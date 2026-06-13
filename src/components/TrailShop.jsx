@@ -86,6 +86,15 @@ function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift, vip }
       boxShadow: equipped ? `0 0 0 1px ${r.color}, 0 14px 40px ${r.glow}` : hover ? `0 16px 38px ${r.glow}` : '0 6px 18px rgba(0,0,0,0.4)',
       transform: hover ? 'translateY(-5px)' : 'translateY(0)', transition: 'transform .22s cubic-bezier(.22,1,.36,1), box-shadow .22s, border-color .2s',
     }}>
+      {trail.nouveaute && (
+        <span style={{
+          position: 'absolute', top: 10, right: 10, zIndex: 3,
+          padding: '3px 9px', borderRadius: 999, fontSize: 9.5, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase',
+          fontFamily: "'Cinzel', serif", color: '#1a1205',
+          background: 'linear-gradient(180deg,#ffe9a8,#d4a017)', border: '1px solid #ffe9a8',
+          boxShadow: '0 4px 14px rgba(212,160,23,.45)',
+        }}>★ Nouveau</span>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
         <TrailSwatch trail={trail} />
         <div style={{ minWidth: 0 }}>
@@ -188,7 +197,7 @@ export default function TrailShop() {
 
       {/* Rangées « Netflix » par rareté (INTERDIT → COMMUN). */}
       {[...Object.keys(RARITY)].sort((a, b) => RARITY[b].order - RARITY[a].order).map(rk => {
-        const rows = visible.filter(t => t.rarete === rk)
+        const rows = visible.filter(t => t.rarete === rk).sort((a, b) => (b.nouveaute ? 1 : 0) - (a.nouveaute ? 1 : 0))
         if (!rows.length) return null
         const rc = RARITY[rk]
         return (

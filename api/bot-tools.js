@@ -678,6 +678,22 @@ const TRAILS = [
   { id:'trail-abysse',        nom:'Or des Abysses',               rarete:'EPIQUE'   },
   { id:'trail-maelstrom',     nom:'Maelström Doré',               rarete:'MYTHIQUE' },
   { id:'trail-constellation', nom:'Constellation de Navigation',  rarete:'MYTHIQUE' },
+  // ── Nouveautés (pack premium) ──
+  { id:'trail-neige',         nom:'Première Neige',     rarete:'COMMUN'   },
+  { id:'trail-bourrasque',    nom:'Bourrasque',         rarete:'COMMUN'   },
+  { id:'trail-givre',         nom:'Givre Polaire',      rarete:'RARE'     },
+  { id:'trail-toxic',         nom:'Brume Toxique',      rarete:'RARE'     },
+  { id:'trail-or-rose',       nom:'Or Rose',            rarete:'RARE'     },
+  { id:'trail-onyx',          nom:"Éclats d'Onyx",      rarete:'RARE'     },
+  { id:'trail-celeste',       nom:'Foudre Céleste',     rarete:'EPIQUE'   },
+  { id:'trail-ecarlate',      nom:'Lame Écarlate',      rarete:'EPIQUE'   },
+  { id:'trail-emeraude-feu',  nom:"Flammes d'Émeraude", rarete:'EPIQUE'   },
+  { id:'trail-lave',          nom:'Coulée de Lave',     rarete:'EPIQUE'   },
+  { id:'trail-nebuleuse',     nom:'Nébuleuse',          rarete:'MYTHIQUE' },
+  { id:'trail-aurore',        nom:'Aurore Boréale',     rarete:'MYTHIQUE' },
+  { id:'trail-supernova',     nom:'Supernova',          rarete:'MYTHIQUE' },
+  { id:'trail-spectre',       nom:'Flamme Spectrale',   rarete:'INTERDIT' },
+  { id:'trail-cosmos',        nom:'Poussière Cosmique', rarete:'INTERDIT' },
 ]
 function findTrail(itemId) { const id = String(itemId || '').trim(); return TRAILS.find(t => t.id === id) || null }
 function trailPriceCents(t) { return TRAIL_PRICE_CENTS[t.rarete] || 50 }

@@ -34,7 +34,9 @@ export default function CursorTrail({ skin, isGlobal = false }) {
     // canvas), on pré-rend UN sprite de glow par couleur (radial gradient) une seule
     // fois, puis on fait drawImage (bon marché). Même rendu glowy, sans le coût du
     // shadowBlur. Cache borné (couleurs fixes du skin + teintes arrondies pour l'arc-en-ciel).
-    const SPR = 64
+    // Sprite glow haute qualité : cœur blanc-chaud (spark) → corps teinté → halo doux
+    // qui s'éteint en douceur (Gaussian-like). Pré-rendu une fois par couleur.
+    const SPR = 96
     const spriteCache = new Map()
     const getSprite = (color) => {
       let c = spriteCache.get(color)
@@ -42,7 +44,11 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       c = document.createElement('canvas'); c.width = c.height = SPR
       const g = c.getContext('2d')
       const grd = g.createRadialGradient(SPR / 2, SPR / 2, 0, SPR / 2, SPR / 2, SPR / 2)
-      grd.addColorStop(0, color); grd.addColorStop(0.32, color); grd.addColorStop(1, 'transparent')
+      grd.addColorStop(0, 'rgba(255,255,255,0.95)') // cœur lumineux (donne le « spark »)
+      grd.addColorStop(0.16, color)
+      grd.addColorStop(0.45, color)
+      grd.addColorStop(0.72, color)
+      grd.addColorStop(1, 'transparent')            // halo qui s'éteint en douceur
       g.fillStyle = grd; g.beginPath(); g.arc(SPR / 2, SPR / 2, SPR / 2, 0, Math.PI * 2); g.fill()
       if (spriteCache.size > 400) spriteCache.clear()
       spriteCache.set(color, c)
@@ -54,18 +60,24 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       ctx.clearRect(0, 0, w, h)
       ctx.globalCompositeOperation = (C?.composite) || 'lighter'
 
+      const tw = C?.twinkle || 0
       for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i]
         p.x += p.vx
         p.y += p.vy
         p.vy += (p.gravity ?? 0.02) * dpr
+        p.vx *= 0.985            // léger frottement → mouvement plus organique
         p.life -= p.decay
 
         if (p.life <= 0) { parts.splice(i, 1); continue }
 
-        // rayon visuel = cœur + halo (équivalent de l'ancien shadowBlur), via le sprite
-        const r = p.size * p.life + p.shadow * dpr * 0.6
-        ctx.globalAlpha = p.life * p.alpha
+        // Taille : easing (reste pleine plus longtemps puis fond) + halo doux.
+        const ease = Math.pow(p.life, 0.6)
+        const r = p.size * ease + p.shadow * dpr * 0.6
+        // Scintillement optionnel (étoiles/cosmos) : modulation d'alpha par particule.
+        let a = p.life * p.alpha
+        if (tw) { p.tw += 0.28; a *= 0.62 + 0.38 * Math.sin(p.tw) }
+        ctx.globalAlpha = a < 0 ? 0 : a
         ctx.drawImage(getSprite(p.color), p.x - r, p.y - r, r * 2, r * 2)
       }
 
@@ -102,6 +114,7 @@ export default function CursorTrail({ skin, isGlobal = false }) {
               size: (Math.random() * C.sizeRand + C.sizeBase) * dpr,
               color: C.hueCycle ? `hsl(${Math.round(hue)}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
               gravity: C.gravity, decay: C.decay, shadow: C.shadow, alpha: C.alpha,
+              tw: Math.random() * 6.283,
             })
           }
         }

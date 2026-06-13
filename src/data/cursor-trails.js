@@ -11,9 +11,9 @@ export const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 
 // Réglages moteur par défaut (repris de l'ancien CursorTrail or). Chaque skin
 // surcharge ce qu'il veut. composite 'lighter' = glow additif ; 'source-over' = solide.
 export const TRAIL_DEFAULTS = {
-  maxParts: 420, maxEmit: 14, emitDivisor: 5.5, minDist: 3.5, dpr: 1.35,
+  maxParts: 560, maxEmit: 16, emitDivisor: 4.6, minDist: 2.6, dpr: 2,
   speed: 0.32, drift: 0.19, gravity: 0.02, sizeBase: 1.35, sizeRand: 1.8,
-  decay: 0.048, shadow: 6, alpha: 0.82, composite: 'lighter', hueCycle: 0,
+  decay: 0.045, shadow: 7, alpha: 0.85, composite: 'lighter', hueCycle: 0, twinkle: 0,
 }
 
 export const TRAILS = [
@@ -106,7 +106,43 @@ export const TRAILS = [
     config: { colors: ['#ffe9a8', '#d4a017', '#ffffff', '#c98a2a'], speed: 0.85, drift: 0.9, gravity: 0, sizeBase: 1.3, sizeRand: 1.8, decay: 0.06, shadow: 13, alpha: 0.95 } },
   { id: 'trail-constellation', nom: 'Constellation de Navigation', rarete: 'MYTHIQUE', emoji: '✦',
     // Carte du ciel : points d'or fins et lents qui scintillent (peu de drift).
-    config: { colors: ['#fff7d6', '#ffe066', '#bfd9ff', '#ffffff'], gravity: 0, speed: 0.14, drift: 0.18, sizeBase: 1.0, sizeRand: 1.4, decay: 0.02, shadow: 14, alpha: 0.95 } },
+    config: { colors: ['#fff7d6', '#ffe066', '#bfd9ff', '#ffffff'], gravity: 0, speed: 0.14, drift: 0.18, sizeBase: 1.0, sizeRand: 1.4, decay: 0.02, shadow: 14, alpha: 0.95, twinkle: 1 } },
+
+  // ════ NOUVEAUTÉS — pack premium (moteur HQ : cœur lumineux + halo doux) ════
+  { id: 'trail-neige', nom: 'Première Neige', rarete: 'COMMUN', emoji: '❄️', nouveaute: true,
+    config: { colors: ['#ffffff', '#eaf4ff', '#cfe4ff', '#f7fbff'], composite: 'source-over', gravity: 0.05, speed: 0.16, drift: 0.55, sizeBase: 2.0, sizeRand: 2.4, decay: 0.022, shadow: 5, alpha: 0.55 } },
+  { id: 'trail-bourrasque', nom: 'Bourrasque', rarete: 'COMMUN', emoji: '🌬️', nouveaute: true,
+    config: { colors: ['#eaf2f7', '#c6d6e0', '#ffffff', '#aebfcc'], composite: 'source-over', gravity: 0, speed: 0.9, drift: 0.2, sizeBase: 1.3, sizeRand: 1.6, decay: 0.05, shadow: 4, alpha: 0.5 } },
+
+  { id: 'trail-givre', nom: 'Givre Polaire', rarete: 'RARE', emoji: '🧊', nouveaute: true,
+    config: { colors: ['#bfefff', '#7fd4ff', '#ffffff', '#4fb6e6'], speed: 0.36, drift: 0.35, gravity: 0.02, sizeBase: 1.3, sizeRand: 1.8, decay: 0.04, shadow: 12, alpha: 0.9 } },
+  { id: 'trail-toxic', nom: 'Brume Toxique', rarete: 'RARE', emoji: '☠️', nouveaute: true,
+    config: { colors: ['#9bff6a', '#3fae2e', '#c8a6ff', '#1f6e12'], composite: 'source-over', gravity: -0.02, speed: 0.26, drift: 0.55, sizeBase: 2.4, sizeRand: 2.6, decay: 0.03, shadow: 9, alpha: 0.55 } },
+  { id: 'trail-or-rose', nom: 'Or Rose', rarete: 'RARE', emoji: '🌹', nouveaute: true,
+    config: { colors: ['#ffd9c2', '#ff9eb0', '#ffe7a8', '#f4b6c0'], speed: 0.34, drift: 0.4, gravity: 0.01, sizeBase: 1.3, sizeRand: 1.9, decay: 0.04, shadow: 12, alpha: 0.92, twinkle: 1 } },
+  { id: 'trail-onyx', nom: "Éclats d'Onyx", rarete: 'RARE', emoji: '⬛', nouveaute: true,
+    config: { colors: ['#d4a017', '#1a1a22', '#f6d98a', '#0c0c12'], speed: 0.46, drift: 0.3, gravity: 0.03, sizeBase: 1.4, sizeRand: 2.0, decay: 0.05, shadow: 10, alpha: 0.9 } },
+
+  { id: 'trail-celeste', nom: 'Foudre Céleste', rarete: 'EPIQUE', emoji: '⚡', nouveaute: true,
+    config: { colors: ['#ffffff', '#ffe98a', '#fff4cf', '#ffd24a'], speed: 0.85, drift: 0.2, gravity: 0, sizeBase: 1.3, sizeRand: 1.7, decay: 0.07, shadow: 15, alpha: 0.97 } },
+  { id: 'trail-ecarlate', nom: 'Lame Écarlate', rarete: 'EPIQUE', emoji: '🩸', nouveaute: true,
+    config: { colors: ['#ff3b3b', '#8a0f1a', '#ff8a8a', '#23060a'], speed: 0.8, drift: 0.16, gravity: -0.02, sizeBase: 1.5, sizeRand: 2.0, decay: 0.072, shadow: 13, alpha: 0.95 } },
+  { id: 'trail-emeraude-feu', nom: "Flammes d'Émeraude", rarete: 'EPIQUE', emoji: '💚', nouveaute: true,
+    config: { colors: ['#aaffc0', '#2fc46a', '#e6fff0', '#127a3e'], gravity: -0.06, speed: 0.5, drift: 0.3, sizeBase: 1.7, sizeRand: 2.3, decay: 0.05, shadow: 14, alpha: 0.93 } },
+  { id: 'trail-lave', nom: 'Coulée de Lave', rarete: 'EPIQUE', emoji: '🌋', nouveaute: true,
+    config: { colors: ['#ffd24a', '#ff6a1f', '#ff3b0f', '#7a1e08'], gravity: 0.1, speed: 0.34, drift: 0.4, sizeBase: 2.2, sizeRand: 2.6, decay: 0.034, shadow: 14, alpha: 0.95 } },
+
+  { id: 'trail-nebuleuse', nom: 'Nébuleuse', rarete: 'MYTHIQUE', emoji: '🌌', nouveaute: true,
+    config: { colors: ['#b06cff', '#ff6ec7', '#6cb8ff', '#fff0ff'], speed: 0.3, drift: 0.5, gravity: 0, sizeBase: 1.8, sizeRand: 2.8, decay: 0.03, shadow: 16, alpha: 0.9, twinkle: 1 } },
+  { id: 'trail-aurore', nom: 'Aurore Boréale', rarete: 'MYTHIQUE', emoji: '🌠', nouveaute: true,
+    config: { colors: ['#5fffc4', '#5ad1ff', '#b06cff', '#d9ffe9'], gravity: -0.04, speed: 0.3, drift: 0.6, sizeBase: 2.0, sizeRand: 3.0, decay: 0.026, shadow: 18, alpha: 0.9 } },
+  { id: 'trail-supernova', nom: 'Supernova', rarete: 'MYTHIQUE', emoji: '💥', nouveaute: true,
+    config: { colors: ['#ffffff', '#ffe9a8', '#ffd24a', '#ff8a3d'], speed: 1.0, drift: 0.5, gravity: 0, sizeBase: 1.6, sizeRand: 2.6, decay: 0.06, shadow: 18, alpha: 0.98 } },
+
+  { id: 'trail-spectre', nom: 'Flamme Spectrale', rarete: 'INTERDIT', emoji: '🔥', nouveaute: true,
+    config: { colors: ['#bafff5', '#5fe6d4', '#ffffff', '#2f9f9f'], gravity: -0.08, speed: 0.6, drift: 0.35, sizeBase: 1.8, sizeRand: 2.6, decay: 0.05, shadow: 18, alpha: 0.96 } },
+  { id: 'trail-cosmos', nom: 'Poussière Cosmique', rarete: 'INTERDIT', emoji: '✨', nouveaute: true,
+    config: { colors: ['#fff3c0', '#9ec5ff', '#ffffff', '#d4a017'], gravity: 0, speed: 0.22, drift: 0.45, sizeBase: 1.1, sizeRand: 1.8, decay: 0.022, shadow: 16, alpha: 0.96, twinkle: 1 } },
 ]
 
 export function findTrail(id) { return TRAILS.find(t => t.id === id) || null }
