@@ -81,7 +81,7 @@ export default class DamesRenderer {
     scene.add(new THREE.HemisphereLight(0xfff0d8, 0x1a1008, 0.55))
     const key = new THREE.DirectionalLight(0xfff3df, 1.15); key.position.set(7, 16, 9); key.castShadow = true
     key.shadow.mapSize.set(2048, 2048); const sc = key.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 50; key.shadow.bias = -0.0004
-    scene.add(key)
+    scene.add(key); this._keyLight = key
     scene.add(Object.assign(new THREE.PointLight(0xffce8a, 0.55, 40), { position: new THREE.Vector3(-7, 7, -5) }))
     const fill = new THREE.DirectionalLight(0x9fb8e0, 0.25); fill.position.set(-6, 8, 6); scene.add(fill)
 
@@ -96,19 +96,12 @@ export default class DamesRenderer {
     controls.rotateSpeed = 0.8; controls.zoomSpeed = 0.9
     this.resetView()
 
-    // Post-processing (palier auto) : bloom + SMAA. Coupé en reduced-motion / petit
-    // écran tactile (perfs) — un palier réglable arrivera en phase 5.
+    // Palier d'effets : 'high' (bloom+SMAA+ombres+particules), 'medium' (SMAA+ombres),
+    // 'low' (rendu simple, sans ombres ni particules). Auto selon l'appareil, réglable.
     const coarse = window.matchMedia?.('(pointer: coarse)')?.matches
-    this.fx = !reducedMotion && !(coarse && Math.min(W, H) < 820)
-    if (this.fx) {
-      const composer = new EffectComposer(renderer); this.composer = composer
-      composer.addPass(new RenderPass(scene, camera))
-      const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.6, 0.72); this.bloom = bloom
-      composer.addPass(bloom)
-      const smaa = new SMAAPass(W * renderer.getPixelRatio(), H * renderer.getPixelRatio()); this.smaa = smaa
-      composer.addPass(smaa)
-      composer.addPass(new OutputPass())
-    }
+    let saved = null; try { saved = localStorage.getItem('dames_quality') } catch (e) { /* */ }
+    const initialTier = saved || (reducedMotion ? 'low' : (coarse && Math.min(W, H) < 820) ? 'medium' : 'high')
+    this._applyQuality(initialTier)
 
     this.raycaster = new THREE.Raycaster(); this.mouse = new THREE.Vector2()
     this._onPointerDown = (e) => { this._downX = e.clientX; this._downY = e.clientY; this._moved = 0; this._resumeAudio() }
@@ -155,6 +148,37 @@ export default class DamesRenderer {
     if (this.smaa) this.smaa.setSize(W * this.renderer.getPixelRatio(), H * this.renderer.getPixelRatio())
   }
   resetView() { if (this.camera) { this.camera.position.set(0, 11.5, 13.5); this.controls.target.set(0, 0, 0); this.controls.update() } }
+
+  // ── palier d'effets (perf) ──────────────────────────────────────────────────
+  quality() { return this._quality }
+  setQuality(tier) { this._applyQuality(tier); try { localStorage.setItem('dames_quality', tier) } catch (e) { /* */ } }
+  _destroyComposer() {
+    if (!this.composer) return
+    try { this.bloom && this.bloom.dispose && this.bloom.dispose() } catch (e) { /* */ }
+    try { this.smaa && this.smaa.dispose && this.smaa.dispose() } catch (e) { /* */ }
+    try { this.composer.dispose && this.composer.dispose() } catch (e) { /* */ }
+    this.composer = null; this.bloom = null; this.smaa = null
+  }
+  _applyQuality(tier) {
+    this._quality = tier
+    if (!this.renderer) return
+    const host = this.canvas.parentElement || this.canvas
+    const W = host.clientWidth || 800, H = host.clientHeight || 600
+    this.particlesOn = tier !== 'low'
+    const sh = tier !== 'low'
+    this.renderer.shadowMap.enabled = sh
+    if (this._keyLight) this._keyLight.castShadow = sh
+    this._destroyComposer()
+    if (tier === 'low') return
+    const composer = new EffectComposer(this.renderer); this.composer = composer
+    composer.addPass(new RenderPass(this.scene, this.camera))
+    if (tier === 'high') { const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.6, 0.72); this.bloom = bloom; composer.addPass(bloom) }
+    const smaa = new SMAAPass(W * this.renderer.getPixelRatio(), H * this.renderer.getPixelRatio()); this.smaa = smaa; composer.addPass(smaa)
+    composer.addPass(new OutputPass()); composer.setSize(W, H)
+  }
+
+  // a11y : surbrillance d'une case au clavier (rc = [r,c] ou null)
+  setCursor(rc) { this._cursor = rc; this._buildMarkers() }
 
   // ── construction ──────────────────────────────────────────────────────────
   _mat(m) { this._track.push(m); return m }
@@ -237,12 +261,12 @@ export default class DamesRenderer {
   setHint(move) { this._hint = move; this._buildMarkers() }
   _clearMarkers() { while (this.markersGroup.children.length) this.markersGroup.remove(this.markersGroup.children[0]) }
   _ring(r, c, kind) {
-    const col = kind === 'cap' ? 0xe06a4a : kind === 'sel' ? 0xf4e2a6 : kind === 'hint' ? 0x6fe0ff : kind === 'last' ? 0xd9b870 : 0xd9b870
-    const inner = kind === 'move' || kind === 'cap' ? 0.30 : kind === 'sel' || kind === 'hint' ? 0.36 : kind === 'last' ? 0.40 : 0.17
-    const tube = kind === 'move' || kind === 'cap' ? 0.04 : kind === 'sel' || kind === 'hint' ? 0.045 : kind === 'last' ? 0.03 : 0.028
+    const col = kind === 'cap' ? 0xe06a4a : kind === 'sel' ? 0xf4e2a6 : kind === 'hint' ? 0x6fe0ff : kind === 'cursor' ? 0xffffff : 0xd9b870
+    const inner = kind === 'move' || kind === 'cap' ? 0.30 : kind === 'sel' || kind === 'hint' ? 0.36 : kind === 'last' || kind === 'cursor' ? 0.40 : 0.17
+    const tube = kind === 'move' || kind === 'cap' ? 0.04 : kind === 'sel' || kind === 'hint' ? 0.045 : kind === 'cursor' ? 0.05 : kind === 'last' ? 0.03 : 0.028
     const op = kind === 'dot' ? 0.5 : kind === 'last' ? 0.4 : 0.92
     const m = new THREE.Mesh(this._geo(new THREE.TorusGeometry(inner, tube, 12, 40)), this._mat(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op })))
-    m.rotation.x = Math.PI / 2; const w = worldPos(r, c); m.position.set(w.x, MARK_Y, w.z); m.userData.pulse = (kind === 'sel' || kind === 'cap' || kind === 'move' || kind === 'hint'); return m
+    m.rotation.x = Math.PI / 2; const w = worldPos(r, c); m.position.set(w.x, MARK_Y, w.z); m.userData.pulse = (kind === 'sel' || kind === 'cap' || kind === 'move' || kind === 'hint' || kind === 'cursor'); return m
   }
   _buildMarkers() {
     this._clearMarkers()
@@ -256,6 +280,8 @@ export default class DamesRenderer {
     }
     // Indice (bouton) : from + to en cyan pulsé.
     if (this._hint) { this.markersGroup.add(this._ring(this._hint.from[0], this._hint.from[1], 'hint')); this.markersGroup.add(this._ring(this._hint.to[0], this._hint.to[1], 'hint')) }
+    // Curseur clavier (a11y).
+    if (this._cursor) this.markersGroup.add(this._ring(this._cursor[0], this._cursor[1], 'cursor'))
   }
 
   setInteractive(b) { this.interactive = b; this._buildMarkers() }
@@ -273,7 +299,7 @@ export default class DamesRenderer {
   // ── animation d'un coup ───────────────────────────────────────────────────────
   _tween(dur, onUpdate, onComplete) { this.tweens.push({ t0: performance.now(), dur, onUpdate, onComplete, done: false }) }
   _ember(x, z) {
-    if (this.reduced) return
+    if (this.reduced || this.particlesOn === false) return
     const geo = this._geo(new THREE.SphereGeometry(0.04, 6, 6))
     for (let k = 0; k < 16; k++) {
       const m = new THREE.Mesh(geo, this._mat(new THREE.MeshBasicMaterial({ color: Math.random() < 0.5 ? 0xe6c878 : 0xff7a3c, transparent: true, opacity: 1 })))

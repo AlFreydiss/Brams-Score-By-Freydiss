@@ -5,8 +5,10 @@
 // Indice, historique en notation 1–50, dernier coup surligné, rafle max + volantes.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { initBoard, generateMoves, applyMove, countPieces, opp, aiMove, P, M } from './engine/draughts-engine.js'
+import { initBoard, generateMoves, applyMove, countPieces, opp, aiMove, isDark, P, M } from './engine/draughts-engine.js'
 import { moveToNotation } from './engine/notation.js'
+
+const QUALITY = [['high', 'Élevé'], ['medium', 'Moyen'], ['low', 'Basique']]
 
 const GOLD = '#d9b870', PARCH = '#efe6d4', MUTED = '#9a8f7d'
 const DIFFS = [['mousse', 'Mousse'], ['marin', 'Marin'], ['capitaine', 'Capitaine'], ['amiral', 'Amiral'], ['legende', 'Légende']]
@@ -22,6 +24,7 @@ export default function DamesGame3D() {
   const [hud, setHud] = useState({ turn: P, pir: 20, mar: 20, gameOver: false, winner: null, thinking: false, mode: 'local', diff: 'marin', canUndo: false, ready: false, hinting: false })
   const [moves, setMoves] = useState([])
   const [muted, setMuted] = useState(false)
+  const [quality, setQuality] = useState(() => { try { return localStorage.getItem('dames_quality') || 'high' } catch (e) { return 'high' } })
   const hintTimer = useRef(0)
 
   const syncHUD = useCallback(() => {
@@ -159,13 +162,28 @@ export default function DamesGame3D() {
   const setMode = (m) => { G.current.mode = m; setHud(h => ({ ...h, mode: m })); newGame() }
   const setDiff = (d) => { G.current.diff = d; setHud(h => ({ ...h, diff: d })) }
   const toggleMute = () => { const m = !muted; setMuted(m); rdrRef.current?.setMuted(m) }
+  const cycleQuality = () => { const i = QUALITY.findIndex(q => q[0] === quality); const next = QUALITY[(i + 1) % QUALITY.length][0]; setQuality(next); rdrRef.current?.setQuality(next) }
+  // a11y : navigation du plateau au clavier (flèches = déplacer le curseur, Entrée = sélectionner/jouer, Échap = désélectionner).
+  const onKeyDown = (e) => {
+    const g = G.current
+    if (e.key === 'Escape') { if (g.selected) { g.selected = null; drawMarkers() } return }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (g.cursor) handleSquare(g.cursor[0], g.cursor[1]); return }
+    const dirs = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }
+    const d = dirs[e.key]; if (!d) return
+    e.preventDefault()
+    const [r, c] = g.cursor || [6, 1]
+    let nr = Math.max(0, Math.min(9, r + d[0])), nc = Math.max(0, Math.min(9, c + d[1]))
+    if (!isDark(nr, nc)) { if (nc + 1 <= 9 && isDark(nr, nc + 1)) nc++; else if (nc - 1 >= 0) nc-- }
+    g.cursor = [nr, nc]; rdrRef.current?.setCursor(g.cursor)
+  }
 
   const turnColor = hud.turn === P ? '#ef8a7c' : '#82b6e6'
   const turnText = hud.turn === P ? (hud.mode === 'ai' ? 'Pirates — à toi de jouer' : 'Pirates — à vous') : (hud.mode === 'ai' ? (hud.thinking ? 'Marine réfléchit…' : 'Marine') : 'Marine — à vous')
   const myTurn = !hud.gameOver && (hud.mode === 'local' || hud.turn === G.current.humanSide) && !hud.thinking
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 'min(74vh, 720px)', minHeight: 460, borderRadius: 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: '1px solid rgba(217,184,112,.16)' }}>
+    <div tabIndex={0} onKeyDown={onKeyDown} role="application" aria-label="Plateau de dames 3D — flèches pour déplacer le curseur, Entrée pour sélectionner ou jouer, Échap pour annuler la sélection"
+      style={{ position: 'relative', width: '100%', height: 'min(74vh, 720px)', minHeight: 460, borderRadius: 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: '1px solid rgba(217,184,112,.16)', outline: 'none' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 200px 30px rgba(0,0,0,.6)' }} />
 
@@ -181,6 +199,7 @@ export default function DamesGame3D() {
           <button style={iconBtn(!hud.canUndo)} title="Annuler" onClick={undo} disabled={!hud.canUndo}>↶</button>
           <button style={iconBtn(!myTurn || hud.hinting)} title="Indice" onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
           <button style={iconBtn(false)} title="Recentrer" onClick={() => rdrRef.current?.resetView()}>⌖</button>
+          <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '✨' : quality === 'medium' ? '◐' : '○'}</button>
           <button style={iconBtn(false)} title="Son" onClick={toggleMute}>{muted ? '🔇' : '🔊'}</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(14,10,7,.78)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: '9px 18px', backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px rgba(0,0,0,.45)', fontWeight: 700, fontSize: 15, color: turnColor }}>
