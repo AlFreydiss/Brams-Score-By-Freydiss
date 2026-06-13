@@ -61,7 +61,7 @@ export function DamesLeaderboard() {
     <div style={cardStyle}>
       <div style={{ fontWeight: 800, fontSize: 14, color: '#fff', marginBottom: 10 }}>🏆 Classement — les plus grosses primes</div>
       {rows === null ? <div style={dim}>Chargement…</div>
-        : rows.length === 0 ? <div style={dim}>Aucune partie classée encore. Le multijoueur en ligne arrive — sois le premier sur le tableau ! 🏴‍☠️</div>
+        : rows.length === 0 ? <div style={dim}>Aucune partie classée encore. Lance une partie en ligne et sois le premier sur le tableau ! 🏴‍☠️</div>
           : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {rows.map((r, i) => {

@@ -2,6 +2,7 @@
 // Branché sur le moteur vérifié. vs IA + multi en ligne arrivent ensuite.
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import DamesBoard from './DamesBoard.jsx'
+import DamesOnline from './DamesOnline.jsx'
 import { getInitialBoard, applyMove, getOutcome, materialCount, DEFAULT_RULESET } from '../../lib/dames/damesEngine.js'
 import { DIFFICULTIES, getBestMove } from '../../lib/dames/damesAI.js'
 import { DamesRankCard, DamesLeaderboard } from './DamesLobby.jsx'
@@ -67,7 +68,7 @@ export default function DamesPage() {
 
       {/* Mode + difficulté */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {[['local', '👥 Local (2 joueurs)'], ['ai', '🤖 vs IA']].map(([id, lbl]) => (
+        {[['local', '👥 Local (2 joueurs)'], ['ai', '🤖 vs IA'], ['online', '🌐 En ligne (classé)']].map(([id, lbl]) => (
           <button key={id} onClick={() => { setMode(id); reset() }} style={{
             padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontWeight: 700, fontSize: 13,
             background: mode === id ? GOLD : 'rgba(255,255,255,.05)', color: mode === id ? '#1a1200' : 'rgba(243,234,216,.7)',
@@ -87,6 +88,7 @@ export default function DamesPage() {
         </div>
       )}
 
+      {mode === 'online' ? <DamesOnline /> : (<>
       {/* Bandeau de tour / résultat */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12, padding: '9px 20px', borderRadius: 999,
@@ -120,8 +122,9 @@ export default function DamesPage() {
       </div>
 
       <p style={{ fontSize: 12, color: 'rgba(243,234,216,.4)', maxWidth: 460, textAlign: 'center', marginTop: 4 }}>
-        Local (2 joueurs) ou <strong style={{ color: 'rgba(243,234,216,.6)' }}>vs IA</strong> (4 difficultés). Le <strong style={{ color: 'rgba(243,234,216,.6)' }}>multijoueur en ligne classé (primes One Piece)</strong> arrive bientôt. 🏴‍☠️
+        Local (2 joueurs), <strong style={{ color: 'rgba(243,234,216,.6)' }}>vs IA</strong> (4 difficultés) ou <strong style={{ color: 'rgba(243,234,216,.6)' }}>en ligne classé</strong> (primes One Piece). 🏴‍☠️
       </p>
+      </>)}
 
       <DamesLeaderboard />
     </div>
