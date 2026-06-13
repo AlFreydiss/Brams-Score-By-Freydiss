@@ -409,7 +409,7 @@ export const ANIMES = [
     emoji: '♪',
     color: '#ec4899',
     colorDark: '#5b1038',
-    coverImage: LOVE_PRISM_VIDEOS[0]?.thumbnail || 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/love-prism-hls/S01E001/thumb.jpg',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/covers/love-prism.jpg',
     coverPosition: 'center center',
     genres: ['Romance', 'Musique', 'Drame'],
     description: 'Saison 1 en VF et japonais, avec sous-titres selon les pistes disponibles.',

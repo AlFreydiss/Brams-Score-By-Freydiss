@@ -34,7 +34,7 @@ export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
         <img
           src={backdrop} alt="" loading="lazy" decoding="async"
           onError={() => setBdBroken(true)}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.coverPosition || 'center 25%' }}
         />
         {/* Scrim bas : titre lisible même sur backdrop clair (Your Name) */}
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 55%, rgba(11,14,20,.8))' }} />
