@@ -11,11 +11,15 @@ import { T } from '../social/socialStyles.js'
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
 function pickMime() {
+  // MP4/H.264 en priorité : lecture beaucoup plus fluide dans le Fil que le WebM
+  // VP8/9 de MediaRecorder (qui sort souvent en framerate variable = saccadé).
   const candidates = [
+    'video/mp4;codecs=avc1.640028,mp4a.40.2',
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4',
     'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
     'video/webm',
-    'video/mp4',
   ]
   for (const m of candidates) {
     try { if (window.MediaRecorder?.isTypeSupported?.(m)) return m } catch {}
@@ -87,8 +91,11 @@ export default function VideoTrimmer({ file, onDone, onCancel }) {
           v.addEventListener('seeked', fn)
         })
       }
-      const stream = (v.captureStream || v.mozCaptureStream).call(v)
-      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000, audioBitsPerSecond: 128_000 })
+      // captureStream(30) force un framerate CONSTANT -> sortie fluide (sans fps,
+      // MediaRecorder sort du VFR qui saccade à la lecture). 30 est ignoré sans risque
+      // par les navigateurs qui ne le gèrent pas.
+      const stream = (v.captureStream || v.mozCaptureStream).call(v, 30)
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 9_000_000, audioBitsPerSecond: 160_000 })
       recRef.current = rec
       chunksRef.current = []
       rec.ondataavailable = (e) => { if (e.data?.size) chunksRef.current.push(e.data) }
@@ -100,7 +107,7 @@ export default function VideoTrimmer({ file, onDone, onCancel }) {
         const base = (file.name || 'video').replace(/\.[a-z0-9]+$/i, '')
         onDone(new File([blob], `${base}-rogne.${ext}`, { type: mime.split(';')[0] }))
       }
-      rec.start(250)
+      rec.start() // blob unique (pas de timeslice) = fichier mieux finalisé, surtout en MP4
       // muted pour l'aperçu silencieux ; Chrome capture l'audio AVANT le gain de
       // sortie, donc la piste son reste présente dans l'enregistrement.
       v.muted = true
