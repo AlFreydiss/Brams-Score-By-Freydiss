@@ -97,18 +97,25 @@ function Spoiler({ text }) {
   )
 }
 
+function escapeRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') }
+
 function RichText({ text, mentions }) {
   if (!text) return null
+  const mlist = (mentions || []).filter(m => m?.username)
   const mmap = {}
-  for (const m of (mentions || [])) if (m?.username) mmap[m.username.toLowerCase()] = m.uid
+  for (const m of mlist) mmap[m.username.toLowerCase()] = m.uid
+  // Les pseudos connus du post (avec ESPACES et ACCENTS) sont matchés en priorité,
+  // puis le @mot générique. Corrige "@Carton OG" / "@Pépé chicken (J3)" non liés.
+  const alt = mlist.map(m => m.username).sort((a, b) => b.length - a.length).map(n => '@' + escapeRe(n)).join('|')
+  const RE = new RegExp(`(https?:\\/\\/[^\\s]+|#[\\p{L}0-9_]+|${alt ? alt + '|' : ''}@[\\p{L}0-9_.]{2,32}|\\|\\|[^|]+\\|\\|)`, 'gu')
   return (
     <div className="feed-rich-text">
-      {String(text).split(TOKEN_RE).map((p, i) => {
+      {String(text).split(RE).map((p, i) => {
         if (!p) return null
         if (/^\|\|[^|]+\|\|$/.test(p)) return <Spoiler key={i} text={p.slice(2, -2)} />
         if (/^https?:\/\//.test(p)) return <a key={i} href={p} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>{p}</a>
         if (/^#[\p{L}0-9_]+$/u.test(p)) return <Link key={i} to={`/fil/recherche?q=${encodeURIComponent(p)}`} onClick={e => e.stopPropagation()}>{p}</Link>
-        if (/^@[A-Za-z0-9_.]{2,32}$/.test(p)) {
+        if (p[0] === '@') {
           const uid = mmap[p.slice(1).toLowerCase()]
           if (uid) return <Link key={i} to={`/u/${uid}`} onClick={e => e.stopPropagation()}>{p}</Link>
         }

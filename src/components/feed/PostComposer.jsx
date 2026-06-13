@@ -19,7 +19,7 @@ const PLACEHOLDERS = [
 
 function detectMention(value, caret) {
   const before = value.slice(0, caret)
-  const m = before.match(/(?:^|\s)@([A-Za-z0-9_.]*)$/)
+  const m = before.match(/(?:^|\s)@([\p{L}0-9_.]*)$/u)
   if (!m) return null
   const query = m[1]
   return { start: caret - query.length - 1, query }
