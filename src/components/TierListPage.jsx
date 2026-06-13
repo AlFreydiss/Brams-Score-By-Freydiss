@@ -55,21 +55,24 @@ const G = {
 }
 
 // ── Default tiers ──────────────────────────────────────────────────────────────
+// Plaque laiton gravée commune (le tier se distingue par sa bande d'accent mate).
+const BRASS_BG = 'linear-gradient(180deg, #2A2318 0%, #1C1710 100%)'
 const DEFAULT_TIERS = [
-  { id:'god',   label:'GOD',   color:'#f5c842', bg:'linear-gradient(135deg,#7a5200,#c08800)' },
-  { id:'s',     label:'S',     color:'#ff5577', bg:'linear-gradient(135deg,#880020,#cc1840)' },
-  { id:'a',     label:'A',     color:'#e8a030', bg:'linear-gradient(135deg,#7a4400,#bc7000)' },
-  { id:'b',     label:'B',     color:'#4aa0e8', bg:'linear-gradient(135deg,#0e3870,#1a609a)' },
-  { id:'c',     label:'C',     color:'#9060d8', bg:'linear-gradient(135deg,#301068,#5020a8)' },
-  { id:'d',     label:'D',     color:'#6898c0', bg:'linear-gradient(135deg,#182a40,#2a4868)' },
-  { id:'f',     label:'F',     color:'#e84055', bg:'linear-gradient(135deg,#780010,#c01030)' },
-  { id:'trash', label:'TRASH', color:'#7a8898', bg:'linear-gradient(135deg,#222c36,#364858)' },
+  { id:'god',   label:'GOD',   color:'#D4B483', bg:BRASS_BG },
+  { id:'s',     label:'S',     color:'#BE6A5A', bg:BRASS_BG },
+  { id:'a',     label:'A',     color:'#C2864E', bg:BRASS_BG },
+  { id:'b',     label:'B',     color:'#5E83A6', bg:BRASS_BG },
+  { id:'c',     label:'C',     color:'#8270A6', bg:BRASS_BG },
+  { id:'d',     label:'D',     color:'#4E8290', bg:BRASS_BG },
+  { id:'f',     label:'F',     color:'#6E60A0', bg:BRASS_BG },
+  { id:'trash', label:'TRASH', color:'#806080', bg:BRASS_BG },
 ]
 
+// Couleurs proposées au color-picker des tiers (accents mats patinés).
 const TIER_COLORS = [
-  '#d4a017','#a0445c','#BFA46A','#4a86b8','#7b6aa8',
-  '#6b8098','#b44a58','#5a6570','#34d399','#f97316',
-  '#8b5cf6','#06b6d4','#ef4444','#22c55e','#f59e0b',
+  '#D4B483','#BE6A5A','#C2864E','#5E83A6','#8270A6',
+  '#4E8290','#6E60A0','#5A5080','#806080','#6E6456',
+  '#C9A86A','#9A8A6A','#7A8C6E','#A8893F','#8A8270',
 ]
 
 // ── Datasets ──────────────────────────────────────────────────────────────────
@@ -561,16 +564,19 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
     }}
     className="tier-row"
     >
-      {/* Rank label */}
+      {/* Rank label — plaque laiton gravée + bande d'accent mate (3px) */}
       <div style={{
         width:80, flexShrink:0,
-        background: tier.bg,
+        background: BRASS_BG,
+        borderTop:'1px solid rgba(212,180,131,0.10)',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
-        borderRight:`2px solid ${tier.color}44`,
-        boxShadow: isOver ? `0 0 20px ${tier.color}44` : 'none',
+        borderRight:`1px solid ${ink.line}`,
+        boxShadow: isOver ? `inset 0 0 0 1px ${tier.color}55` : 'inset 0 1px 0 rgba(212,180,131,.05)',
         transition:'box-shadow .25s',
         position:'relative',
       }}>
+        {/* bande d'accent mate descendante */}
+        <span aria-hidden style={{ position:'absolute', left:0, top:0, bottom:0, width:3, background: tier.color, opacity:.92 }} />
         <textarea
           ref={inputRef}
           value={tmpLabel}
@@ -588,13 +594,14 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
             background:'transparent',
             border:'none',
             outline:'none',
-            color:'#fff',
-            fontSize: tmpLabel.length <= 2 ? 20 : tmpLabel.length <= 5 ? 14 : tmpLabel.length <= 10 ? 11 : 9.5,
-            fontWeight:900,
+            color: tier.color,
+            fontSize: tmpLabel.length <= 2 ? 21 : tmpLabel.length <= 5 ? 15 : tmpLabel.length <= 10 ? 11.5 : 9.5,
+            fontWeight:500,
             lineHeight:1.1,
-            fontFamily:'serif',
-            letterSpacing:0,
-            textShadow:`0 0 20px ${tier.color}88`,
+            fontFamily: fonts.display,
+            fontVariant:'small-caps',
+            letterSpacing:'.12em',
+            textShadow:'0 1px 0 rgba(0,0,0,.6), 0 -1px 0 rgba(212,180,131,.05)',
             padding:'2px 5px',
             overflow:'hidden',
             whiteSpace:'pre-wrap',
@@ -629,14 +636,15 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
       <div ref={setNodeRef} style={{
         flex:1, display:'flex', flexWrap:'wrap', gap:5, padding:'8px 10px',
         alignContent:'flex-start', alignItems:'flex-start', minHeight:90,
-        outline: isOver ? `2px dashed ${tier.color}66` : '2px dashed transparent',
-        outlineOffset:-4, borderRadius:4, transition:'outline .18s',
+        outline: isOver ? `1.5px dashed ${ink.gold500}aa` : `1.5px dashed transparent`,
+        outlineOffset:-4, borderRadius:4, transition:'outline .18s, background .18s',
+        background: isOver ? ink.goldGlow : 'transparent',
         position:'relative',
       }}>
         {items.length === 0 && !isOver && (
           <div style={{
             position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
-            color:'rgba(255,255,255,.08)', fontSize:12, pointerEvents:'none', fontStyle:'italic',
+            color:ink.textFaint, fontFamily:fonts.ui, fontSize:12, pointerEvents:'none', letterSpacing:'.04em',
           }}>
             Glisse ici
           </div>
@@ -760,8 +768,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
 
   return (
     <div style={{
-      background:'rgba(6,7,12,.85)',
-      backdropFilter:'blur(20px)',
+      background: ink.ink800,
       flexShrink:0,
       ...(sidePanel ? {
         position:'sticky',
@@ -770,7 +777,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
         height:'calc(100vh - 170px)',
         minHeight:520,
         minWidth:420,
-        border:`1px solid ${G.border}`,
+        border:`1px solid ${ink.line}`,
         borderRadius:14,
         overflow:'hidden',
         display:'flex',
@@ -2447,27 +2454,29 @@ export default function TierListPage() {
                 </div>
               ) : (
                 <button onClick={() => { setTmpTitle(title); setEditTitle(true); setTimeout(() => titleRef.current?.focus(), 30) }}
-                  style={{ display:'flex', alignItems:'center', gap:5, background:'none', border:'none', cursor:'pointer',
-                    color:G.text, fontSize:13, fontWeight:800, padding:'4px 8px', whiteSpace:'nowrap', flexShrink:0,
+                  style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer',
+                    color:ink.textHi, fontFamily:fonts.display, fontSize:15, fontWeight:500, padding:'4px 8px', whiteSpace:'nowrap', flexShrink:0,
                     borderRadius:8, transition:'background .15s' }}>
-                  {title.slice(0,24)}{title.length > 24 && '…'} <Edit3 size={11} style={{ color:G.muted }}/>
+                  {title.slice(0,24)}{title.length > 24 && '…'} <Edit3 size={12} style={{ color:ink.textMute }}/>
                 </button>
               )}
 
-              {/* Auto-save indicator */}
-              <div style={{ fontSize:9.5, color: saved || draftSaved || cloudSaved ? '#34d399' : G.muted, fontWeight:700, minWidth:108 }}>
-                {cloudSaved ? '✓ Auto-sauvé cloud' : saved ? '✓ Sauvegardé' : draftSaved ? '✓ Auto-sauvé' : '● Sauvegarde...'}
+              {/* Auto-save pill — discrète (point vert sobre) */}
+              <div style={{ display:'flex', alignItems:'center', gap:6, fontFamily:fonts.ui, fontSize:10.5, color: ink.textMute, fontWeight:500, minWidth:108 }}>
+                <span style={{ width:6, height:6, borderRadius:99, flexShrink:0,
+                  background: (saved || draftSaved || cloudSaved) ? '#5B9E6A' : ink.textFaint }} />
+                {cloudSaved ? 'Auto-sauvé cloud' : saved ? 'Sauvegardé' : draftSaved ? 'Auto-sauvé' : 'Sauvegarde…'}
               </div>
 
-              {/* Actions secondaires discrètes */}
+              {/* Actions secondaires — ghost (hairline) */}
               {[
-                { icon:<Download size={11}/>, label:'PNG',    fn:exportPng, c:G.gold },
-                { icon:<Save size={11}/>,     label:'Sauver', fn:saveList,  c:'#34d399' },
+                { icon:<Download size={11}/>, label:'PNG',    fn:exportPng },
+                { icon:<Save size={11}/>,     label:'Sauver', fn:saveList  },
               ].map(b => (
                 <button key={b.label} onClick={b.fn} style={{
-                  display:'flex', alignItems:'center', gap:4, padding:'6px 12px', borderRadius:8,
-                  background:`${b.c}12`, border:`1px solid ${b.c}30`,
-                  color:b.c, cursor:'pointer', fontSize:11, fontWeight:700,
+                  display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:9,
+                  background:'transparent', border:`1px solid ${ink.line}`,
+                  color:ink.textHi, fontFamily:fonts.ui, cursor:'pointer', fontSize:11.5, fontWeight:600,
                   transition:'background .15s, border-color .15s',
                 }}>
                   {b.icon} {b.label}
@@ -2488,10 +2497,10 @@ export default function TierListPage() {
                 onMouseEnter={e => { if (!publishing) e.currentTarget.style.transform = 'translateY(-1px)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
                 style={{
-                  display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:9,
-                  background:'linear-gradient(135deg,#ffd84d,#f0a500)', border:'1px solid #ffe27a',
-                  color:'#1a1200', cursor: publishing ? 'default' : 'pointer', fontSize:12, fontWeight:900,
-                  letterSpacing:'.01em', boxShadow:'0 6px 20px rgba(240,165,0,.4)', opacity: publishing ? .7 : 1,
+                  display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10,
+                  background:`linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`, border:'1px solid rgba(232,213,168,0.5)',
+                  color:'#1A1410', cursor: publishing ? 'default' : 'pointer', fontFamily:fonts.ui, fontSize:12.5, fontWeight:700,
+                  letterSpacing:'.01em', boxShadow:'inset 0 1px 0 rgba(255,255,255,.25), 0 4px 16px rgba(201,168,106,.25)', opacity: publishing ? .7 : 1,
                   transition:'transform .15s, opacity .15s', whiteSpace:'nowrap',
                 }}>
                 <Users size={13}/> {publishing ? 'Publication…' : 'Partager avec la communauté'}
