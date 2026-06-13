@@ -8,6 +8,7 @@ const GOLD_HI = '#d8bd7e'
 const DIM = 'rgba(236,232,223,0.42)'
 
 const SECTIONS = [
+  { id: 'shop-berrys', label: 'Berrys' },
   { id: 'shop-fonds', label: 'Fonds' },
   { id: 'shop-curseurs', label: 'Curseurs' },
   { id: 'shop-trainees', label: 'Traînées' },

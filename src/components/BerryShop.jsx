@@ -5,7 +5,7 @@
 // possédés depuis l'inventaire Supabase. Catalogue statique.
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { createOpeningBgCheckout, completeOpeningBgCheckout, fetchOwnedBackgrounds, fetchOpeningBgEquipCounts } from '../lib/berryShop.js'
+import { createOpeningBgCheckout, completeOpeningBgCheckout, fetchOwnedBackgrounds, fetchOpeningBgEquipCounts, fetchShopBalance, createBerryCheckout, BERRY_PACKS } from '../lib/berryShop.js'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
 import CursorShop from './CursorShop.jsx'
@@ -441,6 +441,49 @@ function ShopBackdrop() {
   )
 }
 
+// ── Recharge de Berrys (top-up € → monnaie du serveur) ───────────────────────
+const fmtBerry = (n) => Number(n || 0).toLocaleString('fr-FR')
+function BerryTopupSection({ balance, busyId, onBuy, authed }) {
+  return (
+    <section id="shop-berrys" style={{ scrollMarginTop: 90, marginBottom: 30, padding: '20px 22px', borderRadius: 18, background: GLASS, border: `1px solid ${GOLD}26` }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', color: GOLD, marginBottom: 6 }}>Trésorerie</div>
+          <h2 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(24px,3.4vw,34px)', fontWeight: 400, color: '#f4ecd8' }}>Recharge de Berrys</h2>
+          <p style={{ margin: '6px 0 0', fontSize: 13.5, color: DIM, maxWidth: 540 }}>Crédite ta cagnotte ฿ pour la boutique, les jeux et les paris du serveur. Crédit instantané sur ton compte Discord.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 14, background: 'rgba(0,0,0,0.28)', border: `1px solid ${HAIR}` }}>
+          <span style={{ fontSize: 20, color: GOLD_HI, fontWeight: 900 }}>฿</span>
+          <div style={{ lineHeight: 1.1 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT }}>Ton solde</div>
+            <strong style={{ fontSize: 19, color: GOLD_HI }}>{authed ? (balance == null ? '…' : `${fmtBerry(balance)} ฿`) : '—'}</strong>
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
+        {BERRY_PACKS.map(p => {
+          const busy = busyId === `berry:${p.id}`
+          const best = p.tag === 'Meilleure offre'
+          return (
+            <div key={p.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 9, padding: '18px 16px 16px', borderRadius: 16, background: 'linear-gradient(180deg, rgba(191,164,106,0.07), rgba(255,255,255,0.012))', border: `1px solid ${best ? `${GOLD}55` : HAIR}` }}>
+              {p.tag && <span style={{ position: 'absolute', top: 10, right: 10, fontSize: 9.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: GOLD, background: `${GOLD}16`, border: `1px solid ${GOLD}40`, padding: '3px 8px', borderRadius: 999 }}>{p.tag}</span>}
+              <div style={{ fontSize: 11.5, color: FAINT, fontWeight: 700 }}>Pack</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                <span style={{ fontSize: 25, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{fmtBerry(p.berries)}</span>
+                <span style={{ fontSize: 17, fontWeight: 900, color: GOLD_HI }}>฿</span>
+              </div>
+              <button className="bsx-btn" disabled={busy} onClick={() => onBuy(p)}
+                style={{ marginTop: 5, padding: '10px 0', borderRadius: 10, border: 'none', background: GOLD, color: '#0b0c0e', fontWeight: 900, fontSize: 13.5, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                {busy ? '…' : `Recharger · ${formatEuroCents(p.priceCents)}`}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 function BerryShopInner() {
   const { isAuthenticated, discordId } = useAuth()
@@ -462,7 +505,13 @@ function BerryShopInner() {
   const [sort, setSort] = useState('rarity')
   const [preview, setPreview] = useState(null) // { list, idx } figé à l'ouverture
   const [giftItem, setGiftItem] = useState(null) // fond à offrir (modale cadeau)
+  const [balance, setBalance] = useState(null)   // solde berries (recharge €)
   const checkoutReturnHandledRef = useRef(false)
+
+  const loadBalance = useCallback(() => {
+    if (!isAuthenticated) { setBalance(null); return }
+    fetchShopBalance().then(setBalance).catch(() => {})
+  }, [isAuthenticated])
 
   const flash = useCallback((msg, kind = 'info') => {
     setToast({ msg, kind, t: Date.now() })
@@ -480,6 +529,7 @@ function BerryShopInner() {
   }, [isAuthenticated])
 
   useEffect(() => { refresh() }, [refresh])
+  useEffect(() => { loadBalance() }, [loadBalance])
 
   useEffect(() => {
     if (checkoutReturnHandledRef.current) return
@@ -502,6 +552,24 @@ function BerryShopInner() {
       cleanUrl()
       return
     }
+    // Recharge de Berrys VIP : déjà créditée côté serveur.
+    if (stripeState === 'berries_vip') {
+      flash('Berrys crédités, offert par le Capitaine 💛', 'success')
+      loadBalance()
+      cleanUrl()
+      return
+    }
+    // Retour d'une recharge de Berrys payée : stripe-complete finalise le crédit.
+    if (stripeState === 'berries') {
+      if (!sessionId) { cleanUrl(); return }
+      setBusyId('stripe-return')
+      completeOpeningBgCheckout(sessionId).then(({ data, error }) => {
+        if (error) { flash(error.message || 'Paiement validé, crédit en cours…', 'error'); return }
+        flash(data?.credited === false ? 'Recharge déjà créditée.' : `+ ${fmtBerry(data?.berries || 0)} ฿ crédités !`, 'success')
+        loadBalance()
+      }).finally(() => { setBusyId(null); cleanUrl() })
+      return
+    }
     if (stripeState !== 'success' || !sessionId) {
       cleanUrl()
       return
@@ -519,7 +587,7 @@ function BerryShopInner() {
       setBusyId(null)
       cleanUrl()
     })
-  }, [flash, refresh])
+  }, [flash, refresh, loadBalance])
 
   // Compteurs « équipé par X » : publics → chargés même sans connexion.
   const refreshCounts = useCallback(() => { fetchOpeningBgEquipCounts().then(setEquipCounts).catch(() => {}) }, [])
@@ -578,6 +646,19 @@ function BerryShopInner() {
     }
     window.location.assign(data.url)
   }, [isAuthenticated, isOwned, busyId, flash])
+
+  const buyBerries = useCallback(async (pack) => {
+    if (!isAuthenticated) { flash('Connecte-toi pour recharger des Berrys.', 'error'); return }
+    if (busyId) return
+    setBusyId(`berry:${pack.id}`)
+    const { data, error } = await createBerryCheckout(pack.id)
+    if (error || !data?.url) {
+      setBusyId(null)
+      flash(error?.message || 'Recharge indisponible pour le moment.', 'error')
+      return
+    }
+    window.location.assign(data.url)
+  }, [isAuthenticated, busyId, flash])
 
   const doEquip = useCallback(async (bg) => {
     if (!isOwned(bg)) return
@@ -646,6 +727,9 @@ function BerryShopInner() {
             </div>
           </div>
         </header>
+
+        {/* Recharge de Berrys (top-up € → monnaie du serveur) */}
+        <BerryTopupSection balance={balance} busyId={busyId} onBuy={buyBerries} authed={isAuthenticated} />
 
         {/* Hero */}
         <div id="shop-fonds" style={{ scrollMarginTop: 90 }} />

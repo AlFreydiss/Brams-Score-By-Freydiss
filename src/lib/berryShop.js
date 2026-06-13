@@ -385,6 +385,22 @@ export function completeOpeningBgCheckout(sessionId) {
   return stripeShopPost('/api/stripe-complete', { sessionId })
 }
 
+// ── Recharge de Berrys (€) ────────────────────────────────────────────────────
+// Doit refléter BERRY_PACKS de api/bot-tools.js (le serveur reste seul juge du
+// montant facturé ET des berrys crédités — le client n'envoie que packId).
+export const BERRY_PACKS = [
+  { id: 'berry-2m',  berries: 2_000_000,  priceCents: 199 },
+  { id: 'berry-6m',  berries: 6_000_000,  priceCents: 499,  tag: 'Populaire' },
+  { id: 'berry-14m', berries: 14_000_000, priceCents: 999,  tag: '+ Bonus' },
+  { id: 'berry-32m', berries: 32_000_000, priceCents: 1999, tag: 'Meilleure offre' },
+]
+// Crée une session Checkout pour une recharge de Berrys. Le retour Stripe
+// (?stripe=berries) est finalisé par completeOpeningBgCheckout (stripe-complete
+// route vers settleCartOrGift qui crédite atomiquement).
+export function createBerryCheckout(packId) {
+  return stripeShopPost('/api/stripe-berries', { packId })
+}
+
 // ── Cadeaux & panier ──────────────────────────────────────────────────────────
 // Offrir un article (vrai argent) à un membre → Stripe Checkout.
 export function createGiftCheckout(itemId, recipientId, message, gifterName) {

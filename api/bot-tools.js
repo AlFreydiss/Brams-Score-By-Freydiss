@@ -1104,6 +1104,73 @@ async function stripeDonateComplete(req, res) {
   }
 }
 
+// ── Recharge de Berrys en euros (top-up de la monnaie du serveur) ─────────────
+// La monnaie vit dans users.data.berrys (source partagée bot Discord ⇄ site). Le crédit
+// passe par la RPC credit_berries_topup : ATOMIQUE + IDEMPOTENT (1 session Stripe = 1
+// crédit) + notifie le bot via berry_sync. Le montant de berrys vient TOUJOURS du serveur
+// (jamais du client) ; le total Stripe est revalidé à la finalisation.
+const BERRY_PACKS = [
+  { id: 'berry-2m',  berries: 2_000_000,  priceCents: 199 },
+  { id: 'berry-6m',  berries: 6_000_000,  priceCents: 499 },
+  { id: 'berry-14m', berries: 14_000_000, priceCents: 999 },
+  { id: 'berry-32m', berries: 32_000_000, priceCents: 1999 },
+]
+function findBerryPack(id) { const s = String(id || '').trim(); return BERRY_PACKS.find(p => p.id === s) || null }
+function berryPackLabel(pack) { return `${pack.berries.toLocaleString('fr-FR')} ฿` }
+
+async function creditBerriesTopup({ discordId, pack, stripeSession }) {
+  return await supabaseRest('rpc/credit_berries_topup', {
+    method: 'POST',
+    body: { p_discord_id: String(discordId), p_amount: pack.berries, p_stripe_session: String(stripeSession), p_pack_id: pack.id },
+  })
+}
+
+async function stripeBerries(req, res) {
+  setStripeCors(res)
+  if (req.method === 'OPTIONS') return res.status(204).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' })
+  try {
+    const { user, discordId } = await getAuthedSupabaseUser(req)
+    const { packId } = readJsonBody(req)
+    const pack = findBerryPack(packId)
+    if (!pack) return res.status(404).json({ error: 'Pack de Berrys introuvable.' })
+
+    // VIP (Capitaine / Amel) : crédit immédiat gratuit, sans Stripe.
+    const vip = VIP_FREE_ACCOUNTS[String(discordId)]
+    if (vip) {
+      const r = await creditBerriesTopup({ discordId, pack, stripeSession: `vip:${discordId}:${pack.id}:${Date.now()}` })
+      return res.status(200).json({ ok: true, vip: true, url: `${getSiteOrigin(req)}/boutique?stripe=berries_vip`, balance: r?.balance })
+    }
+
+    if (pack.priceCents < STRIPE_MIN_EUR_CHARGE_CENTS) return res.status(400).json({ error: 'Stripe refuse les paiements carte sous 0,50 €.' })
+
+    const origin = getSiteOrigin(req)
+    const params = new URLSearchParams()
+    params.set('mode', 'payment')
+    params.set('success_url', `${origin}/boutique?stripe=berries&session_id={CHECKOUT_SESSION_ID}`)
+    params.set('cancel_url', `${origin}/boutique?stripe=cancel`)
+    params.set('client_reference_id', `${discordId}:berries:${pack.id}`)
+    params.set('line_items[0][quantity]', '1')
+    params.set('line_items[0][price_data][currency]', 'eur')
+    params.set('line_items[0][price_data][unit_amount]', String(pack.priceCents))
+    params.set('line_items[0][price_data][product_data][name]', `${berryPackLabel(pack)} — Recharge Berrys`)
+    params.set('line_items[0][price_data][product_data][description]', 'Berrys crédités sur ton compte Brams Community')
+    params.set('metadata[kind]', 'berries')
+    params.set('metadata[pack_id]', pack.id)
+    params.set('metadata[discord_id]', String(discordId))
+    params.set('metadata[user_id]', String(user?.id || ''))
+    if (user?.email) params.set('customer_email', user.email)
+    params.set('invoice_creation[enabled]', 'true')
+    params.set('invoice_creation[invoice_data][description]', `Recharge ${berryPackLabel(pack)} — Brams Community`)
+    params.set('invoice_creation[invoice_data][footer]', 'Merci pour ton achat sur Brams Community 🏴‍☠️')
+
+    const session = await stripeApi('/v1/checkout/sessions', { method: 'POST', params })
+    return res.status(200).json({ ok: true, id: session.id, url: session.url })
+  } catch (e) {
+    return res.status(e.status || 500).json({ error: e?.message || 'Erreur recharge Berrys' })
+  }
+}
+
 // Revenus Stripe (temps réel) — réservé aux ADMINS (créateur + Brams + Berat).
 const REVENUE_ADMINS = ['1094070545248694342', '1079054995917381672', '999607813334638692']
 async function stripeRevenue(req, res) {
@@ -1182,6 +1249,16 @@ async function settleCartOrGift(session) {
                message: session.metadata?.donor_message || null, stripe_session: session.id }],
     })
     return { ok: true, kind, amount: cents }
+  }
+  if (kind === 'berries') {
+    const pack = findBerryPack(session.metadata?.pack_id)
+    if (!pack) return { ok: false, error: 'Pack de Berrys invalide.' }
+    if (Number(session.amount_total) !== pack.priceCents) return { ok: false, error: 'Montant recharge invalide.' }
+    const discordId = session.metadata?.discord_id
+    if (!discordId) return { ok: false, error: 'Acheteur inconnu.' }
+    // Idempotent : la RPC ne crédite qu'une fois par session (complete + webhook OK).
+    const r = await creditBerriesTopup({ discordId, pack, stripeSession: session.id })
+    return { ok: true, kind, credited: r?.credited !== false, berries: pack.berries, balance: r?.balance }
   }
   return null
 }
@@ -1322,6 +1399,7 @@ export default async function handler(req, res) {
   if (tool === 'stripe-gift')           return stripeGift(req, res)
   if (tool === 'stripe-donate')         return stripeDonate(req, res)
   if (tool === 'stripe-donate-complete') return stripeDonateComplete(req, res)
+  if (tool === 'stripe-berries')        return stripeBerries(req, res)
   if (tool === 'stripe-revenue')        return stripeRevenue(req, res)
   return res.status(404).json({ error: 'Unknown bot tool' })
 }

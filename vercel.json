@@ -53,6 +53,10 @@
       "destination": "/api/bot-tools?tool=stripe-donate-complete"
     },
     {
+      "source": "/api/stripe-berries",
+      "destination": "/api/bot-tools?tool=stripe-berries"
+    },
+    {
       "source": "/api/stripe-revenue",
       "destination": "/api/bot-tools?tool=stripe-revenue"
     },
