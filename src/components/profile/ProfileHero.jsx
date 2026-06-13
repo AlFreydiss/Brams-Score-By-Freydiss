@@ -70,12 +70,13 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
             <ProfileActions data={data} onShare={onShare} copied={copied} onEdit={onEdit} />
           </div>
 
-          {/* Badges rang / rôle */}
-          <div className="pfx-ig-badges">
-            <span className="pfx-badge pfx-badge-rank" style={{ '--rank': rank.color }}>{rank.emoji} {rank.rang}</span>
-            {!certifData && profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
-            {!certifData && profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
-          </div>
+          {/* Badges rôle (rang retiré à la demande) */}
+          {((!certifData && profileIsCreator) || (!certifData && profileIsStaff)) && (
+            <div className="pfx-ig-badges">
+              {!certifData && profileIsCreator && <span className="pfx-badge pfx-badge-creator">👑 Créateur</span>}
+              {!certifData && profileIsStaff   && <span className="pfx-badge pfx-badge-staff">🛡 Staff</span>}
+            </div>
+          )}
 
           {/* Ligne stats */}
           <div className="pfx-ig-stats">
