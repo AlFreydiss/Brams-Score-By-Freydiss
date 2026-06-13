@@ -1,16 +1,14 @@
-// ── Page Jeu de Dames — version 3D (Pirates vs Marine) ───────────────────────
-// Le plateau 2D est remplacé par le moteur 3D Three.js (DamesGame3D, Local/vs IA).
-// Le mode « En ligne classé » réutilise pour l'instant l'implémentation existante
-// (refonte 3D serveur-autoritaire = phase suivante).
+// ── Page Jeu de Dames — 3D (Pirates vs Marine) ───────────────────────────────
+// Onglet « Partie (3D) » : Local / vs IA. Onglet « En ligne classé » : matchmaking
+// + parties temps réel serveur-autoritaires (ELO). Le 2D est entièrement retiré.
 import { useState } from 'react'
 import DamesGame3D from './DamesGame3D.jsx'
-import DamesOnline from './DamesOnline.jsx'
-import { DamesRankCard, DamesLeaderboard } from './DamesLobby.jsx'
+import DamesOnline3D from './DamesOnline3D.jsx'
 
 const GOLD = '#d4a017'
 
 export default function DamesPage() {
-  const [tab, setTab] = useState('play') // 'play' (3D local/IA) | 'online'
+  const [tab, setTab] = useState('play')
 
   return (
     <div style={{ minHeight: '100vh', padding: '24px 16px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, color: '#f3ead8' }}>
@@ -23,8 +21,6 @@ export default function DamesPage() {
         </p>
       </div>
 
-      <DamesRankCard />
-
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {[['play', '🎲 Partie (3D)'], ['online', '🌐 En ligne classé']].map(([id, lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{
@@ -36,10 +32,8 @@ export default function DamesPage() {
       </div>
 
       <div style={{ width: '100%', maxWidth: 1100 }}>
-        {tab === 'play' ? <DamesGame3D /> : <DamesOnline />}
+        {tab === 'play' ? <DamesGame3D /> : <DamesOnline3D />}
       </div>
-
-      <DamesLeaderboard />
     </div>
   )
 }
