@@ -11,6 +11,7 @@ const VIDEOS = VIDEOS_RAW
 const COLOR  = '#ff6f9c'
 const COLOR2 = '#ffaecb'
 const NS     = 'quintuplets'
+const SEASON_LABELS = { S01: 'Saison 1', S02: 'Saison 2', Film: 'Film' }
 
 const SYNOPSIS = "Fūtarō Uesugi, lycéen brillant mais fauché, décroche un job de tuteur en or : faire réviser cinq sœurs quintuplées… toutes ravissantes, toutes au bord du redoublement, et toutes décidées à lui mener la vie dure. Entre Ichika, Nino, Miku, Yotsuba et Itsuki, une certitude posée dès le départ : l'une d'elles deviendra sa femme. Mais laquelle ?"
 
@@ -180,6 +181,16 @@ export default function QuintupletsPage({ onClose }) {
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
   const total = VIDEOS.length
+  // Groupe les épisodes par saison en conservant l'index global (pour playHandlers / EpisodeWatch).
+  const seasonGroups = useMemo(() => {
+    const order = [], byKey = {}
+    VIDEOS.forEach((v, i) => {
+      const s = v.season || '—'
+      if (!byKey[s]) { byKey[s] = { season: s, items: [] }; order.push(byKey[s]) }
+      byKey[s].items.push({ v, i })
+    })
+    return order
+  }, [])
 
   return (
     <>
@@ -241,11 +252,20 @@ export default function QuintupletsPage({ onClose }) {
                     <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{watchedCount === total ? '✓ Terminé' : watchedCount === 0 ? 'Pas commencé' : `${watchedCount}/${total} vus`}</span>
                   </div>
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
-                  {VIDEOS.map((v, i) => (
-                    <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
-                  ))}
-                </div>
+                {seasonGroups.map((g, gi) => (
+                  <div key={g.season} style={{ marginBottom: gi < seasonGroups.length - 1 ? 30 : 0 }}>
+                    <div style={{ display:'flex',alignItems:'center',gap:10,margin:'4px 0 14px' }}>
+                      <h4 style={{ margin:0,fontSize:14,fontWeight:900,color:'#fff',letterSpacing:'.01em' }}>{SEASON_LABELS[g.season] || g.season}</h4>
+                      <span style={{ fontSize:10.5,fontWeight:700,color:COLOR2,background:'rgba(255,111,156,.10)',border:'1px solid rgba(255,111,156,.20)',borderRadius:999,padding:'2px 9px' }}>{g.items.length} {g.season === 'Film' ? 'film' : 'épisodes'}</span>
+                      <div style={{ flex:1,height:1,background:'linear-gradient(90deg,rgba(255,111,156,.18),transparent)' }} />
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
+                      {g.items.map(({ v, i }) => (
+                        <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
 
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>💐</span>
