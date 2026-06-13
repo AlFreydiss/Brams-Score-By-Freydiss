@@ -8,6 +8,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
+import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
 
 const SIZE = 10, P = 'P', M = 'M'
 const isDark = (r, c) => (r + c) % 2 === 1
@@ -65,7 +71,12 @@ export default class DamesRenderer {
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(W, H, false)
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.outputColorSpace = THREE.SRGBColorSpace
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.12
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18
+
+    // Env map PBR (reflets réalistes sur l'or) générée depuis RoomEnvironment — pas de HDRI.
+    const pmrem = new THREE.PMREMGenerator(renderer); this._pmrem = pmrem
+    const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04); this._envRT = envRT
+    scene.environment = envRT.texture
 
     scene.add(new THREE.HemisphereLight(0xfff0d8, 0x1a1008, 0.55))
     const key = new THREE.DirectionalLight(0xfff3df, 1.15); key.position.set(7, 16, 9); key.castShadow = true
@@ -85,6 +96,20 @@ export default class DamesRenderer {
     controls.rotateSpeed = 0.8; controls.zoomSpeed = 0.9
     this.resetView()
 
+    // Post-processing (palier auto) : bloom + SMAA. Coupé en reduced-motion / petit
+    // écran tactile (perfs) — un palier réglable arrivera en phase 5.
+    const coarse = window.matchMedia?.('(pointer: coarse)')?.matches
+    this.fx = !reducedMotion && !(coarse && Math.min(W, H) < 820)
+    if (this.fx) {
+      const composer = new EffectComposer(renderer); this.composer = composer
+      composer.addPass(new RenderPass(scene, camera))
+      const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.6, 0.72); this.bloom = bloom
+      composer.addPass(bloom)
+      const smaa = new SMAAPass(W * renderer.getPixelRatio(), H * renderer.getPixelRatio()); this.smaa = smaa
+      composer.addPass(smaa)
+      composer.addPass(new OutputPass())
+    }
+
     this.raycaster = new THREE.Raycaster(); this.mouse = new THREE.Vector2()
     this._onPointerDown = (e) => { this._downX = e.clientX; this._downY = e.clientY; this._moved = 0; this._resumeAudio() }
     this._onPointerUp = (e) => {
@@ -103,10 +128,21 @@ export default class DamesRenderer {
       const t = now * 0.004
       this.markersGroup.children.forEach(m => { if (m.userData.pulse) m.material.opacity = 0.55 + 0.4 * Math.sin(t * 1.6 + m.position.x) })
       if (this.selected && this.interactive) { const m = this.pieceMeshes[this.selected[0] + '_' + this.selected[1]]; if (m) m.position.y = PIECE_Y + 0.10 + Math.sin(now * 0.005) * 0.04 }
-      controls.update()
-      renderer.render(scene, camera)
+      if (controls.enabled) controls.update()
+      if (this.composer) this.composer.render(); else renderer.render(scene, camera)
     }
     this.raf = requestAnimationFrame(loop)
+    if (!reducedMotion) this._introCam()
+  }
+
+  // Intro ciné : vol de caméra vers la position de repos (désactivé en reduced-motion).
+  _introCam() {
+    if (!this.controls) return
+    this.controls.enabled = false
+    const end = { x: 0, y: 11.5, z: 13.5 }, start = { x: -9.5, y: 18.5, z: 16.5 }
+    this.camera.position.set(start.x, start.y, start.z); this.camera.lookAt(0, 0, 0)
+    const ease = p => 1 - Math.pow(1 - p, 3)
+    this._tween(1400, (p) => { const e = ease(p); this.camera.position.set(start.x + (end.x - start.x) * e, start.y + (end.y - start.y) * e, start.z + (end.z - start.z) * e); this.camera.lookAt(0, 0, 0) }, () => { if (this.controls) { this.controls.target.set(0, 0, 0); this.controls.enabled = true; this.controls.update() } })
   }
 
   _resize() {
@@ -114,13 +150,16 @@ export default class DamesRenderer {
     const host = this.canvas.parentElement || this.canvas
     const W = host.clientWidth || 800, H = host.clientHeight || 600
     this.camera.aspect = W / H; this.camera.updateProjectionMatrix(); this.renderer.setSize(W, H, false)
+    if (this.composer) this.composer.setSize(W, H)
+    if (this.bloom) this.bloom.setSize(W, H)
+    if (this.smaa) this.smaa.setSize(W * this.renderer.getPixelRatio(), H * this.renderer.getPixelRatio())
   }
   resetView() { if (this.camera) { this.camera.position.set(0, 11.5, 13.5); this.controls.target.set(0, 0, 0); this.controls.update() } }
 
   // ── construction ──────────────────────────────────────────────────────────
   _mat(m) { this._track.push(m); return m }
   _geo(g) { this._track.push(g); return g }
-  _goldMat() { return this._mat(new THREE.MeshStandardMaterial({ color: 0xd9b870, metalness: 0.95, roughness: 0.25, emissive: 0x3a2a08, emissiveIntensity: 0.18 })) }
+  _goldMat() { return this._mat(new THREE.MeshPhysicalMaterial({ color: 0xd9b870, metalness: 1, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.18, envMapIntensity: 1.15, emissive: 0x2a1e06, emissiveIntensity: 0.12 })) }
 
   _buildBoard() {
     this.tilesGroup = new THREE.Group(); this.boardTiles = []
@@ -159,8 +198,9 @@ export default class DamesRenderer {
   }
   _makePiece(side, king, r, c) {
     const g = new THREE.Group()
-    const sideMat = this._mat(new THREE.MeshStandardMaterial({ color: side === P ? 0x7c1f17 : 0x153a63, metalness: 0.35, roughness: 0.45 }))
-    const topMat = this._mat(new THREE.MeshStandardMaterial({ map: this._medallion(side, king), metalness: 0.25, roughness: 0.5 }))
+    const sideMat = this._mat(new THREE.MeshPhysicalMaterial({ color: side === P ? 0x7c1f17 : 0x153a63, metalness: 0.4, roughness: 0.4, clearcoat: 0.5, clearcoatRoughness: 0.4, envMapIntensity: 1 }))
+    const medTex = this._medallion(side, king)
+    const topMat = this._mat(new THREE.MeshStandardMaterial({ map: medTex, bumpMap: medTex, bumpScale: 0.25, metalness: 0.35, roughness: 0.45, envMapIntensity: 0.9 }))
     const botMat = this._mat(new THREE.MeshStandardMaterial({ color: side === P ? 0x4a0f0a : 0x0c2038, metalness: 0.3, roughness: 0.6 }))
     const disc = new THREE.Mesh(this._geo(new THREE.CylinderGeometry(0.40, 0.43, 0.17, 56, 1)), [sideMat, topMat, botMat])
     disc.castShadow = true; disc.receiveShadow = true; g.add(disc)
@@ -298,6 +338,11 @@ export default class DamesRenderer {
       this.renderer.domElement.removeEventListener('pointerup', this._onPointerUp)
     }
     if (this.controls) this.controls.dispose()
+    try { this.bloom && this.bloom.dispose && this.bloom.dispose() } catch (e) { /* ignore */ }
+    try { this.smaa && this.smaa.dispose && this.smaa.dispose() } catch (e) { /* ignore */ }
+    try { this.composer && this.composer.dispose && this.composer.dispose() } catch (e) { /* ignore */ }
+    try { this._envRT && this._envRT.dispose() } catch (e) { /* ignore */ }
+    try { this._pmrem && this._pmrem.dispose() } catch (e) { /* ignore */ }
     for (const o of this._track) { try { o.dispose && o.dispose() } catch (e) { /* ignore */ } }
     this._track = []
     if (this.renderer) { this.renderer.dispose(); this.renderer.forceContextLoss && this.renderer.forceContextLoss() }
