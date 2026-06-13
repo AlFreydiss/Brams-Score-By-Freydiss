@@ -134,13 +134,21 @@ export function AuthProvider({ children }) {
       // charge nulle part (profil, Fil, boutique…) → "faut actualiser sur tout le
       // site". On le borne donc à 5s. Si la vraie session arrive plus tard,
       // onAuthStateChange (ci-dessous) la propage → l'UI se répare seule, sans F5.
+      // On a DÉJÀ une session (seed storage ou échange PKCE) → inutile d'appeler
+      // getSession() qui peut hang 5s pour rien et polluer la console
+      // ("getSession timeout"). onAuthStateChange + le refresh REST (getAccessToken)
+      // la maintiennent à jour ; une session périmée se corrige seule (SIGNED_OUT).
+      if (seeded || exchangedSession) {
+        if (exchangedSession) applySession(exchangedSession)
+        settle()
+        return
+      }
+
       try {
-        const { data, error } = exchangedSession
-          ? { data: { session: exchangedSession }, error: null }
-          : await Promise.race([
-              supabase.auth.getSession(),
-              authTimeout('getSession timeout (5s)'),
-            ])
+        const { data, error } = await Promise.race([
+          supabase.auth.getSession(),
+          authTimeout('getSession timeout (5s)'),
+        ])
         if (error) console.warn('[auth] getSession:', error.message)
         console.log('[auth] getSession →', data?.session?.user?.id ?? 'null')
         const timedOut = error?.message?.includes('timeout')
