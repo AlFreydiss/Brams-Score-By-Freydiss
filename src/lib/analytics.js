@@ -55,17 +55,22 @@ export async function track(eventType, metadata = {}, page = window.location.pat
 
 // ---------- interne ----------
 async function upsertSession() {
+  const row = {
+    session_id: sid(),
+    user_id: _user?.user_id ?? null,
+    username: _user?.username ?? null,
+    device: device(),
+    user_agent: navigator.userAgent.slice(0, 250),
+    referrer: document.referrer ? (() => { try { return new URL(document.referrer).hostname; } catch { return null; } })() : null,
+    current_page: window.location.pathname,
+    last_seen: new Date().toISOString(),
+  };
+  // .upsert() (ON CONFLICT DO UPDATE) est refusé par RLS sur Supabase ; insert simple
+  // + update simple passent tous les deux. On insère, et si la session existe déjà
+  // (conflit unique), on bascule sur un update.
   try {
-    await supabase.from('analytics_sessions').upsert({
-      session_id: sid(),
-      user_id: _user?.user_id ?? null,
-      username: _user?.username ?? null,
-      device: device(),
-      user_agent: navigator.userAgent.slice(0, 250),
-      referrer: document.referrer ? (() => { try { return new URL(document.referrer).hostname; } catch { return null; } })() : null,
-      current_page: window.location.pathname,
-      last_seen: new Date().toISOString(),
-    }, { onConflict: 'session_id' });
+    const { error } = await supabase.from('analytics_sessions').insert(row);
+    if (error) await supabase.from('analytics_sessions').update(row).eq('session_id', sid());
   } catch (e) { console.debug('[analytics]', e); }
 }
 
