@@ -18,6 +18,7 @@ const iconBtn = (dis) => ({ appearance: 'none', border: '1px solid rgba(217,184,
 
 export default function DamesGame3D() {
   const canvasRef = useRef(null)
+  const containerRef = useRef(null)
   const rdrRef = useRef(null)
   const workerRef = useRef(null)
   const G = useRef({ board: null, turn: P, mode: 'local', diff: 'marin', humanSide: P, aiSide: M, legalMoves: [], movableKeys: new Set(), selected: null, inputLocked: false, gameOver: false, history: [], last: null, seq: 0, pendingMove: null, pendingHint: null })
@@ -25,7 +26,11 @@ export default function DamesGame3D() {
   const [moves, setMoves] = useState([])
   const [muted, setMuted] = useState(false)
   const [quality, setQuality] = useState(() => { try { return localStorage.getItem('dames_quality') || 'high' } catch (e) { return 'high' } })
+  const [fs, setFs] = useState(false)
   const hintTimer = useRef(0)
+
+  useEffect(() => { const h = () => setFs(!!document.fullscreenElement); document.addEventListener('fullscreenchange', h); return () => document.removeEventListener('fullscreenchange', h) }, [])
+  const toggleFs = () => { const el = containerRef.current; if (!el) return; if (document.fullscreenElement) document.exitFullscreen?.(); else el.requestFullscreen?.() }
 
   const syncHUD = useCallback(() => {
     const g = G.current
@@ -182,8 +187,8 @@ export default function DamesGame3D() {
   const myTurn = !hud.gameOver && (hud.mode === 'local' || hud.turn === G.current.humanSide) && !hud.thinking
 
   return (
-    <div tabIndex={0} onKeyDown={onKeyDown} role="application" aria-label="Plateau de dames 3D — flèches pour déplacer le curseur, Entrée pour sélectionner ou jouer, Échap pour annuler la sélection"
-      style={{ position: 'relative', width: '100%', height: 'min(74vh, 720px)', minHeight: 460, borderRadius: 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: '1px solid rgba(217,184,112,.16)', outline: 'none' }}>
+    <div ref={containerRef} tabIndex={0} onKeyDown={onKeyDown} role="application" aria-label="Plateau de dames 3D — flèches pour déplacer le curseur, Entrée pour sélectionner ou jouer, Échap pour annuler la sélection"
+      style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)', outline: 'none' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 200px 30px rgba(0,0,0,.6)' }} />
 
@@ -200,6 +205,7 @@ export default function DamesGame3D() {
           <button style={iconBtn(!myTurn || hud.hinting)} title="Indice" onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
           <button style={iconBtn(false)} title="Recentrer" onClick={() => rdrRef.current?.resetView()}>⌖</button>
           <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '✨' : quality === 'medium' ? '◐' : '○'}</button>
+          <button style={iconBtn(false)} title={fs ? 'Quitter le plein écran' : 'Plein écran'} aria-label="Plein écran" onClick={toggleFs}>{fs ? '🗗' : '⛶'}</button>
           <button style={iconBtn(false)} title="Son" onClick={toggleMute}>{muted ? '🔇' : '🔊'}</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(14,10,7,.78)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: '9px 18px', backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px rgba(0,0,0,.45)', fontWeight: 700, fontSize: 15, color: turnColor }}>

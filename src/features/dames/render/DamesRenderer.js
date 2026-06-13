@@ -206,6 +206,11 @@ export default class DamesRenderer {
   }
 
   _medallion(side, king) {
+    // Cache : seulement 4 médaillons uniques (P/M × pion/dame) au lieu d'1 par pièce
+    // → montage ~10× plus léger (40 canvas+textures → 4).
+    this._medCache = this._medCache || {}
+    const ck = side + (king ? 'K' : '')
+    if (this._medCache[ck]) return this._medCache[ck]
     const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S
     const ctx = cv.getContext('2d'); const cx = S / 2, cy = S / 2, R = S * 0.46
     const g = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R * 1.08)
@@ -218,7 +223,7 @@ export default class DamesRenderer {
     const light = king ? '#f6e7b0' : '#f3ead6', dark = side === P ? '#4a0f0d' : '#0c2038'
     if (side === P) drawSkull(ctx, cx, cy + S * 0.01, S * 0.42, light, dark); else drawAnchor(ctx, cx, cy, S * 0.46, light)
     const t = new THREE.CanvasTexture(cv); t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true
-    this._track.push(t); return t
+    this._track.push(t); this._medCache[ck] = t; return t
   }
   _makePiece(side, king, r, c) {
     const g = new THREE.Group()

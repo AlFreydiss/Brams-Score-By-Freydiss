@@ -22,13 +22,17 @@ export default function DamesOnline3D() {
   const [turn, setTurn] = useState(P)
   const [err, setErr] = useState(null)
   const [lb, setLb] = useState([])
+  const [fs, setFs] = useState(false)
   const canvasRef = useRef(null)
+  const containerRef = useRef(null)
   const rdrRef = useRef(null)
   const G = useRef({ matchId: null, myColor: P, board: null, turn: P, ply: 0, legalMoves: [], movableKeys: new Set(), selected: null, locked: false, status: 'active' })
   const unsubRef = useRef(null), pollRef = useRef(0), aliveRef = useRef(true)
 
   const loadLb = useCallback(() => { leaderboard(30).then(setLb).catch(() => {}) }, [])
   useEffect(() => { aliveRef.current = true; loadLb(); if (isAuthenticated) ensureRating().then(r => { if (aliveRef.current) setRating(r) }).catch(() => {}); return () => { aliveRef.current = false } }, [isAuthenticated, loadLb])
+  useEffect(() => { const h = () => setFs(!!document.fullscreenElement); document.addEventListener('fullscreenchange', h); return () => document.removeEventListener('fullscreenchange', h) }, [])
+  const toggleFs = () => { const el = containerRef.current; if (!el) return; if (document.fullscreenElement) document.exitFullscreen?.(); else el.requestFullscreen?.() }
 
   const drawMarkers = useCallback(() => {
     const g = G.current, rdr = rdrRef.current; if (!rdr) return
@@ -187,8 +191,9 @@ export default function DamesOnline3D() {
         Tu joues <strong style={{ color: G.current.myColor === P ? '#ef8a7c' : '#82b6e6' }}>{G.current.myColor === P ? '☠️ Pirates' : '⚓ Marine'}</strong>
         <span style={{ opacity: .4 }}>·</span> vs <strong style={{ color: PARCH }}>{opponent?.username || 'Adversaire'}</strong>
       </div>
-      <div style={{ position: 'relative', width: '100%', height: 'min(70vh, 680px)', minHeight: 440, borderRadius: 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: '1px solid rgba(217,184,112,.16)' }}>
+      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(70vh, 680px)', minHeight: 440, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)' }}>
         <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        <button onClick={toggleFs} title="Plein écran" aria-label="Plein écran" style={{ position: 'absolute', top: 12, right: 12, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(217,184,112,.2)', background: 'rgba(14,10,7,.7)', color: MUTED, cursor: 'pointer', fontSize: 15 }}>{fs ? '🗗' : '⛶'}</button>
         <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(14,10,7,.8)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 14, color: myTurn ? '#9fe0a0' : MUTED }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: turn === P ? '#c0392b' : '#3f86c8' }} />
