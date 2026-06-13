@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { isStaff, isCreator } from '../lib/roles.js'
-import { listPostReports } from '../lib/feed.js'
+import { listPostReports, resolvePostReport } from '../lib/feed.js'
 import { getAccessToken } from '../lib/supabaseRest.js'
 import StaffSettings from './StaffSettings.jsx'
 import AnalyticsTab from './staff/AnalyticsTab.jsx'
@@ -237,14 +237,67 @@ function RevenusView({ revenue, revErr }) {
     </div>
   )
 }
-function ReportsView({ reportCount }) {
-  return <Card><SectionTitle>Signalements</SectionTitle>
-    <div style={{ textAlign: 'center', padding: '34px 12px', background: reportCount ? C.negSoft : C.posSoft, border: `1px solid ${reportCount ? C.neg + '40' : C.pos + '40'}`, borderRadius: 12 }}>
-      <div style={{ fontSize: 30, color: reportCount ? C.neg : C.pos, marginBottom: 8 }}>{reportCount ? '⚠' : '✓'}</div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: reportCount ? C.neg : C.pos }}>{reportCount ? `${reportCount} signalement(s) à traiter` : 'Aucun signalement ouvert'}</div>
-      <div style={{ fontSize: 12.5, color: C.muted, marginTop: 6 }}>Le Fil — modération communautaire</div>
-    </div>
-  </Card>
+function reportAgo(iso) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return "à l'instant"
+  if (s < 3600) return `${Math.floor(s / 60)} min`
+  if (s < 86400) return `${Math.floor(s / 3600)} h`
+  return `${Math.floor(s / 86400)} j`
+}
+
+function ReportsView({ onResolved }) {
+  const [reports, setReports] = useState(null)
+  const [busy, setBusy] = useState(null)
+  const load = useCallback(() => {
+    setReports(null)
+    listPostReports('open').then(({ reports }) => setReports(Array.isArray(reports) ? reports : [])).catch(() => setReports([]))
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  const act = async (id, action) => {
+    if (action === 'delete_post' && !window.confirm('Supprimer ce post définitivement ?')) return
+    setBusy(id)
+    try { await resolvePostReport(id, action) } finally { setBusy(null); load(); onResolved?.() }
+  }
+  const btn = (bg, bd, col) => ({ padding: '7px 14px', borderRadius: 9, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', background: bg, border: `1px solid ${bd}`, color: col })
+
+  return (
+    <Card>
+      <SectionTitle right={reports?.length ? <span style={{ fontSize: 12, fontWeight: 800, color: C.neg, background: C.negSoft, borderRadius: 999, padding: '2px 10px' }}>{reports.length} ouvert(s)</span> : null}>Signalements</SectionTitle>
+      {reports === null ? (
+        <div style={{ textAlign: 'center', padding: 30, color: C.muted, fontSize: 13 }}>Chargement…</div>
+      ) : reports.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '34px 12px', background: C.posSoft, border: `1px solid ${C.pos}40`, borderRadius: 12 }}>
+          <div style={{ fontSize: 30, color: C.pos, marginBottom: 8 }}>✓</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.pos }}>Aucun signalement ouvert</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {reports.map((r) => (
+            <div key={r.id} style={{ background: C.cardHi, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, fontSize: 12, color: C.muted, marginBottom: 9 }}>
+                <strong style={{ color: C.text }}>@{r.reporter_name}</strong> a signalé un post de <strong style={{ color: C.text }}>@{r.post_author_name}</strong>
+                {r.report_count > 1 && <span style={{ color: C.neg, fontWeight: 800 }}>· {r.report_count}× signalé</span>}
+                <span style={{ marginLeft: 'auto' }}>{reportAgo(r.created_at)}</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: C.neg, background: C.negSoft, border: `1px solid ${C.neg}33`, borderRadius: 8, padding: '7px 10px', marginBottom: 10 }}>
+                <strong>Raison :</strong> {r.reason}
+              </div>
+              <div style={{ fontSize: 13, color: r.post_deleted ? C.muted : C.text, background: 'rgba(255,255,255,.03)', borderLeft: `3px solid ${C.gold}`, borderRadius: 6, padding: '8px 12px', marginBottom: 12, fontStyle: r.post_deleted ? 'italic' : 'normal', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {r.post_deleted ? 'Post déjà supprimé.' : (r.post_content || '(post sans texte)')}
+                {r.post_media_url && !r.post_deleted && <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>📎 média joint</div>}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button onClick={() => act(r.id, 'dismiss')} disabled={busy === r.id} style={btn('transparent', C.border, C.text)}>Rejeter</button>
+                {!r.post_deleted && <button onClick={() => act(r.id, 'delete_post')} disabled={busy === r.id} style={btn(C.negSoft, `${C.neg}55`, C.neg)}>🗑 Supprimer le post</button>}
+                <a href={`/fil/${r.post_id}`} target="_blank" rel="noreferrer" style={{ ...btn('transparent', C.border, C.muted), textDecoration: 'none' }}>Voir le post ↗</a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
 }
 function BotView() {
   return <Card><SectionTitle>Brams Score</SectionTitle>
@@ -297,13 +350,17 @@ export default function StaffPanel() {
     } catch (e) { setRevenueError(e.message) }
   }, [isRevenueAdmin])
 
+  const loadReportCount = useCallback(() => {
+    listPostReports('open').then(({ reports }) => setReportCount(Array.isArray(reports) ? reports.length : 0)).catch(() => {})
+  }, [])
+
   useEffect(() => {
     if (!userIsStaff) return
     loadRevenue()
     timer.current = setInterval(() => { if (!document.hidden) loadRevenue() }, 12000)
-    listPostReports('open').then(({ reports }) => setReportCount(Array.isArray(reports) ? reports.length : 0)).catch(() => {})
+    loadReportCount()
     return () => clearInterval(timer.current)
-  }, [userIsStaff, loadRevenue])
+  }, [userIsStaff, loadRevenue, loadReportCount])
 
   if (!isAuthenticated) return <GateScreen icon="🔒" title="Espace Staff" sub="Connecte-toi pour accéder au panel staff." action={<button onClick={() => document.dispatchEvent(new CustomEvent('open-auth-modal'))} style={{ padding: '10px 24px', borderRadius: 10, background: C.gold, color: '#0b0c0e', fontWeight: 800, fontSize: 14, border: 'none', cursor: 'pointer' }}>Se connecter</button>} />
   if (!userIsStaff) return <GateScreen icon="⛔" title="Accès réservé au staff" sub={`Réservé au staff Brams Community.\nID : ${discordId || userId || '—'}`} action={<button onClick={() => navigate('/')} style={{ padding: '10px 24px', borderRadius: 10, background: 'transparent', color: C.muted, fontWeight: 700, fontSize: 14, border: `1px solid ${C.border}`, cursor: 'pointer' }}>← Retour au site</button>} />
@@ -320,7 +377,7 @@ export default function StaffPanel() {
             {active === 'overview' && <Overview revenue={revenue} revErr={revErr} reportCount={reportCount} />}
             {active === 'revenus' && <RevenusView revenue={revenue} revErr={revErr} />}
             {active === 'analytics' && <AnalyticsTab />}
-            {active === 'reports' && <ReportsView reportCount={reportCount} />}
+            {active === 'reports' && <ReportsView onResolved={loadReportCount} />}
             {active === 'members' && <PlaceholderView label="Membres" />}
             {active === 'bot' && <BotView />}
             {active === 'settings' && <StaffSettings isAdmin={isRevenueAdmin} />}
