@@ -75,6 +75,38 @@ export const TRAILS = [
   { id: 'trail-soleil', nom: 'Tambours de la Libération', rarete: 'INTERDIT', emoji: '☀️',
     // Gear 5 : éclats blanc-chauds, cartoon, qui pulsent comme un rire.
     config: { colors: ['#ffffff', '#ffe9b0', '#ffd24a', '#fff7e6'], gravity: -0.04, speed: 0.5, drift: 0.55, sizeBase: 2.6, sizeRand: 3.0, decay: 0.045, shadow: 18, alpha: 0.96 } },
+
+  // ════ BRAMS · Grand Line (DA or champagne / braise-corail / sarcelle) ════
+  { id: 'trail-embruns', nom: 'Embruns Salés', rarete: 'COMMUN', emoji: '💧',
+    // Gouttes d'eau de mer qui retombent — fines, fraîches, source-over.
+    config: { colors: ['#cfeeff', '#9cc8f0', '#eaf7ff', '#7fb6e6'], composite: 'source-over', gravity: 0.12, speed: 0.3, drift: 0.5, sizeBase: 1.6, sizeRand: 2.0, decay: 0.04, shadow: 3, alpha: 0.6 } },
+  { id: 'trail-phare', nom: 'Brume du Phare', rarete: 'COMMUN', emoji: '🕯️',
+    // Halo ambré doux et brumeux qui s'étale — chaleureux, lent.
+    config: { colors: ['#ffe9bf', '#f3d27a', '#fff4dd', '#e0b25e'], composite: 'source-over', gravity: -0.02, speed: 0.18, drift: 0.4, sizeBase: 3.0, sizeRand: 3.2, decay: 0.026, shadow: 7, alpha: 0.4 } },
+
+  { id: 'trail-galion', nom: 'Sillage du Galion', rarete: 'RARE', emoji: '⛵',
+    // Écume dorée du sillage — éclats champagne projetés vers le bas.
+    config: { colors: ['#f6d98a', '#d4a017', '#fff3cf', '#bfa46a'], gravity: 0.06, speed: 0.46, drift: 0.6, sizeBase: 1.6, sizeRand: 2.2, decay: 0.046, shadow: 10, alpha: 0.9 } },
+  { id: 'trail-sarcelle', nom: 'Lueur Sarcelle', rarete: 'RARE', emoji: '🪸',
+    // Bioluminescence des abysses : particules sarcelle qui montent doucement.
+    config: { colors: ['#5fe6d4', '#1f8f86', '#bafff5', '#39c7b8'], gravity: -0.05, speed: 0.2, drift: 0.4, sizeBase: 1.5, sizeRand: 1.9, decay: 0.026, shadow: 13, alpha: 0.85 } },
+  { id: 'trail-soufre', nom: 'Cendres de Soufre', rarete: 'RARE', emoji: '🌋',
+    // Archipel volcanique : cendres sombres + braises qui retombent.
+    config: { colors: ['#ff7a3d', '#7a2410', '#ffae3b', '#2a1410'], composite: 'source-over', gravity: 0.09, speed: 0.36, drift: 0.7, sizeBase: 2.2, sizeRand: 2.4, decay: 0.03, shadow: 6, alpha: 0.66 } },
+
+  { id: 'trail-corail', nom: 'Braises de Corail', rarete: 'EPIQUE', emoji: '🪼',
+    // Braise-corail signature Brams : tisons chauds qui s'élèvent en glow.
+    config: { colors: ['#ff8a5c', '#ff4d3d', '#ffd2a0', '#c9341f'], gravity: -0.06, speed: 0.5, drift: 0.3, sizeBase: 1.7, sizeRand: 2.3, decay: 0.05, shadow: 13, alpha: 0.92 } },
+  { id: 'trail-abysse', nom: 'Or des Abysses', rarete: 'EPIQUE', emoji: '🪙',
+    // Trésor englouti : pièces d'or qui scintillent et coulent lentement.
+    config: { colors: ['#ffe066', '#d4a017', '#fffaf0', '#9a7b1e'], gravity: 0.04, speed: 0.3, drift: 0.45, sizeBase: 1.4, sizeRand: 2.2, decay: 0.034, shadow: 12, alpha: 0.9 } },
+
+  { id: 'trail-maelstrom', nom: 'Maelström Doré', rarete: 'MYTHIQUE', emoji: '🌀',
+    // Tourbillon : éclats d'or rapides à fort drift, comme aspirés en spirale.
+    config: { colors: ['#ffe9a8', '#d4a017', '#ffffff', '#c98a2a'], speed: 0.85, drift: 0.9, gravity: 0, sizeBase: 1.3, sizeRand: 1.8, decay: 0.06, shadow: 13, alpha: 0.95 } },
+  { id: 'trail-constellation', nom: 'Constellation de Navigation', rarete: 'MYTHIQUE', emoji: '✦',
+    // Carte du ciel : points d'or fins et lents qui scintillent (peu de drift).
+    config: { colors: ['#fff7d6', '#ffe066', '#bfd9ff', '#ffffff'], gravity: 0, speed: 0.14, drift: 0.18, sizeBase: 1.0, sizeRand: 1.4, decay: 0.02, shadow: 14, alpha: 0.95 } },
 ]
 
 export function findTrail(id) { return TRAILS.find(t => t.id === id) || null }

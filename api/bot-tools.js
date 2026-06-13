@@ -627,6 +627,15 @@ const CURSORS = [
   { id:'cur-haki',        nom:'Haoshoku Haki',      rarete:'INTERDIT', emoji:'⚡',  animated:true  },
   { id:'cur-akuma',       nom:'Akuma no Mi Interdit',rarete:'INTERDIT',emoji:'😈',  animated:true  },
   { id:'cur-im',          nom:"Œil d'Im-sama",      rarete:'INTERDIT', emoji:'👁️',  animated:true  },
+  // ── BRAMS · Grand Line (nouveaux) ──
+  { id:'cur-bottle',      nom:'Bouteille à la Mer', rarete:'COMMUN',   emoji:'🍾', animated:false },
+  { id:'cur-island',      nom:'Île au Trésor',      rarete:'COMMUN',   emoji:'🏝️', animated:false },
+  { id:'cur-spyglass',    nom:'Longue-vue',         rarete:'RARE',     emoji:'🔭', animated:false },
+  { id:'cur-northstar',   nom:'Étoile du Nord',     rarete:'RARE',     emoji:'🌟', animated:true  },
+  { id:'cur-parrot',      nom:'Perroquet du Capitaine', rarete:'RARE', emoji:'🦜', animated:false },
+  { id:'cur-jollyroger',  nom:'Jolly Roger',        rarete:'EPIQUE',   emoji:'☠️', animated:true  },
+  { id:'cur-trident',     nom:'Trident des Mers',   rarete:'EPIQUE',   emoji:'🔱', animated:false },
+  { id:'cur-mermaid',     nom:'Sirène des Abysses', rarete:'MYTHIQUE', emoji:'🧜‍♀️', animated:true },
 ]
 function findCursor(itemId) { const id = String(itemId || '').trim(); return CURSORS.find(c => c.id === id) || null }
 function cursorPriceCents(cur) { return CURSOR_PRICE_CENTS[cur.rarete] || 50 }
@@ -659,6 +668,16 @@ const TRAILS = [
   { id:'trail-void',    nom:'Œil du Néant',        rarete:'INTERDIT' },
   { id:'trail-dragon',  nom:'Aura de Combat',      rarete:'INTERDIT' },
   { id:'trail-soleil',  nom:'Tambours de la Libération', rarete:'INTERDIT' },
+  // ── BRAMS · Grand Line ──
+  { id:'trail-embruns',       nom:'Embruns Salés',                rarete:'COMMUN'   },
+  { id:'trail-phare',         nom:'Brume du Phare',               rarete:'COMMUN'   },
+  { id:'trail-galion',        nom:'Sillage du Galion',            rarete:'RARE'     },
+  { id:'trail-sarcelle',      nom:'Lueur Sarcelle',               rarete:'RARE'     },
+  { id:'trail-soufre',        nom:'Cendres de Soufre',            rarete:'RARE'     },
+  { id:'trail-corail',        nom:'Braises de Corail',            rarete:'EPIQUE'   },
+  { id:'trail-abysse',        nom:'Or des Abysses',               rarete:'EPIQUE'   },
+  { id:'trail-maelstrom',     nom:'Maelström Doré',               rarete:'MYTHIQUE' },
+  { id:'trail-constellation', nom:'Constellation de Navigation',  rarete:'MYTHIQUE' },
 ]
 function findTrail(itemId) { const id = String(itemId || '').trim(); return TRAILS.find(t => t.id === id) || null }
 function trailPriceCents(t) { return TRAIL_PRICE_CENTS[t.rarete] || 50 }

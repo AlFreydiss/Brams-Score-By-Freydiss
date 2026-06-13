@@ -72,6 +72,15 @@ const CURSEURS = [
   { id: 'cur-haki',        nom: 'Haoshoku Haki',      rarete: 'INTERDIT', prix: 8000000,  emoji: '⚡', animated: true,  stock: 7,    limite: true  },
   { id: 'cur-akuma',       nom: 'Akuma no Mi Interdit',rarete:'INTERDIT', prix: 12000000, emoji: '😈', animated: true,  stock: 5,    limite: true  },
   { id: 'cur-im',          nom: 'Œil d\'Im-sama',     rarete: 'INTERDIT', prix: 25000000, emoji: '👁️', animated: true,  stock: 1,    limite: true  },
+  // ── BRAMS · Grand Line (nouveaux) ──
+  { id: 'cur-bottle',      nom: 'Bouteille à la Mer', rarete: 'COMMUN',   prix: 9000,     emoji: '🍾', animated: false, stock: null, limite: false },
+  { id: 'cur-island',      nom: 'Île au Trésor',      rarete: 'COMMUN',   prix: 11000,    emoji: '🏝️', animated: false, stock: null, limite: false },
+  { id: 'cur-spyglass',    nom: 'Longue-vue',         rarete: 'RARE',     prix: 35000,    emoji: '🔭', animated: false, stock: null, limite: false },
+  { id: 'cur-northstar',   nom: 'Étoile du Nord',     rarete: 'RARE',     prix: 42000,    emoji: '🌟', animated: true,  stock: null, limite: false },
+  { id: 'cur-parrot',      nom: 'Perroquet du Capitaine', rarete: 'RARE', prix: 55000,    emoji: '🦜', animated: false, stock: null, limite: false },
+  { id: 'cur-jollyroger',  nom: 'Jolly Roger',        rarete: 'EPIQUE',   prix: 180000,   emoji: '☠️', animated: true,  stock: null, limite: false },
+  { id: 'cur-trident',     nom: 'Trident des Mers',   rarete: 'EPIQUE',   prix: 230000,   emoji: '🔱', animated: false, stock: null, limite: false },
+  { id: 'cur-mermaid',     nom: 'Sirène des Abysses', rarete: 'MYTHIQUE', prix: 1500000,  emoji: '🧜‍♀️', animated: true, stock: null, limite: false },
 ]
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
