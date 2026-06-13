@@ -256,8 +256,14 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
             src={mediaUrl}
             autoPlay
             playsInline
-            muted={false}
+            muted={hasAudio}
             style={mediaStyle}
+            onCanPlay={e => {
+              // Lecture GARANTIE : la politique autoplay bloque la vidéo avec son
+              // (-> figée, story coincée). On tente avec son, repli en muet si refusé.
+              const v = e.currentTarget
+              if (v.paused) v.play().catch(() => { v.muted = true; v.play().catch(() => {}) })
+            }}
             onLoadedMetadata={e => {
               const v = e.currentTarget
               const d = v.duration
