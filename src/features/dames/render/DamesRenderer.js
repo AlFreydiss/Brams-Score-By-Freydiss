@@ -71,15 +71,16 @@ export default class DamesRenderer {
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(W, H, false)
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.outputColorSpace = THREE.SRGBColorSpace
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95
 
     // Env map PBR (reflets réalistes sur l'or) générée depuis RoomEnvironment — pas de HDRI.
+    // environmentIntensity bas : l'env sert surtout aux REFLETS, pas à éclairer (sinon tout crame).
     const pmrem = new THREE.PMREMGenerator(renderer); this._pmrem = pmrem
     const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04); this._envRT = envRT
-    scene.environment = envRT.texture
+    scene.environment = envRT.texture; scene.environmentIntensity = 0.38
 
-    scene.add(new THREE.HemisphereLight(0xfff0d8, 0x1a1008, 0.55))
-    const key = new THREE.DirectionalLight(0xfff3df, 1.15); key.position.set(7, 16, 9); key.castShadow = true
+    scene.add(new THREE.HemisphereLight(0xfff0d8, 0x1a1008, 0.38))
+    const key = new THREE.DirectionalLight(0xfff3df, 0.9); key.position.set(7, 16, 9); key.castShadow = true
     key.shadow.mapSize.set(2048, 2048); const sc = key.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 50; key.shadow.bias = -0.0004
     scene.add(key); this._keyLight = key
     const rimLight = new THREE.PointLight(0xffce8a, 0.55, 40); rimLight.position.set(-7, 7, -5); scene.add(rimLight)
@@ -172,7 +173,7 @@ export default class DamesRenderer {
     if (tier === 'low') return
     const composer = new EffectComposer(this.renderer); this.composer = composer
     composer.addPass(new RenderPass(this.scene, this.camera))
-    if (tier === 'high') { const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.55, 0.6, 0.72); this.bloom = bloom; composer.addPass(bloom) }
+    if (tier === 'high') { const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.32, 0.5, 0.85); this.bloom = bloom; composer.addPass(bloom) }
     const smaa = new SMAAPass(W * this.renderer.getPixelRatio(), H * this.renderer.getPixelRatio()); this.smaa = smaa; composer.addPass(smaa)
     composer.addPass(new OutputPass()); composer.setSize(W, H)
   }
