@@ -71,10 +71,11 @@ def sub_map_vo(mkv):
     return f"0:{fre[0]['index']}"
 
 def encode(src,out):
+    # MAX QUALITE : x264 slow crf16 tune animation (profil High), bien meilleur que NVENC sur l'anime.
     for dec in (['-hwaccel','cuda'],[]):
         try:
-            ff([*dec,'-i',str(src),'-map','0:v:0','-map','0:a:m:language:jpn','-c:v','h264_nvenc',
-                '-preset','p5','-cq','23','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k',
+            ff([*dec,'-i',str(src),'-map','0:v:0','-map','0:a:m:language:jpn','-c:v','libx264','-preset','slow','-crf','16',
+                '-tune','animation','-profile:v','high','-pix_fmt','yuv420p','-c:a','aac','-b:a','256k',
                 '-movflags','+faststart',str(out)])
             return True
         except subprocess.CalledProcessError:
@@ -99,7 +100,7 @@ def process(f,num):
     url=upload(vo,f'{KEY_PREFIX}/{base}-vostfr.mp4')
     e={'episode':num,'title':f'Épisode {num}','episodeLabel':base,'src':url,
        'season':season,'arc':arc,'preferredAudioLang':'ja','progressKey':f'hxh-{base}','badge':'VOSTFR',
-       'audio':[{'label':'VOSTFR','srclang':'ja','default':True}]}
+       'audio':[{'label':'VOSTFR','srclang':'ja','default':True}],'hq':True}
     if thumb.exists(): e['thumbnail']=upload(thumb,f'{KEY_PREFIX}/thumbnails/{base}.jpg')
     if has_sub: e['subtitles']=[{'label':'Français','srclang':'fr','src':upload(vtt,f'{KEY_PREFIX}/{base}-fr.vtt'),'default':True}]
     try: vo.unlink()
@@ -120,8 +121,9 @@ def main():
     for num in sorted(files):
         # Entrée déjà dans le json = épisode encodé ET uploadé (l'entrée n'est
         # écrite qu'après l'upload) → on saute sans ré-encoder (reprise rapide).
-        if by_key.get(f'hxh-E{num:03d}'):
-            print(f'[E{num:03d}] deja complet — skip',flush=True); continue
+        prev=by_key.get(f'hxh-E{num:03d}')
+        if prev and prev.get('hq'):
+            print(f'[E{num:03d}] hq deja — skip',flush=True); continue
         print(f'[E{num:03d}] {files[num].name[:70]}',flush=True)
         e=process(files[num],num)
         if not e: continue

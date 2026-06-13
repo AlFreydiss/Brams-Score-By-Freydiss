@@ -52,11 +52,12 @@ SETS=[
 ]
 
 def encode(src,out):
-    # AV1 -> h264 : décodage matériel av1_cuvid (RTX 5070), repli décodage CPU dav1d.
+    # MAX QUALITE : AV1 -> x264 slow crf16 tune animation (profil High). Audio AAC jpn copie (lossless).
+    # Décodage matériel av1_cuvid (RTX 5070), repli décodage CPU dav1d.
     for dec in (['-hwaccel','cuda','-c:v','av1_cuvid'],[]):
         try:
-            ff([*dec,'-i',str(src),'-map','0:v:0','-map','0:a:m:language:jpn','-c:v','h264_nvenc',
-                '-preset','p5','-cq','23','-pix_fmt','yuv420p','-c:a','copy','-movflags','+faststart',str(out)])
+            ff([*dec,'-i',str(src),'-map','0:v:0','-map','0:a:m:language:jpn','-c:v','libx264','-preset','slow','-crf','16',
+                '-tune','animation','-profile:v','high','-pix_fmt','yuv420p','-c:a','copy','-movflags','+faststart',str(out)])
             return True
         except subprocess.CalledProcessError:
             if out.exists(): out.unlink()
@@ -77,7 +78,7 @@ def process(f,base,season,arc,num):
     url=upload(vo,f'{KEY_PREFIX}/{base}-vostfr.mp4')
     e={'episode':num,'title':f'Épisode {int(base[4:])}','episodeLabel':base,'src':url,
        'season':season,'arc':arc,'preferredAudioLang':'ja','progressKey':f'kny-{base}','badge':'VOSTFR',
-       'audio':[{'label':'VOSTFR','srclang':'ja','default':True}]}
+       'audio':[{'label':'VOSTFR','srclang':'ja','default':True}],'hq':True}
     if thumb.exists(): e['thumbnail']=upload(thumb,f'{KEY_PREFIX}/thumbnails/{base}.jpg')
     if has_sub: e['subtitles']=[{'label':'Français','srclang':'fr','src':upload(vtt,f'{KEY_PREFIX}/{base}-fr.vtt'),'default':True}]
     try: vo.unlink()
@@ -104,8 +105,8 @@ def main():
             base=f'{season}E{ep:02d}'
             # Entrée déjà dans le json = épisode encodé ET uploadé (l'entrée n'est
             # écrite qu'après l'upload) → on saute sans ré-encoder (reprise rapide).
-            if by_key.get(f'kny-{base}'):
-                print(f'[{base}] deja complet — skip',flush=True); continue
+            if by_key.get(f'kny-{base}',{}).get('hq'):
+                print(f'[{base}] hq deja — skip',flush=True); continue
             print(f'[{base}] {files[ep].name[:70]}',flush=True)
             e=process(files[ep],base,season,arc,num)
             if not e: continue

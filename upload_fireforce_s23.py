@@ -59,11 +59,13 @@ def full_sub_map(mkv):
     return f"0:{fre[0]['index']}"
 
 def encode_vostfr(src, out):
+    # MAX QUALITE : x264 slow crf16 tune animation (profil High). Bien meilleur que NVENC
+    # sur l'anime (line art + aplats), regle le banding des scenes calmes/sombres.
     # Tente la piste JAP explicitement (fichiers MULTI), repli sur 1re/2e piste.
     for amap in ('0:a:m:language:jpn','0:a:m:language:jap','0:a:1','0:a:0'):
         try:
-            ff(['-i',str(src),'-map','0:v:0','-map',amap,'-c:v','h264_nvenc','-preset','p5','-cq','23',
-                '-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart',str(out)])
+            ff(['-i',str(src),'-map','0:v:0','-map',amap,'-c:v','libx264','-preset','slow','-crf','16',
+                '-tune','animation','-profile:v','high','-pix_fmt','yuv420p','-c:a','aac','-b:a','256k','-movflags','+faststart',str(out)])
             return True
         except subprocess.CalledProcessError:
             if out.exists(): out.unlink()
@@ -85,6 +87,9 @@ def main():
         print(f'\n=== Fire Force {season} : {len(files)} episodes ===')
         for ep in sorted(files):
             f=files[ep]; base=f'{season}E{ep:02d}'
+            prev=by_key.get((season,ep))
+            # Reprise du reencode HQ : entree deja repassee en x264 -> on saute.
+            if prev and prev.get('hq'): print('  hq deja',base); continue
             print(season,'Ep',ep)
             vo=TMP/f'{base}-vostfr.mp4'; vtt=TMP/f'{base}-fr.vtt'; thumb=TMP/f'{base}.jpg'
             if not vo.exists():
@@ -105,9 +110,13 @@ def main():
             url_thumb=upload(thumb,f'{KEY_PREFIX}/thumbnails/{base}.jpg') if thumb.exists() else None
             e={'episode':ep,'title':f'Épisode {ep}','episodeLabel':base,'src':url_vo,
                'season':season,'arc':f'Fire Force {season}','preferredAudioLang':'ja','progressKey':base,'badge':'VOSTFR',
-               'audio':[{'label':'VOSTFR','srclang':'ja','default':True}]}
+               'audio':[{'label':'VOSTFR','srclang':'ja','default':True}],'hq':True}
             if url_thumb: e['thumbnail']=url_thumb
+            elif prev and prev.get('thumbnail'): e['thumbnail']=prev['thumbnail']
             if has_sub: e['subtitles']=[{'label':'Français','srclang':'fr','src':upload(vtt,f'{KEY_PREFIX}/{base}-fr.vtt'),'default':True}]
+            elif prev and prev.get('subtitles'): e['subtitles']=prev['subtitles']
+            # ne pas ecraser un titre personnalise par "Épisode N"
+            if prev and prev.get('title') and not re.match(r'^épisode \d+$',prev['title'].strip(),re.I): e['title']=prev['title']
             by_key[(season,ep)]=e
             out=sorted(by_key.values(),key=lambda d:(d.get('season') or '',d.get('episode') or 0))
             JSON.write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8')
