@@ -248,11 +248,49 @@ body.playing{cursor:none}
     <button class="btn big glass" id="bImport" style="--hglow:rgba(0,223,200,.35)"><span class="ic">🎵</span> &nbsp;Importer un MP3 / MP4</button>
   </div>
   <div class="btnrow">
+    <button class="btn glass" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Duo Relais</button>
     <button class="btn glass" id="bOpt1" style="--hglow:rgba(160,107,255,.4)"><span class="ic">⚙</span> Options</button>
     <button class="btn glass" id="bBoard" style="--hglow:rgba(255,209,43,.35)"><span class="ic">🏆</span> Classement</button>
   </div>
   <p class="hint">MP3 · MP4 · MKV · WebM — map générée par analyse spectrale, calée sur le BPM<br><kbd>Clic</kbd><kbd>Z</kbd><kbd>X</kbd> jouer · <kbd>Échap</kbd> pause · <kbd>Espace</kbd> skip intro · <kbd>²</kbd> retry</p>
   <input type="file" id="file" accept="audio/*,video/mp4,video/webm,video/x-matroska,.mp4,.mkv,.webm,.mov,.m4a" hidden>
+</div>
+
+<!-- ════ DUO RELAIS — lobby ════ -->
+<div class="screen" id="sDuo" style="gap:16px">
+  <div class="card" style="min-width:min(440px,92vw);max-width:480px;gap:14px">
+    <h2 style="font-size:24px">👥 Duo Relais</h2>
+    <p class="muted" style="font-size:13px;margin-top:-4px">Une map, deux joueurs, à tour de rôle. Le combo se transmet — visez le plus gros score à deux. 🤝</p>
+    <div id="duoStart" style="display:flex;flex-direction:column;gap:10px;width:100%">
+      <button class="btn big go" id="duoCreate">➕ Créer une room</button>
+      <div style="display:flex;gap:8px;width:100%">
+        <input id="duoCode" maxlength="6" placeholder="CODE" style="flex:1;background:#120c22;border:1px solid #ffffff26;border-radius:14px;color:#fff;padding:11px 14px;font-size:16px;letter-spacing:3px;text-align:center;text-transform:uppercase;outline:none">
+        <button class="btn glass" id="duoJoin" style="white-space:nowrap">Rejoindre</button>
+      </div>
+      <div id="duoMsg" class="pubmsg" style="min-height:18px"></div>
+    </div>
+    <div id="duoRoom" style="display:none;flex-direction:column;gap:12px;width:100%">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <span class="muted" style="font-size:12px">Code</span>
+        <span id="duoRoomCode" style="font-family:'Exo 2',sans-serif;font-weight:800;font-size:22px;letter-spacing:4px;color:#5fe68c"></span>
+        <button class="iconbtn" id="duoCopy" title="Copier le lien" style="width:34px;height:34px;font-size:14px">📋</button>
+      </div>
+      <div id="duoPlayers" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap">
+        <span class="muted" style="font-size:12px">Tranche</span>
+        <div class="seg small" id="duoSeg">
+          <button data-s="15000">15 s</button><button data-s="30000" class="on">30 s</button><button data-s="45000">45 s</button><button data-s="60000">60 s</button>
+        </div>
+      </div>
+      <p class="muted small" id="duoHint" style="text-align:center">L'hôte choisit une map dans « Niveaux prêts », puis lance.</p>
+      <div style="display:flex;gap:8px;width:100%">
+        <button class="btn glass" id="duoLeave" style="flex:0 0 auto">Quitter</button>
+        <button class="btn glass" id="duoReady" style="flex:1">Je suis prêt ✓</button>
+        <button class="btn big go" id="duoLaunch" style="flex:1;display:none">🚀 Lancer</button>
+      </div>
+    </div>
+    <button class="btn ghost" id="duoBack" style="font-size:13px">‹ Retour</button>
+  </div>
 </div>
 
 <div class="screen" id="sLoad"><div class="spin"></div><p id="loadTxt" style="color:#fff;font-size:16px">Chargement…</p></div>
@@ -3073,6 +3111,139 @@ function loop(now){
   if(introT<1){cx.fillStyle='rgba(4,2,8,'+((1-introT)*.92).toFixed(3)+')';cx.fillRect(0,0,W,H);}
 }
 requestAnimationFrame(loop);
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     DUO RELAIS — couche réseau (Supabase Realtime). Chunk 1 : lobby + presence
+     + ready-check + sync horloge (Cristian). Le gameplay relais (départ
+     synchronisé, tranches, spectate) se branche via window.__duo.* (chunk 2).
+     Accède aux globals du jeu (show, store, SUPABASE_URL/ANON, FEATURED…).
+════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  const $=id=>document.getElementById(id)
+  const D={ sb:null, me:null, name:'', chan:null, room:null, host:false, segMs:30000, offset:0, peers:{}, started:false }
+  window.__duo=D
+  const msg=(t,ok)=>{const e=$('duoMsg');if(e){e.textContent=t||'';e.className='pubmsg'+(ok===true?' ok':ok===false?' err':'')}}
+  const code6=()=>{const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=c[(Math.random()*c.length)|0];return s}
+
+  async function initSB(){
+    if(D.sb) return D.sb
+    const ref=(SUPABASE_URL.match(/https?:\/\/([^.]+)\./)||[])[1]
+    let session=null
+    try{ const raw=localStorage.getItem('sb-'+ref+'-auth-token'); if(raw){const w=JSON.parse(raw); session=w.currentSession||w;} }catch(e){}
+    const mod=await import('https://esm.sh/@supabase/supabase-js@2')
+    D.sb=mod.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
+    if(session&&session.access_token){ try{ await D.sb.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token||''}); }catch(e){} }
+    const u=session&&session.user
+    D.me = (u&&(u.user_metadata&&(u.user_metadata.provider_id||u.user_metadata.sub)))
+      || (u&&u.identities&&(u.identities.find(i=>i.provider==='discord')||{}).identity_data||{}).provider_id
+      || (u&&u.id) || null
+    D.name = (typeof store!=='undefined'&&store.get&&store.get('pseudo',''))
+      || (u&&u.user_metadata&&(u.user_metadata.global_name||u.user_metadata.full_name||u.user_metadata.name)) || 'Pirate'
+    return D.sb
+  }
+
+  function renderPeers(){
+    const wrap=$('duoPlayers'); if(!wrap) return
+    const list=Object.values(D.peers)
+    wrap.innerHTML=list.map(p=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid #ffffff14;border-radius:12px;padding:9px 13px">
+      <span style="width:9px;height:9px;border-radius:50%;background:${p.ready?'#5fe68c':'#ffae3b'};box-shadow:0 0 8px currentColor"></span>
+      <span style="flex:1;font-weight:700">${(p.name||'Pirate').replace(/[<>&]/g,'')}</span>
+      ${p.host?'<span class="muted" style="font-size:11px">HÔTE</span>':''}
+      <span class="muted" style="font-size:11.5px">${p.ready?'Prêt':'…'}</span></div>`).join('')
+    const both=list.length>=2 && list.every(p=>p.ready)
+    const launch=$('duoLaunch'), ready=$('duoReady')
+    if(D.host){ launch.style.display=both?'block':'none'; }
+    const meP=D.peers[D.me]
+    if(ready) ready.textContent = (meP&&meP.ready)?'Pas prêt ✗':'Je suis prêt ✓'
+  }
+
+  function trackSelf(extra){
+    if(!D.chan) return
+    const cur=D.peers[D.me]||{}
+    D.peers[D.me]={ id:D.me, name:D.name, host:D.host, ready:!!(extra&&'ready'in extra?extra.ready:cur.ready) }
+    D.chan.track(D.peers[D.me])
+  }
+
+  async function joinChannel(){
+    const ch=D.sb.channel('osu-duo:'+D.room.code,{config:{presence:{key:D.me},broadcast:{self:false}}})
+    D.chan=ch
+    ch.on('presence',{event:'sync'},()=>{
+      const st=ch.presenceState(); const peers={}
+      for(const k in st){ const m=st[k][0]; if(m) peers[m.id]=m }
+      D.peers=peers; renderPeers()
+    })
+    // sync horloge (Cristian) : l'invité ping, l'hôte répond.
+    ch.on('broadcast',{event:'ping'},({payload})=>{ if(D.host) ch.send({type:'broadcast',event:'pong',payload:{tg:payload.tg,th:Date.now(),to:payload.from}}) })
+    ch.on('broadcast',{event:'pong'},({payload})=>{ if(payload.to!==D.me) return; const rtt=Date.now()-payload.tg; D._samp=(D._samp||[]); D._samp.push(payload.th-(payload.tg+rtt/2)); })
+    // départ synchronisé (rempli par le chunk 2 gameplay)
+    ch.on('broadcast',{event:'start'},({payload})=>{ if(D.onStart) D.onStart(payload) })
+    ch.on('broadcast',{event:'hit'},({payload})=>{ if(D.onNet) D.onNet('hit',payload) })
+    ch.on('broadcast',{event:'miss'},({payload})=>{ if(D.onNet) D.onNet('miss',payload) })
+    ch.on('broadcast',{event:'cursor'},({payload})=>{ if(D.onNet) D.onNet('cursor',payload) })
+    ch.on('broadcast',{event:'state'},({payload})=>{ if(D.onNet) D.onNet('state',payload) })
+    ch.on('broadcast',{event:'pause'},({payload})=>{ if(D.onNet) D.onNet('pause',payload) })
+    ch.on('broadcast',{event:'resume'},({payload})=>{ if(D.onNet) D.onNet('resume',payload) })
+    ch.on('broadcast',{event:'finish'},({payload})=>{ if(D.onNet) D.onNet('finish',payload) })
+    await ch.subscribe(async (s)=>{ if(s==='SUBSCRIBED'){ trackSelf({ready:false}); if(!D.host) syncClock(); } })
+    D.send=(event,payload)=>{ try{ ch.send({type:'broadcast',event,payload}) }catch(e){} }
+  }
+  // estimation d'offset (médiane sur ~5 passes) — l'invité contre l'hôte.
+  async function syncClock(){
+    D._samp=[]; for(let i=0;i<5;i++){ D.send('ping',{tg:Date.now(),from:D.me}); await new Promise(r=>setTimeout(r,180)); }
+    setTimeout(()=>{ const a=(D._samp||[]).slice().sort((x,y)=>x-y); if(a.length) D.offset=a[a.length>>1]; },300)
+  }
+
+  function openRoomView(){ $('duoStart').style.display='none'; $('duoRoom').style.display='flex'; $('duoRoomCode').textContent=D.room.code
+    $('duoLaunch').style.display='none'; $('duoReady').style.display='block'
+    $('duoHint').textContent = D.host ? "Choisis une map dans « Niveaux prêts », règle la tranche, puis lance quand vous êtes prêts." : "En attente de l'hôte qui choisit la map et lance."
+    document.querySelectorAll('#duoSeg button').forEach(b=>{ b.disabled=!D.host; b.style.opacity=D.host?1:.5 })
+    renderPeers()
+  }
+
+  async function createRoom(){
+    try{ msg('Connexion…'); await initSB(); if(!D.me){ msg('Connecte-toi sur Brams pour jouer en duo.',false); return }
+      D.host=true; const code=code6()
+      const { error } = await D.sb.from('osu_rooms').insert({ code, host:D.me, segment_ms:D.segMs, status:'lobby' })
+      if(error){ msg(error.message,false); return }
+      D.room={ code }; await joinChannel(); openRoomView()
+    }catch(e){ msg('Erreur : '+(e.message||e),false) }
+  }
+  async function joinRoom(){
+    const code=($('duoCode').value||'').trim().toUpperCase(); if(code.length<4){ msg('Code invalide',false); return }
+    try{ msg('Connexion…'); await initSB(); if(!D.me){ msg('Connecte-toi sur Brams pour jouer en duo.',false); return }
+      const { data, error } = await D.sb.from('osu_rooms').select('*').eq('code',code).maybeSingle()
+      if(error||!data){ msg('Room introuvable',false); return }
+      if(data.guest && data.guest!==D.me){ msg('Room déjà pleine',false); return }
+      D.host=false; D.segMs=data.segment_ms||30000; D.room={ code }
+      await D.sb.from('osu_rooms').update({ guest:D.me }).eq('code',code)
+      await joinChannel(); openRoomView()
+    }catch(e){ msg('Erreur : '+(e.message||e),false) }
+  }
+  function leaveRoom(){
+    try{ if(D.chan) D.sb.removeChannel(D.chan) }catch(e){}
+    if(D.room&&D.host){ try{ D.sb.from('osu_rooms').delete().eq('code',D.room.code) }catch(e){} }
+    D.chan=null; D.room=null; D.host=false; D.peers={}
+    $('duoRoom').style.display='none'; $('duoStart').style.display='flex'; msg('')
+  }
+
+  // ── wiring UI ──
+  function bind(){
+    const b=$('bDuo'); if(b) b.onclick=()=>{ if(typeof show==='function') show('sDuo'); msg(''); $('duoRoom').style.display='none'; $('duoStart').style.display='flex' }
+    const back=$('duoBack'); if(back) back.onclick=()=>{ leaveRoom(); if(typeof show==='function') show('sMenu') }
+    $('duoCreate')&&($('duoCreate').onclick=createRoom)
+    $('duoJoin')&&($('duoJoin').onclick=joinRoom)
+    $('duoLeave')&&($('duoLeave').onclick=leaveRoom)
+    $('duoReady')&&($('duoReady').onclick=()=>{ const meP=D.peers[D.me]||{}; trackSelf({ready:!meP.ready}); setTimeout(renderPeers,60) })
+    $('duoCopy')&&($('duoCopy').onclick=()=>{ try{ navigator.clipboard.writeText(location.origin+'/fredisu.html#duo='+(D.room&&D.room.code)) }catch(e){} })
+    document.querySelectorAll('#duoSeg button').forEach(btn=>btn.onclick=()=>{ if(!D.host)return; document.querySelectorAll('#duoSeg button').forEach(x=>x.classList.remove('on')); btn.classList.add('on'); D.segMs=+btn.dataset.s; try{ D.sb.from('osu_rooms').update({segment_ms:D.segMs}).eq('code',D.room.code) }catch(e){} })
+    $('duoLaunch')&&($('duoLaunch').onclick=()=>{ if(D.onLaunch) D.onLaunch(); else msg('Sélectionne une map dans « Niveaux prêts » d\'abord.',false) })
+    // rejoindre via lien #duo=CODE
+    const m=(location.hash||'').match(/duo=([A-Z0-9]+)/i); if(m){ if(typeof show==='function') show('sDuo'); $('duoCode').value=m[1].toUpperCase(); }
+  }
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',bind); else bind()
+})();
 </script>
 </body>
 </html>
