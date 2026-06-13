@@ -30,7 +30,7 @@ const HERO_KEYART = {
 }
 // Vraies nouveautés : dans les données historiques presque TOUT portait le badge
 // « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
-const NEW_IDS = new Set(['quintuplets', 'kaiju-no-8', 'fireforce', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
+const NEW_IDS = new Set(['quintuplets', 'kny', 'kaiju-no-8', 'fireforce', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
 const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

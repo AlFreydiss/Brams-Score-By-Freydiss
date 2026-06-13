@@ -11,7 +11,6 @@ import BC_VIDEOS from '../data/bc-videos.json'
 import BLUELOCK_VIDEOS from '../data/bluelock-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
-import DRSTONE_VIDEOS from '../data/drstone-videos.json'
 import FIREFORCE_VIDEOS from '../data/fireforce-videos.json'
 import KAIJU_VIDEOS from '../data/kaiju-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
@@ -99,6 +98,7 @@ export const ANIMES = [
     color: '#7cc4e0',
     colorDark: '#1d3a4a',
     coverImage: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21519-SUo3ZQuCbYhJ.png',
+    coverPosition: 'center bottom',
     genres: ['Romance', 'Drame', 'Surnaturel'],
     description: "Mitsuha et Taki échangent leurs corps au gré de rêves étranges. Quand une comète menace tout, un lien défiant le temps les unit. Le chef-d'œuvre de Makoto Shinkai.",
     stats: [
@@ -118,6 +118,7 @@ export const ANIMES = [
     color: '#5ec8e0',
     colorDark: '#16384a',
     coverImage: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx142455-5cBnV4rz5ISf.jpg',
+    coverPosition: 'center 40%',
     genres: ['Science-fiction', 'Romance', 'Aventure'],
     description: "Tokyo coupée du monde par des bulles défiant la gravité. Hibiki, jeune parkouriste, rencontre la mystérieuse Uta. Un conte SF signé Wit Studio (Tetsuro Araki / Gen Urobuchi).",
     stats: [
@@ -148,25 +149,7 @@ export const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#e0524a',
   },
-  {
-    id: 'drstone',
-    title: 'Dr. Stone',
-    subtitle: 'Science & Survie',
-    emoji: '⚗️',
-    color: '#00b894',
-    colorDark: '#005c45',
-    coverImage: '/drstone-poster.jpg',
-    coverPosition: 'center top',
-    genres: ['Science-fiction', 'Aventure', 'Shōnen'],
-    description: "Toute l'humanité est pétrifiée. Des millénaires plus tard, le génie Senku se réveille et décide de reconstruire la civilisation grâce à la science.",
-    stats: [
-      { label: 'Vidéos', value: videoCountLabel(DRSTONE_VIDEOS.length, 35) },
-      { label: 'Statut', value: availabilityLabel(DRSTONE_VIDEOS.length) },
-    ],
-    action: '▶ Accéder',
-    badge: 'NOUVEAU',
-    badgeColor: '#00b894',
-  },
+  // Dr. Stone retiré d'Anime & Scan le 2026-06-13 (demande). Page + routing conservés.
   {
     id: 'jjk',
     title: 'Jujutsu Kaisen',
@@ -288,7 +271,7 @@ export const ANIMES = [
     emoji: '🐉',
     color: '#f57f17',
     colorDark: '#5c2e00',
-    coverImage: 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc=',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-thumbnails/S01E039.jpg',
     coverPosition: 'center center',
     genres: ['Action', 'Science-fiction', 'Shōnen'],
     description: "Après la défaite de Majin Buu, Goku continue à repousser ses limites en affrontant des adversaires venus d'autres univers.",
@@ -326,7 +309,7 @@ export const ANIMES = [
     emoji: '🎹',
     color: '#ff6f9c',
     colorDark: '#5f2540',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E01.jpg',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/your-lie/thumbnails/S01E10.jpg',
     coverPosition: 'center center',
     genres: ['Drame', 'Musique', 'Romance'],
     description: "Kōsei, ex-prodige du piano qui n'entend plus ses notes depuis la mort de sa mère, retrouve la musique grâce à la violoniste Kaori. Bouleversant.",
@@ -346,7 +329,7 @@ export const ANIMES = [
     emoji: '💍',
     color: '#ff6f9c',
     colorDark: '#5f2540',
-    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S01E01.jpg',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/quintuplets/thumbnails/S02E03.jpg',
     coverPosition: 'center center',
     genres: ['Romance', 'Comédie', 'Harem'],
     description: "Fūtarō, tuteur fauché, doit faire réviser cinq sœurs quintuplées au bord du redoublement — et l'une d'elles deviendra sa femme. S1 + S2 + le film qui conclut tout.",
@@ -407,7 +390,7 @@ export const ANIMES = [
     color: '#00d4ff',
     colorDark: '#003d52',
     coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/vivy/key-visual.jpg',
-    coverPosition: 'center top',
+    coverPosition: 'center 60%',
     genres: ['Science-fiction', 'Action', 'Drame'],
     description: "Vivy est une IA chanteuse chargée d'une mission de 100 ans pour empêcher une guerre apocalyptique entre humains et machines.",
     stats: [
