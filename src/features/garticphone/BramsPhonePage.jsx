@@ -145,7 +145,8 @@ export default function BramsPhonePage() {
 function Room({ code, identity, navigate, copied, onCopy }) {
   const hook = useGarticRoom({ code, ...identity })
   const { room, players, me, n, myTask, remaining, isHost, spectator, error, ready,
-    mySubmitted, start, advance, setReady, submit, prevPage, allPages } = hook
+    mySubmitted, start, advance, setReady, submit, prevPage, allPages,
+    revealStep, sendReaction, sendRevealStep, onReaction } = hook
 
   const total = useMemo(() => {
     if (!room?.settings?.phaseDurations || !room.current_phase) return null
@@ -255,6 +256,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
 
       {(status === 'reveal' || status === 'finished') && (
         <Reveal room={room} players={players} n={n} isHost={isHost} allPages={allPages}
+          revealStep={revealStep} sendRevealStep={sendRevealStep} sendReaction={sendReaction} onReaction={onReaction}
           onReplay={() => navigate('/brams-phone')} />
       )}
       </div>

@@ -24,6 +24,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const [error, setError] = useState('')
   const [ready, setReadyState] = useState(false) // état de chargement initial
   const [tick, setTick] = useState(0)            // re-render 4x/s pour le minuteur
+  const [revealStep, setRevealStep] = useState(null) // {a,p} page synchronisée par l'hôte au reveal
 
   const offsetRef = useRef(0)        // serverNow - Date.now()
   const refreshing = useRef(false)
@@ -32,6 +33,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const migratingRef = useRef(false)
   const joinedRef = useRef(false)
   const chRef = useRef(null)         // canal presence/broadcast
+  const reactionCbsRef = useRef(new Set()) // abonnés aux emojis broadcastés (reveal)
 
   // ── Refetch complet (room + players ; pages au reveal) ────────────────────
   const refresh = useCallback(async () => {
@@ -83,7 +85,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
         const channel = joinChannel(code, {
           userId, displayName, avatarUrl,
           onPresence: (state) => { if (!stop) setPresence(new Set(Object.keys(state || {}))) },
-          onBroadcast: () => { if (!stop) refresh() }, // player_submitted / phase_change / host_migrated
+          onBroadcast: (event, payload) => {
+            if (stop) return
+            if (event === 'reaction') { reactionCbsRef.current.forEach((cb) => { try { cb(payload) } catch {} }); return }
+            if (event === 'reveal_step') { setRevealStep(payload || null); return }
+            refresh() // player_submitted / phase_change / host_migrated
+          },
         })
         if (stop) { try { sub() } catch {}; try { channel.leave() } catch {}; return }
         unsub = sub
@@ -246,10 +253,19 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, connectedPlayers, me, isHost, spectator, userId, tick, code])
 
+  // ── Reveal : réactions emojis + synchro de page (broadcast canal room) ────
+  const sendReaction = useCallback((emoji) => { chRef.current?.send('reaction', { emoji, from: userId }) }, [userId])
+  const sendRevealStep = useCallback((step) => { chRef.current?.send('reveal_step', step) }, [])
+  const onReaction = useCallback((cb) => {
+    reactionCbsRef.current.add(cb)
+    return () => reactionCbsRef.current.delete(cb)
+  }, [])
+
   return {
     room, players: connectedPlayers, me, n, myTask, remaining, isHost, spectator, error, ready,
     mySubmitted, submittedSeats,
     start, advance, setReady, submit, prevPage, allPages, refresh,
     serverNowMs,
+    revealStep, sendReaction, sendRevealStep, onReaction,
   }
 }

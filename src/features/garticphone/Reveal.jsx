@@ -1,11 +1,14 @@
-// Brams Phone — REVEAL. Reconstruit les albums, lecture cinématique page par page
-// (transitions flashback), nom de l'auteur par page. L'hôte avance / autoplay.
-// Carte récap finale partageable : album rendu sur canvas offscreen → PNG.
+// Brams Phone — REVEAL. Albums reconstruits, lecture cinématique page par page
+// (flip + flash doré), auteur + n° de page. L'HÔTE pilote (broadcast reveal_step) →
+// tout le monde voit la même page ; autoplay réglable. Réactions emojis flottantes
+// broadcastées à tous (canal room). Carte récap finale partageable (canvas → PNG).
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { type, fonts } from '../../styles/typography.js'
 import { C, GRAD, alpha, panel, KEYFRAMES } from './theme.js'
 import { Btn, Waiting } from './ui.jsx'
 import { buildAlbums } from './logic/rotation.js'
+
+const REACTIONS = ['😂', '🔥', '💀', '😮', '❤️', '🏴‍☠️']
 
 function authorName(players, userId) {
   const p = players.find((x) => String(x.user_id) === String(userId))
@@ -16,7 +19,6 @@ function authorName(players, userId) {
 async function renderAlbumPng(album, players) {
   const cards = album.pages
   const cw = 760, pad = 28, gap = 18
-  // pré-charge les images de dessin
   const imgs = {}
   await Promise.all(cards.filter((c) => c.type === 'drawing' && c.content).map((c) => new Promise((res) => {
     const im = new Image(); im.crossOrigin = 'anonymous'
@@ -24,20 +26,15 @@ async function renderAlbumPng(album, players) {
     im.onerror = () => res()
     im.src = c.content
   })))
-  // hauteur dynamique
   let h = pad + 60
-  const heights = cards.map((c) => {
-    const ch = c.type === 'drawing' ? 380 : 86
-    h += ch + gap
-    return ch
-  })
+  const heights = cards.map((c) => { const ch = c.type === 'drawing' ? 380 : 86; h += ch + gap; return ch })
   h += pad
   const cv = document.createElement('canvas')
   cv.width = cw; cv.height = h
   const ctx = cv.getContext('2d')
   ctx.fillStyle = '#0a1018'; ctx.fillRect(0, 0, cw, h)
   ctx.fillStyle = '#d7a829'; ctx.font = '800 30px ' + fonts.display
-  ctx.fillText('Brams Phone — Album', pad, pad + 30)
+  ctx.fillText('🏴‍☠️ Brams Phone — Album', pad, pad + 30)
   ctx.fillStyle = 'rgba(243,239,226,0.5)'; ctx.font = '500 14px ' + fonts.body
   ctx.fillText(`Carnet de ${authorName(players, cards[0]?.author_user_id)}`, pad, pad + 52)
   let y = pad + 70
@@ -49,8 +46,7 @@ async function renderAlbumPng(album, players) {
     if (c.type === 'drawing' && imgs[c.content]) {
       const im = imgs[c.content]
       const ratio = Math.min((cw - pad * 2) / im.width, (ch - 8) / im.height)
-      const dw = im.width * ratio, dh = im.height * ratio
-      ctx.drawImage(im, pad, y, dw, dh)
+      ctx.drawImage(im, pad, y, im.width * ratio, im.height * ratio)
     } else {
       ctx.fillStyle = '#f3efe2'; ctx.font = '500 22px ' + fonts.body
       const words = String(c.content || '—').split(' ')
@@ -87,12 +83,15 @@ function PageCard({ page, players, kind }) {
   )
 }
 
-export default function Reveal({ room, players, n, isHost, allPages, onReplay }) {
+export default function Reveal({ room, players, n, isHost, allPages, onReplay,
+  revealStep, sendRevealStep, sendReaction, onReaction }) {
   const [pages, setPages] = useState(null)
   const [albumIdx, setAlbumIdx] = useState(0)
   const [pageIdx, setPageIdx] = useState(0)
   const [autoplay, setAutoplay] = useState(true)
   const [sharing, setSharing] = useState(false)
+  const guided = !isHost // l'invité suit le dévoilement piloté par l'hôte
+  const fxRef = useRef(null)
 
   useEffect(() => {
     let alive = true
@@ -107,18 +106,48 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay })
   const lastAlbum = albumIdx >= albums.length - 1
   const finished = lastAlbum && lastPageOfAlbum
 
+  // ── Réactions flottantes (spawn DOM + animation CSS GPU, auto-retrait) ───────
+  const spawn = useCallback((emoji) => {
+    const layer = fxRef.current; if (!layer || !emoji) return
+    const el = document.createElement('div')
+    el.textContent = emoji
+    el.style.cssText = `position:absolute;bottom:6%;left:${8 + Math.random() * 84}%;font-size:${22 + Math.random() * 18}px;pointer-events:none;will-change:transform,opacity;transform:translateX(-50%);animation:bpReact ${1.7 + Math.random() * 1.3}s cubic-bezier(.3,.7,.3,1) forwards`
+    layer.appendChild(el)
+    el.addEventListener('animationend', () => el.remove())
+  }, [])
+
+  useEffect(() => {
+    if (!onReaction) return
+    return onReaction((p) => spawn(p?.emoji))
+  }, [onReaction, spawn])
+
+  const react = (emoji) => { sendReaction?.(emoji); spawn(emoji) }
+
+  // ── Synchro hôte ↔ invités ───────────────────────────────────────────────
+  // Invité : suit la position broadcastée. Hôte : diffuse sa position courante.
+  useEffect(() => {
+    if (!guided || !revealStep) return
+    if (typeof revealStep.a === 'number') setAlbumIdx(revealStep.a)
+    if (typeof revealStep.p === 'number') setPageIdx(revealStep.p)
+  }, [guided, revealStep])
+
+  useEffect(() => {
+    if (guided || !albums.length) return
+    sendRevealStep?.({ a: albumIdx, p: pageIdx })
+  }, [guided, albumIdx, pageIdx, albums.length, sendRevealStep])
+
   const next = useCallback(() => {
     if (!album) return
     if (pageIdx < album.pages.length - 1) setPageIdx((i) => i + 1)
     else if (albumIdx < albums.length - 1) { setAlbumIdx((i) => i + 1); setPageIdx(0) }
   }, [album, pageIdx, albumIdx, albums.length])
 
-  // Autoplay : avance toutes les 3.2s.
+  // Autoplay (hôte uniquement) : avance toutes les 3.2s.
   useEffect(() => {
-    if (!autoplay || finished || !album) return
+    if (guided || !autoplay || finished || !album) return
     const t = setTimeout(next, 3200)
     return () => clearTimeout(t)
-  }, [autoplay, finished, album, next])
+  }, [guided, autoplay, finished, album, next])
 
   const share = async () => {
     if (!album) return
@@ -145,26 +174,34 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay })
   }
 
   const kind = page?.page_index === 0 ? 'Phrase de départ' : page?.type === 'drawing' ? 'Dessin' : 'Description'
+  const startAuthor = authorName(players, album?.pages[0]?.author_user_id)
+  const endAuthor = authorName(players, album?.pages[album.pages.length - 1]?.author_user_id)
 
   return (
     <div style={{ width: 'min(880px, 100%)', margin: '0 auto', display: 'grid', gap: 18 }}>
       <style>{KEYFRAMES}</style>
+      <style>{`
+        @keyframes bpReact { 0%{opacity:0;transform:translate(-50%,0) scale(.5)} 12%{opacity:1} 100%{opacity:0;transform:translate(-50%,-300px) scale(1.15) rotate(8deg)} }
+        @keyframes bpGoldFlash { 0%{opacity:.55} 100%{opacity:0} }
+      `}</style>
 
       {/* Header album */}
       <div style={{ ...panel, padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
         <div>
           <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 6 }}>Le grand dévoilement</div>
-          <div style={{ ...type.h2, color: C.parchment }}>Carnet de {authorName(players, album?.pages[0]?.author_user_id)}</div>
+          <div style={{ ...type.h2, color: C.parchment }}>Carnet de {startAuthor}</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ ...type.small, color: C.textMut }}>{albumIdx + 1}/{albums.length}</span>
-          <Btn variant="ghost" onClick={() => setAutoplay((a) => !a)} style={{ minHeight: 40, padding: '0 14px' }}>{autoplay ? '⏸ Auto' : '▶ Auto'}</Btn>
+          <span style={{ ...type.small, color: C.textMut }}>Album {albumIdx + 1}/{albums.length} · page {pageIdx + 1}/{album?.pages.length}</span>
+          {!guided && <Btn variant="ghost" onClick={() => setAutoplay((a) => !a)} style={{ minHeight: 40, padding: '0 14px' }}>{autoplay ? '⏸ Auto' : '▶ Auto'}</Btn>}
         </div>
       </div>
 
       {/* Scène */}
       <div style={{ ...panel, padding: 'clamp(18px,3vw,28px)', minHeight: 320 }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(540px 220px at 50% 0%, ${alpha(C.sea, 0.12)}, transparent 64%)` }} />
+        {/* flash doré façon flashback à chaque page */}
+        <div key={`flash-${albumIdx}-${pageIdx}`} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(60% 60% at 50% 45%, ${alpha(C.goldSoft, 0.9)}, transparent 70%)`, mixBlendMode: 'screen', animation: 'bpGoldFlash .5s ease-out forwards' }} />
         <div key={`${albumIdx}-${pageIdx}`} style={{ position: 'relative' }}>
           <PageCard page={page} players={players} kind={kind} />
         </div>
@@ -174,18 +211,41 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay })
             <div key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= pageIdx ? C.gold : 'rgba(255,255,255,0.1)', transition: 'background .3s' }} />
           ))}
         </div>
+        {/* réactions flottantes (overlay) */}
+        <div ref={fxRef} aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 3 }} />
       </div>
+
+      {/* Barre de réactions (tout le monde) */}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {REACTIONS.map((e) => (
+          <button key={e} onClick={() => react(e)} aria-label={`Réagir ${e}`} style={{
+            width: 46, height: 46, borderRadius: 13, fontSize: 22, cursor: 'pointer',
+            border: `1px solid ${C.hairSoft}`, background: 'rgba(255,255,255,0.04)',
+            transition: 'transform .12s ease, border-color .12s ease',
+          }}
+            onMouseEnter={(ev) => { ev.currentTarget.style.transform = 'translateY(-3px) scale(1.08)'; ev.currentTarget.style.borderColor = alpha(C.gold, 0.5) }}
+            onMouseLeave={(ev) => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.borderColor = C.hairSoft }}
+          >{e}</button>
+        ))}
+      </div>
+
+      {/* Récap fin d'album */}
+      {lastPageOfAlbum && !finished && (
+        <div style={{ ...panel, padding: '14px 20px', textAlign: 'center', ...type.body, color: C.textMut }}>
+          🎬 Ce carnet a dérivé de <strong style={{ color: C.parchment }}>{startAuthor}</strong> à <strong style={{ color: C.parchment }}>{endAuthor}</strong>.
+        </div>
+      )}
 
       {/* Contrôles */}
       <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <Btn variant="ghost" onClick={share} disabled={sharing}>{sharing ? 'Génération…' : '📥 Partager cet album'}</Btn>
         <div style={{ display: 'flex', gap: 10 }}>
-          {!finished ? (
-            <Btn variant="gold" onClick={() => { setAutoplay(false); next() }}>Suivant →</Btn>
+          {guided ? (
+            !finished && <span style={{ ...type.small, color: C.textMut, alignSelf: 'center' }}>🎙️ Le capitaine pilote le dévoilement.</span>
+          ) : !finished ? (
+            <Btn variant="gold" onClick={() => { setAutoplay(false); next() }}>{lastPageOfAlbum ? 'Album suivant →' : 'Suivant →'}</Btn>
           ) : (
-            isHost
-              ? <Btn variant="gold" onClick={onReplay}>Rejouer une partie</Btn>
-              : <span style={{ ...type.small, color: C.textMut, alignSelf: 'center' }}>Le capitaine peut relancer.</span>
+            <Btn variant="gold" onClick={onReplay}>Rejouer une partie</Btn>
           )}
         </div>
       </div>
@@ -195,6 +255,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay })
           <div style={{ fontSize: 34, marginBottom: 6 }}>🏴‍☠️</div>
           <div style={{ ...type.h2, color: '#fff' }}>Fin de l'aventure !</div>
           <div style={{ ...type.body, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>Partage tes albums préférés sur le Discord.</div>
+          {guided && <div style={{ ...type.small, color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>Le capitaine peut relancer une partie.</div>}
         </div>
       )}
     </div>
