@@ -3,7 +3,6 @@
 // dédup cross-device via RPC). Flag localStorage = ne re-montre jamais. Inline styles only.
 import { useEffect, useRef, useState } from 'react';
 import { setAcquisitionSource } from '../lib/analytics.js';
-import { sbRpc } from '../lib/supabaseRest.js';
 
 const DONE_KEY = 'bc_acq_done';
 const DELAY_MS = 2500; // laisse le site s'afficher avant de demander
@@ -33,32 +32,25 @@ export default function AcquisitionModal({ discordId, authReady = true }) {
   const [thanks, setThanks] = useState(false);
   const scheduledRef = useRef(false);
 
-  // Décision d'affichage (une seule fois, après résolution de l'auth).
+  // Sondage = visiteurs NON connectés, et une seule fois dans la vie du navigateur.
+  // Le flag est posé dès l'affichage → même un reload ne le re-montre pas.
   useEffect(() => {
     if (!authReady || scheduledRef.current) return;
     scheduledRef.current = true;
-    if (localStorage.getItem(DONE_KEY)) return;
-    let t;
-    const schedule = () => { t = setTimeout(() => setShow(true), DELAY_MS); };
-    if (discordId) {
-      sbRpc('get_acquisition', {}, { tag: 'acq' })
-        .then((d) => { if (d?.answered) localStorage.setItem(DONE_KEY, '1'); else schedule(); })
-        .catch(schedule);
-    } else {
-      schedule();
-    }
+    if (discordId) return;                        // connecté → jamais
+    if (localStorage.getItem(DONE_KEY)) return;   // déjà vu → jamais
+    const t = setTimeout(() => {
+      localStorage.setItem(DONE_KEY, '1');
+      setShow(true);
+    }, DELAY_MS);
     return () => clearTimeout(t);
   }, [authReady, discordId]);
 
-  const finish = () => { localStorage.setItem(DONE_KEY, '1'); setShow(false); };
+  const finish = () => setShow(false);
 
-  const choose = async (source, detail = null) => {
+  const choose = (source, detail = null) => {
     setThanks(true);
     setAcquisitionSource(source, detail);
-    if (discordId) {
-      try { await sbRpc('set_acquisition', { p_source: source, p_detail: detail }, { tag: 'acq' }); } catch {}
-    }
-    localStorage.setItem(DONE_KEY, '1');
     setTimeout(() => setShow(false), 1300);
   };
 
