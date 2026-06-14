@@ -67,16 +67,16 @@ end $$;
 
 create or replace function gartic_prev_page(p_code text, p_token uuid)
   returns jsonb language plpgsql stable security definer set search_path = public as $$
-declare g record; v_book int; v_pg record;
+declare g record; v_book int; v_type text; v_content text;
 begin
   select * into g from _gartic_player(p_code, p_token);
-  if g.room_id is null then return jsonb_build_object('error','unauthorized'); end if;
+  if g.room_id is null or g.seat is null then return jsonb_build_object('error','unauthorized'); end if;
   if g.current_round <= 0 or g.n is null then return jsonb_build_object('page', null); end if;
   v_book := ((g.seat - g.current_round) % g.n + g.n) % g.n;
-  select type, content into v_pg from gartic_pages
+  select type, content into v_type, v_content from gartic_pages
     where room_id = g.room_id and book_id = v_book and page_index = g.current_round - 1;
-  return jsonb_build_object('page', case when v_pg is null then null
-    else jsonb_build_object('type', v_pg.type, 'content', v_pg.content) end);
+  if not found then return jsonb_build_object('page', null); end if;
+  return jsonb_build_object('page', jsonb_build_object('type', v_type, 'content', v_content));
 end $$;
 
 create or replace function gartic_submit(p_code text, p_token uuid, p_content text)
@@ -84,7 +84,7 @@ create or replace function gartic_submit(p_code text, p_token uuid, p_content te
 declare g record; v_book int; v_type text;
 begin
   select * into g from _gartic_player(p_code, p_token);
-  if g.room_id is null then return jsonb_build_object('error','unauthorized'); end if;
+  if g.room_id is null or g.seat is null then return jsonb_build_object('error','unauthorized'); end if;
   if g.status not in ('writing','drawing','describing') or g.n is null then return jsonb_build_object('error','phase'); end if;
   v_book := ((g.seat - g.current_round) % g.n + g.n) % g.n;
   v_type := case when g.current_round = 0 then 'text' when g.current_round % 2 = 1 then 'drawing' else 'text' end;
@@ -198,6 +198,7 @@ begin
   if v_room.id is null then return jsonb_build_object('error','introuvable'); end if;
   if v_room.status not in ('reveal','finished') then return jsonb_build_object('error','not_reveal'); end if;
   v_n := (v_room.settings->>'n')::int;
+  if v_n is null or v_n = 0 then v_n := null; end if;
   return jsonb_build_object('pages', coalesce((
     select jsonb_agg(jsonb_build_object('book_id',pg.book_id,'page_index',pg.page_index,'type',pg.type,
       'content',pg.content,'author', jsonb_build_object('name',pl.display_name,'avatar',pl.avatar_url))

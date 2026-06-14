@@ -2,10 +2,13 @@
 // Usage: node scripts/verify_gartic_rls.mjs  (lit .env.local)
 import { readFileSync } from 'node:fs';
 
-const env = Object.fromEntries(
-  readFileSync(new URL('../.env.local', import.meta.url), 'utf8')
-    .split('\n').filter(Boolean).map((l) => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; })
-);
+let env;
+try {
+  env = Object.fromEntries(
+    readFileSync(new URL('../.env.local', import.meta.url), 'utf8')
+      .split('\n').filter(Boolean).map((l) => { const i = l.indexOf('='); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; })
+  );
+} catch { console.error('Manque .env.local (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)'); process.exit(1); }
 const URL_ = env.VITE_SUPABASE_URL, ANON = env.VITE_SUPABASE_ANON_KEY;
 const H = { apikey: ANON, Authorization: `Bearer ${ANON}`, 'Content-Type': 'application/json', Accept: 'application/json' };
 const rpc = (fn, body) => fetch(`${URL_}/rest/v1/rpc/${fn}`, { method: 'POST', headers: H, body: JSON.stringify(body) }).then(async (r) => ({ status: r.status, json: await r.json().catch(() => null) }));
@@ -30,12 +33,15 @@ const players = state.json?.players || [];
 ok(players.length >= 2, 'room_state liste les joueurs');
 ok(players.every((p) => !('secret_token' in p)), 'room_state ne fuite PAS secret_token');
 
-const direct = await get(`gartic_pages?select=*&limit=1`);
-ok(direct.status === 200 && Array.isArray(direct.json) && direct.json.length === 0, 'SELECT direct gartic_pages = vide (RLS deny)');
-
 await rpc('gartic_start', { p_code: code, p_token: tokA, p_settings: { rounds: 2, phaseDurations: { writing: 60, drawing: 60, describing: 60 } } });
 await rpc('gartic_submit', { p_code: code, p_token: tokA, p_content: 'phrase A' });
 await rpc('gartic_submit', { p_code: code, p_token: tokB, p_content: 'phrase B' });
+
+const direct = await get(`gartic_pages?select=*&limit=1`);
+ok(direct.status === 200 && Array.isArray(direct.json) && direct.json.length === 0, 'SELECT direct gartic_pages = vide malgré pages existantes (RLS deny)');
+
+const nonHostAdv = await rpc('gartic_advance', { p_code: code, p_token: tokB });
+ok(nonHostAdv.json?.error === 'unauthorized', 'non-host ne peut pas advance');
 
 const allEarly = await rpc('gartic_all_pages', { p_code: code });
 ok(allEarly.json?.error === 'not_reveal', 'gartic_all_pages refusé hors reveal');
