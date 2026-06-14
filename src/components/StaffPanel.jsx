@@ -197,7 +197,7 @@ function Overview({ revenue, revErr, reportCount }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
         <Kpi label="Encaissé récent" value={revenue ? eur(revenue.recentTotal) : '—'} sub={revenue ? `${revenue.recentCount} paiements` : 'Stripe'} />
-        <Kpi label="Solde dispo" value={revenue ? eur(revenue.available) : '—'} sub="Disponible" subColor={C.pos} />
+        <Kpi label="Solde dispo" value={revenue ? eur(revenue.total ?? revenue.available) : '—'} sub="Disponible" subColor={C.pos} />
         <Kpi label="En attente" value={revenue ? eur(revenue.pending) : '—'} sub="En cours de versement" />
         <Kpi label="Signalements" value={String(reportCount ?? 0)} sub={reportCount ? 'À traiter' : 'Aucun ouvert'} subColor={reportCount ? C.neg : C.pos} />
       </div>
@@ -228,7 +228,7 @@ function RevenusView({ revenue, revErr }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-        <Kpi label="Solde dispo" value={revenue ? eur(revenue.available) : '—'} subColor={C.pos} sub="Disponible" />
+        <Kpi label="Solde dispo" value={revenue ? eur(revenue.total ?? revenue.available) : '—'} subColor={C.pos} sub="Disponible" />
         <Kpi label="En attente" value={revenue ? eur(revenue.pending) : '—'} sub="Versement à venir" />
         <Kpi label="Encaissé récent" value={revenue ? eur(revenue.recentTotal) : '—'} sub={revenue ? `${revenue.recentCount} paiements` : '—'} />
       </div>

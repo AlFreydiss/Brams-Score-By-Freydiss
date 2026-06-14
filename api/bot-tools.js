@@ -1216,9 +1216,10 @@ async function stripeRevenue(req, res) {
   try {
     const { discordId } = await getAuthedSupabaseUser(req)
     if (!REVENUE_ADMINS.includes(String(discordId))) return res.status(403).json({ error: 'Réservé aux admins.' })
-    const [balance, charges] = await Promise.all([
+    const [balance, charges, payouts] = await Promise.all([
       stripeApi('/v1/balance'),
       stripeApi('/v1/charges?limit=15'),
+      stripeApi('/v1/payouts?limit=100'),
     ])
     const sum = (arr) => (arr || []).reduce((s, b) => s + (b.amount || 0), 0)
     const recent = (charges.data || []).map(c => ({
@@ -1227,9 +1228,15 @@ async function stripeRevenue(req, res) {
       email: c.billing_details?.email || c.receipt_email || null,
     }))
     const totalPaid = recent.filter(c => c.paid && !c.refunded).reduce((s, c) => s + c.amount, 0)
+    const available = sum(balance.available)
+    const pending = sum(balance.pending)
+    // Déjà viré vers la banque (jusqu'aux 100 derniers virements ; paginer si ça dépasse un jour).
+    const paidOut = (payouts.data || []).filter(p => p.status !== 'failed' && p.status !== 'canceled').reduce((s, p) => s + (p.amount || 0), 0)
     return res.status(200).json({
       ok: true, currency: 'eur',
-      available: sum(balance.available), pending: sum(balance.pending),
+      available, pending, paidOut,
+      // Cumul encaissé : ne retombe jamais à 0 après un virement (le payout passe de "available" à "paidOut").
+      total: available + pending + paidOut,
       recentTotal: totalPaid, recentCount: recent.filter(c => c.paid).length, recent,
     })
   } catch (e) {
