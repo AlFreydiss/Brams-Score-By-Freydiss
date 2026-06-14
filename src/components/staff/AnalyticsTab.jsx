@@ -2,7 +2,7 @@
 // Dashboard analytics complet — Staff Panel Brams Community
 // Inline styles exclusivement. Supabase + VITE_ANALYTICS_KEY.
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { supabase } from '../../lib/supabase.js';
+import { sbRpc } from '../../lib/supabaseRest.js';
 
 const KEY = import.meta.env.VITE_ANALYTICS_KEY;
 const REFRESH_MS = 30_000;
@@ -280,21 +280,27 @@ export default function AnalyticsTab() {
   const [lastUpdate, setLast] = useState(null);
 
   const load = useCallback(async () => {
-    try {
-      const [a, b, c, d, e, f] = await Promise.all([
-        supabase.rpc('analytics_overview',   { p_key:KEY }),
-        supabase.rpc('analytics_daily',      { p_key:KEY, p_days:period }),
-        supabase.rpc('analytics_top_pages',  { p_key:KEY, p_days:period, p_limit:6 }),
-        supabase.rpc('analytics_top_events', { p_key:KEY, p_event:'anime_view', p_days:period, p_limit:6 }),
-        supabase.rpc('analytics_online_users',{ p_key:KEY }),
-        supabase.rpc('analytics_live_feed',  { p_key:KEY, p_limit:35 }),
-      ]);
-      const fail = [a,b,c,d,e,f].find(r => r.error);
-      if (fail?.error) throw fail.error;
-      setOv(a.data); setDaily(b.data||[]); setTP(c.data||[]);
-      setTA(d.data||[]); setOnline(e.data||[]); setFeed(f.data||[]);
-      setError(null); setLast(new Date());
-    } catch(err) { setError(err.message || String(err)); }
+    // REST direct (sbRpc) au lieu de supabase.rpc() : le client supabase-js peut
+    // hanger sur le verrou d'auth → load() ne se terminait jamais et les KPI
+    // restaient à 0 SANS erreur. sbRpc renvoie le résultat direct (objet/array),
+    // ou { ok:false, error } en cas d'échec (clé absente, réseau…).
+    const [a, b, c, d, e, f] = await Promise.all([
+      sbRpc('analytics_overview',    { p_key:KEY }),
+      sbRpc('analytics_daily',       { p_key:KEY, p_days:period }),
+      sbRpc('analytics_top_pages',   { p_key:KEY, p_days:period, p_limit:6 }),
+      sbRpc('analytics_top_events',  { p_key:KEY, p_event:'anime_view', p_days:period, p_limit:6 }),
+      sbRpc('analytics_online_users',{ p_key:KEY }),
+      sbRpc('analytics_live_feed',   { p_key:KEY, p_limit:35 }),
+    ]);
+    const fail = [a,b,c,d,e,f].find(r => r && r.ok === false);
+    if (fail) { setError(fail.error || 'Erreur analytics'); return; }
+    setOv(a || null);
+    setDaily(Array.isArray(b) ? b : []);
+    setTP(Array.isArray(c) ? c : []);
+    setTA(Array.isArray(d) ? d : []);
+    setOnline(Array.isArray(e) ? e : []);
+    setFeed(Array.isArray(f) ? f : []);
+    setError(null); setLast(new Date());
   }, [period]);
 
   useEffect(() => {
