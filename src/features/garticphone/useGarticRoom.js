@@ -1,15 +1,17 @@
 // Brams Phone — hook d'orchestration du salon (glue de la machine à états).
-// Responsabilités : identité + join, abonnement realtime, dérivation de ma tâche,
+// Responsabilités : identité + join (token secret), abonnement realtime (gartic_rooms),
+// canal presence/broadcast (liveness + signaux basse latence), dérivation de ma tâche,
 // horloge serveur calibrée, heartbeat, boucle hôte (avance au timeout / quand tout
-// le monde a soumis, en comblant les manquants), migration d'hôte.
+// le monde a soumis — le serveur comble les manquants), migration d'hôte serveur.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  joinRoom, fetchRoom, fetchPlayers, fetchAllPages, fetchPrevPage,
-  submitPage, fillMissingPage, setReady as apiSetReady, touchPlayer, setConnected,
-  startGame, advance as apiAdvance, promoteSelfHost, serverNow, subscribeRoom,
+  joinRoom, fetchRoom, fetchPlayers, roomState, fetchPrevPage,
+  submitPage, submittedSeats as apiSubmittedSeats, fetchAllPages,
+  setReady as apiSetReady, touchPlayer, startGame, advance as apiAdvance,
+  promoteSelfHost, serverNow, subscribeRoom, joinChannel, getToken,
 } from '../../lib/garticRooms.js'
-import { seatTask, seatForBook } from './logic/rotation.js'
-import { shouldAdvance, missingSeats } from './logic/hostLoop.js'
+import { seatTask } from './logic/rotation.js'
+import { shouldAdvance } from './logic/hostLoop.js'
 
 const HOST_DEAD_MS = 22000 // hôte sans heartbeat depuis >22s = décroché
 
@@ -17,6 +19,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const [room, setRoom] = useState(null)
   const [players, setPlayers] = useState([])
   const [pages, setPages] = useState([])
+  const [presence, setPresence] = useState(() => new Set()) // user_ids présents (canal realtime)
   const [spectator, setSpectator] = useState(false)
   const [error, setError] = useState('')
   const [ready, setReadyState] = useState(false) // état de chargement initial
@@ -28,22 +31,20 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const advancingRef = useRef(false)
   const migratingRef = useRef(false)
   const joinedRef = useRef(false)
+  const chRef = useRef(null)         // canal presence/broadcast
 
-  // ── Refetch complet (room + players + pages) ──────────────────────────────
+  // ── Refetch complet (room + players ; pages au reveal) ────────────────────
   const refresh = useCallback(async () => {
     if (!code) return
     if (refreshing.current) { refreshQueued.current = true; return }
     refreshing.current = true
     try {
-      const r = await fetchRoom(code)
-      if (!r) { setError('introuvable'); setRoom(null); return }
-      const [pl, pg] = await Promise.all([
-        fetchPlayers(r.id),
-        // Les pages ne sont lisibles côté serveur qu'au reveal ; en jeu, fetchPrevPage
-        // (RPC/sélectif) gère la page courante. On charge tout au reveal/finished.
-        ['reveal', 'finished'].includes(r.status) ? fetchAllPages(r.id) : Promise.resolve([]),
-      ])
-      setRoom(r); setPlayers(pl); setPages(pg)
+      const st = await roomState(code)
+      if (!st?.room) { setError('introuvable'); setRoom(null); return }
+      setRoom(st.room); setPlayers(st.players || [])
+      // Pages lisibles serveur uniquement au reveal ; en jeu, fetchPrevPage (RPC) gère
+      // la page courante. On charge tout l'album au reveal/finished.
+      if (['reveal', 'finished'].includes(st.room.status)) setPages(await fetchAllPages(code))
     } catch {
       // jamais casser la boucle live sur une erreur réseau
     } finally {
@@ -59,12 +60,14 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     return () => { alive = false }
   }, [])
 
-  // ── Mount : join + premier refresh + abonnement realtime + heartbeat ──────
+  // ── Mount : join (token) + abonnement realtime + canal presence + heartbeat ─
   useEffect(() => {
     if (!code || !userId) return
-    let stop = false, roomIdForSub = null, unsub = null, hb = null, watchdog = null
+    let stop = false, unsub = null, hb = null, watchdog = null
 
     const init = async () => {
+      // Reconnexion : getToken(code) relit le token depuis sessionStorage si présent ;
+      // joinRoom le rafraîchit de toute façon (idempotent côté serveur).
       const res = await joinRoom({ code, userId, displayName, avatarUrl })
       if (stop) return
       if (res.error === 'introuvable') { setError('introuvable'); setReadyState(true); return }
@@ -72,15 +75,19 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       joinedRef.current = !res.spectator
       const r = res.room
       if (r) {
-        roomIdForSub = r.id
         unsub = subscribeRoom(r.id, () => { if (!stop) refresh() })
-        await touchPlayer(r.id, userId).catch(() => {})
+        chRef.current = joinChannel(code, {
+          userId, displayName, avatarUrl,
+          onPresence: (state) => { if (!stop) setPresence(new Set(Object.keys(state || {}))) },
+          onBroadcast: () => { if (!stop) refresh() }, // player_submitted / phase_change / host_migrated
+        })
+        await touchPlayer(code).catch(() => {})
       }
       await refresh()
       setReadyState(true)
 
-      // Heartbeat 10s : maintient connected=true + last_seen frais.
-      hb = setInterval(() => { if (roomIdForSub && !spectator) touchPlayer(roomIdForSub, userId) }, 10000)
+      // Heartbeat 10s : maintient connected=true + last_seen frais côté serveur.
+      hb = setInterval(() => { if (!stop && !res.spectator) touchPlayer(code) }, 10000)
 
       // Watchdog realtime : resync au focus (canal mort en veille).
       const onFocus = () => { if (!document.hidden) refresh() }
@@ -93,16 +100,13 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     }
     init()
 
-    const onUnload = () => { if (roomIdForSub) setConnected(roomIdForSub, userId, false) }
-    window.addEventListener('beforeunload', onUnload)
-
     return () => {
       stop = true
       try { unsub?.() } catch {}
+      try { chRef.current?.leave() } catch {}
+      chRef.current = null
       if (hb) clearInterval(hb)
       watchdog?.()
-      window.removeEventListener('beforeunload', onUnload)
-      if (roomIdForSub) setConnected(roomIdForSub, userId, false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, userId])
@@ -120,6 +124,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const isHost = !!me?.is_host
   const phaseEndsAtMs = room?.phase_ends_at ? new Date(room.phase_ends_at).getTime() : null
 
+  // Joueurs « connectés » = vus par le canal presence (fallback : flag DB connected).
+  const connectedPlayers = useMemo(() => {
+    if (presence.size === 0) return players
+    return players.map((p) => ({ ...p, connected: presence.has(String(p.user_id)) || p.connected }))
+  }, [players, presence])
+
   const remaining = useMemo(() => {
     if (!phaseEndsAtMs) return null
     return Math.max(0, (phaseEndsAtMs - serverNowMs()) / 1000)
@@ -132,9 +142,9 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     return seatTask(me.seat, room.current_round, n)
   }, [me, room?.status, room?.current_round, n])
 
-  // Sièges ayant déjà soumis ce round (déduit des pages côté reveal, sinon via état).
-  // En jeu on ne lit pas les pages des autres (RLS) → on s'appuie sur le compteur
-  // dérivé par le serveur si présent ; sinon on suit nos propres soumissions.
+  // Sièges ayant déjà soumis ce round. En jeu on ne lit pas les pages des autres (RLS) →
+  // l'hôte interroge submittedSeats(code) (dérivé serveur) ; les clients suivent leurs
+  // propres soumissions + les broadcasts player_submitted.
   const [submittedSeats, setSubmittedSeats] = useState(() => new Set())
   const [mySubmitted, setMySubmitted] = useState(false)
   // Reset des soumissions à chaque changement de round/phase.
@@ -143,78 +153,55 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     setMySubmitted(false)
   }, [room?.current_round, room?.status])
 
-  // ── Actions exposées ──────────────────────────────────────────────────────
+  // ── Actions exposées (token implicite via le code) ────────────────────────
   const start = useCallback(async (settings) => {
-    if (!room) return
     setError('')
-    const out = await startGame(room.id, settings)
-    if (out?.error) setError(out.error)
+    const out = await startGame(code, settings)
+    const j = Array.isArray(out?.data) ? out.data[0] : out?.data
+    if (j?.error) setError(j.error)
+    chRef.current?.send('phase_change', { status: 'writing' })
     await refresh()
-  }, [room, refresh])
+  }, [code, refresh])
 
   const advance = useCallback(async () => {
-    if (!room) return
-    await apiAdvance(room.id)
+    await apiAdvance(code)
+    chRef.current?.send('phase_change', {})
     await refresh()
-  }, [room, refresh])
+  }, [code, refresh])
 
-  const setReady = useCallback(async (b) => {
-    if (!room) return
-    await apiSetReady(room.id, userId, b)
-  }, [room, userId])
+  const setReady = useCallback(async (b) => { await apiSetReady(code, b) }, [code])
 
   const submit = useCallback(async (content) => {
-    if (!room || !myTask) return { error: 'no_task' }
-    const out = await submitPage({
-      roomId: room.id, bookId: myTask.book, pageIndex: myTask.pageIndex,
-      type: myTask.type, content: content ?? (myTask.type === 'drawing' ? '' : '—'),
-      authorUserId: userId,
-    })
+    const out = await submitPage(code, content)
     if (!out.error) {
       setMySubmitted(true)
       if (me?.seat != null) setSubmittedSeats((s) => new Set(s).add(me.seat))
+      chRef.current?.send('player_submitted', { seat: me?.seat })
     }
     return out
-  }, [room, myTask, userId, me])
+  }, [code, me])
 
-  const prevPage = useCallback(async () => {
-    if (!room || !myTask) return null
-    return fetchPrevPage(room.id, myTask.book, room.current_round)
-  }, [room, myTask])
+  const prevPage = useCallback(async () => fetchPrevPage(code), [code])
+  const allPages = useCallback(async () => fetchAllPages(code), [code])
 
-  const allPages = useCallback(async () => {
-    if (!room) return []
-    return fetchAllPages(room.id)
-  }, [room])
-
-  // ── Boucle hôte : avance la partie ────────────────────────────────────────
+  // ── Boucle hôte : avance la partie (fill serveur) ─────────────────────────
   useEffect(() => {
     if (!isHost || !room) return
     let stop = false
     const loop = setInterval(async () => {
       if (stop || advancingRef.current) return
       if (!['writing', 'drawing', 'describing'].includes(room.status)) return
-      const round = room.current_round
-      // RLS ouverte (v1) : l'hôte lit toutes les pages → vrai set des sièges ayant soumis
-      // ce round (déduit du book_id via seatForBook). Évite d'écraser les vraies pages.
-      const pg = await fetchAllPages(room.id).catch(() => [])
-      const submittedBooks = new Set(pg.filter((p) => p.page_index === round).map((p) => p.book_id))
-      const realSubmitted = new Set([...submittedBooks].map((b) => seatForBook(b, round, n)))
+      const { round, seats } = await apiSubmittedSeats(code)
+      if (round !== room.current_round) return
       const decision = shouldAdvance(
         { status: room.status, phaseEndsAtMs, current_round: round },
-        players, realSubmitted, serverNowMs(),
+        connectedPlayers, seats, serverNowMs(),
       )
       if (!decision) return
       advancingRef.current = true
       try {
-        // Comble UNIQUEMENT les sièges réellement manquants, sans écraser (ignore-duplicates).
-        const missing = missingSeats(players, realSubmitted, n)
-        await Promise.all(missing.map((seat) => {
-          const t = seatTask(seat, round, n)
-          if (!t) return Promise.resolve()
-          return fillMissingPage({ roomId: room.id, bookId: t.book, pageIndex: t.pageIndex, type: t.type }).catch(() => {})
-        }))
-        await apiAdvance(room.id)
+        await apiAdvance(code)          // le serveur comble les sièges manquants
+        chRef.current?.send('phase_change', {})
         await refresh()
       } finally {
         // petit délai pour laisser le nouveau round se propager avant de re-décider
@@ -223,32 +210,34 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     }, 2000)
     return () => { stop = true; clearInterval(loop) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHost, room?.status, room?.current_round, phaseEndsAtMs, players, n])
+  }, [isHost, room?.status, room?.current_round, phaseEndsAtMs, connectedPlayers, n, code])
 
-  // ── Migration d'hôte : le plus petit siège connecté se promeut si l'hôte est mort ─
+  // ── Migration d'hôte : pré-filtre local, validation serveur ───────────────
+  // Déclencheur local (host mort >22s, plus petit siège connecté) ; le serveur
+  // re-valide candidat + staleness dans gartic_promote_host.
   useEffect(() => {
     if (!room || !me || spectator) return
     if (isHost) return
     const now = serverNowMs()
-    const hostAlive = players.some((p) => p.is_host && p.connected &&
+    const hostAlive = connectedPlayers.some((p) => p.is_host && p.connected &&
       (!p.last_seen || now - new Date(p.last_seen).getTime() < HOST_DEAD_MS))
     if (hostAlive) return
-    // Candidat = plus petit siège parmi les connectés vivants.
-    const alive = players.filter((p) => p.connected && p.seat != null &&
+    const alive = connectedPlayers.filter((p) => p.connected && p.seat != null &&
       (!p.last_seen || now - new Date(p.last_seen).getTime() < HOST_DEAD_MS))
     if (alive.length === 0) return
     const lowest = alive.reduce((a, b) => (a.seat <= b.seat ? a : b))
     if (String(lowest.user_id) !== String(userId)) return
     if (migratingRef.current) return
     migratingRef.current = true
-    promoteSelfHost(room.id, userId)
+    promoteSelfHost(code)
+      .then((res) => { if (res?.ok) chRef.current?.send('host_migrated', {}) })
       .then(() => refresh())
       .finally(() => { setTimeout(() => { migratingRef.current = false }, 3000) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room, players, me, isHost, spectator, userId, tick])
+  }, [room, connectedPlayers, me, isHost, spectator, userId, tick, code])
 
   return {
-    room, players, me, n, myTask, remaining, isHost, spectator, error, ready,
+    room, players: connectedPlayers, me, n, myTask, remaining, isHost, spectator, error, ready,
     mySubmitted, submittedSeats,
     start, advance, setReady, submit, prevPage, allPages, refresh,
     serverNowMs,
