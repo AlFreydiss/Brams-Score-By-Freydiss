@@ -9,6 +9,7 @@ import { C, GRAD, alpha, panel, pageBg, dotGrid, KEYFRAMES } from './theme.js'
 import { Btn, Waiting } from './ui.jsx'
 import { createRoom, genRoomCode, guestId } from '../../lib/garticRooms.js'
 import { useGarticRoom } from './useGarticRoom.js'
+import { playSound, vibrate, isMuted, toggleMuted } from './sound.js'
 import Lobby from './Lobby.jsx'
 import WritePhase from './WritePhase.jsx'
 import DrawPhase from './DrawPhase.jsx'
@@ -16,13 +17,40 @@ import DescribePhase from './DescribePhase.jsx'
 import Reveal from './Reveal.jsx'
 
 const Shell = ({ children }) => (
-  <div style={{ minHeight: '100vh', background: C.bg, color: C.text, paddingTop: 92, paddingBottom: 56, position: 'relative', overflowX: 'hidden', fontFamily: fonts.body }}>
+  <div className="bp-page" style={{ minHeight: '100vh', background: C.bg, color: C.text, paddingTop: 92, paddingBottom: 56, position: 'relative', overflowX: 'hidden', fontFamily: fonts.body }}>
     <style>{KEYFRAMES}</style>
+    <style>{`
+      .bp-page :focus-visible{ outline:2px solid ${C.gold}; outline-offset:2px; border-radius:10px }
+      @media (max-width:760px){
+        .bp-landing-grid{ grid-template-columns:1fr !important; gap:24px !important; min-height:0 !important }
+        .bp-landing-aside{ display:none !important }
+      }
+    `}</style>
     <div style={pageBg} />
     <div style={dotGrid} />
     <div style={{ position: 'relative', zIndex: 2, width: 'min(1180px, calc(100% - 28px))', margin: '0 auto' }}>{children}</div>
   </div>
 )
+
+// Bannière "reconnexion" quand le réseau tombe (les actions realtime/RLS échouent hors-ligne).
+function OfflineBanner() {
+  const [online, setOnline] = useState(typeof navigator === 'undefined' || navigator.onLine !== false)
+  useEffect(() => {
+    const on = () => setOnline(true), off = () => setOnline(false)
+    window.addEventListener('online', on); window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
+  if (online) return null
+  return (
+    <div role="status" style={{ position: 'fixed', top: 70, left: '50%', transform: 'translateX(-50%)', zIndex: 50,
+      display: 'flex', alignItems: 'center', gap: 9, padding: '9px 16px', borderRadius: 999,
+      background: alpha(C.warn, 0.16), border: `1px solid ${alpha(C.warn, 0.5)}`, color: C.parchment,
+      ...type.small, backdropFilter: 'blur(8px)', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.warn, animation: 'bp-pulse 1.2s ease-in-out infinite' }} />
+      Reconnexion…
+    </div>
+  )
+}
 
 function normalize(c) { return (c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) }
 
@@ -45,7 +73,7 @@ function Landing({ identity, onCreated }) {
 
   return (
     <Shell>
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.05fr) minmax(340px,0.78fr)', gap: 36, alignItems: 'center', minHeight: 'min(560px, calc(100vh - 180px))' }}>
+      <div className="bp-landing-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.05fr) minmax(340px,0.78fr)', gap: 36, alignItems: 'center', minHeight: 'min(560px, calc(100vh - 180px))' }}>
         <div style={{ maxWidth: 600 }}>
           <div data-bp-anim style={{ display: 'inline-flex', alignItems: 'center', gap: 9, marginBottom: 20, padding: '7px 14px', borderRadius: 999, ...type.eyebrow, color: C.gold, background: alpha(C.gold, 0.1), border: `1px solid ${alpha(C.gold, 0.26)}` }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.gold, animation: 'bp-pulse 2s ease-in-out infinite' }} />
@@ -77,7 +105,7 @@ function Landing({ identity, onCreated }) {
             </p>
           )}
         </div>
-        <div data-bp-anim style={{ ...panel, padding: 30, textAlign: 'center', animation: 'bp-float 7s ease-in-out infinite' }}>
+        <div data-bp-anim className="bp-landing-aside" style={{ ...panel, padding: 30, textAlign: 'center', animation: 'bp-float 7s ease-in-out infinite' }}>
           <div style={{ fontSize: 64, marginBottom: 10 }}>🏴‍☠️</div>
           <div style={{ ...type.h2, color: C.parchment, marginBottom: 6 }}>Le téléphone arabe</div>
           <div style={{ ...type.body, color: C.textMut }}>version pirate de Brams</div>
@@ -124,6 +152,37 @@ function Room({ code, identity, navigate, copied, onCopy }) {
     return room.settings.phaseDurations[room.current_phase] || null
   }, [room?.settings, room?.current_phase])
 
+  const status = room?.status
+  const [muted, setMutedState] = useState(isMuted())
+  const onToggleMute = () => setMutedState(toggleMuted())
+
+  // Feedback sensoriel : sons + vibrations aux moments clés (hooks AVANT tout return).
+  const prevStatusRef = useRef(null)
+  useEffect(() => {
+    if (!status) return
+    const prev = prevStatusRef.current
+    prevStatusRef.current = status
+    if (prev === null || prev === status) return // pas de son au montage initial
+    if (status === 'reveal' || status === 'finished') { playSound('reveal'); vibrate([20, 40, 30]) }
+    else { playSound('phase'); if (myTask) vibrate(30) }
+  }, [status, myTask])
+
+  useEffect(() => { if (mySubmitted) { playSound('submit'); vibrate(20) } }, [mySubmitted])
+
+  const prevCountRef = useRef(0)
+  useEffect(() => {
+    const c = players.length
+    if (status === 'lobby' && c > prevCountRef.current && prevCountRef.current > 0) playSound('join')
+    prevCountRef.current = c
+  }, [players.length, status])
+
+  const lastTickRef = useRef(-1)
+  useEffect(() => {
+    if (remaining == null || !['writing', 'drawing', 'describing'].includes(status)) { lastTickRef.current = -1; return }
+    const s = Math.ceil(remaining)
+    if (s > 0 && s <= 5 && s !== lastTickRef.current) { lastTickRef.current = s; playSound('tick') }
+  }, [remaining, status])
+
   if (error === 'introuvable') {
     return (
       <Shell>
@@ -143,10 +202,9 @@ function Room({ code, identity, navigate, copied, onCopy }) {
     return <Shell><div style={{ ...panel, maxWidth: 440, margin: '70px auto 0', padding: 30 }}><Waiting label={`Connexion au salon ${code}…`} /></div></Shell>
   }
 
-  const status = room.status
-
   return (
     <Shell>
+      <OfflineBanner />
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
         <Btn variant="ghost" onClick={() => navigate('/brams-phone')} style={{ minHeight: 40, padding: '0 14px', fontSize: 13 }}>← Quitter</Btn>
@@ -154,12 +212,19 @@ function Room({ code, identity, navigate, copied, onCopy }) {
           <span style={{ ...type.small, color: C.textMut }}>CODE</span>
           <strong style={{ ...type.h3, color: C.parchment, letterSpacing: '0.18em' }}>{room.code}</strong>
         </div>
-        <div style={{ marginLeft: 'auto', ...type.small, color: C.textMut }}>
-          👥 {players.filter((p) => p.connected !== false).length}
-          {status !== 'lobby' && status !== 'reveal' && status !== 'finished' && <> · manche {(room.current_round ?? 0) + 1}/{n}</>}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ ...type.small, color: C.textMut }}>
+            👥 {players.filter((p) => p.connected !== false).length}
+            {status !== 'lobby' && status !== 'reveal' && status !== 'finished' && <> · manche {(room.current_round ?? 0) + 1}/{n}</>}
+          </span>
+          <button onClick={onToggleMute} aria-label={muted ? 'Activer le son' : 'Couper le son'} title={muted ? 'Activer le son' : 'Couper le son'}
+            style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${C.hairSoft}`, background: 'rgba(255,255,255,0.04)', color: C.text, cursor: 'pointer', fontSize: 16, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+            {muted ? '🔇' : '🔊'}
+          </button>
         </div>
       </div>
 
+      <div key={status} style={{ animation: 'bp-rise .42s cubic-bezier(.16,1,.3,1)' }}>
       {status === 'lobby' && (
         <Lobby room={room} players={players} me={me} isHost={isHost} spectator={spectator}
           onStart={start} onSetReady={setReady} onCopy={onCopy} copied={copied} />
@@ -192,6 +257,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
         <Reveal room={room} players={players} n={n} isHost={isHost} allPages={allPages}
           onReplay={() => navigate('/brams-phone')} />
       )}
+      </div>
     </Shell>
   )
 }
