@@ -53,6 +53,19 @@ export async function track(eventType, metadata = {}, page = window.location.pat
   } catch (e) { console.debug('[analytics]', e); }
 }
 
+/**
+ * Réponse au sondage "Comment avez-vous connu le site ?".
+ * Écrit sur la session analytics courante (RLS autorise l'update anon de sa session).
+ * setAcquisitionSource('TikTok') | setAcquisitionSource('Autre', 'un pote sur Twitch')
+ */
+export async function setAcquisitionSource(source, detail = null) {
+  try {
+    await supabase.from('analytics_sessions')
+      .update({ acquisition_source: source, acquisition_detail: detail })
+      .eq('session_id', sid());
+  } catch (e) { console.debug('[analytics]', e); }
+}
+
 // ---------- interne ----------
 async function upsertSession() {
   const row = {

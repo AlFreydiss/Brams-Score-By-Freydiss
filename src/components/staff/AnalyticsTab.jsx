@@ -267,6 +267,44 @@ function TopList({ title, rows, empty }) {
   );
 }
 
+// ── Sources d'acquisition ───────────────────────────────────────
+const ACQ_ICONS = {
+  'Discord': '💬', 'Ami / bouche-à-oreille': '🤝', 'TikTok': '🎵', 'YouTube': '▶️',
+  'Instagram': '📸', 'Twitter/X': '🐦', 'Reddit': '👽', 'Google / recherche': '🔍', 'Autre': '✏️',
+};
+function AcquisitionPanel({ data }) {
+  const total = data?.total || 0;
+  const rows = Array.isArray(data?.sources) ? data.sources : [];
+  const max = Math.max(1, ...rows.map(r => Number(r.count) || 0));
+  return (
+    <div style={card({ flex:'1 1 320px', minWidth:280 })}>
+      <div style={{ ...label, marginBottom:12 }}>🌐 Sources d'acquisition · {total} réponse{total>1?'s':''}</div>
+      {rows.length === 0 ? (
+        <div style={{ fontSize:13, color:C.muted }}>Aucune réponse pour l'instant — le sondage s'affiche à la 1ère visite.</div>
+      ) : rows.map((r) => {
+        const cnt = Number(r.count) || 0;
+        const pct = total ? Math.round((cnt / total) * 100) : 0;
+        return (
+          <div key={r.source} style={{ marginBottom:10 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:13, marginBottom:4 }}>
+              <span style={{ display:'flex', alignItems:'center', gap:8, minWidth:0 }}>
+                <span style={{ flexShrink:0 }}>{ACQ_ICONS[r.source] || '🌐'}</span>
+                <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.source}</span>
+              </span>
+              <span style={{ fontSize:12, color:C.muted, flexShrink:0, marginLeft:8, fontVariantNumeric:'tabular-nums' }}>
+                {cnt} <span style={{ opacity:.6 }}>({pct}%)</span>
+              </span>
+            </div>
+            <div style={{ height:6, borderRadius:3, background:'rgba(255,255,255,0.06)' }}>
+              <div style={{ height:'100%', width:`${(cnt/max)*100}%`, borderRadius:3, background:C.gold, transition:'width .5s ease' }}/>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Composant principal ─────────────────────────────────────────
 export default function AnalyticsTab() {
   const [ov, setOv]           = useState(null);
@@ -275,6 +313,7 @@ export default function AnalyticsTab() {
   const [topAnimes, setTA]    = useState([]);
   const [online, setOnline]   = useState([]);
   const [feed, setFeed]       = useState([]);
+  const [acq, setAcq]         = useState({ total:0, sources:[] });
   const [period, setPeriod]   = useState(14);
   const [error, setError]     = useState(null);
   const [lastUpdate, setLast] = useState(null);
@@ -284,15 +323,16 @@ export default function AnalyticsTab() {
     // hanger sur le verrou d'auth → load() ne se terminait jamais et les KPI
     // restaient à 0 SANS erreur. sbRpc renvoie le résultat direct (objet/array),
     // ou { ok:false, error } en cas d'échec (clé absente, réseau…).
-    const [a, b, c, d, e, f] = await Promise.all([
+    const [a, b, c, d, e, f, g] = await Promise.all([
       sbRpc('analytics_overview',    { p_key:KEY }),
       sbRpc('analytics_daily',       { p_key:KEY, p_days:period }),
       sbRpc('analytics_top_pages',   { p_key:KEY, p_days:period, p_limit:6 }),
       sbRpc('analytics_top_events',  { p_key:KEY, p_event:'anime_view', p_days:period, p_limit:6 }),
       sbRpc('analytics_online_users',{ p_key:KEY }),
       sbRpc('analytics_live_feed',   { p_key:KEY, p_limit:35 }),
+      sbRpc('analytics_acquisition', { p_key:KEY, p_days:period }),
     ]);
-    const fail = [a,b,c,d,e,f].find(r => r && r.ok === false);
+    const fail = [a,b,c,d,e,f,g].find(r => r && r.ok === false);
     if (fail) { setError(fail.error || 'Erreur analytics'); return; }
     setOv(a || null);
     setDaily(Array.isArray(b) ? b : []);
@@ -300,6 +340,7 @@ export default function AnalyticsTab() {
     setTA(Array.isArray(d) ? d : []);
     setOnline(Array.isArray(e) ? e : []);
     setFeed(Array.isArray(f) ? f : []);
+    setAcq(g && Array.isArray(g.sources) ? g : { total:0, sources:[] });
     setError(null); setLast(new Date());
   }, [period]);
 
@@ -383,6 +424,9 @@ export default function AnalyticsTab() {
           empty="Pas encore de données — pense à appeler track('anime_view', { title }) sur ta page anime."
         />
       </div>
+
+      {/* ── Sources d'acquisition ── */}
+      <AcquisitionPanel data={acq} />
 
     </div>
   );

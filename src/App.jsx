@@ -18,6 +18,7 @@ import NotificationToast from './components/social/NotificationToast.jsx'
 import CallOverlay from './components/social/CallOverlay.jsx'
 import WelcomeAnimation from './components/WelcomeAnimation.jsx'
 import AmelWelcome from './components/AmelWelcome.jsx'
+import AcquisitionModal from './components/AcquisitionModal.jsx'
 import AuthGuard from './components/AuthGuard.jsx'
 import ComingSoon from './components/ComingSoon.jsx'
 import Navbar from './components/Navbar.jsx'
@@ -573,6 +574,7 @@ export default function App() {
       <EquippedOpeningBackground />
       <NotificationToast />
       <AmelWelcome />
+      <AcquisitionModal discordId={discordId} authReady={!loading} />
       <CallOverlay />
       <Suspense fallback={
         <div style={{
