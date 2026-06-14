@@ -3147,7 +3147,12 @@ requestAnimationFrame(loop);
     let session=null
     try{ const raw=localStorage.getItem('sb-'+ref+'-auth-token'); if(raw){const w=JSON.parse(raw); session=w.currentSession||w;} }catch(e){}
     const mod=await import('https://esm.sh/@supabase/supabase-js@2')
-    D.sb=mod.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false}})
+    // autoRefreshToken:true → le client rafraîchit le JWT avant expiration (~1h) et repousse
+    // le token frais au socket Realtime (realtime.setAuth via TOKEN_REFRESHED). Sans ça, après
+    // une longue attente en lobby, presence/broadcast (prêt, lancer) + écritures RLS osu_rooms
+    // cassaient (JWT expiré). persistSession:false conservé (ne pas écraser la session SPA) ;
+    // la rotation du refresh_token reste gérée en mémoire par le client.
+    D.sb=mod.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:true}})
     if(session&&session.access_token){ try{ await D.sb.auth.setSession({access_token:session.access_token,refresh_token:session.refresh_token||''}); }catch(e){} }
     const u=session&&session.user
     D.me = (u&&(u.user_metadata&&(u.user_metadata.provider_id||u.user_metadata.sub)))
