@@ -1,0 +1,65 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0c0a07;color:#e8e2d4;font-family:Oswald,system-ui,sans-serif;padding:26px;display:flex;gap:46px;justify-content:center}
+  .col{width:340px}
+  h3{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7c7363;margin:0 0 14px;font-weight:600}
+  .list{border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+  .row{display:flex;align-items:stretch;min-height:92;border-bottom:1px solid rgba(255,255,255,.05)}
+  .row:last-child{border-bottom:none}
+  .body{flex:1;background:#100c08}
+
+  /* ===== ACTUEL ===== */
+  .a-cell{width:90px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#241d14,#17110b);border-right:1px solid rgba(212,180,131,.12)}
+  .a-bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .a-lbl{font-variant:small-caps;letter-spacing:.12em;font-size:16px;font-weight:600;text-align:center;text-shadow:0 1px 0 rgba(0,0,0,.6)}
+
+  /* ===== PROPOSÉ ===== */
+  .p-cell{width:90px;flex-shrink:0;position:relative;display:flex;align-items:center;gap:3px;padding:0 5px;
+    border-right:1px solid rgba(212,180,131,.12);overflow:hidden}
+  .p-lbl{flex:1;min-width:0;font-variant:small-caps;letter-spacing:.10em;font-size:15px;font-weight:600;text-align:center;
+    text-shadow:0 1px 2px rgba(0,0,0,.7)}
+  /* equaliseur = 4 barres animees a gauche */
+  .eq{flex-shrink:0;display:flex;align-items:flex-end;gap:2px;height:44px}
+  .eq i{width:3px;border-radius:2px;display:block;background:currentColor;animation:eq 1.1s ease-in-out infinite}
+  .eq i:nth-child(1){height:40%;animation-delay:0s}
+  .eq i:nth-child(2){height:85%;animation-delay:.18s}
+  .eq i:nth-child(3){height:55%;animation-delay:.36s}
+  .eq i:nth-child(4){height:70%;animation-delay:.54s}
+  @keyframes eq{0%,100%{transform:scaleY(.32)}50%{transform:scaleY(1)}}
+</style></head>
+<body>
+
+<div class="col">
+  <h3>◄ Actuel</h3>
+  <div class="list" id="a"></div>
+</div>
+<div class="col">
+  <h3>Proposé ►</h3>
+  <div class="list" id="p"></div>
+</div>
+
+<script>
+  const TIERS=[
+    {n:'ZENO',c:'#C9A24B'},
+    {n:'DAIKAISHIN',c:'#C56B5C'},
+    {n:'BEST',c:'#5E83A6'},
+    {n:'ELITES',c:'#8E6FB0'},
+  ];
+  const A=document.getElementById('a'), P=document.getElementById('p');
+  for(const t of TIERS){
+    A.insertAdjacentHTML('beforeend',
+      `<div class="row"><div class="a-cell"><span class="a-bar" style="background:${t.c};opacity:.92"></span>
+        <span class="a-lbl" style="color:${t.c}">${t.n}</span></div><div class="body"></div></div>`);
+    P.insertAdjacentHTML('beforeend',
+      `<div class="row"><div class="p-cell" style="background:
+          linear-gradient(180deg, ${t.c}2e, ${t.c}10),
+          linear-gradient(180deg,#241d14,#16110b)">
+        <div class="eq" style="color:${t.c}"><i></i><i></i><i></i><i></i></div>
+        <span class="p-lbl" style="color:${t.c}">${t.n}</span></div>
+        <div class="body" style="background:linear-gradient(90deg, ${t.c}0a, #100c08 60%)"></div></div>`);
+  }
+</script>
+</body></html>
