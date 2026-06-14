@@ -2,6 +2,10 @@
 // 4 tailles de pinceau, palette 16 couleurs + sélecteur, gomme, pot de peinture
 // (flood fill), pipette, annuler/refaire/effacer (pile de snapshots). Fond blanc
 // (PNG non transparent). Le canvas est exposé au parent via canvasRef.
+//
+// Phase 2 : pression stylet/doigt → épaisseur variable, traits lissés (quadratique
+// midpoint, fini l'escalier), curseur custom montrant la taille du pinceau, et
+// ergonomie tactile soignée (cf. <style> mobile en bas).
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { type, fonts } from '../../styles/typography.js'
 import { C, alpha } from './theme.js'
@@ -23,17 +27,27 @@ function hexToRgba(hex) {
 
 export default function DrawCanvas({ canvasRef, disabled }) {
   const localRef = useRef(null)
+  const wrapRef = useRef(null)
+  const cursorRef = useRef(null)      // curseur custom (cercle taille pinceau), piloté en impératif
   const ctxRef = useRef(null)
   const drawingRef = useRef(false)
+  // Lissage : on garde le dernier point + le dernier midpoint pour tracer des
+  // courbes quadratiques (control = dernier point, de mid à mid) au lieu de segments.
   const lastRef = useRef(null)
+  const lastMidRef = useRef(null)
 
   const [color, setColor] = useState('#1b1b1b')
   const [size, setSize] = useState(7)
   const [tool, setTool] = useState('brush') // brush | eraser | fill | eyedropper
+  const toolRef = useRef(tool); toolRef.current = tool
+  const colorRef = useRef(color); colorRef.current = color
+  const sizeRef = useRef(size); sizeRef.current = size
   const undoRef = useRef([])
   const redoRef = useRef([])
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+
+  const usesCursor = tool === 'brush' || tool === 'eraser' // les autres gardent un curseur natif
 
   // Init : fond blanc + premier snapshot.
   useEffect(() => {
@@ -95,6 +109,15 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     }
   }
 
+  // Épaisseur effective selon la pression. Souris / pas de capteur → taille pleine ;
+  // stylet/doigt → modulée de ~0.4× (effleurement) à ~1.2× (appui franc), min 1px.
+  const widthFor = (e) => {
+    const s = sizeRef.current
+    const p = e.pressure
+    if (e.pointerType === 'mouse' || p == null || p <= 0) return s
+    return Math.max(1, s * (0.4 + 0.8 * p))
+  }
+
   // Flood fill (scanline simple).
   const floodFill = (sx, sy, fillHex) => {
     const ctx = ctxRef.current
@@ -125,6 +148,24 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     setColor(hex); setTool('brush')
   }
 
+  // ── Curseur custom : cercle de la taille du pinceau qui suit le pointeur ──────
+  // Piloté en impératif (pas de state) pour ne pas re-render à chaque pixel.
+  const moveCursor = (e) => {
+    const cur = cursorRef.current, wrap = wrapRef.current, cv = localRef.current
+    if (!cur || !wrap || !cv) return
+    if (!usesCursor) { cur.style.opacity = '0'; return }
+    const wrapRect = wrap.getBoundingClientRect()
+    const cvRect = cv.getBoundingClientRect()
+    const scale = cvRect.width / W              // px écran par unité interne
+    const d = Math.max(6, sizeRef.current * scale)
+    cur.style.width = `${d}px`; cur.style.height = `${d}px`
+    cur.style.transform = `translate(${e.clientX - wrapRect.left}px, ${e.clientY - wrapRect.top}px) translate(-50%, -50%)`
+    cur.style.borderColor = toolRef.current === 'eraser' ? 'rgba(0,0,0,0.55)' : colorRef.current
+    cur.style.background = toolRef.current === 'eraser' ? 'rgba(255,255,255,0.6)' : alpha(colorRef.current, 0.18)
+    cur.style.opacity = '1'
+  }
+  const hideCursor = () => { if (cursorRef.current) cursorRef.current.style.opacity = '0' }
+
   const onDown = (e) => {
     if (disabled) return
     e.preventDefault()
@@ -134,33 +175,41 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     const ctx = ctxRef.current
     drawingRef.current = true
     lastRef.current = p
+    lastMidRef.current = p
     try { localRef.current.setPointerCapture?.(e.pointerId) } catch {}
-    // point isolé
+    // point isolé (clic sans déplacement)
     ctx.beginPath()
     ctx.fillStyle = tool === 'eraser' ? '#ffffff' : color
-    ctx.arc(p.x, p.y, size / 2, 0, Math.PI * 2)
+    ctx.arc(p.x, p.y, widthFor(e) / 2, 0, Math.PI * 2)
     ctx.fill()
   }
 
   const onMove = (e) => {
+    moveCursor(e)
     if (!drawingRef.current || disabled) return
     e.preventDefault()
     const ctx = ctxRef.current
     const p = pos(e)
     const last = lastRef.current
+    const lastMid = lastMidRef.current
+    const mid = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 }
     ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color
-    ctx.lineWidth = size
+    ctx.lineWidth = widthFor(e)
+    // Courbe quadratique : du dernier midpoint au nouveau, contrôle = dernier point.
+    // Donne un tracé lisse continu (pas d'angles durs entre échantillons).
     ctx.beginPath()
-    ctx.moveTo(last.x, last.y)
-    ctx.lineTo(p.x, p.y)
+    ctx.moveTo(lastMid.x, lastMid.y)
+    ctx.quadraticCurveTo(last.x, last.y, mid.x, mid.y)
     ctx.stroke()
     lastRef.current = p
+    lastMidRef.current = mid
   }
 
   const onUp = () => {
     if (!drawingRef.current) return
     drawingRef.current = false
     lastRef.current = null
+    lastMidRef.current = null
     snapshot()
   }
 
@@ -175,10 +224,15 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [undo, redo])
 
+  // Cache le curseur custom quand on bascule sur un outil sans curseur (sans bouger).
+  useEffect(() => {
+    if (!usesCursor && cursorRef.current) cursorRef.current.style.opacity = '0'
+  }, [usesCursor])
+
   const toolBtn = (id, label, title) => {
     const active = tool === id
     return (
-      <button title={title} onClick={() => setTool(id)} style={{
+      <button title={title} onClick={() => setTool(id)} className="bpc-btn" style={{
         width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 18,
         border: `1px solid ${active ? alpha(C.gold, 0.5) : C.hairSoft}`,
         background: active ? alpha(C.gold, 0.16) : 'rgba(255,255,255,0.04)',
@@ -188,33 +242,44 @@ export default function DrawCanvas({ canvasRef, disabled }) {
   }
 
   return (
-    <div style={{ display: 'grid', gap: 14, opacity: disabled ? 0.7 : 1 }}>
+    <div className="bpc-root" style={{ display: 'grid', gap: 14, opacity: disabled ? 0.7 : 1 }}>
       {/* Toile */}
-      <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.hairTop}`, boxShadow: '0 20px 50px rgba(0,0,0,0.4)', background: '#fff' }}>
+      <div ref={wrapRef} className="bpc-wrap" style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.hairTop}`, boxShadow: '0 20px 50px rgba(0,0,0,0.4)', background: '#fff', touchAction: 'none' }}>
         <canvas
           ref={localRef}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
-          onPointerLeave={onUp}
-          onPointerCancel={onUp}
-          style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: `${W} / ${H}`, touchAction: 'none', cursor: tool === 'fill' ? 'cell' : tool === 'eyedropper' ? 'crosshair' : 'crosshair' }}
+          onPointerLeave={(e) => { hideCursor(); onUp(e) }}
+          onPointerCancel={(e) => { hideCursor(); onUp(e) }}
+          onPointerEnter={moveCursor}
+          style={{
+            display: 'block', width: '100%', height: 'auto', aspectRatio: `${W} / ${H}`,
+            touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
+            cursor: usesCursor ? 'none' : tool === 'fill' ? 'cell' : 'crosshair',
+          }}
         />
+        {/* Curseur custom (cercle taille pinceau). pointerEvents:none = transparent aux events. */}
+        <div ref={cursorRef} aria-hidden style={{
+          position: 'absolute', top: 0, left: 0, width: 14, height: 14, borderRadius: '50%',
+          border: '2px solid #1b1b1b', boxShadow: '0 0 0 1px rgba(255,255,255,0.85)',
+          pointerEvents: 'none', opacity: 0, willChange: 'transform', zIndex: 2,
+        }} />
       </div>
 
       {/* Barre d'outils */}
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="bpc-bar" style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         {/* Couleurs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 22px)', gap: 5 }}>
+        <div className="bpc-palette" style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 22px)', gap: 5 }}>
           {PALETTE.map((c) => (
-            <button key={c} onClick={() => { setColor(c); setTool('brush') }} title={c} style={{
+            <button key={c} onClick={() => { setColor(c); setTool('brush') }} title={c} className="bpc-swatch" style={{
               width: 22, height: 22, borderRadius: 6, cursor: 'pointer', background: c,
               border: color === c ? `2px solid ${C.gold}` : '1px solid rgba(0,0,0,0.25)',
               boxShadow: color === c ? `0 0 0 2px ${alpha(C.gold, 0.3)}` : 'none',
             }} />
           ))}
         </div>
-        <label style={{ width: 34, height: 34, borderRadius: 9, overflow: 'hidden', cursor: 'pointer', border: `1px solid ${C.hairTop}`, display: 'grid', placeItems: 'center', background: color, position: 'relative' }} title="Couleur perso">
+        <label className="bpc-btn" style={{ width: 34, height: 34, borderRadius: 9, overflow: 'hidden', cursor: 'pointer', border: `1px solid ${C.hairTop}`, display: 'grid', placeItems: 'center', background: color, position: 'relative' }} title="Couleur perso">
           <input type="color" value={color} onChange={(e) => { setColor(e.target.value); setTool('brush') }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
           <span style={{ fontSize: 13, mixBlendMode: 'difference', color: '#fff' }}>🎨</span>
         </label>
@@ -222,7 +287,7 @@ export default function DrawCanvas({ canvasRef, disabled }) {
         {/* Tailles */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {SIZES.map((s) => (
-            <button key={s} onClick={() => setSize(s)} title={`${s}px`} style={{
+            <button key={s} onClick={() => setSize(s)} title={`${s}px`} className="bpc-btn" style={{
               width: 38, height: 38, borderRadius: 10, cursor: 'pointer', display: 'grid', placeItems: 'center',
               border: `1px solid ${size === s ? alpha(C.gold, 0.5) : C.hairSoft}`,
               background: size === s ? alpha(C.gold, 0.16) : 'rgba(255,255,255,0.04)',
@@ -241,12 +306,26 @@ export default function DrawCanvas({ canvasRef, disabled }) {
         </div>
 
         {/* Historique */}
-        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-          <button onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)" style={histBtn(canUndo)}>↶</button>
-          <button onClick={redo} disabled={!canRedo} title="Refaire (Ctrl+Y)" style={histBtn(canRedo)}>↷</button>
-          <button onClick={clearAll} title="Tout effacer" style={{ ...histBtn(true), color: C.danger, fontFamily: fonts.body, fontSize: 13, fontWeight: 800, width: 'auto', padding: '0 12px' }}>Effacer</button>
+        <div className="bpc-hist" style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+          <button onClick={undo} disabled={!canUndo} title="Annuler (Ctrl+Z)" className="bpc-btn" style={histBtn(canUndo)}>↶</button>
+          <button onClick={redo} disabled={!canRedo} title="Refaire (Ctrl+Y)" className="bpc-btn" style={histBtn(canRedo)}>↷</button>
+          <button onClick={clearAll} title="Tout effacer" className="bpc-btn" style={{ ...histBtn(true), color: C.danger, fontFamily: fonts.body, fontSize: 13, fontWeight: 800, width: 'auto', padding: '0 12px' }}>Effacer</button>
         </div>
       </div>
+
+      {/* Ergonomie tactile : sur petit écran on agrandit les cibles et on étale la
+          barre d'outils, et on coupe les gestes parasites (sélection, callout iOS). */}
+      <style>{`
+        .bpc-root { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        .bpc-wrap { overscroll-behavior: contain; }
+        @media (hover: none) and (pointer: coarse) {
+          .bpc-bar { gap: 10px; justify-content: center; }
+          .bpc-palette { grid-template-columns: repeat(8, 30px) !important; gap: 7px !important; }
+          .bpc-swatch { width: 30px !important; height: 30px !important; border-radius: 8px !important; }
+          .bpc-btn { min-width: 48px; min-height: 48px; }
+          .bpc-hist { margin-left: 0 !important; }
+        }
+      `}</style>
     </div>
   )
 }

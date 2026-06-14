@@ -39,6 +39,7 @@ export default function AcquisitionModal({ discordId, authReady = true }) {
     scheduledRef.current = true;
     if (discordId) return;                        // connecté → jamais
     if (localStorage.getItem(DONE_KEY)) return;   // déjà vu → jamais
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/brams-phone')) return; // pas par-dessus le jeu
     const t = setTimeout(() => {
       localStorage.setItem(DONE_KEY, '1');
       setShow(true);
