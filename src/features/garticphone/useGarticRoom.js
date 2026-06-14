@@ -5,10 +5,10 @@
 // le monde a soumis — le serveur comble les manquants), migration d'hôte serveur.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  joinRoom, fetchRoom, fetchPlayers, roomState, fetchPrevPage,
+  joinRoom, roomState, fetchPrevPage,
   submitPage, submittedSeats as apiSubmittedSeats, fetchAllPages,
   setReady as apiSetReady, touchPlayer, startGame, advance as apiAdvance,
-  promoteSelfHost, serverNow, subscribeRoom, joinChannel, getToken,
+  promoteSelfHost, serverNow, subscribeRoom, joinChannel,
 } from '../../lib/garticRooms.js'
 import { seatTask } from './logic/rotation.js'
 import { shouldAdvance } from './logic/hostLoop.js'
@@ -75,12 +75,19 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       joinedRef.current = !res.spectator
       const r = res.room
       if (r) {
-        unsub = subscribeRoom(r.id, () => { if (!stop) refresh() })
-        chRef.current = joinChannel(code, {
+        // StrictMode (mount→clean→remount) : init() est async, donc un mount jeté peut
+        // créer un canal APRÈS son cleanup. On re-vérifie stop avant de stocker, sinon
+        // on démantèle tout de suite → pas de canal orphelin ni de handler doublé.
+        if (stop) return
+        const sub = subscribeRoom(r.id, () => { if (!stop) refresh() })
+        const channel = joinChannel(code, {
           userId, displayName, avatarUrl,
           onPresence: (state) => { if (!stop) setPresence(new Set(Object.keys(state || {}))) },
           onBroadcast: () => { if (!stop) refresh() }, // player_submitted / phase_change / host_migrated
         })
+        if (stop) { try { sub() } catch {}; try { channel.leave() } catch {}; return }
+        unsub = sub
+        chRef.current = channel
         await touchPlayer(code).catch(() => {})
       }
       await refresh()
@@ -125,6 +132,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const phaseEndsAtMs = room?.phase_ends_at ? new Date(room.phase_ends_at).getTime() : null
 
   // Joueurs « connectés » = vus par le canal presence (fallback : flag DB connected).
+  // NOTE Phase 1 : connected reste true côté serveur (pas de setConnected(false)) ; un joueur parti compte "actif" jusqu'à la staleness last_seen — le timeout de phase relance de toute façon. Affinage = phases ultérieures.
   const connectedPlayers = useMemo(() => {
     if (presence.size === 0) return players
     return players.map((p) => ({ ...p, connected: presence.has(String(p.user_id)) || p.connected }))
@@ -164,7 +172,9 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   }, [code, refresh])
 
   const advance = useCallback(async () => {
-    await apiAdvance(code)
+    const out = await apiAdvance(code)
+    const j = Array.isArray(out?.data) ? out.data[0] : out?.data
+    if (j?.error) console.warn('[gartic] advance:', j.error)
     chRef.current?.send('phase_change', {})
     await refresh()
   }, [code, refresh])
