@@ -443,6 +443,18 @@ function ShopBackdrop() {
 
 // ── Recharge de Berrys (top-up € → monnaie du serveur) ───────────────────────
 const fmtBerry = (n) => Number(n || 0).toLocaleString('fr-FR')
+// Pièce « berry » en or ciselée — identité de la monnaie (sobre, pas de glow).
+function BerryCoin({ d = 34, style }) {
+  return (
+    <div style={{ width: d, height: d, borderRadius: '50%', flex: '0 0 auto', display: 'grid', placeItems: 'center', position: 'relative',
+      background: 'radial-gradient(circle at 38% 30%, #efdca6, #cdae66 44%, #a3854a 72%, #74592c 100%)',
+      boxShadow: 'inset 0 1px 1px rgba(255,247,224,0.6), inset 0 -2px 3px rgba(60,42,15,0.55), 0 2px 5px rgba(0,0,0,0.45)',
+      border: '1px solid rgba(120,93,46,0.7)', ...style }}>
+      <div style={{ position: 'absolute', inset: 3, borderRadius: '50%', border: '1px solid rgba(255,243,214,0.28)' }} />
+      <span style={{ fontFamily: "'Pirata One', serif", fontWeight: 400, color: '#3a2c0c', fontSize: Math.round(d * 0.5), lineHeight: 1, textShadow: '0 1px 0 rgba(255,247,224,0.45)', position: 'relative', zIndex: 1 }}>฿</span>
+    </div>
+  )
+}
 function BerryTopupSection({ balance, busyId, onBuy, authed }) {
   return (
     <section id="shop-berrys" style={{ scrollMarginTop: 90, marginBottom: 30, padding: '20px 22px', borderRadius: 18, background: GLASS, border: `1px solid ${GOLD}26` }}>
@@ -452,11 +464,15 @@ function BerryTopupSection({ balance, busyId, onBuy, authed }) {
           <h2 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(24px,3.4vw,34px)', fontWeight: 400, color: '#f4ecd8' }}>Recharge de Berrys</h2>
           <p style={{ margin: '6px 0 0', fontSize: 13.5, color: DIM, maxWidth: 540 }}>Crédite ta cagnotte ฿ pour la boutique, les jeux et les paris du serveur. Crédit instantané sur ton compte Discord.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 14, background: 'rgba(0,0,0,0.28)', border: `1px solid ${HAIR}` }}>
-          <span style={{ fontSize: 20, color: GOLD_HI, fontWeight: 900 }}>฿</span>
-          <div style={{ lineHeight: 1.1 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: FAINT }}>Ton solde</div>
-            <strong style={{ fontSize: 19, color: GOLD_HI }}>{authed ? (balance == null ? '…' : `${fmtBerry(balance)} ฿`) : '—'}</strong>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 16, position: 'relative', overflow: 'hidden',
+          background: 'linear-gradient(180deg, rgba(216,189,126,0.10), rgba(0,0,0,0.30))', border: `1px solid ${GOLD}4d` }}>
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: `linear-gradient(${GOLD_HI}, ${GOLD})` }} />
+          <BerryCoin d={46} />
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: FAINT, marginBottom: 2 }}>Ton solde</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: GOLD_HI, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {authed ? (balance == null ? '…' : <>{fmtBerry(balance)}<span style={{ fontSize: 14, fontWeight: 800, color: GOLD, marginLeft: 3 }}>฿</span></>) : '—'}
+            </div>
           </div>
         </div>
       </div>
@@ -465,15 +481,20 @@ function BerryTopupSection({ balance, busyId, onBuy, authed }) {
           const busy = busyId === `berry:${p.id}`
           const best = p.tag === 'Meilleure offre'
           return (
-            <div key={p.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 9, padding: '18px 16px 16px', borderRadius: 16, background: 'linear-gradient(180deg, rgba(191,164,106,0.07), rgba(255,255,255,0.012))', border: `1px solid ${best ? `${GOLD}55` : HAIR}` }}>
-              {p.tag && <span style={{ position: 'absolute', top: 10, right: 10, fontSize: 9.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: GOLD, background: `${GOLD}16`, border: `1px solid ${GOLD}40`, padding: '3px 8px', borderRadius: 999 }}>{p.tag}</span>}
-              <div style={{ fontSize: 11.5, color: FAINT, fontWeight: 700 }}>Pack</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                <span style={{ fontSize: 25, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{fmtBerry(p.berries)}</span>
-                <span style={{ fontSize: 17, fontWeight: 900, color: GOLD_HI }}>฿</span>
+            <div key={p.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 8, padding: '20px 14px 14px', borderRadius: 16,
+              background: best ? 'linear-gradient(180deg, rgba(216,189,126,0.12), rgba(255,255,255,0.012))' : 'linear-gradient(180deg, rgba(191,164,106,0.06), rgba(255,255,255,0.012))',
+              border: `1px solid ${best ? `${GOLD}73` : HAIR}` }}>
+              {best && <div style={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)', fontSize: 9, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase', color: '#0b0c0e', background: `linear-gradient(${GOLD_HI}, ${GOLD})`, padding: '3px 12px', borderRadius: '0 0 8px 8px' }}>Meilleure offre</div>}
+              <BerryCoin d={best ? 46 : 34} style={best ? { marginTop: 6 } : undefined} />
+              <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', color: best ? GOLD_HI : GOLD }}>{best ? 'le + avantageux' : (p.tag || 'Pack')}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, justifyContent: 'center', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{fmtBerry(p.berries)}</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: GOLD_HI }}>฿</span>
               </div>
               <button className="bsx-btn" disabled={busy} onClick={() => onBuy(p)}
-                style={{ marginTop: 5, padding: '10px 0', borderRadius: 10, border: 'none', background: GOLD, color: '#0b0c0e', fontWeight: 900, fontSize: 13.5, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                style={{ width: '100%', marginTop: 4, padding: '11px 0', borderRadius: 11, border: `1px solid ${best ? `${GOLD}66` : `${GOLD}47`}`,
+                  background: best ? `linear-gradient(180deg, ${GOLD_HI}, ${GOLD})` : 'transparent', color: best ? '#0b0c0e' : GOLD_HI,
+                  fontWeight: 900, fontSize: 13, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
                 {busy ? '…' : `Recharger · ${formatEuroCents(p.priceCents)}`}
               </button>
             </div>
