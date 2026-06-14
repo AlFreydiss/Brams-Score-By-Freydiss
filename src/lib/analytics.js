@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from './supabase.js';
+import { sbRpc } from './supabaseRest.js';
 
 const SESSION_KEY = 'bc_sid';
 const HEARTBEAT_MS = 45_000; // ping toutes les 45s → "en ligne" = last_seen < 2min
@@ -76,7 +77,9 @@ async function upsertSession() {
     user_agent: navigator.userAgent.slice(0, 250),
     referrer: document.referrer ? (() => { try { return new URL(document.referrer).hostname; } catch { return null; } })() : null,
     current_page: window.location.pathname,
-    last_seen: new Date().toISOString(),
+    // last_seen NON renseigné ici → DB default now() (horloge SERVEUR). Écrire un
+    // timestamp client créait un skew vs first_seen (durées négatives). beat() avance
+    // ensuite last_seen via l'RPC analytics_touch (now() serveur aussi).
   };
   // .upsert() (ON CONFLICT DO UPDATE) est refusé par RLS sur Supabase ; insert simple
   // + update simple passent tous les deux. On insère, et si la session existe déjà
@@ -89,9 +92,9 @@ async function upsertSession() {
 
 async function beat(page) {
   try {
-    await supabase.from('analytics_sessions')
-      .update({ last_seen: new Date().toISOString(), current_page: page })
-      .eq('session_id', sid());
+    // RPC serveur (REST direct) : last_seen = now() côté DB → durée de session juste
+    // (plus de skew d'horloge client), et pas de hang du client supabase-js sur l'auth.
+    await sbRpc('analytics_touch', { p_session: sid(), p_page: page }, { tag: 'analytics' });
   } catch (e) { console.debug('[analytics]', e); }
 }
 
