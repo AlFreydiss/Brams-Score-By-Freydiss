@@ -10,6 +10,8 @@ const BG = '#08090d'
 const GAMES = [
   { to: '/fredisu.html', external: true, emoji: '🎯', title: "Fred'isu", tag: 'Rythme', accent: '#d4a017',
     desc: "Rhythm game façon osu! : importe un MP3/MP4, la map se génère par analyse du son calée sur le BPM. Cercles, sliders, spinners, mods HD/HR/DT/FL, leaderboard mondial.", featured: true },
+  { to: '/brams-phone', emoji: '🎨', title: 'Brams Phone', tag: 'Multijoueur', accent: '#2f9e8c',
+    desc: "Téléphone arabe version pirate. Une phrase → un dessin → une devinette… la chaîne dérive entre potes, en direct. Canvas complet, reveal cinématique et réactions emojis en live." },
   { to: '/dames',      emoji: '🔴', title: 'Dames',      tag: 'Classé · ELO', accent: '#e0524a',
     desc: "Dames internationales 10×10 (rafle maximale, dames volantes). Local, vs IA (4 niveaux) ou en ligne classé avec ELO et primes One Piece." },
   { to: '/undercover', emoji: '🕵️', title: 'Undercover', tag: 'Multijoueur', accent: '#5fb88a',
