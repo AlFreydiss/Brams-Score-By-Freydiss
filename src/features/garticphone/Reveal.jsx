@@ -109,11 +109,14 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   // ── Réactions flottantes (spawn DOM + animation CSS GPU, auto-retrait) ───────
   const spawn = useCallback((emoji) => {
     const layer = fxRef.current; if (!layer || !emoji) return
+    if (layer.childElementCount > 60) layer.firstChild?.remove() // anti-flood (peer hostile / spam)
     const el = document.createElement('div')
     el.textContent = emoji
     el.style.cssText = `position:absolute;bottom:6%;left:${8 + Math.random() * 84}%;font-size:${22 + Math.random() * 18}px;pointer-events:none;will-change:transform,opacity;transform:translateX(-50%);animation:bpReact ${1.7 + Math.random() * 1.3}s cubic-bezier(.3,.7,.3,1) forwards`
     layer.appendChild(el)
-    el.addEventListener('animationend', () => el.remove())
+    const kill = () => el.remove()
+    el.addEventListener('animationend', kill)
+    setTimeout(kill, 3600) // filet si animationend ne se déclenche pas (onglet en veille)
   }, [])
 
   useEffect(() => {
@@ -127,14 +130,17 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   // Invité : suit la position broadcastée. Hôte : diffuse sa position courante.
   useEffect(() => {
     if (!guided || !revealStep) return
-    if (typeof revealStep.a === 'number') setAlbumIdx(revealStep.a)
+    // id d'album stable (book = siège auteur) → robuste si la liste filtrée diffère
+    // transitoirement entre pairs (fetch partiel). Index positionnel = page fausse.
+    const idx = albums.findIndex((x) => x.book === revealStep.a)
+    if (idx >= 0) setAlbumIdx(idx)
     if (typeof revealStep.p === 'number') setPageIdx(revealStep.p)
-  }, [guided, revealStep])
+  }, [guided, revealStep, albums])
 
   useEffect(() => {
     if (guided || !albums.length) return
-    sendRevealStep?.({ a: albumIdx, p: pageIdx })
-  }, [guided, albumIdx, pageIdx, albums.length, sendRevealStep])
+    sendRevealStep?.({ a: albums[albumIdx]?.book, p: pageIdx })
+  }, [guided, albumIdx, pageIdx, albums, sendRevealStep])
 
   const next = useCallback(() => {
     if (!album) return

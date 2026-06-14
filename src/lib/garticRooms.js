@@ -170,7 +170,9 @@ export function subscribeRoom(roomId, onChange) {
 // host_migrated (Phase 3 ajoutera reaction).
 export function joinChannel(code, { userId, displayName, avatarUrl, onPresence, onBroadcast }) {
   if (!supabase) return { send: () => {}, leave: () => {} }
-  const ch = supabase.channel(`room:${String(code).toUpperCase()}`, { config: { presence: { key: String(userId) } } })
+  // broadcast.self:false explicite : l'émetteur ne reçoit pas ses propres events
+  // (réactions/reveal_step). C'est le défaut Supabase mais le reveal en dépend → on le fige.
+  const ch = supabase.channel(`room:${String(code).toUpperCase()}`, { config: { presence: { key: String(userId) }, broadcast: { self: false } } })
   ch.on('presence', { event: 'sync' }, () => onPresence?.(ch.presenceState()))
   ch.on('broadcast', { event: '*' }, (p) => onBroadcast?.(p.event, p.payload))
   ch.subscribe((status) => {
