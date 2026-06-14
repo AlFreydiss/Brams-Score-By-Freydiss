@@ -104,6 +104,19 @@ export async function submitPage({ roomId, bookId, pageIndex, type, content, aut
   return { error: error || null }
 }
 
+// Comble un siège manquant SANS écraser une vraie soumission (ignore-duplicates).
+// Utilisé par la boucle hôte au timeout pour ne jamais casser la chaîne (AFK).
+export async function fillMissingPage({ roomId, bookId, pageIndex, type, content }) {
+  const { error } = await rest('gartic_pages?on_conflict=room_id,book_id,page_index', {
+    method: 'POST', prefer: 'resolution=ignore-duplicates,return=minimal',
+    body: {
+      room_id: roomId, book_id: bookId, page_index: pageIndex, type,
+      content: content ?? (type === 'drawing' ? '' : '—'), author_user_id: 'host',
+    },
+  })
+  return { error: error || null }
+}
+
 // Page précédente de mon carnet courant (à dessiner / décrire).
 export async function fetchPrevPage(roomId, bookId, round) {
   if (round <= 0) return null
@@ -128,6 +141,20 @@ export async function touchPlayer(roomId, userId) {
 export async function setConnected(roomId, userId, connected) {
   await rest(`gartic_players?room_id=eq.${enc(roomId)}&user_id=eq.${enc(String(userId))}`,
     { method: 'PATCH', prefer: 'return=minimal', body: { connected } }).catch(() => {})
+}
+
+// Migration d'hôte (modèle Undercover, sans RPC) : le joueur de plus petit siège
+// encore connecté se promeut capitaine quand l'hôte courant a décroché. On retire
+// le flag aux autres puis on se l'attribue + on pointe host_user_id sur soi. La
+// course est tolérée : si deux clients tentent en même temps, les PATCH sont
+// idempotents et le hook ne déclenche que depuis un seul candidat (plus bas siège).
+export async function promoteSelfHost(roomId, userId) {
+  await rest(`gartic_players?room_id=eq.${enc(roomId)}&is_host=eq.true`,
+    { method: 'PATCH', prefer: 'return=minimal', body: { is_host: false } }).catch(() => {})
+  await rest(`gartic_players?room_id=eq.${enc(roomId)}&user_id=eq.${enc(String(userId))}`,
+    { method: 'PATCH', prefer: 'return=minimal', body: { is_host: true } }).catch(() => {})
+  await rest(`gartic_rooms?id=eq.${enc(roomId)}`,
+    { method: 'PATCH', prefer: 'return=minimal', body: { host_user_id: String(userId) } }).catch(() => {})
 }
 
 // ── RPC (horloge serveur + transitions) ─────────────────────────────────────

@@ -89,6 +89,7 @@ const TournamentHubPage  = lazyWithReload(() => import('./components/TournamentH
 const TournamentPage     = lazyWithReload(() => import('./components/TournamentPage.jsx'))
 const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentRoomPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
+const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const EchecsPage         = lazyWithReload(() => import('./features/echecs/EchecsPage.jsx'))
 const DamesPage          = lazyWithReload(() => import('./features/dames/DamesPage.jsx'))
@@ -643,6 +644,10 @@ export default function App() {
         <Route path="/tournoi"       element={<PageLayout><TournamentHubPage /></PageLayout>} />
         <Route path="/tournoi/salon" element={<PageLayout><TournamentRoomPage /></PageLayout>} />
         <Route path="/undercover"    element={<PageLayout><UndercoverPage /></PageLayout>} />
+
+        {/* Brams Phone (Gartic Phone) */}
+        <Route path="/brams-phone"        element={<PageLayout><BramsPhonePage /></PageLayout>} />
+        <Route path="/brams-phone/:code"  element={<PageLayout><BramsPhonePage /></PageLayout>} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
