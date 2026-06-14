@@ -567,16 +567,16 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
       {/* Rank label — plaque laiton gravée + bande d'accent mate (3px) */}
       <div style={{
         width:80, flexShrink:0,
-        background: BRASS_BG,
+        // fond plein à la couleur du tier (réutilise tier.color → MAJ live au color-picker),
+        // dégradé vers ~12% plus sombre pour un rendu propre sur le thème dark.
+        background: `linear-gradient(180deg, ${tier.color}, color-mix(in srgb, ${tier.color} 88%, #000))`,
         borderTop:'1px solid rgba(212,180,131,0.10)',
         display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2,
-        borderRight:`1px solid ${ink.line}`,
+        borderRight:'1px solid rgba(255,255,255,0.15)',
         boxShadow: isOver ? `inset 0 0 0 1px ${tier.color}55` : 'inset 0 1px 0 rgba(212,180,131,.05)',
         transition:'box-shadow .25s',
         position:'relative',
       }}>
-        {/* bande d'accent mate descendante */}
-        <span aria-hidden style={{ position:'absolute', left:0, top:0, bottom:0, width:3, background: tier.color, opacity:.92 }} />
         <textarea
           ref={inputRef}
           value={tmpLabel}
@@ -594,14 +594,14 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
             background:'transparent',
             border:'none',
             outline:'none',
-            color: tier.color,
+            color: '#fff',
             fontSize: tmpLabel.length <= 2 ? 21 : tmpLabel.length <= 5 ? 15 : tmpLabel.length <= 10 ? 11.5 : 9.5,
             fontWeight:500,
             lineHeight:1.1,
             fontFamily: fonts.display,
             fontVariant:'small-caps',
             letterSpacing:'.12em',
-            textShadow:'0 1px 0 rgba(0,0,0,.6), 0 -1px 0 rgba(212,180,131,.05)',
+            textShadow:'0 1px 2px rgba(0,0,0,0.4)',
             padding:'2px 5px',
             overflow:'hidden',
             whiteSpace:'pre-wrap',
