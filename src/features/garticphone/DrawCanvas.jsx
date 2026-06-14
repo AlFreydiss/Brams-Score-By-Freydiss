@@ -110,7 +110,7 @@ export default function DrawCanvas({ canvasRef, disabled }) {
   }
 
   // Épaisseur effective selon la pression. Souris / pas de capteur → taille pleine ;
-  // stylet/doigt avec pression → modulée (jamais < 1px, plafonnée à la taille choisie).
+  // stylet/doigt → modulée de ~0.4× (effleurement) à ~1.2× (appui franc), min 1px.
   const widthFor = (e) => {
     const s = sizeRef.current
     const p = e.pressure
@@ -223,6 +223,11 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [undo, redo])
+
+  // Cache le curseur custom quand on bascule sur un outil sans curseur (sans bouger).
+  useEffect(() => {
+    if (!usesCursor && cursorRef.current) cursorRef.current.style.opacity = '0'
+  }, [usesCursor])
 
   const toolBtn = (id, label, title) => {
     const active = tool === id
