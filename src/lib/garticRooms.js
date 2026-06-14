@@ -22,6 +22,21 @@ export function guestId() {
   } catch { return 'guest_' + Math.floor(Math.random() * 1e12) }
 }
 
+// ── Token secret par salon (mémoire + sessionStorage pour la reconnexion) ────
+const _tokens = new Map() // code -> secret_token
+function tokenKey(code) { return 'bp_token_' + String(code).toUpperCase() }
+export function getToken(code) {
+  const c = String(code).toUpperCase()
+  if (_tokens.has(c)) return _tokens.get(c)
+  try { const t = sessionStorage.getItem(tokenKey(c)); if (t) { _tokens.set(c, t); return t } } catch {}
+  return null
+}
+function setToken(code, tok) {
+  const c = String(code).toUpperCase()
+  _tokens.set(c, tok)
+  try { sessionStorage.setItem(tokenKey(c), tok) } catch {}
+}
+
 // REST direct borné 10s (le client supabase-js peut hang sur le verrou d'auth).
 async function rest(path, { method = 'GET', body, prefer } = {}) {
   if (!SB_URL || !SB_KEY) return { data: null, error: 'supabase' }
@@ -49,135 +64,97 @@ async function rest(path, { method = 'GET', body, prefer } = {}) {
     return { data: null, error: e?.name === 'AbortError' ? 'timeout' : (e?.message || 'fail') }
   } finally { clearTimeout(timer) }
 }
-const enc = encodeURIComponent
 const rpc = (fn, args) => rest(`rpc/${fn}`, { method: 'POST', body: args, prefer: 'return=representation' })
 
-// ── Salon ───────────────────────────────────────────────────────────────────
+// ── Salon (RPC sécurisées : token secret, anti-triche serveur) ───────────────
 export async function createRoom({ userId, displayName, avatarUrl }) {
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 6; attempt++) {
     const code = genRoomCode()
-    const { data, error } = await rest('gartic_rooms', {
-      method: 'POST', prefer: 'return=representation',
-      body: { code, host_user_id: String(userId), status: 'lobby', settings: {} },
-    })
-    if (!error && data?.[0]) {
-      const room = data[0]
-      await rest('gartic_players', {
-        method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
-        body: { room_id: room.id, user_id: String(userId), display_name: displayName, avatar_url: avatarUrl, is_host: true, last_seen: new Date().toISOString() },
-      }).catch(() => {})
-      return { code, room, error: null }
-    }
-    if (error === 'timeout') return { error: 'Délai dépassé, réessaie' }
-    if (!/duplicate|conflict|23505/i.test(error || '')) return { error: error || 'fail' }
+    const { data } = await rpc('gartic_create', { p_code: code, p_user: String(userId), p_name: displayName, p_avatar: avatarUrl })
+    const out = Array.isArray(data) ? data[0] : data
+    if (out?.secret_token) { setToken(out.code, out.secret_token); return { code: out.code, room: out.room, error: null } }
+    if (out?.error && out.error !== 'code_taken') return { error: out.error }
   }
   return { error: 'code_collision' }
 }
 
-export async function fetchRoom(code) {
-  const { data } = await rest(`gartic_rooms?code=eq.${enc(String(code).toUpperCase())}&select=*&limit=1`)
-  return Array.isArray(data) && data[0] ? data[0] : null
-}
-
 export async function joinRoom({ code, userId, displayName, avatarUrl }) {
-  const room = await fetchRoom(code)
-  if (!room) return { error: 'introuvable' }
-  if (room.status !== 'lobby') return { room, spectator: true, error: null } // join tardif = spectateur
-  const { error } = await rest('gartic_players?on_conflict=room_id,user_id', {
-    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
-    body: { room_id: room.id, user_id: String(userId), display_name: displayName, avatar_url: avatarUrl, connected: true, last_seen: new Date().toISOString() },
-  })
-  return { room, error: error === 'timeout' ? 'Délai dépassé, réessaie' : (error || null) }
+  const { data } = await rpc('gartic_join', { p_code: String(code), p_user: String(userId), p_name: displayName, p_avatar: avatarUrl })
+  const out = Array.isArray(data) ? data[0] : data
+  if (!out || out.error === 'introuvable') return { error: 'introuvable' }
+  if (out.spectator) return { room: out.room, spectator: true, error: null }
+  if (out.secret_token) setToken(code, out.secret_token)
+  return { room: out.room, error: null }
 }
 
-export async function fetchPlayers(roomId) {
-  const { data } = await rest(`gartic_players?room_id=eq.${enc(roomId)}&select=*&order=joined_at.asc`)
-  return Array.isArray(data) ? data : []
+// État complet du salon (room + players) via RPC ; pages/players non lisibles direct.
+export async function roomState(code) {
+  const { data } = await rpc('gartic_room_state', { p_code: String(code) })
+  const out = Array.isArray(data) ? data[0] : data
+  return out && !out.error ? out : null // { room, players }
+}
+export async function fetchRoom(code)    { return (await roomState(code))?.room ?? null }
+export async function fetchPlayers(code) { return (await roomState(code))?.players ?? [] }
+
+// ── Pages (siège + round résolus serveur) ───────────────────────────────────
+export async function submitPage(code, content) {
+  const tok = getToken(code); if (!tok) return { error: 'no_token' }
+  const { data } = await rpc('gartic_submit', { p_code: String(code), p_token: tok, p_content: content ?? '' })
+  const out = Array.isArray(data) ? data[0] : data
+  return out?.ok ? { error: null } : { error: out?.error || 'fail' }
+}
+export async function fetchPrevPage(code) {
+  const tok = getToken(code); if (!tok) return null
+  const { data } = await rpc('gartic_prev_page', { p_code: String(code), p_token: tok })
+  const out = Array.isArray(data) ? data[0] : data
+  return out?.page ?? null // { type, content } | null
+}
+export async function submittedSeats(code) {
+  const { data } = await rpc('gartic_submitted_seats', { p_code: String(code) })
+  const out = Array.isArray(data) ? data[0] : data
+  return { round: out?.round ?? 0, seats: new Set(Array.isArray(out?.seats) ? out.seats : []) }
+}
+export async function fetchAllPages(code) {
+  const { data } = await rpc('gartic_all_pages', { p_code: String(code) })
+  const out = Array.isArray(data) ? data[0] : data
+  return Array.isArray(out?.pages) ? out.pages : []
 }
 
-// ── Pages ─────────────────────────────────────────────────────────────────
-export async function submitPage({ roomId, bookId, pageIndex, type, content, authorUserId }) {
-  const { error } = await rest('gartic_pages?on_conflict=room_id,book_id,page_index', {
-    method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal',
-    body: { room_id: roomId, book_id: bookId, page_index: pageIndex, type, content, author_user_id: String(authorUserId) },
-  })
-  return { error: error || null }
+// ── Présence / état joueur (token implicite) ─────────────────────────────────
+export async function setReady(code, ready) {
+  const tok = getToken(code); if (!tok) return
+  await rpc('gartic_set_ready', { p_code: String(code), p_token: tok, p_ready: ready })
+}
+export async function touchPlayer(code) {
+  const tok = getToken(code); if (!tok) return
+  await rpc('gartic_touch', { p_code: String(code), p_token: tok })
 }
 
-// Comble un siège manquant SANS écraser une vraie soumission (ignore-duplicates).
-// Utilisé par la boucle hôte au timeout pour ne jamais casser la chaîne (AFK).
-export async function fillMissingPage({ roomId, bookId, pageIndex, type, content }) {
-  const { error } = await rest('gartic_pages?on_conflict=room_id,book_id,page_index', {
-    method: 'POST', prefer: 'resolution=ignore-duplicates,return=minimal',
-    body: {
-      room_id: roomId, book_id: bookId, page_index: pageIndex, type,
-      content: content ?? (type === 'drawing' ? '' : '—'), author_user_id: 'host',
-    },
-  })
-  return { error: error || null }
-}
-
-// Page précédente de mon carnet courant (à dessiner / décrire).
-export async function fetchPrevPage(roomId, bookId, round) {
-  if (round <= 0) return null
-  const { data } = await rest(`gartic_pages?room_id=eq.${enc(roomId)}&book_id=eq.${bookId}&page_index=eq.${round - 1}&select=type,content&limit=1`)
-  return Array.isArray(data) && data[0] ? data[0] : null
-}
-
-export async function fetchAllPages(roomId) {
-  const { data } = await rest(`gartic_pages?room_id=eq.${enc(roomId)}&select=book_id,page_index,type,content,author_user_id&order=book_id.asc,page_index.asc`)
-  return Array.isArray(data) ? data : []
-}
-
-// ── Présence / état joueur ──────────────────────────────────────────────────
-export async function setReady(roomId, userId, ready) {
-  await rest(`gartic_players?room_id=eq.${enc(roomId)}&user_id=eq.${enc(String(userId))}`,
-    { method: 'PATCH', prefer: 'return=minimal', body: { is_ready: ready } }).catch(() => {})
-}
-export async function touchPlayer(roomId, userId) {
-  await rest(`gartic_players?room_id=eq.${enc(roomId)}&user_id=eq.${enc(String(userId))}`,
-    { method: 'PATCH', prefer: 'return=minimal', body: { connected: true, last_seen: new Date().toISOString() } }).catch(() => {})
-}
-export async function setConnected(roomId, userId, connected) {
-  await rest(`gartic_players?room_id=eq.${enc(roomId)}&user_id=eq.${enc(String(userId))}`,
-    { method: 'PATCH', prefer: 'return=minimal', body: { connected } }).catch(() => {})
-}
-
-// Migration d'hôte (modèle Undercover, sans RPC) : le joueur de plus petit siège
-// encore connecté se promeut capitaine quand l'hôte courant a décroché. On retire
-// le flag aux autres puis on se l'attribue + on pointe host_user_id sur soi. La
-// course est tolérée : si deux clients tentent en même temps, les PATCH sont
-// idempotents et le hook ne déclenche que depuis un seul candidat (plus bas siège).
-export async function promoteSelfHost(roomId, userId) {
-  await rest(`gartic_players?room_id=eq.${enc(roomId)}&is_host=eq.true`,
-    { method: 'PATCH', prefer: 'return=minimal', body: { is_host: false } }).catch(() => {})
-  await rest(`gartic_players?room_id=eq.${enc(roomId)}&user_id=eq.${enc(String(userId))}`,
-    { method: 'PATCH', prefer: 'return=minimal', body: { is_host: true } }).catch(() => {})
-  await rest(`gartic_rooms?id=eq.${enc(roomId)}`,
-    { method: 'PATCH', prefer: 'return=minimal', body: { host_user_id: String(userId) } }).catch(() => {})
+// Migration d'hôte : le serveur valide candidat (plus bas siège vivant) + staleness.
+export async function promoteSelfHost(code) {
+  const tok = getToken(code); if (!tok) return { ok: false }
+  const { data } = await rpc('gartic_promote_host', { p_code: String(code), p_token: tok })
+  return (Array.isArray(data) ? data[0] : data) || { ok: false }
 }
 
 // ── RPC (horloge serveur + transitions) ─────────────────────────────────────
-export const startGame = (roomId, settings) => rpc('gartic_start', { p_room: roomId, p_settings: settings })
-export const advance = (roomId) => rpc('gartic_advance', { p_room: roomId })
-export async function myBook(roomId, userId, round) {
-  const { data } = await rpc('gartic_my_book', { p_room: roomId, p_user: String(userId), p_round: round })
-  return typeof data === 'number' ? data : (Array.isArray(data) ? data[0] : null)
-}
+export const startGame = (code, settings) => rpc('gartic_start', { p_code: String(code), p_token: getToken(code), p_settings: settings })
+export const advance = (code) => rpc('gartic_advance', { p_code: String(code), p_token: getToken(code) })
 export async function serverNow() {
   const { data } = await rpc('gartic_now', {})
   const iso = Array.isArray(data) ? data[0] : data
   return iso ? new Date(iso).getTime() : Date.now()
 }
 
-// ── Realtime (postgres_changes, auto-rebuild du canal) ──────────────────────
+// ── Realtime (postgres_changes sur gartic_rooms UNIQUEMENT) ─────────────────
+// players/pages sont en RLS deny → aucun event ne remonterait. Les transitions de
+// phase passent par gartic_rooms (SELECT-able) ; la liveness/les signaux passent
+// par le canal presence/broadcast (joinChannel).
 export function subscribeRoom(roomId, onChange) {
   if (!supabase) return () => {}
   let ch, retry, closed = false
   const build = () => supabase.channel(`bpgartic_${roomId}_${Date.now()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'gartic_rooms', filter: `id=eq.${roomId}` }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'gartic_players', filter: `room_id=eq.${roomId}` }, onChange)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'gartic_pages', filter: `room_id=eq.${roomId}` }, onChange)
     .subscribe((status) => {
       if (!closed && (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED')) {
         clearTimeout(retry)
@@ -186,4 +163,21 @@ export function subscribeRoom(roomId, onChange) {
     })
   ch = build()
   return () => { closed = true; clearTimeout(retry); try { supabase.removeChannel(ch) } catch {} }
+}
+
+// ── Canal liveness + signaux basse latence ──────────────────────────────────
+// presence = qui est là (lobby) ; broadcast = player_submitted / phase_change /
+// host_migrated (Phase 3 ajoutera reaction).
+export function joinChannel(code, { userId, displayName, avatarUrl, onPresence, onBroadcast }) {
+  if (!supabase) return { send: () => {}, leave: () => {} }
+  const ch = supabase.channel(`room:${String(code).toUpperCase()}`, { config: { presence: { key: String(userId) } } })
+  ch.on('presence', { event: 'sync' }, () => onPresence?.(ch.presenceState()))
+  ch.on('broadcast', { event: '*' }, (p) => onBroadcast?.(p.event, p.payload))
+  ch.subscribe((status) => {
+    if (status === 'SUBSCRIBED') ch.track({ user_id: String(userId), display_name: displayName, avatar_url: avatarUrl, at: Date.now() })
+  })
+  return {
+    send: (event, payload = {}) => { try { ch.send({ type: 'broadcast', event, payload }) } catch {} },
+    leave: () => { try { supabase.removeChannel(ch) } catch {} },
+  }
 }
