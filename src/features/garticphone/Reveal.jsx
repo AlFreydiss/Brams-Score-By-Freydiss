@@ -93,11 +93,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   const guided = !isHost // l'invité suit le dévoilement piloté par l'hôte
   const fxRef = useRef(null)
 
-  useEffect(() => {
-    let alive = true
-    allPages().then((p) => { if (alive) setPages(p || []) })
-    return () => { alive = false }
-  }, [allPages])
+  const loadPages = useCallback(() => { allPages().then((p) => setPages(p || [])).catch(() => {}) }, [allPages])
+  useEffect(() => { let alive = true; allPages().then((p) => { if (alive) setPages(p || []) }).catch(() => {}); return () => { alive = false } }, [allPages])
 
   const albums = useMemo(() => pages ? buildAlbums(pages, n).filter((a) => a.pages.length) : [], [pages, n])
   const album = albums[albumIdx] || null
@@ -134,8 +131,9 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
     // transitoirement entre pairs (fetch partiel). Index positionnel = page fausse.
     const idx = albums.findIndex((x) => x.book === revealStep.a)
     if (idx >= 0) setAlbumIdx(idx)
+    else loadPages()  // on suit une page qu'on n'a pas encore → refetch (filet anti-freeze)
     if (typeof revealStep.p === 'number') setPageIdx(revealStep.p)
-  }, [guided, revealStep, albums])
+  }, [guided, revealStep, albums, loadPages])
 
   useEffect(() => {
     if (guided || !albums.length) return

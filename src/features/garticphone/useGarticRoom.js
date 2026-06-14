@@ -179,12 +179,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   }, [code, refresh])
 
   const advance = useCallback(async () => {
-    const out = await apiAdvance(code)
+    const out = await apiAdvance(code, room?.current_round)
     const j = Array.isArray(out?.data) ? out.data[0] : out?.data
     if (j?.error) console.warn('[gartic] advance:', j.error)
     chRef.current?.send('phase_change', {})
     await refresh()
-  }, [code, refresh])
+  }, [code, refresh, room?.current_round])
 
   const setReady = useCallback(async (b) => { await apiSetReady(code, b) }, [code])
 
@@ -217,7 +217,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       if (!decision) return
       advancingRef.current = true
       try {
-        await apiAdvance(code)          // le serveur comble les sièges manquants
+        await apiAdvance(code, round)   // le serveur comble les sièges manquants
         chRef.current?.send('phase_change', {})
         await refresh()
       } finally {

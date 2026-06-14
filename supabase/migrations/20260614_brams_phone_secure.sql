@@ -11,6 +11,7 @@ create policy grm_select on gartic_rooms for select to anon, authenticated using
 
 drop function if exists gartic_start(uuid, jsonb);
 drop function if exists gartic_advance(uuid);
+drop function if exists gartic_advance(text, uuid);
 drop function if exists gartic_my_book(uuid, text, int);
 
 create or replace function _gartic_player(p_code text, p_token uuid)
@@ -124,7 +125,7 @@ begin
   return jsonb_build_object('ok', true, 'n', v_n);
 end $$;
 
-create or replace function gartic_advance(p_code text, p_token uuid)
+create or replace function gartic_advance(p_code text, p_token uuid, p_expected_round int default null)
   returns jsonb language plpgsql security definer set search_path = public as $$
 declare g record; r gartic_rooms; v_n int; nextr int; ph text; dur int; s int; bk int; v_type text;
 begin
@@ -133,6 +134,9 @@ begin
   select * into r from gartic_rooms where id = g.room_id;
   v_n := (r.settings->>'n')::int;
   if v_n is null then return jsonb_build_object('error','not_started'); end if;
+  if p_expected_round is not null and p_expected_round <> r.current_round then
+    return jsonb_build_object('ok', false, 'reason', 'stale');  -- une autre avance a déjà eu lieu
+  end if;
   v_type := case when r.current_round = 0 then 'text' when r.current_round % 2 = 1 then 'drawing' else 'text' end;
   for s in 0..v_n-1 loop
     bk := ((s - r.current_round) % v_n + v_n) % v_n;
@@ -211,5 +215,5 @@ end $$;
 grant execute on function _gartic_player(text,uuid), gartic_create(text,text,text,text),
   gartic_join(text,text,text,text), gartic_room_state(text), gartic_prev_page(text,uuid),
   gartic_submit(text,uuid,text), gartic_submitted_seats(text), gartic_start(text,uuid,jsonb),
-  gartic_advance(text,uuid), gartic_set_ready(text,uuid,boolean), gartic_touch(text,uuid),
+  gartic_advance(text,uuid,int), gartic_set_ready(text,uuid,boolean), gartic_touch(text,uuid),
   gartic_promote_host(text,uuid), gartic_all_pages(text), gartic_now() to anon, authenticated;
