@@ -1172,9 +1172,23 @@ const TLX_HERO_ROWS = [
 ]
 // Cartes d'aperçu : laiton mat teinté de l'accent (jamais de dégradé criard).
 const TLX_GRADS = MAT_ACCENTS.map(c => `linear-gradient(160deg, ${c}59, ${c}24)`)
-// Vignettes persos de la preview hero (S→F) : réutilise les images du deck
-// « Personnages ». Le dégradé de tier sert de fallback derrière l'image.
-const TLX_HERO_THUMBS = PERSO_LIST.slice(0, 12)
+// Vignettes de la preview hero (S→F). Les images persos de MAL sont à ~80% mortes
+// (404), donc on cure une liste d'affiches shōnen aux URLs VÉRIFIÉES vivantes. Le
+// dégradé de tier + l'initiale servent de fallback si une image venait à tomber.
+const TLX_HERO_THUMBS = [
+  { name:'One Piece',          img:'https://cdn.myanimelist.net/images/anime/6/73245.jpg' },
+  { name:'Attack on Titan',    img:'https://cdn.myanimelist.net/images/anime/10/47347.jpg' },
+  { name:'Jujutsu Kaisen',     img:'https://cdn.myanimelist.net/images/anime/1171/109222.jpg' },
+  { name:'Demon Slayer',       img:'https://cdn.myanimelist.net/images/anime/1286/99889.jpg' },
+  { name:'FMA Brotherhood',    img:'https://cdn.myanimelist.net/images/anime/1223/96541.jpg' },
+  { name:'Hunter x Hunter',    img:'https://cdn.myanimelist.net/images/anime/11/33657.jpg' },
+  { name:'Death Note',         img:'https://cdn.myanimelist.net/images/anime/9/9453.jpg' },
+  { name:'Chainsaw Man',       img:'https://cdn.myanimelist.net/images/anime/1806/126216.jpg' },
+  { name:'Naruto',             img:'https://cdn.myanimelist.net/images/anime/3/72078.jpg' },
+  { name:'My Hero Academia',   img:'https://cdn.myanimelist.net/images/anime/10/78745.jpg' },
+  { name:'Steins;Gate',        img:'https://cdn.myanimelist.net/images/anime/5/73199.jpg' },
+  { name:'Vinland Saga',       img:'https://cdn.myanimelist.net/images/anime/1500/103005.jpg' },
+]
 const TLX_ACCENTS = MAT_ACCENTS
 const TLX_TYPE_META = {
   anime:  { accent: MAT_ACCENTS[3], glow: 'rgba(94,131,166,0.22)', desc: 'Des shōnen cultes aux pépites de la saison — classe les séries de la Brams.', preview: [MAT_ACCENTS[0], MAT_ACCENTS[3], MAT_ACCENTS[5]] },
@@ -1337,10 +1351,15 @@ function TlxLadder() {
                       animation: `tlxCardIn .6s cubic-bezier(.22,1,.36,1) both, tlxFloaty ${4 + (ci % 3)}s ease-in-out infinite`,
                       animationDelay: `${d}s, ${d + 0.6}s`,
                     }}>
+                      {/* Fallback derrière l'image : initiale gravée sur le dégradé du tier. */}
+                      <span aria-hidden style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
+                        fontFamily: fonts.display, fontWeight: 600, fontSize: 15, color: 'rgba(255,255,255,0.42)' }}>
+                        {thumb?.name?.[0] || ''}
+                      </span>
                       {thumb && (
                         <img src={thumb.img} alt={thumb.name} loading="lazy" decoding="async"
                           onError={e => { e.currentTarget.style.display = 'none' }}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+                          style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
                       )}
                     </div>
                   )
