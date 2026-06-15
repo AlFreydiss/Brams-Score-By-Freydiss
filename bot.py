@@ -4837,11 +4837,12 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         print(f"❌ /testrank followup failed: {e}")
 
 # ─────────────────────────────────────────
-#  /move  (ADMIN - déplace tout un salon vocal)
+#  /move  (admins + IDs autorisés - déplace tout un salon vocal)
 # ─────────────────────────────────────────
-@bot.tree.command(name="move", description="[ADMIN] Déplace tous les membres d'un salon vocal vers un autre")
-@app_commands.default_permissions(administrator=True)
-@app_commands.checks.has_permissions(administrator=True)
+# Membres non-admins explicitement autorisés à utiliser /move.
+MOVE_ALLOWED_IDS = {999607813334638692, 1079054995917381672}
+
+@bot.tree.command(name="move", description="Déplace tous les membres d'un salon vocal vers un autre")
 @app_commands.describe(source="Salon vocal de départ", destination="Salon vocal d'arrivée")
 async def move(interaction: discord.Interaction, source: discord.VoiceChannel, destination: discord.VoiceChannel):
     try:
@@ -4851,6 +4852,10 @@ async def move(interaction: discord.Interaction, source: discord.VoiceChannel, d
         return
     except Exception as e:
         print(f"❌ /move defer failed: {e}")
+        return
+    is_admin = bool(interaction.guild) and interaction.user.guild_permissions.administrator
+    if not (is_admin or interaction.user.id in MOVE_ALLOWED_IDS):
+        await interaction.followup.send("⛔ Tu n'es pas autorisé à utiliser cette commande.", ephemeral=True)
         return
     if source.id == destination.id:
         await interaction.followup.send("⚠️ Source et destination sont le même salon.", ephemeral=True)
