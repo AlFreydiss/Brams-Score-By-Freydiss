@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePartie } from '../hooks/usePartie.js'
 import { useStockfish } from '../hooks/useStockfish.js'
 import Plateau from '../components/Plateau.jsx'
+import Plateau3D from '../components/Plateau3D.jsx'
 import PanneauJoueur from '../components/PanneauJoueur.jsx'
 import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
@@ -159,9 +160,11 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
   const sesCaptures = maCouleur === 'w' ? captures.parNoir : captures.parBlanc
   const avantageMoi = maCouleur === 'w' ? captures.avantage : -captures.avantage
 
+  const PlateauComp = troisD ? Plateau3D : Plateau
+
   return (
     <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
-      <Plateau
+      <PlateauComp
         partie={partie}
         orientation={maCouleur === 'w' ? 'white' : 'black'}
         peutJouer={c => c === maCouleur && !fin.terminee && !abandonnee && !reflechit}

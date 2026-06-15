@@ -6,6 +6,7 @@ import { usePartie } from '../hooks/usePartie.js'
 import { useRealtimeGame } from '../hooks/useRealtimeGame.js'
 import { useHorloge } from '../hooks/useHorloge.js'
 import Plateau from '../components/Plateau.jsx'
+import Plateau3D from '../components/Plateau3D.jsx'
 import PanneauJoueur from '../components/PanneauJoueur.jsx'
 import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
@@ -240,10 +241,11 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
   const tempsMoi = maCouleur === 'w' ? tempsBlanc : tempsNoir
   const tempsLui = maCouleur === 'w' ? tempsNoir : tempsBlanc
   const decoLongue = decoDepuis && Date.now() - decoDepuis > DELAI_DECO_MS
+  const PlateauComp = troisD ? Plateau3D : Plateau
 
   return (
     <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
-      <Plateau
+      <PlateauComp
         partie={partie}
         orientation={maCouleur === 'w' ? 'white' : 'black'}
         peutJouer={c => enCours && c === maCouleur}

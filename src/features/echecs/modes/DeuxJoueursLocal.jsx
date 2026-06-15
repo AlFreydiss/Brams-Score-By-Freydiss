@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { usePartie } from '../hooks/usePartie.js'
 import Plateau from '../components/Plateau.jsx'
+import Plateau3D from '../components/Plateau3D.jsx'
 import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import PiecesCapturees from '../components/PiecesCapturees.jsx'
 import BarreActions from '../components/BarreActions.jsx'
@@ -29,10 +30,11 @@ export default function DeuxJoueursLocal({ onQuitter, troisD = false }) {
   }, [fin.terminee])
 
   const taillePlateau = useMemo(() => taillePlateauAuto(troisD), [troisD])
+  const PlateauComp = troisD ? Plateau3D : Plateau
 
   return (
     <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
-      <Plateau
+      <PlateauComp
         partie={partie}
         orientation="white"
         peutJouer={c => c === trait && !fin.terminee}
