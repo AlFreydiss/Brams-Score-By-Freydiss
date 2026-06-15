@@ -60,7 +60,23 @@ const G = {
 // pour que la sous-barre studio reste collée sous la nav dans les deux états.
 const NAVBAR_HEIGHT = 72            // .nav-shell-premium au repos
 const NAVBAR_HEIGHT_SCROLLED = 64   // .navbar-premium-scrolled .nav-shell-premium
-const SUBNAV_HEIGHT = 60            // barre « BRAMS TIER STUDIO »
+const SUBNAV_HEIGHT = 52            // sous-barre slim
+
+// ── Recettes de la sous-barre (slim, sobre, hairline) ───────────────────────────
+const subnavGhost = { display:'flex', alignItems:'center', gap:6, flexShrink:0, height:34, padding:'0 12px',
+  borderRadius:9, background:'transparent', border:`1px solid ${ink.line}`, color:ink.textHi,
+  fontFamily:fonts.ui, fontSize:12, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap', transition:'background .15s,border-color .15s' }
+const subnavIcon = { display:'grid', placeItems:'center', width:32, height:32, borderRadius:8, flexShrink:0,
+  background:'transparent', border:`1px solid ${ink.line}`, color:ink.textHi, cursor:'pointer', fontSize:16, lineHeight:1 }
+const subnavMenu = { position:'absolute', top:'calc(100% + 8px)', right:0, zIndex:60, background:'#0E0E10',
+  border:`1px solid ${ink.line}`, borderRadius:12, padding:6, minWidth:212, boxShadow:'0 14px 36px rgba(0,0,0,.55)',
+  display:'flex', flexDirection:'column', gap:2 }
+const subnavMenuItem = { display:'flex', alignItems:'center', gap:9, padding:'9px 11px', borderRadius:8, border:'none',
+  background:'transparent', cursor:'pointer', textAlign:'left', color:ink.text, fontFamily:fonts.ui, fontSize:12.5, fontWeight:600 }
+const subnavPrimary = (busy) => ({ display:'flex', alignItems:'center', gap:6, flexShrink:0, height:34, padding:'0 16px',
+  borderRadius:9, background:`linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`, border:'1px solid rgba(199,168,105,.5)',
+  color:'#1A1410', fontFamily:fonts.ui, fontSize:12.5, fontWeight:700, cursor:busy?'default':'pointer', opacity:busy?.7:1,
+  boxShadow:'inset 0 1px 0 rgba(255,255,255,.18)', whiteSpace:'nowrap' })
 
 // ── Default tiers ──────────────────────────────────────────────────────────────
 // Plaque laiton gravée commune (le tier se distingue par sa bande d'accent mate).
@@ -1146,6 +1162,10 @@ const CSS = `
   ::-webkit-scrollbar { width:4px; height:4px; }
   ::-webkit-scrollbar-thumb { background:rgba(199,168,105,.18); border-radius:4px; }
   .tl-tabs::-webkit-scrollbar { display:none; }
+  /* Sous-barre : focus clavier visible + crayon de renommage au survol */
+  .tl-tabs button:focus-visible, .tl-name-edit:focus-visible { outline:2px solid #C7A869; outline-offset:2px; border-radius:6px; }
+  .tl-page-premium input:focus-visible { outline:2px solid rgba(199,168,105,.6); outline-offset:1px; }
+  .tl-name-edit:hover svg { color:#C9C4BB !important; }
 `
 
 // ── Main Export ───────────────────────────────────────────────────────────────
@@ -1529,14 +1549,18 @@ const TLX_CSS = `
   @media (prefers-reduced-motion: reduce){ .tlx-hub *, .tlx-hub *::before, .tlx-hub *::after { animation:none !important; } }
 `
 
-function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, onSelectType, onStartBlank, onLoadExisting, onSeeCommunity, onOpenList }) {
+function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, onSelectType, onStartBlank, onLoadExisting, onSeeCommunity, onOpenList, search = '' }) {
   const ghostBtn = {
     display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
     fontFamily: 'inherit', fontWeight: 600, fontSize: 14, color: TLX.text,
     padding: '12px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.04)',
     border: `1px solid ${TLX.line}`,
   }
-  const topCommunity = useMemo(() => [...(communityLists || [])].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 6), [communityLists])
+  const topCommunity = useMemo(() => {
+    const q = (search || '').trim().toLowerCase()
+    const base = [...(communityLists || [])].filter(l => !q || (`${l.title || ''} ${l.authorName || ''}`).toLowerCase().includes(q))
+    return base.sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 6)
+  }, [communityLists, search])
   const deckTypes = types.filter(t => t.id !== 'custom')
   const animeCount = types.find(t => t.id === 'anime')?.items.length || 0
   const persoCount = types.find(t => t.id === 'persos')?.items.length || 0
@@ -1745,6 +1769,16 @@ export default function TierListPage() {
   const [toast, setToast]     = useState(null)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [showExport, setShowExport] = useState(false)
+  const [hubSearch, setHubSearch] = useState('')
+  const [scrolled, setScrolled] = useState(false)
+  // La sous-barre suit la hauteur courante de la navbar (72↔64) — même seuil de
+  // scroll que Navbar.jsx, pour rester collée sous elle dans tous les états.
+  useEffect(() => {
+    const f = () => setScrolled(window.scrollY > 42)
+    f(); window.addEventListener('scroll', f, { passive: true })
+    return () => window.removeEventListener('scroll', f)
+  }, [])
   const [hideHint, setHideHint] = useState(() => {
     try { return localStorage.getItem('tl_hint_dismissed') === '1' } catch { return false }
   })
@@ -2404,8 +2438,18 @@ export default function TierListPage() {
     { id:'templates',label:'Templates',   icon:<Grid size={13}/> },
   ]
 
+  // Mode courant : éditeur (deck choisi) vs hub. La sous-barre suit la navbar.
+  const isEditor = tab === 'studio' && !!selectedType
+  const navH = scrolled ? NAVBAR_HEIGHT_SCROLLED : NAVBAR_HEIGHT
+  // Recherche de la sous-barre hub : filtre titres/auteurs des listes en live.
+  const hubMatch = (...fields) => {
+    const q = hubSearch.trim().toLowerCase()
+    if (!q) return true
+    return fields.filter(Boolean).join(' ').toLowerCase().includes(q)
+  }
+
   return (
-    <div className="tl-page-premium" style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:NAVBAR_HEIGHT_SCROLLED,
+    <div className="tl-page-premium" style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:NAVBAR_HEIGHT,
       background:'linear-gradient(180deg, #0B0B0C 0%, #0d0d0f 50%, #0a0a0b 100%)' }}>
       <style>{CSS}</style>
       {/* Le scroll-padding réserve la place de la navbar fixe + la sous-barre sticky
@@ -2413,180 +2457,144 @@ export default function TierListPage() {
       <style>{`html{scroll-padding-top:${NAVBAR_HEIGHT_SCROLLED + SUBNAV_HEIGHT}px;}`}</style>
 
       {/* ── Studio Header ── */}
+      {/* ── Sous-barre Tier Studio — slim, sticky, suit la hauteur de la navbar ── */}
       <header style={{
-        position:'sticky', top:NAVBAR_HEIGHT_SCROLLED, zIndex:50,
-        background:'rgba(8,9,13,.95)', backdropFilter:'blur(24px)',
-        borderBottom:`1px solid ${G.border}`,
-        padding: isMobile ? '0 12px' : '0 20px',
+        position:'sticky', top:navH, zIndex:50,
+        background:'rgba(10,10,11,0.72)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)',
+        borderBottom:`1px solid ${ink.line}`,
       }}>
-        <div style={{ maxWidth:1600, margin:'0 auto', display:'flex', alignItems:'center', gap: isNarrowBar ? 10 : 14,
-          minWidth:0, flexWrap: isNarrowBar ? 'wrap' : 'nowrap', rowGap:8,
-          ...(isNarrowBar ? { height:'auto', minHeight:60, paddingTop:8, paddingBottom:8 } : { height:60 }) }}>
+        <div style={{ maxWidth: isEditor ? 1600 : 1240, margin:'0 auto', padding: isMobile ? '0 14px' : '0 24px',
+          display:'flex', alignItems:'center', gap: isNarrowBar ? 10 : 16, minWidth:0,
+          flexWrap: isNarrowBar ? 'wrap' : 'nowrap', rowGap:8,
+          ...(isNarrowBar ? { minHeight:SUBNAV_HEIGHT, paddingTop:7, paddingBottom:7 } : { height:SUBNAV_HEIGHT }) }}>
 
-          {/* Chevron retour (atelier uniquement) → landing */}
-          {tab === 'studio' && selectedType && (
-            <button onClick={leaveAtelier} title="Retour à l'accueil" aria-label="Retour à l'accueil" style={{
-              flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-              height:34, padding:'0 11px', borderRadius:9,
-              background:'transparent', border:`1px solid ${G.border}`, color:G.text,
-              cursor:'pointer', fontSize:12.5, fontWeight:700, fontFamily:'inherit',
-            }}>
-              <ArrowLeft size={15}/> {!isNarrowBar && 'Retour'}
-            </button>
-          )}
-
-          {/* Brand — wordmark cliquable (retour landing) */}
-          <button onClick={leaveAtelier} title="Brams Tier Studio — accueil" style={{
-            display:'flex', alignItems:'center', gap:10, flexShrink:0,
-            background:'transparent', border:'none', padding:0, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
-            <div style={{
-              width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center',
-              background:`linear-gradient(135deg,${G.rose}22,${G.gold}22)`,
-              border:`1px solid ${G.gold}33`,
-              fontSize:15,
-            }}>⚔️</div>
-            <div>
-              <div style={{ fontSize:12, fontWeight:900, letterSpacing:'.14em', color:G.gold, lineHeight:1 }}>
-                BRAMS TIER STUDIO
-              </div>
-              {tab === 'studio' && selectedType && (
-                <div style={{ fontSize:9.5, color:G.muted, letterSpacing:'.06em', lineHeight:1, marginTop:2 }}>
-                  {selectedType.icon} {selectedType.label}
-                  {placedCount > 0 && ` · ${placedCount} placés`}
-                </div>
-              )}
-            </div>
-          </button>
-
-          {/* Tabs */}
-          <div className="tl-tabs" style={{ display:'flex', gap:2, background:'rgba(255,255,255,.04)', borderRadius:10, padding:3,
-            minWidth:0, maxWidth:'100%', overflowX:'auto', scrollbarWidth:'none' }}>
-            {TABS.map(t => (
-              <button key={t.id} onClick={() => (t.id === 'studio' ? leaveAtelier() : setTab(t.id))} style={{
-                flexShrink:0, whiteSpace:'nowrap',
-                display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:7,
-                background: tab === t.id ? `rgba(199,168,105,.14)` : 'transparent',
-                border: tab === t.id ? `1px solid ${G.gold}33` : '1px solid transparent',
-                color: tab === t.id ? G.gold : G.muted,
-                cursor:'pointer', fontSize:11, fontWeight:700, transition:'all .15s',
-              }}>
-                {t.icon} {t.label}
+          {isEditor ? (
+            /* ═══ MODE ÉDITEUR — pas d'onglets ni de gros branding, le « Retour » suffit ═══ */
+            <>
+              <button onClick={leaveAtelier} aria-label="Retour au hub" style={subnavGhost}>
+                <ArrowLeft size={15}/> {!isNarrowBar && 'Retour'}
               </button>
-            ))}
-          </div>
+              {!isNarrowBar && <span style={{ width:1, height:20, background:ink.line, flexShrink:0 }} />}
 
-          <div style={{ flex:1 }}/>
-
-          {/* Studio actions */}
-          {tab === 'studio' && selectedType && (
-            <div style={{ display:'flex', alignItems:'center', gap:6, minWidth:0,
-              flexWrap: isNarrowBar ? 'wrap' : 'nowrap', rowGap:6 }}>
-              {/* Title edit */}
               {editTitle ? (
-                <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                <span style={{ display:'flex', alignItems:'center', gap:5, minWidth:0 }}>
                   <input ref={titleRef} value={tmpTitle} onChange={e => setTmpTitle(e.target.value)}
                     onKeyDown={e => { if (e.key==='Enter'){setTitle(tmpTitle);setEditTitle(false);setSaved(false)} if (e.key==='Escape') setEditTitle(false) }}
-                    style={{ ...miniInput, width:180, fontSize:13, fontWeight:800 }}/>
-                  <button onClick={() => { setTitle(tmpTitle); setEditTitle(false); setSaved(false) }}
-                    style={{ ...actionBtn, padding:'4px 8px' }}><Check size={12}/></button>
-                </div>
+                    style={{ ...miniInput, width:170, fontSize:13, fontWeight:600, fontFamily:fonts.display }}/>
+                  <button onClick={() => { setTitle(tmpTitle); setEditTitle(false); setSaved(false) }} style={subnavIcon}><Check size={12}/></button>
+                </span>
               ) : (
-                <button onClick={() => { setTmpTitle(title); setEditTitle(true); setTimeout(() => titleRef.current?.focus(), 30) }}
-                  style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', cursor:'pointer',
-                    color:ink.textHi, fontFamily:fonts.display, fontSize:15, fontWeight:500, padding:'4px 8px', whiteSpace:'nowrap', flexShrink:0,
-                    borderRadius:8, transition:'background .15s' }}>
-                  {title.slice(0,24)}{title.length > 24 && '…'} <Edit3 size={12} style={{ color:ink.textMute }}/>
+                <button className="tl-name-edit" onClick={() => { setTmpTitle(title); setEditTitle(true); setTimeout(() => titleRef.current?.focus(), 30) }}
+                  style={{ display:'flex', alignItems:'center', gap:7, minWidth:0, background:'none', border:'none', cursor:'pointer', padding:'4px 2px', borderRadius:8 }}>
+                  <span style={{ color:ink.textHi, fontFamily:fonts.display, fontWeight:500, fontSize:14.5, whiteSpace:'nowrap',
+                    overflow:'hidden', textOverflow:'ellipsis', maxWidth: isNarrowBar ? 120 : 220 }}>{title}</span>
+                  <Edit3 size={12} style={{ color:ink.textFaint, flexShrink:0 }}/>
                 </button>
               )}
+              {!isNarrowBar && selectedType && (
+                <span style={{ flexShrink:0, padding:'2px 8px', borderRadius:6, fontSize:10.5, fontWeight:600, letterSpacing:'.04em',
+                  color:ink.textMute, background:'rgba(255,255,255,.04)', border:`1px solid ${ink.line}` }}>{selectedType.label}</span>
+              )}
+              {!isNarrowBar && (
+                <span style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0, fontFamily:fonts.ui, fontSize:11, color:ink.textMute }}>
+                  <span style={{ width:6, height:6, borderRadius:99, background:(saved||draftSaved||cloudSaved)?'#5B9E6A':ink.textFaint }} />
+                  {cloudSaved ? 'Sauvé cloud' : saved ? 'Sauvegardé' : draftSaved ? 'Auto-sauvé' : 'Sauvegarde…'}
+                </span>
+              )}
 
-              {/* Auto-save pill — discrète (point vert sobre) */}
-              <div style={{ display:'flex', alignItems:'center', gap:6, fontFamily:fonts.ui, fontSize:10.5, color: ink.textMute, fontWeight:500, minWidth:108 }}>
-                <span style={{ width:6, height:6, borderRadius:99, flexShrink:0,
-                  background: (saved || draftSaved || cloudSaved) ? '#5B9E6A' : ink.textFaint }} />
-                {cloudSaved ? 'Auto-sauvé cloud' : saved ? 'Sauvegardé' : draftSaved ? 'Auto-sauvé' : 'Sauvegarde…'}
-              </div>
+              <span style={{ flex:1 }}/>
 
-              {/* Actions secondaires — ghost (hairline) */}
-              {[
-                { icon:<Download size={11}/>, label:'PNG',    fn:exportPng },
-                { icon:<Save size={11}/>,     label:'Sauver', fn:saveList  },
-              ].map(b => (
-                <button key={b.label} onClick={b.fn} style={{
-                  display:'flex', alignItems:'center', gap:5, padding:'7px 12px', borderRadius:9,
-                  background:'transparent', border:`1px solid ${ink.line}`,
-                  color:ink.textHi, fontFamily:fonts.ui, cursor:'pointer', fontSize:11.5, fontWeight:600,
-                  transition:'background .15s, border-color .15s',
-                }}>
-                  {b.icon} {b.label}
-                </button>
-              ))}
+              {!isNarrowBar && (
+                <span style={{ position:'relative' }}>
+                  <button onClick={() => setShowExport(v => !v)} style={subnavGhost}><Download size={13}/> Exporter</button>
+                  {showExport && (
+                    <>
+                      <span onClick={() => setShowExport(false)} style={{ position:'fixed', inset:0, zIndex:55 }} />
+                      <span style={subnavMenu}>
+                        <button onClick={() => { exportPng(); setShowExport(false) }} style={subnavMenuItem}
+                          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.06)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                          <Download size={13}/> Image PNG
+                        </button>
+                      </span>
+                    </>
+                  )}
+                </span>
+              )}
+              {!isNarrowBar && (
+                <label style={{ ...subnavGhost, cursor: coverUploading ? 'wait' : 'pointer',
+                  ...(coverUrl ? { color:'#5B9E6A', borderColor:'rgba(91,158,106,.4)' } : null) }}>
+                  <input type="file" accept="image/*" onChange={handleCoverUpload} style={{ display:'none' }} disabled={coverUploading} />
+                  🖼 {coverUploading ? '…' : coverUrl ? 'Couverture ✓' : 'Couverture'}
+                </label>
+              )}
 
-              {/* Image de présentation (couverture) — optionnelle, jointe à la publication */}
-              <label style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 12px', borderRadius:9, cursor: coverUploading ? 'wait' : 'pointer',
-                background: coverUrl ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.04)', border:`1px solid ${coverUrl ? 'rgba(52,211,153,.4)' : G.border}`,
-                color: coverUrl ? '#34d399' : G.muted, fontSize:11.5, fontWeight:700, whiteSpace:'nowrap' }}>
-                <input type="file" accept="image/*" onChange={handleCoverUpload} style={{ display:'none' }} disabled={coverUploading} />
-                🖼️ {coverUploading ? '…' : coverUrl ? 'Couverture ✓' : 'Couverture'}
-              </label>
-              {coverUrl && <button onClick={() => setCoverUrl(null)} title="Retirer la couverture" style={{ ...actionBtn, padding:'8px 10px' }}><X size={12}/></button>}
-
-              {/* CTA principal — Partager : dégradé champagne mat (pas de glow), en évidence */}
-              <button onClick={shareList} disabled={publishing}
-                onMouseEnter={e => { if (!publishing) e.currentTarget.style.transform = 'translateY(-1px)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
-                style={{
-                  display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10,
-                  background:`linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`, border:'1px solid rgba(199,168,105,0.5)',
-                  color:'#1A1410', cursor: publishing ? 'default' : 'pointer', fontFamily:fonts.ui, fontSize:12.5, fontWeight:700,
-                  letterSpacing:'.01em', boxShadow:'inset 0 1px 0 rgba(255,255,255,.18)', opacity: publishing ? .7 : 1,
-                  transition:'transform .15s, opacity .15s', whiteSpace:'nowrap',
-                }}>
-                <Users size={13}/> {publishing ? 'Publication…' : 'Partager avec la communauté'}
-              </button>
-
-              {/* Menu « ⋯ » — actions secondaires regroupées (désencombre le bandeau) */}
-              <div style={{ position:'relative' }}>
-                <button onClick={() => setShowMenu(v => !v)} aria-label="Plus d'actions" style={{
-                  display:'flex', alignItems:'center', justifyContent:'center', width:32, height:30, borderRadius:8,
-                  background: showMenu ? 'rgba(255,255,255,.10)' : 'rgba(255,255,255,.05)',
-                  border:`1px solid ${G.border}`, color:G.text, cursor:'pointer', fontSize:16, fontWeight:700, lineHeight:1,
-                }}>⋯</button>
+              <span style={{ position:'relative' }}>
+                <button onClick={() => setShowMenu(v => !v)} aria-label="Plus d'actions" style={subnavIcon}>⋯</button>
                 {showMenu && (
                   <>
-                    <div onClick={() => setShowMenu(false)} style={{ position:'fixed', inset:0, zIndex:55 }} />
-                    <div style={{
-                      position:'absolute', top:'calc(100% + 8px)', right:0, zIndex:60,
-                      background:'#14151c', border:`1px solid ${G.border}`, borderRadius:12,
-                      padding:6, minWidth:210, boxShadow:'0 14px 36px rgba(0,0,0,.55)',
-                      display:'flex', flexDirection:'column', gap:2,
-                    }}>
+                    <span onClick={() => setShowMenu(false)} style={{ position:'fixed', inset:0, zIndex:55 }} />
+                    <span style={subnavMenu}>
                       {[
-                        { icon:<Grid size={13}/>,      label:'Templates de tiers',   fn:() => setShowTemplates(v => !v) },
-                        { icon:<Shuffle size={13}/>,   label:'Mélanger au hasard',   fn:randomize },
-                        { icon:<RotateCcw size={13}/>, label:'Réinitialiser',        fn:reset, danger:true },
+                        { icon:<Save size={13}/>, label:'Sauvegarder maintenant', fn:saveList },
+                        ...(isNarrowBar ? [{ icon:<Download size={13}/>, label:'Exporter en PNG', fn:exportPng }] : []),
+                        ...(coverUrl ? [{ icon:<X size={13}/>, label:'Retirer la couverture', fn:() => setCoverUrl(null) }] : []),
+                        { icon:<Grid size={13}/>, label:'Templates de tiers', fn:() => setShowTemplates(v => !v) },
+                        { icon:<Shuffle size={13}/>, label:'Mélanger au hasard', fn:randomize },
+                        { icon:<RotateCcw size={13}/>, label:'Réinitialiser', fn:reset, danger:true },
                         { icon:<ArrowLeft size={13}/>, label:'Changer de catégorie', fn:() => setSelectedType(null) },
                       ].map(m => (
-                        <button key={m.label} onClick={() => { m.fn(); setShowMenu(false) }} style={{
-                          display:'flex', alignItems:'center', gap:9, padding:'9px 11px', borderRadius:8,
-                          border:'none', background:'transparent', cursor:'pointer', textAlign:'left',
-                          color: m.danger ? G.rose : G.text, fontSize:12.5, fontWeight:600, transition:'background .12s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.06)'}
-                        onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                        <button key={m.label} onClick={() => { m.fn(); setShowMenu(false) }} style={{ ...subnavMenuItem, color: m.danger ? G.rose : ink.text }}
+                          onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,.06)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
                           {m.icon} {m.label}
                         </button>
                       ))}
-                    </div>
+                    </span>
                   </>
                 )}
-              </div>
-            </div>
+              </span>
+
+              <button onClick={shareList} disabled={publishing} style={subnavPrimary(publishing)}>
+                <Users size={13}/> {publishing ? 'Publication…' : 'Partager'}
+              </button>
+            </>
+          ) : (
+            /* ═══ MODE HUB — branding discret + onglets + recherche ═══ */
+            <>
+              <button onClick={leaveAtelier} title="Tier Studio — accueil" style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0, background:'none', border:'none', padding:0, cursor:'pointer' }}>
+                <span style={{ fontSize:15, lineHeight:1 }}>⚔️</span>
+                {!isMobile && <span style={{ fontFamily:fonts.ui, fontSize:13, fontWeight:600, letterSpacing:'.02em', color:ink.textMute }}>Tier Studio</span>}
+              </button>
+              {!isNarrowBar && <span style={{ width:1, height:20, background:ink.line, flexShrink:0 }} />}
+              <span className="tl-tabs" style={{ display:'flex', gap: isMobile ? 2 : 4, minWidth:0, maxWidth:'100%', overflowX:'auto', scrollbarWidth:'none' }}>
+                {TABS.map(t => {
+                  const on = tab === t.id
+                  return (
+                    <button key={t.id} onClick={() => (t.id === 'studio' ? leaveAtelier() : setTab(t.id))} style={{
+                      flexShrink:0, whiteSpace:'nowrap', display:'flex', alignItems:'center', gap:6, padding:'0 10px', height:SUBNAV_HEIGHT-1,
+                      background:'none', border:'none', borderBottom:`2px solid ${on ? ink.gold500 : 'transparent'}`, cursor:'pointer',
+                      color: on ? ink.gold500 : '#8A857C', fontFamily:fonts.ui, fontSize:12.5, fontWeight: on ? 700 : 600, transition:'color .15s, border-color .15s' }}
+                      onMouseEnter={e => { if (!on) e.currentTarget.style.color=ink.textHi }} onMouseLeave={e => { if (!on) e.currentTarget.style.color='#8A857C' }}>
+                      {t.icon} {t.label}
+                    </button>
+                  )
+                })}
+              </span>
+              <span style={{ flex:1 }}/>
+              <span style={{ position:'relative', flexShrink:0, ...(isNarrowBar ? { flex:'1 1 100%' } : { width:264 }) }}>
+                <Search size={13} style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', color:ink.textFaint, pointerEvents:'none' }}/>
+                <input value={hubSearch} onChange={e => setHubSearch(e.target.value)} placeholder="Rechercher un perso, un anime…"
+                  style={{ width:'100%', height:34, padding:'0 12px 0 32px', borderRadius:9, background:'rgba(255,255,255,.04)',
+                    border:`1px solid ${ink.line}`, color:ink.textHi, fontFamily:fonts.ui, fontSize:12.5, outline:'none', transition:'border-color .15s, background .15s' }}
+                  onFocus={e => { e.currentTarget.style.borderColor='rgba(199,168,105,.45)'; e.currentTarget.style.background='rgba(255,255,255,.06)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor=ink.line; e.currentTarget.style.background='rgba(255,255,255,.04)' }}/>
+              </span>
+            </>
           )}
         </div>
 
         {/* Templates inline panel */}
         <AnimatePresence>
-          {showTemplates && tab === 'studio' && (
+          {showTemplates && isEditor && (
             <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }}
               style={{ borderTop:`1px solid ${G.border}`, overflow:'hidden' }}>
               <div style={{ maxWidth:1600, margin:'0 auto', padding:'12px 0', display:'flex', gap:10, flexWrap:'wrap' }}>
@@ -2630,6 +2638,7 @@ export default function TierListPage() {
                 onLoadExisting={() => setTab('mylists')}
                 onSeeCommunity={() => setTab('community')}
                 onOpenList={loadList}
+                search={hubSearch}
               />
             </motion.div>
           ) : (
@@ -2637,16 +2646,7 @@ export default function TierListPage() {
             <motion.div key="editor" initial={{ opacity:0 }} animate={{ opacity:1 }}
               style={{ display:'flex', flexDirection:'column' }}>
 
-              {/* Retour au hub des tier lists (choix de catégorie) */}
-              <div style={{ maxWidth:1600, margin:'0 auto', width:'100%', padding:'12px 18px 0' }}>
-                <button onClick={() => setSelectedType(null)} style={{
-                  display:'inline-flex', alignItems:'center', gap:7, padding:'7px 14px', borderRadius:9,
-                  background:'rgba(255,255,255,.05)', border:`1px solid ${G.border}`, color:G.text,
-                  cursor:'pointer', fontSize:12.5, fontWeight:700, fontFamily:'inherit',
-                }}>
-                  <ArrowLeft size={14}/> Hub des tier lists
-                </button>
-              </div>
+              {/* (Retour au hub assuré par la sous-barre — bouton in-content retiré, redondant.) */}
 
               {/* Bannière d'aide — explique le principe en une phrase (masquable) */}
               {!hideHint && (
@@ -2795,16 +2795,16 @@ export default function TierListPage() {
             <div style={{ display:'flex', gap:8, marginBottom:16 }}>
               {[{ id:'popular', label:'🔥 Populaire' }, { id:'recent', label:'🆕 Récent' }].map(t => (
                 <button key={t.id} onClick={() => setCommunityTab(t.id)} style={{
-                  padding:'7px 16px', borderRadius:999, fontSize:12.5, fontWeight:800, cursor:'pointer', fontFamily:'inherit',
-                  color: communityTab === t.id ? '#1a1200' : G.muted,
-                  background: communityTab === t.id ? 'linear-gradient(135deg,#ffd84d,#f0a500)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${communityTab === t.id ? '#ffe27a' : G.border}`,
+                  padding:'7px 16px', borderRadius:999, fontSize:12.5, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  color: communityTab === t.id ? ink.gold400 : G.muted,
+                  background: communityTab === t.id ? 'rgba(199,168,105,.14)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${communityTab === t.id ? 'rgba(199,168,105,.4)' : G.border}`,
                 }}>{t.label}</button>
               ))}
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
               {/* Tri au rendu : Populaire = likes ↓ ; Récent = date ↓ (reste correct après like/publication). */}
-              {[...communityLists].sort((a, b) => communityTab === 'recent'
+              {[...communityLists].filter(l => hubMatch(l.title, l.authorName)).sort((a, b) => communityTab === 'recent'
                 ? (new Date(b.savedAt || b.createdAt || b.updatedAt || 0) - new Date(a.savedAt || a.createdAt || a.updatedAt || 0))
                 : ((b.likes || 0) - (a.likes || 0))
               ).map(list => (
@@ -2850,7 +2850,7 @@ export default function TierListPage() {
             </div>
           ) : (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:14 }}>
-              {savedLists.map(list => (
+              {savedLists.filter(l => hubMatch(l.title, l.name)).map(list => (
                 <SavedListCard
                   key={list.id} list={list}
                   onLoad={loadList} onDelete={deleteList} onDuplicate={duplicateList}
