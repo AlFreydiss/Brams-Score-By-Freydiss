@@ -1309,6 +1309,13 @@ def reset_berrys(uid: str, track: str = "lost") -> int:
 # 24h (vs 16h avant) pour ne pas pénaliser un membre qui farm une journée non-stop.
 MAX_SESSION_SECONDS = 24 * 3600
 
+# Découpage des présences continues : le heartbeat (vocal_rank_loop, 2 min) archive
+# la session en cours par tranches de 6h et rouvre derrière. Sinon une présence
+# non-stop reste UNE session géante que le plafond 24h tronque dans chaque fenêtre
+# (un membre 70h non-stop n'était compté que 24h sur 7j → rang bloqué). Tranches
+# de 6h ≪ 24h → jamais tronquées, et le total est préservé.
+SESSION_CHUNK_SECONDS = 6 * 3600
+
 def seconds_since(sessions, cutoff, join_time=None, _now=None):
     """Secondes vocales accumulées depuis un timestamp `cutoff` (borne basse).
     Chaque session est plafonnée à 24h (anti-session fantôme) et `end` ne peut pas
@@ -3749,6 +3756,19 @@ async def vocal_rank_loop():
                 # proprement la session en cours si le bot redémarre (cf. on_ready).
                 user["voice_seen"] = now
                 _DIRTY.add(uid)
+                # Découpe la présence continue en tranches de 6h archivées : évite
+                # qu'une session géante (non-stop) soit tronquée à 24h par fenêtre.
+                # Garde-fou anti-corruption : on ne backfill jamais plus de 14j (= la
+                # plus large fenêtre affichée). Un join_time aberrant (très ancien) est
+                # ainsi borné — pas de boucle infinie, pas de ré-inflation massive.
+                if jt and now - jt >= SESSION_CHUNK_SECONDS:
+                    t = max(jt, now - 14 * 86400)
+                    while now - t >= SESSION_CHUNK_SECONDS:
+                        user.setdefault("vocal_sessions", []).append({"start": t, "end": t + SESSION_CHUNK_SECONDS})
+                        archive_voice_session(uid, t, t + SESSION_CHUNK_SECONDS, None)
+                        t += SESSION_CHUNK_SECONDS
+                    user["join_time"] = t   # reliquat (< 6h) reste la session ouverte
+                    jt = t
                 hours_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=jt) / 3600
                 # Pré-check synchrone : ne lancer update_rank que si les rôles ne sont pas déjà corrects
                 _deserved = set(get_all_ranks_for_hours(hours_7d))
