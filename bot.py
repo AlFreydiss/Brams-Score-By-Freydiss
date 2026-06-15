@@ -4837,6 +4837,46 @@ async def testrank(interaction: discord.Interaction, membre: discord.Member = No
         print(f"❌ /testrank followup failed: {e}")
 
 # ─────────────────────────────────────────
+#  /move  (ADMIN - déplace tout un salon vocal)
+# ─────────────────────────────────────────
+@bot.tree.command(name="move", description="[ADMIN] Déplace tous les membres d'un salon vocal vers un autre")
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(source="Salon vocal de départ", destination="Salon vocal d'arrivée")
+async def move(interaction: discord.Interaction, source: discord.VoiceChannel, destination: discord.VoiceChannel):
+    try:
+        await interaction.response.defer(ephemeral=True)
+    except discord.NotFound:
+        print("⚠️ /move : interaction expirée avant defer")
+        return
+    except Exception as e:
+        print(f"❌ /move defer failed: {e}")
+        return
+    if source.id == destination.id:
+        await interaction.followup.send("⚠️ Source et destination sont le même salon.", ephemeral=True)
+        return
+    members = [m for m in source.members if not m.bot]
+    if not members:
+        await interaction.followup.send(f"Aucun membre à déplacer dans {source.mention}.", ephemeral=True)
+        return
+    reason = f"/move par {interaction.user}"
+    moved = failed = 0
+    for m in members:
+        try:
+            await m.move_to(destination, reason=reason)
+            moved += 1
+        except Exception as e:
+            failed += 1
+            print(f"❌ /move {m.display_name}: {e}")
+    msg = f"✅ **{moved}** membre(s) déplacé(s) de {source.mention} → {destination.mention}."
+    if failed:
+        msg += f"\n⚠️ **{failed}** échec(s) — vérifie que le bot a la permission *Déplacer les membres*."
+    try:
+        await interaction.followup.send(msg, ephemeral=True)
+    except Exception as e:
+        print(f"❌ /move followup failed: {e}")
+
+# ─────────────────────────────────────────
 #  /test  (ADMIN - simulation d'événements)
 # ─────────────────────────────────────────
 @bot.tree.command(name="test", description="[ADMIN] Simuler un événement sans affecter les données réelles")
