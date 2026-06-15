@@ -43,20 +43,28 @@ import {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const G = {
-  bg:    '#08090D',
-  panel: 'rgba(14,15,22,.96)',
-  card:  'rgba(20,22,32,.88)',
-  border:'rgba(255,255,255,.08)',
-  gold:  '#BFA46A',
+  bg:    '#0B0B0C',
+  panel: 'rgba(22,22,24,.96)',
+  card:  'rgba(22,22,24,.88)',
+  border:'rgba(255,255,255,.07)',
+  gold:  '#C7A869',
   rose:  '#a0445c',
   blue:  '#4a86b8',
-  text:  '#e8e4de',
-  muted: 'rgba(232,228,222,.36)',
+  text:  '#EDEAE3',
+  muted: 'rgba(237,234,227,.40)',
 }
+
+// ── Hauteurs de barres — source unique pour le sticky + le scroll-padding ───────
+// La navbar globale (.nav-shell-premium, index.css) fait 72px au repos et rétrécit
+// à 64px en scroll (.navbar-premium-scrolled). On cale tout sur la hauteur scrollée
+// pour que la sous-barre studio reste collée sous la nav dans les deux états.
+const NAVBAR_HEIGHT = 72            // .nav-shell-premium au repos
+const NAVBAR_HEIGHT_SCROLLED = 64   // .navbar-premium-scrolled .nav-shell-premium
+const SUBNAV_HEIGHT = 60            // barre « BRAMS TIER STUDIO »
 
 // ── Default tiers ──────────────────────────────────────────────────────────────
 // Plaque laiton gravée commune (le tier se distingue par sa bande d'accent mate).
-const BRASS_BG = 'linear-gradient(180deg, #2A2318 0%, #1C1710 100%)'
+const BRASS_BG = 'linear-gradient(180deg, #20201F 0%, #161618 100%)'
 const DEFAULT_TIERS = [
   { id:'god',   label:'GOD',   color:'#D4B483', bg:BRASS_BG },
   { id:'s',     label:'S',     color:'#BE6A5A', bg:BRASS_BG },
@@ -135,7 +143,7 @@ const PERSO_LIST = [
 // ── Tier types ─────────────────────────────────────────────────────────────────
 const TIER_TYPES = [
   { id:'anime',  label:'Animes',      icon:'🎬', color:'#a0445c', items:ANIME_LIST  },
-  { id:'persos', label:'Personnages', icon:'👤', color:'#BFA46A', items:PERSO_LIST  },
+  { id:'persos', label:'Personnages', icon:'👤', color:'#C7A869', items:PERSO_LIST  },
   { id:'custom', label:'Custom',      icon:'✨', color:'#7b6aa8', items:[]          },
 ]
 
@@ -162,7 +170,7 @@ const TEMPLATES = [
     desc:'3 rangs simples : Bon, Correct, Mauvais',
     tiers:[
       { id:'bon',     label:'BON',     color:'#34d399', bg:'linear-gradient(135deg,#0a2e1a,#0f4a2a)' },
-      { id:'correct', label:'OK',      color:'#BFA46A', bg:'linear-gradient(135deg,#2b2112,#55401c)' },
+      { id:'correct', label:'OK',      color:'#C7A869', bg:'linear-gradient(135deg,#2b2112,#55401c)' },
       { id:'mauvais', label:'MAUVAIS', color:'#a0445c', bg:'linear-gradient(135deg,#241017,#4a1b2a)' },
     ],
   },
@@ -171,7 +179,7 @@ const TEMPLATES = [
     desc:'4 rangs identité Brams Community',
     tiers:[
       { id:'yonkou',  label:'YONKOU',   color:'#d4a017', bg:'linear-gradient(135deg,#2a1f00,#4a3800)' },
-      { id:'capitaine',label:'CAPITAINE',color:'#BFA46A', bg:'linear-gradient(135deg,#2b2112,#55401c)' },
+      { id:'capitaine',label:'CAPITAINE',color:'#C7A869', bg:'linear-gradient(135deg,#2b2112,#55401c)' },
       { id:'marin',   label:'MARIN',    color:'#4a86b8', bg:'linear-gradient(135deg,#152330,#21384c)' },
       { id:'recrue',  label:'RECRUE',   color:'#5a6570', bg:'linear-gradient(135deg,#161c22,#27313a)' },
     ],
@@ -393,7 +401,7 @@ function tierBg(color) {
 }
 
 function fireConfetti() {
-  confetti({ particleCount:60, spread:100, origin:{x:.5,y:.4}, colors:['#BFA46A','#a0445c','#fff'], zIndex:99999 })
+  confetti({ particleCount:60, spread:100, origin:{x:.5,y:.4}, colors:['#C7A869','#a0445c','#fff'], zIndex:99999 })
 }
 
 // ── Draggable Item Card ────────────────────────────────────────────────────────
@@ -440,7 +448,7 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
         boxShadow: itemIsOver && !isDragging
           ? `0 0 0 2px ${G.gold}, 0 6px 24px rgba(0,0,0,.72)`
           : isDragOverlay
-          ? '0 12px 40px rgba(0,0,0,.8), 0 0 0 2px rgba(191,164,106,.4)'
+          ? '0 12px 40px rgba(0,0,0,.8), 0 0 0 2px rgba(199,168,105,.4)'
           : '0 2px 8px rgba(0,0,0,.55)',
         userSelect:'none',
         transform: isDragOverlay ? 'rotate(2deg) scale(1.06)' : undefined,
@@ -462,7 +470,7 @@ const ItemCard = memo(function ItemCard({ itemId, allById, compact=false, isDrag
               title="Renommer"
               onPointerDown={e => e.stopPropagation()}
               onClick={e => { e.stopPropagation(); setEditingName(true) }}
-              style={cardActionBtn('#BFA46A')}
+              style={cardActionBtn('#C7A869')}
             >
               <Edit3 size={8}/>
             </button>
@@ -559,7 +567,7 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
       display:'flex', alignItems:'stretch',
       borderBottom:`1px solid rgba(255,255,255,.05)`,
       minHeight:90, position:'relative',
-      background: isOver ? 'rgba(191,164,106,.04)' : 'transparent',
+      background: isOver ? 'rgba(199,168,105,.04)' : 'transparent',
       transition:'background .2s',
     }}
     className="tier-row"
@@ -660,7 +668,7 @@ function TierRow({ tier, items, allById, onRename, onColorChange, onDelete, onAd
         opacity:0, pointerEvents:'none', transition:'opacity .15s',
         borderLeft:'1px solid rgba(255,255,255,.05)',
       }}>
-        <button onClick={() => inputRef.current?.focus()} title="Renommer" style={iconBtn('#BFA46A')}><Edit3 size={10}/></button>
+        <button onClick={() => inputRef.current?.focus()} title="Renommer" style={iconBtn('#C7A869')}><Edit3 size={10}/></button>
         <button onClick={() => setShowColorPicker(v => !v)} title="Couleur" style={iconBtn(tier.color)}><Palette size={10}/></button>
         <button onClick={() => onAddAbove(tier.id)} title="Ajouter au-dessus" style={iconBtn('#4a86b8')}><Plus size={10}/></button>
         <button onClick={() => onDelete(tier.id)} title="Supprimer" style={iconBtn('#a0445c')}><Trash2 size={10}/></button>
@@ -822,7 +830,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
 
         <button onClick={() => setAddMode(addMode ? null : 'file')}
           style={{ display:'flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:8,
-            background:`rgba(191,164,106,.10)`, border:`1px solid ${G.gold}33`,
+            background:`rgba(199,168,105,.10)`, border:`1px solid ${G.gold}33`,
             color:G.gold, cursor:'pointer', fontSize:10.5, fontWeight:700, flexShrink:0 }}>
           <Plus size={11}/> Ajouter
         </button>
@@ -896,7 +904,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
         alignContent:'flex-start',
         outline: isOver ? `2px dashed ${G.gold}55` : '2px dashed transparent',
         outlineOffset:-4, borderRadius:6,
-        scrollbarWidth:'thin', scrollbarColor:`rgba(191,164,106,.15) transparent`,
+        scrollbarWidth:'thin', scrollbarColor:`rgba(199,168,105,.15) transparent`,
       }}>
         {filtered.map(item => {
           const isCustomItem = customItems.some(custom => custom.id === item.id)
@@ -905,7 +913,7 @@ function ItemPool({ items, allById, customItems, onAddCustom, onRenameCustom, on
             <ItemCard itemId={item.id} allById={allById} onRenameCustom={onRenameCustom} onDeleteCustom={onDeleteCustom}/>
             <button onClick={() => onToggleFav(item.id)} style={{
               position:'absolute', top:3, [isCustomItem ? 'left' : 'right']:3, width:18, height:18, borderRadius:'50%',
-              background: favorites.includes(item.id) ? 'rgba(191,164,106,.9)' : 'rgba(0,0,0,.6)',
+              background: favorites.includes(item.id) ? 'rgba(199,168,105,.9)' : 'rgba(0,0,0,.6)',
               border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
               zIndex:4,
             }}>
@@ -930,14 +938,14 @@ const miniInput = {
 }
 const actionBtn = {
   display:'flex', alignItems:'center', gap:4, height:28, padding:'0 12px', borderRadius:8,
-  background:`rgba(191,164,106,.14)`, border:`1px solid rgba(191,164,106,.3)`,
-  color:'#BFA46A', cursor:'pointer', fontSize:11, fontWeight:700,
+  background:`rgba(199,168,105,.14)`, border:`1px solid rgba(199,168,105,.3)`,
+  color:'#C7A869', cursor:'pointer', fontSize:11, fontWeight:700,
 }
 function tabBtn(active) {
   return {
     display:'flex', alignItems:'center', gap:4, padding:'3px 9px', borderRadius:7, border:'none', cursor:'pointer',
-    background: active ? 'rgba(191,164,106,.14)' : 'rgba(255,255,255,.05)',
-    color: active ? '#BFA46A' : 'rgba(255,255,255,.4)', fontSize:10, fontWeight:700,
+    background: active ? 'rgba(199,168,105,.14)' : 'rgba(255,255,255,.05)',
+    color: active ? '#C7A869' : 'rgba(255,255,255,.4)', fontSize:10, fontWeight:700,
   }
 }
 
@@ -951,7 +959,7 @@ function Toast({ msg, onDone }) {
         background:'rgba(10,12,20,.97)', backdropFilter:'blur(16px)',
         border:`1px solid ${G.gold}33`, borderRadius:12,
         padding:'8px 20px', color:'#fff', fontSize:12.5, fontWeight:700,
-        boxShadow:`0 8px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(191,164,106,.1)`,
+        boxShadow:`0 8px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(199,168,105,.1)`,
         whiteSpace:'nowrap',
       }}>
       {msg}
@@ -1102,7 +1110,7 @@ const CSS = `
     background:
       linear-gradient(110deg, rgba(255,255,255,.035) 0 1px, transparent 1px 90px),
       linear-gradient(180deg, rgba(255,255,255,.026) 0 1px, transparent 1px 76px),
-      linear-gradient(145deg, transparent 0%, rgba(191,164,106,.055) 42%, transparent 70%);
+      linear-gradient(145deg, transparent 0%, rgba(199,168,105,.055) 42%, transparent 70%);
     background-size:180px 180px, 156px 156px, 180% 180%;
     opacity:.72;
     mask-image:linear-gradient(180deg, rgba(0,0,0,.82), rgba(0,0,0,.50) 42%, rgba(0,0,0,.20));
@@ -1111,7 +1119,7 @@ const CSS = `
   .tl-page-premium::after {
     z-index:0;
     background:
-      linear-gradient(90deg, transparent 0%, rgba(191,164,106,.06) 48%, transparent 68%),
+      linear-gradient(90deg, transparent 0%, rgba(199,168,105,.06) 48%, transparent 68%),
       linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.34) 100%);
     opacity:.48;
     transform:translateX(-35%);
@@ -1132,11 +1140,11 @@ const CSS = `
   .tier-rank-delete:hover { opacity:1 !important; pointer-events:all !important; }
   .tier-item-card:hover .custom-item-actions,
   .tier-item-card:focus-within .custom-item-actions { opacity:1 !important; pointer-events:all !important; }
-  .tier-item-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.7),0 0 0 1.5px rgba(191,164,106,.3) !important; transform:translateY(-2px) scale(1.03); }
+  .tier-item-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.7),0 0 0 1.5px rgba(199,168,105,.3) !important; transform:translateY(-2px) scale(1.03); }
   .tier-item-card { transition:transform .18s,box-shadow .18s; }
-  .saved-list-card:hover { border-color:rgba(191,164,106,.28) !important; }
+  .saved-list-card:hover { border-color:rgba(199,168,105,.28) !important; }
   ::-webkit-scrollbar { width:4px; height:4px; }
-  ::-webkit-scrollbar-thumb { background:rgba(191,164,106,.18); border-radius:4px; }
+  ::-webkit-scrollbar-thumb { background:rgba(199,168,105,.18); border-radius:4px; }
   .tl-tabs::-webkit-scrollbar { display:none; }
 `
 
@@ -1164,6 +1172,9 @@ const TLX_HERO_ROWS = [
 ]
 // Cartes d'aperçu : laiton mat teinté de l'accent (jamais de dégradé criard).
 const TLX_GRADS = MAT_ACCENTS.map(c => `linear-gradient(160deg, ${c}59, ${c}24)`)
+// Vignettes persos de la preview hero (S→F) : réutilise les images du deck
+// « Personnages ». Le dégradé de tier sert de fallback derrière l'image.
+const TLX_HERO_THUMBS = PERSO_LIST.slice(0, 12)
 const TLX_ACCENTS = MAT_ACCENTS
 const TLX_TYPE_META = {
   anime:  { accent: MAT_ACCENTS[3], glow: 'rgba(94,131,166,0.22)', desc: 'Des shōnen cultes aux pépites de la saison — classe les séries de la Brams.', preview: [MAT_ACCENTS[0], MAT_ACCENTS[3], MAT_ACCENTS[5]] },
@@ -1252,9 +1263,9 @@ function TlxAmbient() {
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
       <div style={{ position: 'absolute', inset: 0, background:
-        `radial-gradient(1200px 700px at 78% -8%, rgba(201,168,106,0.12), transparent 60%),
-         radial-gradient(900px 600px at 10% 12%, rgba(190,106,90,0.06), transparent 60%),
-         radial-gradient(1000px 800px at 50% 110%, rgba(168,137,63,0.06), transparent 55%),
+        `radial-gradient(1200px 700px at 78% -8%, rgba(199,168,105,0.05), transparent 60%),
+         radial-gradient(900px 600px at 10% 12%, rgba(190,106,90,0.035), transparent 60%),
+         radial-gradient(1000px 800px at 50% 110%, rgba(168,137,63,0.035), transparent 55%),
          linear-gradient(180deg, ${ink.ink800}, ${ink.ink900})` }} />
       <div style={{ position: 'absolute', inset: '-40px', opacity: 0.05,
         backgroundImage: 'linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)',
@@ -1262,7 +1273,7 @@ function TlxAmbient() {
         maskImage: 'radial-gradient(70% 60% at 50% 40%, black, transparent 90%)',
         WebkitMaskImage: 'radial-gradient(70% 60% at 50% 40%, black, transparent 90%)' }} />
       <div style={{ position: 'absolute', top: -120, right: -80, width: 520, height: 520, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(245,196,81,0.22), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbA 16s ease-in-out infinite' }} />
+        background: 'radial-gradient(circle, rgba(199,168,105,0.07), transparent 65%)', filter: 'blur(24px)', animation: 'tlxOrbA 16s ease-in-out infinite' }} />
       <div style={{ position: 'absolute', bottom: -140, left: -100, width: 460, height: 460, borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(190,106,90,0.14), transparent 65%)', filter: 'blur(20px)', animation: 'tlxOrbB 19s ease-in-out infinite' }} />
       <svg viewBox="0 0 100 100" style={{ position: 'absolute', top: 70, right: 60, width: 220, height: 220, opacity: 0.06, animation: 'tlxSpinSlow 80s linear infinite' }}>
@@ -1282,7 +1293,7 @@ function TlxAmbient() {
 function TlxLadder() {
   return (
     <div style={{ perspective: '1400px', position: 'relative' }}>
-      <div style={{ position: 'absolute', inset: -30, background: 'radial-gradient(60% 60% at 60% 35%, rgba(245,196,81,0.16), transparent 70%)', filter: 'blur(30px)' }} />
+      <div style={{ position: 'absolute', inset: -30, background: 'radial-gradient(60% 60% at 60% 35%, rgba(199,168,105,0.06), transparent 70%)', filter: 'blur(34px)' }} />
       <div style={{
         position: 'relative', transform: 'rotateY(-9deg) rotateX(5deg)', transformStyle: 'preserve-3d',
         background: `linear-gradient(180deg, ${ink.ink700}, ${ink.ink900})`,
@@ -1314,25 +1325,29 @@ function TlxLadder() {
               <div style={{ display: 'flex', gap: 6, flex: 1, minWidth: 0 }}>
                 {Array.from({ length: row.cards }).map((_, ci) => {
                   const d = ri * 0.12 + ci * 0.08 + 0.2
+                  const before = TLX_HERO_ROWS.slice(0, ri).reduce((n, r) => n + r.cards, 0)
+                  const thumb = TLX_HERO_THUMBS[(before + ci) % TLX_HERO_THUMBS.length]
                   return (
                     <div key={ci} style={{
-                      width: 38, height: 50, borderRadius: 8, flexShrink: 0,
+                      width: 38, height: 50, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
                       background: TLX_GRADS[(ri + ci) % TLX_GRADS.length],
-                      border: '1px solid rgba(255,255,255,0.18)',
-                      boxShadow: '0 6px 14px -6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.35)',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      boxShadow: '0 6px 14px -6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.18)',
                       position: 'relative',
                       animation: `tlxCardIn .6s cubic-bezier(.22,1,.36,1) both, tlxFloaty ${4 + (ci % 3)}s ease-in-out infinite`,
                       animationDelay: `${d}s, ${d + 0.6}s`,
                     }}>
-                      <span style={{ position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
-                        width: 14, height: 14, borderRadius: 99, background: 'rgba(255,255,255,0.55)',
-                        boxShadow: 'inset 0 -2px 3px rgba(0,0,0,0.2)' }} />
+                      {thumb && (
+                        <img src={thumb.img} alt={thumb.name} loading="lazy" decoding="async"
+                          onError={e => { e.currentTarget.style.display = 'none' }}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+                      )}
                     </div>
                   )
                 })}
                 {row.slot && (
                   <div style={{ width: 38, height: 50, borderRadius: 8, flexShrink: 0,
-                    border: '1.5px dashed rgba(245,196,81,0.5)', display: 'grid', placeItems: 'center', color: 'rgba(245,196,81,0.7)' }}>
+                    border: '1.5px dashed rgba(199,168,105,0.5)', display: 'grid', placeItems: 'center', color: 'rgba(199,168,105,0.7)' }}>
                     <Plus size={14} />
                   </div>
                 )}
@@ -1352,9 +1367,10 @@ function TlxLadder() {
       <div style={{
         position: 'absolute', top: -14, right: 18, zIndex: 3, display: 'flex', alignItems: 'center', gap: 6,
         padding: '7px 12px', borderRadius: 99,
-        background: 'linear-gradient(180deg, rgba(245,196,81,0.95), rgba(202,162,58,0.95))',
-        color: '#1a1205', fontWeight: 700, fontSize: 12,
-        boxShadow: '0 12px 30px -8px rgba(245,196,81,0.6)', animation: 'tlxFloaty 5s ease-in-out infinite',
+        background: 'rgba(199,168,105,0.10)',
+        border: '1px solid rgba(199,168,105,0.40)', backdropFilter: 'blur(6px)',
+        color: ink.gold400, fontWeight: 600, fontSize: 12,
+        boxShadow: '0 6px 18px -10px rgba(0,0,0,0.6)', animation: 'tlxFloaty 5s ease-in-out infinite',
       }}>
         <Sparkles size={13} /> Glisse-dépose
       </div>
@@ -1383,7 +1399,7 @@ function TlxCategoryCard({ type, index, onOpen }) {
         transition: 'transform .2s cubic-bezier(.22,1,.36,1), box-shadow .3s, border-color .3s',
         transformStyle: 'preserve-3d',
         background: `linear-gradient(180deg, ${ink.ink700}, ${ink.ink800})`,
-        border: `1px solid ${spot.on ? 'rgba(201,168,106,0.4)' : TLX.line}`,
+        border: `1px solid ${spot.on ? 'rgba(199,168,105,0.4)' : TLX.line}`,
         borderRadius: 22, padding: 24, position: 'relative', overflow: 'hidden',
         boxShadow: spot.on ? `0 30px 70px -28px rgba(0,0,0,0.75), 0 0 0 1px ${meta.glow}` : '0 18px 50px -30px rgba(0,0,0,0.6)',
       }}>
@@ -1448,7 +1464,7 @@ function TlxCommunityCard({ list, index, onOpen }) {
         </div>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
           padding: '5px 9px', borderRadius: 99, fontSize: 12.5, fontWeight: 600,
-          color: TLX.gold, background: 'rgba(245,196,81,0.1)', border: '1px solid rgba(245,196,81,0.22)' }}>
+          color: TLX.gold, background: 'rgba(199,168,105,0.1)', border: '1px solid rgba(199,168,105,0.22)' }}>
           <Heart size={12} fill={TLX.gold} /> {list.likes || 0}
         </span>
       </button>
@@ -1467,7 +1483,7 @@ function TlxStat({ value, label }) {
 }
 
 const TLX_CSS = `
-  .tlx-hub ::selection { background: rgba(245,196,81,0.3); }
+  .tlx-hub ::selection { background: rgba(199,168,105,0.3); }
   .tlx-hero-grid { display:grid; grid-template-columns: 1.05fr 0.95fr; gap:56px; align-items:center; }
   .tlx-cat-grid { display:grid; grid-template-columns: 1fr 1fr; gap:22px; }
   .tlx-comm-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:16px; }
@@ -1475,11 +1491,11 @@ const TLX_CSS = `
   @media (max-width: 760px){ .tlx-cat-grid{ grid-template-columns:1fr; } .tlx-comm-grid{ grid-template-columns:1fr 1fr; } }
   @media (max-width: 520px){ .tlx-comm-grid{ grid-template-columns:1fr; } }
   .tlx-comm{ transition:transform .3s cubic-bezier(.22,1,.36,1), border-color .3s, box-shadow .3s; }
-  .tlx-comm:hover{ transform:translateY(-4px); border-color:rgba(245,196,81,0.35) !important; box-shadow:0 16px 40px -18px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,196,81,0.14); }
+  .tlx-comm:hover{ transform:translateY(-4px); border-color:rgba(199,168,105,0.35) !important; box-shadow:0 16px 40px -18px rgba(0,0,0,0.7), 0 0 0 1px rgba(199,168,105,0.14); }
   .tlx-ghost{ transition:all .25s ease; }
-  .tlx-ghost:hover{ border-color:rgba(245,196,81,0.4) !important; color:#fff !important; background:rgba(245,196,81,0.06) !important; }
+  .tlx-ghost:hover{ border-color:rgba(199,168,105,0.4) !important; color:#fff !important; background:rgba(199,168,105,0.06) !important; }
   .tlx-cta{ transition:transform .25s cubic-bezier(.22,1,.36,1), box-shadow .3s; }
-  .tlx-cta:hover{ transform:translateY(-2px); box-shadow:0 18px 44px -12px rgba(245,196,81,0.65) !important; }
+  .tlx-cta:hover{ transform:translateY(-2px); box-shadow:0 16px 36px -18px rgba(0,0,0,0.6) !important; border-color:rgba(199,168,105,0.5) !important; }
   .tlx-cta:active{ transform:translateY(0); }
   .tlx-hub button:focus-visible { outline: 2px solid ${TLX.gold}; outline-offset: 2px; }
   @keyframes tlxCardIn { from{opacity:0; transform:translateY(14px) scale(.9);} to{opacity:1; transform:translateY(0) scale(1);} }
@@ -1537,7 +1553,7 @@ function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, 
               <TlxReveal>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8,
                   fontFamily: 'monospace', fontSize: 12, letterSpacing: 1.5, color: TLX.gold,
-                  padding: '7px 13px', borderRadius: 99, background: 'rgba(245,196,81,0.08)', border: '1px solid rgba(245,196,81,0.22)' }}>
+                  padding: '7px 13px', borderRadius: 99, background: 'rgba(199,168,105,0.08)', border: '1px solid rgba(199,168,105,0.22)' }}>
                   <Compass size={14} /> ATELIER DE CLASSEMENT
                 </span>
               </TlxReveal>
@@ -1560,7 +1576,7 @@ function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, 
                     fontFamily: 'inherit', fontWeight: 700, fontSize: 15, color: '#1a1205',
                     padding: '14px 24px', borderRadius: 13, border: 'none',
                     background: `linear-gradient(135deg, ${TLX.goldHi}, ${TLX.gold} 55%, ${TLX.goldDeep})`,
-                    boxShadow: '0 14px 36px -12px rgba(245,196,81,0.6)',
+                    boxShadow: '0 10px 28px -16px rgba(0,0,0,0.6)',
                   }}>
                     <Plus size={18} /> Créer une tier list vierge
                   </button>
@@ -1603,16 +1619,16 @@ function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, 
           {/* le coffre au trésor : départ de zéro */}
           <TlxReveal delay={0.1}>
             <div style={{ marginTop: 22, position: 'relative', borderRadius: 22, overflow: 'hidden',
-              background: 'linear-gradient(120deg, rgba(245,196,81,0.12), rgba(202,162,58,0.05) 60%, rgba(20,23,33,0.7))',
-              border: '1px solid rgba(245,196,81,0.28)',
-              boxShadow: '0 24px 60px -32px rgba(245,196,81,0.4)', padding: 24,
+              background: 'linear-gradient(120deg, rgba(199,168,105,0.08), rgba(168,142,63,0.03) 60%, rgba(22,22,24,0.7))',
+              border: '1px solid rgba(199,168,105,0.22)',
+              boxShadow: '0 20px 50px -34px rgba(0,0,0,0.6)', padding: 24,
               display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
               <div style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', left: 0, pointerEvents: 'none',
                 background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.07), transparent)',
                 transform: 'skewX(-18deg)', animation: 'tlxShimmer 9s ease-in-out infinite' }} />
               <div style={{ width: 62, height: 62, borderRadius: 18, flexShrink: 0, display: 'grid', placeItems: 'center',
                 background: `linear-gradient(160deg, ${TLX.goldHi}, ${TLX.goldDeep})`, color: '#1a1205',
-                boxShadow: '0 14px 34px -10px rgba(245,196,81,0.6)' }}>
+                boxShadow: '0 10px 26px -14px rgba(0,0,0,0.55)' }}>
                 <Wand2 size={28} />
               </div>
               <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
@@ -1626,7 +1642,7 @@ function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, 
                 fontFamily: 'inherit', fontWeight: 700, fontSize: 15, color: '#1a1205',
                 padding: '13px 22px', borderRadius: 13, border: 'none', flexShrink: 0,
                 background: `linear-gradient(135deg, ${TLX.goldHi}, ${TLX.gold} 55%, ${TLX.goldDeep})`,
-                boxShadow: '0 12px 30px -12px rgba(245,196,81,0.6)', position: 'relative' }}>
+                boxShadow: '0 10px 26px -16px rgba(0,0,0,0.6)', position: 'relative' }}>
                 Commencer de zéro <ArrowRight size={17} />
               </button>
             </div>
@@ -2370,13 +2386,16 @@ export default function TierListPage() {
   ]
 
   return (
-    <div className="tl-page-premium" style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:72,
-      background:'linear-gradient(180deg, #07080c 0%, #0a0b10 42%, #070709 100%)' }}>
+    <div className="tl-page-premium" style={{ position:'relative', minHeight:'100vh', color:G.text, fontFamily:"'Inter',system-ui,sans-serif", paddingTop:NAVBAR_HEIGHT_SCROLLED,
+      background:'linear-gradient(180deg, #0B0B0C 0%, #0d0d0f 50%, #0a0a0b 100%)' }}>
       <style>{CSS}</style>
+      {/* Le scroll-padding réserve la place de la navbar fixe + la sous-barre sticky
+          pour qu'aucune carte ne se retrouve coupée derrière elles au scroll/ancrage. */}
+      <style>{`html{scroll-padding-top:${NAVBAR_HEIGHT_SCROLLED + SUBNAV_HEIGHT}px;}`}</style>
 
       {/* ── Studio Header ── */}
       <header style={{
-        position:'sticky', top:72, zIndex:50,
+        position:'sticky', top:NAVBAR_HEIGHT_SCROLLED, zIndex:50,
         background:'rgba(8,9,13,.95)', backdropFilter:'blur(24px)',
         borderBottom:`1px solid ${G.border}`,
         padding: isMobile ? '0 12px' : '0 20px',
@@ -2427,7 +2446,7 @@ export default function TierListPage() {
               <button key={t.id} onClick={() => (t.id === 'studio' ? leaveAtelier() : setTab(t.id))} style={{
                 flexShrink:0, whiteSpace:'nowrap',
                 display:'flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:7,
-                background: tab === t.id ? `rgba(191,164,106,.14)` : 'transparent',
+                background: tab === t.id ? `rgba(199,168,105,.14)` : 'transparent',
                 border: tab === t.id ? `1px solid ${G.gold}33` : '1px solid transparent',
                 color: tab === t.id ? G.gold : G.muted,
                 cursor:'pointer', fontSize:11, fontWeight:700, transition:'all .15s',
@@ -2492,15 +2511,15 @@ export default function TierListPage() {
               </label>
               {coverUrl && <button onClick={() => setCoverUrl(null)} title="Retirer la couverture" style={{ ...actionBtn, padding:'8px 10px' }}><X size={12}/></button>}
 
-              {/* CTA principal — Partager avec la communauté : jaune brillant, en évidence */}
+              {/* CTA principal — Partager : dégradé champagne mat (pas de glow), en évidence */}
               <button onClick={shareList} disabled={publishing}
                 onMouseEnter={e => { if (!publishing) e.currentTarget.style.transform = 'translateY(-1px)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}
                 style={{
                   display:'flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10,
-                  background:`linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`, border:'1px solid rgba(232,213,168,0.5)',
+                  background:`linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`, border:'1px solid rgba(199,168,105,0.5)',
                   color:'#1A1410', cursor: publishing ? 'default' : 'pointer', fontFamily:fonts.ui, fontSize:12.5, fontWeight:700,
-                  letterSpacing:'.01em', boxShadow:'inset 0 1px 0 rgba(255,255,255,.25), 0 4px 16px rgba(201,168,106,.25)', opacity: publishing ? .7 : 1,
+                  letterSpacing:'.01em', boxShadow:'inset 0 1px 0 rgba(255,255,255,.18)', opacity: publishing ? .7 : 1,
                   transition:'transform .15s, opacity .15s', whiteSpace:'nowrap',
                 }}>
                 <Users size={13}/> {publishing ? 'Publication…' : 'Partager avec la communauté'}
@@ -2559,7 +2578,7 @@ export default function TierListPage() {
                     color:G.text, cursor:'pointer', textAlign:'left',
                     transition:'border-color .15s, background .15s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor=G.gold+'44'; e.currentTarget.style.background='rgba(191,164,106,.06)' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor=G.gold+'44'; e.currentTarget.style.background='rgba(199,168,105,.06)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor=G.border; e.currentTarget.style.background='rgba(255,255,255,.04)' }}>
                     <span style={{ fontSize:18 }}>{tpl.emoji}</span>
                     <div>

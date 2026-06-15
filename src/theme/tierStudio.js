@@ -3,20 +3,20 @@
 // Référencé en inline dans les style={{}} ; keyframes/letterpress → <style> scopé.
 
 export const ink = {
-  ink900: '#0D0B07', // fond le plus profond (noir chaud)
-  ink800: '#14110B', // fond de page
-  ink700: '#1C1810', // surface / cartes
-  ink600: '#262017', // élevé / hover
-  line:   '#322A1E', // bordures
-  lineSoft: 'rgba(212,180,131,0.08)', // hairlines teintées or
-  gold500: '#C9A86A', // champagne, accent principal
-  gold400: '#D9BE85', // or clair (highlights)
-  gold300: '#E8D5A8', // texte or (emphase)
-  goldGlow: 'rgba(201,168,106,0.15)',
-  textHi:   '#F3ECDD', // blanc chaud (titres)
-  text:     '#C9C0AE', // corps (gris chaud)
-  textMute: '#8A8270', // légendes
-  textFaint:'#5A5446',
+  ink900: '#080809', // fond le plus profond
+  ink800: '#0B0B0C', // fond de page (base sombre neutre)
+  ink700: '#161618', // surface / cartes
+  ink600: '#1E1E20', // élevé / hover
+  line:   'rgba(255,255,255,0.07)', // bordures fines
+  lineSoft: 'rgba(255,255,255,0.05)', // hairlines
+  gold500: '#C7A869', // champagne mat, accent principal
+  gold400: '#D9C190', // champagne clair (hover)
+  gold300: '#E3D2A6', // champagne lumineux (emphase texte)
+  goldGlow: 'rgba(199,168,105,0.06)', // halo réduit au minimum
+  textHi:   '#EDEAE3', // off-white chaud (titres)
+  text:     '#C7C2B8', // corps
+  textMute: '#9A958B', // secondaire gris chaud désaturé
+  textFaint:'#6B675F',
 }
 
 // Accents de tier MATS (heat-map désaturée, descendante). Défauts — l'user peut
@@ -53,10 +53,10 @@ export const fonts = {
 // Plaque laiton gravée (label de tier, cartes structurelles).
 export function plaque(extra = {}) {
   return {
-    background: 'linear-gradient(180deg, #2A2318 0%, #1C1710 100%)',
+    background: 'linear-gradient(180deg, #1E1E20 0%, #161618 100%)',
     border: `1px solid ${ink.line}`,
-    borderTopColor: 'rgba(212,180,131,0.14)',
-    boxShadow: '0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 rgba(212,180,131,.06)',
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    boxShadow: '0 1px 2px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04)',
     ...extra,
   }
 }
@@ -69,7 +69,7 @@ export function engravedLabel(accent, extra = {}) {
     fontVariant: 'small-caps',
     fontWeight: 500,
     letterSpacing: '.12em',
-    textShadow: '0 1px 0 rgba(0,0,0,.6), 0 -1px 0 rgba(212,180,131,.05)',
+    textShadow: '0 1px 0 rgba(0,0,0,.6), 0 -1px 0 rgba(255,255,255,.04)',
     ...extra,
   }
 }
@@ -85,17 +85,18 @@ export function card(extra = {}) {
   }
 }
 
-// Bouton primaire (or plein).
+// Bouton primaire — outline premium : fill sombre, bordure fine champagne, texte
+// champagne. Zéro glow (le relief vient d'un dégradé champagne très subtil).
 export function btnPrimary(extra = {}) {
   return {
-    background: `linear-gradient(180deg, ${ink.gold400}, ${ink.gold500})`,
-    color: '#1A1410',
-    border: '1px solid rgba(232,213,168,0.5)',
+    background: 'linear-gradient(180deg, rgba(199,168,105,0.16), rgba(199,168,105,0.07))',
+    color: ink.gold400,
+    border: '1px solid rgba(199,168,105,0.45)',
     borderRadius: 10,
     fontFamily: fonts.ui,
     fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,.25)',
+    boxShadow: 'none',
     ...extra,
   }
 }
