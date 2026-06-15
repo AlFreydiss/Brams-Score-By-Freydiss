@@ -115,7 +115,7 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
   if (!webgl) return <Plateau partie={partie} orientation={orientation} peutJouer={peutJouer} onCoup={onCoup} interactif={interactif} taille={480} />
 
   return (
-    <div data-testid="plateau3d-wrap" style={{ position: 'relative', width: '100%', height: 'min(72vh, 560px)' }}>
+    <div data-testid="plateau3d-wrap" style={{ position: 'relative', width: '100%', height: 'min(82vh, 820px)' }}>
       <Canvas shadows dpr={[1, 1.6]} camera={{ position: orientation === 'black' ? [0, 8, -8] : [0, 8, 8], fov: 42 }}>
         <color attach="background" args={['#0b0a0e']} />
         <ambientLight intensity={0.6} />

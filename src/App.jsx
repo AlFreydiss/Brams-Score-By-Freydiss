@@ -647,9 +647,9 @@ export default function App() {
         <Route path="/tournoi/salon" element={<PageLayout><TournamentRoomPage /></PageLayout>} />
         <Route path="/undercover"    element={<PageLayout><UndercoverPage /></PageLayout>} />
 
-        {/* Brams Phone (Gartic Phone) */}
-        <Route path="/brams-phone"        element={<PageLayout><BramsPhonePage /></PageLayout>} />
-        <Route path="/brams-phone/:code"  element={<PageLayout><BramsPhonePage /></PageLayout>} />
+        {/* Brams Phone (Gartic Phone) — écran de jeu immersif (hors PageLayout) */}
+        <Route path="/brams-phone"        element={<BramsPhonePage />} />
+        <Route path="/brams-phone/:code"  element={<BramsPhonePage />} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
@@ -657,8 +657,8 @@ export default function App() {
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
-        <Route path="/echecs"      element={<PageLayout><EchecsPage /></PageLayout>} />
-        <Route path="/dames"       element={<PageLayout><DamesPage /></PageLayout>} />
+        <Route path="/echecs"      element={<EchecsPage />} />
+        <Route path="/dames"       element={<DamesPage />} />
         <Route path="/jeux"        element={<PageLayout><GamesHubPage /></PageLayout>} />
         <Route path="/fredisu"     element={<FredisuPage />} />
 

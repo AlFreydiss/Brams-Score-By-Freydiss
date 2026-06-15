@@ -9,6 +9,7 @@ import { assurerProfil, getProfil, getLeaderboard, getPartieEnCours } from './li
 import { rangPourElo } from './lib/elo.js'
 import { THEME, modeTroisD, setModeTroisD } from './constants.js'
 import { sons, isMuted, setMuted } from './lib/sons.js'
+import BarreJeu from '../../components/BarreJeu.jsx'
 
 function CarteMode({ emoji, titre, texte, cta, onClick, accent, desactive, note }) {
   const [hover, setHover] = useState(false)
@@ -128,38 +129,31 @@ export default function EchecsPage() {
   const enJeu = ['solo', 'local', 'partie'].includes(mode.type)
 
   return (
-    <div style={{ minHeight: '100vh', background: `radial-gradient(1100px 500px at 50% -8%, rgba(224,82,74,0.10), transparent 60%), radial-gradient(900px 420px at 85% 8%, rgba(255,215,0,0.05), transparent 55%), ${THEME.bg}`, paddingTop: enJeu ? 78 : 92, paddingBottom: enJeu ? 24 : 80 }}>
-      <div style={{ maxWidth: enJeu ? 1640 : 1080, margin: '0 auto', padding: '0 18px', fontFamily: THEME.fontBody }}>
+    <div style={{ minHeight: '100vh', background: `radial-gradient(1100px 500px at 50% -8%, rgba(224,82,74,0.10), transparent 60%), radial-gradient(900px 420px at 85% 8%, rgba(255,215,0,0.05), transparent 55%), ${THEME.bg}`, paddingTop: 0, paddingBottom: enJeu ? 24 : 80 }}>
+      <BarreJeu titre="Échecs Brams">
+        <button
+          onClick={() => { const v = !troisD; setTroisD(v); setModeTroisD(v) }}
+          title={troisD ? 'Passer en vue 2D classique' : 'Passer en vue 3D'}
+          style={{ height: 42, padding: '0 14px', borderRadius: 12, cursor: 'pointer', fontSize: 13.5, fontWeight: 800, fontFamily: THEME.fontBody, background: troisD ? 'rgba(255,215,0,0.10)' : THEME.card, border: `1px solid ${troisD ? 'rgba(255,215,0,0.45)' : THEME.cardBorder}`, color: troisD ? THEME.gold : THEME.text }}
+        >
+          {troisD ? '🧊 3D' : '▦ 2D'}
+        </button>
+        <button
+          onClick={() => { const m = !mute; setMute(m); setMuted(m); sons.debloquer() }}
+          title={mute ? 'Activer les sons' : 'Couper les sons'}
+          style={{ width: 42, height: 42, borderRadius: 12, cursor: 'pointer', fontSize: 18, background: THEME.card, border: `1px solid ${THEME.cardBorder}`, color: THEME.text }}
+        >
+          {mute ? '🔇' : '🔊'}
+        </button>
+      </BarreJeu>
+      <div style={{ maxWidth: enJeu ? 1640 : 1080, margin: '0 auto', padding: '18px 18px 0', fontFamily: THEME.fontBody }}>
 
-        {/* En-tête (compact en partie) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: enJeu ? 8 : 26 }}>
-          <div>
-            <h1 style={{ margin: 0, fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: enJeu ? 20 : 'clamp(28px, 4.5vw, 44px)', letterSpacing: '-0.02em', color: THEME.text }}>
-              ♟ Échecs <span style={{ background: `linear-gradient(120deg, ${THEME.gold}, #ff9f43)`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>Brams</span>
-            </h1>
-            {!enJeu && (
-              <p style={{ margin: '4px 0 0', color: THEME.muted, fontSize: 14 }}>
-                Défie Stockfish ou les membres de l'équipage — ELO et rangs One Piece à la clé.
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => { const v = !troisD; setTroisD(v); setModeTroisD(v) }}
-              title={troisD ? 'Passer en vue 2D classique' : 'Passer en vue 3D'}
-              style={{ height: 42, padding: '0 14px', borderRadius: 12, cursor: 'pointer', fontSize: 13.5, fontWeight: 800, fontFamily: THEME.fontBody, background: troisD ? 'rgba(255,215,0,0.10)' : THEME.card, border: `1px solid ${troisD ? 'rgba(255,215,0,0.45)' : THEME.cardBorder}`, color: troisD ? THEME.gold : THEME.text }}
-            >
-              {troisD ? '🧊 3D' : '▦ 2D'}
-            </button>
-            <button
-              onClick={() => { const m = !mute; setMute(m); setMuted(m); sons.debloquer() }}
-              title={mute ? 'Activer les sons' : 'Couper les sons'}
-              style={{ width: 42, height: 42, borderRadius: 12, cursor: 'pointer', fontSize: 18, background: THEME.card, border: `1px solid ${THEME.cardBorder}`, color: THEME.text }}
-            >
-              {mute ? '🔇' : '🔊'}
-            </button>
-          </div>
-        </div>
+        {/* Sous-titre du hub (sous la barre, mode hub uniquement) */}
+        {!enJeu && (
+          <p style={{ margin: '0 0 22px', color: THEME.muted, fontSize: 14 }}>
+            Défie Stockfish ou les membres de l'équipage — ELO et rangs One Piece à la clé.
+          </p>
+        )}
 
         {mode.type === 'hub' && (
           <>
