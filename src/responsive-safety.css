@@ -53,14 +53,15 @@
 :where(pre) { max-width: 100%; overflow-x: auto; }
 :where(table) { max-width: 100%; }
 
-/* ── 5. Garde-fou anti scroll-horizontal (renforce index.css) ───────────── */
-:where(html, body, #root) {
+/* ── 5. Garde-fou anti scroll-horizontal — TOUJOURS clip, JAMAIS hidden.
+   `overflow-x: hidden` sur html/body est recalculé en `overflow-y: auto` par le
+   navigateur → html/body deviennent des scroll-containers et cassent TOUT
+   `position: sticky` (la barre défile au lieu de coller). `clip` clippe sans
+   créer de scroll-container. Sélecteurs réels (pas :where) pour gagner le cascade. */
+html, body, #root {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
-}
-@supports (overflow: clip) {
-  :where(html, body, #root) { overflow-x: clip; }
+  overflow-x: clip;
 }
 
 /* ── 6. Ajustements mobile : densité verticale & marges latérales ─────────

@@ -305,7 +305,7 @@ function AMVBackground({ hidden = false }) {
 // Wrapper pour les pages Wiki/ThÃ©ories (Navbar + fond sombre + WelcomeAnimation)
 function PageLayout({ children }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative', isolation: 'isolate', overflowX: 'hidden' }}>
+    <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative', isolation: 'isolate', overflowX: 'clip' }}>
       <WelcomeAnimation />
       <Navbar />
       {children}

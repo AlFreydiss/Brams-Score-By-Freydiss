@@ -223,10 +223,12 @@ const CSS = `
    * et le wrapper principal via isolation:isolate dans App.jsx.
    */
 
-  /* Empêche l'overflow horizontal parasite sur mobile */
+  /* Empêche l'overflow horizontal parasite — clip et NON hidden : hidden est
+     recalculé en overflow-y:auto par le navigateur, ce qui transforme html/body
+     en scroll-containers et casse TOUS les position:sticky du site. */
   html, body {
     max-width: 100vw;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Pas de gap subpixel sur les images/vidéos inline */

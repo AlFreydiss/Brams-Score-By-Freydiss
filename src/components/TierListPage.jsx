@@ -1108,7 +1108,10 @@ const listAction = {
 const CSS = `
   .tl-page-premium {
     isolation:isolate;
-    overflow-x:hidden;
+    /* clip (PAS hidden) : hidden force overflow-y:auto → conteneur de scroll qui
+       casse le position:sticky de la sous-barre (gap + ne colle pas). clip clippe
+       l'horizontal SANS créer de scroll-container → le sticky reste collé fenêtre. */
+    overflow-x:clip;
   }
   .tl-page-premium > * {
     position:relative;
