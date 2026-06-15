@@ -9,9 +9,18 @@ import { THEME, MODELE_3D_URL, NOEUDS_PIECES_3D, CREDIT_3D } from '../constants.
 import { squareVers3D, piecesDepuisFen } from '../lib/coords3d.js'
 import { useInteractionEchecs } from '../hooks/useInteractionEchecs.js'
 import SelecteurPromotion from './SelecteurPromotion.jsx'
+import Plateau from './Plateau.jsx'
 
 const FICHIERS = 'abcdefgh'
 useGLTF.preload(MODELE_3D_URL)
+
+// Couleurs 3D : flat hex obligatoire (three ne parse pas les gradients/rgba CSS).
+// caseClaire / caseFoncee / gold de THEME sont déjà des hex valides → réutilisés.
+const C3D = {
+  claire: THEME.caseClaire, foncee: THEME.caseFoncee,   // cases (hex)
+  selection: THEME.gold, legal: THEME.gold,             // sélection + anneau coups légaux
+  dernier: '#b9a44a', echec: '#e05a4e',                 // dernier coup + roi en échec (CSS → hex plat)
+}
 
 // Clone profond + normalisation : base à y=0, centré en x/z, mis à l'échelle d'une case.
 function normaliserPiece(src) {
@@ -56,13 +65,13 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur }) {
       <mesh key={square} position={[x, -0.06, z]} receiveShadow
         onClick={(e) => { e.stopPropagation(); onCaseClic(square, pieceSur(square)) }}>
         <boxGeometry args={[1, 0.12, 1]} />
-        <meshStandardMaterial color={sb?.color || (claire ? THEME.caseClaire : THEME.caseFoncee)} />
+        <meshStandardMaterial color={sb?.color || (claire ? C3D.claire : C3D.foncee)} />
       </mesh>
     )
     if (sb?.legal) cases.push(
       <mesh key={square + '-l'} position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.12, 0.2, 28]} />
-        <meshStandardMaterial color={THEME.gold} emissive={THEME.gold} emissiveIntensity={0.7} transparent opacity={0.9} />
+        <meshStandardMaterial color={C3D.legal} emissive={C3D.legal} emissiveIntensity={0.7} transparent opacity={0.9} />
       </mesh>
     )
   }
@@ -74,10 +83,10 @@ function Scene({ partie, orientation, inter, pieceSur }) {
   const pieces = useMemo(() => piecesDepuisFen(partie.fen), [partie.fen])
   const surbrillances = useMemo(() => {
     const s = {}
-    if (partie.dernierCoup) { s[partie.dernierCoup.from] = { color: THEME.dernierCoup }; s[partie.dernierCoup.to] = { color: THEME.dernierCoup } }
-    if (inter.selection) s[inter.selection] = { color: THEME.gold }
+    if (partie.dernierCoup) { s[partie.dernierCoup.from] = { color: C3D.dernier }; s[partie.dernierCoup.to] = { color: C3D.dernier } }
+    if (inter.selection) s[inter.selection] = { color: C3D.selection }
     for (const m of inter.coupsLegauxSel) s[m.to] = { ...(s[m.to] || {}), legal: true }
-    if (partie.caseRoiEnEchec) s[partie.caseRoiEnEchec] = { color: THEME.echecRoi }
+    if (partie.caseRoiEnEchec) s[partie.caseRoiEnEchec] = { color: C3D.echec }
     return s
   }, [partie.dernierCoup, partie.caseRoiEnEchec, inter.selection, inter.coupsLegauxSel])
 
@@ -98,6 +107,12 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
     const m = {}; for (const p of piecesDepuisFen(partie.fen)) m[p.square] = p.couleur
     return (sq) => m[sq] || null
   }, [partie.fen])
+
+  // Fallback 2D si WebGL absent (sinon <Canvas> crash). Après tous les hooks.
+  const webgl = useMemo(() => {
+    try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))) } catch { return false }
+  }, [])
+  if (!webgl) return <Plateau partie={partie} orientation={orientation} peutJouer={peutJouer} onCoup={onCoup} interactif={interactif} taille={480} />
 
   return (
     <div data-testid="plateau3d-wrap" style={{ position: 'relative', width: '100%', height: 'min(72vh, 560px)' }}>
