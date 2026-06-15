@@ -32,7 +32,7 @@ function normaliserPiece(src) {
   const size = new THREE.Vector3(); box.getSize(size)
   const center = new THREE.Vector3(); box.getCenter(center)
   const footprint = Math.max(size.x, size.z) || 1
-  const scale = 0.82 / footprint
+  const scale = 0.70 / footprint // un peu d'air entre les pièces (la rangée du fond se chevauchait à 0.82)
   o.position.set(-center.x, -box.min.y, -center.z) // recentré, base au sol
   const g = new THREE.Group(); g.add(o); g.scale.setScalar(scale)
   return g
