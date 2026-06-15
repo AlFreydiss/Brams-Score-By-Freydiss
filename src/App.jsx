@@ -313,6 +313,16 @@ function PageLayout({ children }) {
   )
 }
 
+// Écran de jeu immersif : base opaque + stacking context (zIndex 1 + isolation) pour
+// COUVRIR le fond d'opening équipé global (fixed zIndex 0), SANS la navbar du site.
+function GameLayout({ children }) {
+  return (
+    <div style={{ minHeight: '100vh', background: '#0b0c0e', position: 'relative', zIndex: 1, isolation: 'isolate', overflowX: 'hidden' }}>
+      {children}
+    </div>
+  )
+}
+
 // Slug d'URL → titre lisible pour l'event analytics anime_view (le dashboard
 // affiche metadata.title ; le slug brut ferait des "kny" dans le top animes).
 const ANIME_TITLES = {
@@ -648,8 +658,8 @@ export default function App() {
         <Route path="/undercover"    element={<PageLayout><UndercoverPage /></PageLayout>} />
 
         {/* Brams Phone (Gartic Phone) — écran de jeu immersif (hors PageLayout) */}
-        <Route path="/brams-phone"        element={<BramsPhonePage />} />
-        <Route path="/brams-phone/:code"  element={<BramsPhonePage />} />
+        <Route path="/brams-phone"        element={<GameLayout><BramsPhonePage /></GameLayout>} />
+        <Route path="/brams-phone/:code"  element={<GameLayout><BramsPhonePage /></GameLayout>} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
@@ -657,8 +667,8 @@ export default function App() {
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
-        <Route path="/echecs"      element={<EchecsPage />} />
-        <Route path="/dames"       element={<DamesPage />} />
+        <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
+        <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />
         <Route path="/jeux"        element={<PageLayout><GamesHubPage /></PageLayout>} />
         <Route path="/fredisu"     element={<FredisuPage />} />
 
