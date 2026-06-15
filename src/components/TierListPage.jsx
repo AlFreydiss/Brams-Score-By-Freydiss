@@ -1569,8 +1569,8 @@ function TlxHub({ types, communityLists, loadedListsCount, resumable, onResume, 
   const persoCount = types.find(t => t.id === 'persos')?.items.length || 0
   return (
     <div className="tlx-hub" style={{ position: 'relative', fontFamily: fonts.ui }}>
-      <style>{TLX_CSS}</style>
-      <TlxAmbient />
+      {/* TLX_CSS + TlxAmbient sont rendus au niveau page (.tl-page-premium) pour
+          couvrir aussi Communauté / Mes Listes / Templates — plus de doublon ici. */}
       <main style={{ position: 'relative', zIndex: 2, maxWidth: 1240, margin: '0 auto', padding: '0 32px 140px' }}>
         {/* Brouillon en cours → reprise (la landing reste l'écran par défaut) */}
         {resumable && (
@@ -2459,7 +2459,16 @@ export default function TierListPage() {
           pour qu'aucune carte ne se retrouve coupée derrière elles au scroll/ancrage. */}
       <style>{`html{scroll-padding-top:${NAVBAR_HEIGHT_SCROLLED + SUBNAV_HEIGHT}px;}`}</style>
 
-      {/* ── Studio Header ── */}
+      {/* Fond « atelier » (grille + radiaux champagne + grain + orbes + pluie de
+          berrys) commun à toutes les vues hors éditeur : hub, Communauté, Mes
+          Listes, Templates. Fixed zIndex:0, derrière le contenu (z-index:1). */}
+      {!isEditor && (
+        <>
+          <style>{TLX_CSS}</style>
+          <TlxAmbient />
+        </>
+      )}
+
       {/* ── Sous-barre Tier Studio — slim, sticky, suit la hauteur de la navbar ── */}
       <header style={{
         position:'sticky', top:navH, zIndex:50,
