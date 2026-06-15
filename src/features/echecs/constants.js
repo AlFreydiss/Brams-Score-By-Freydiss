@@ -112,3 +112,15 @@ export const CLE_MUTE      = 'echecs_mute'
 export const CLE_NIVEAU_IA  = 'echecs_niveau_ia'
 export const CLE_COULEUR_IA = 'echecs_couleur_ia'
 export const CLE_CADENCE    = 'echecs_cadence'
+
+// ── Échiquier 3D (vrai 3D r3f) ──────────────────────────────────────────────
+export const MODELE_3D_URL = '/models/echecs3d.glb'
+// Noms de nœuds réels du GLB (relevés via gltf-transform). 'w'/'b' = couleur ;
+// type chess.js p/n/b/r/q/k. Renseignés à partir de la sortie du script list.mjs.
+// Le pion est un nœud parent (Pawn_Body_*) avec un enfant (Pawn_Top_*) : cloner
+// le nœud body embarque le top, on référence donc le body.
+export const NOEUDS_PIECES_3D = {
+  w: { p: 'Pawn_Body_W1', n: 'Knight_W1', b: 'Bishop_W1', r: 'Castle_W1', q: 'Queen_W', k: 'King_W' },
+  b: { p: 'Pawn_Body_B1', n: 'Knight_B1', b: 'Bishop_B1', r: 'Castle_B1', q: 'Queen_B', k: 'King_B' },
+}
+export const CREDIT_3D = 'Modèle : A Beautiful Game (Khronos) — CC-BY 4.0'
