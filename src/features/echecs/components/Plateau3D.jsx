@@ -1,9 +1,9 @@
 // Échiquier vrai 3D (react-three-fiber). MÊME interface que Plateau : drop-in.
 // Logique de coup déléguée à useInteractionEchecs ; pièces = nœuds clonés (profond)
 // du GLB, auto-ajustés (Box3) à la case. Matériaux d'origine (marbre blanc/noir).
-import { Suspense, useMemo, useRef } from 'react'
+import { Suspense, useMemo, useRef, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, useGLTF, ContactShadows, Html } from '@react-three/drei'
+import { OrbitControls, useGLTF, ContactShadows, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import { THEME, MODELE_3D_URL, NOEUDS_PIECES_3D, CREDIT_3D } from '../constants.js'
 import { squareVers3D, piecesDepuisFen } from '../lib/coords3d.js'
@@ -54,6 +54,37 @@ function Piece3D({ nodes, nodeName, cible, type }) {
   return <group ref={ref} position={cible}><primitive object={obj} /></group>
 }
 
+// Trajectoire du dernier coup : arc laser de la case de départ à la case d'arrivée,
+// via le MÊME squareVers3D que les pièces (donc correct + même flip d'orientation).
+// S'efface en ~1.4s et se relance à chaque nouveau coup.
+function TrajectoireCoup({ dernierCoup, orientation }) {
+  const ref = useRef()
+  const tRef = useRef(0)
+  const points = useMemo(() => {
+    if (!dernierCoup?.from || !dernierCoup?.to) return null
+    const a = squareVers3D(dernierCoup.from, orientation)
+    const b = squareVers3D(dernierCoup.to, orientation)
+    const N = 28, pts = []
+    for (let i = 0; i <= N; i++) {
+      const t = i / N
+      pts.push([
+        a[0] + (b[0] - a[0]) * t,
+        0.08 + Math.sin(Math.PI * t) * 0.6,   // arc relevé, ancré aux deux cases
+        a[2] + (b[2] - a[2]) * t,
+      ])
+    }
+    return pts
+  }, [dernierCoup?.from, dernierCoup?.to, orientation])
+  useEffect(() => { tRef.current = 0 }, [dernierCoup?.from, dernierCoup?.to])
+  useFrame((_, dt) => {
+    const o = ref.current; if (!o?.material) return
+    tRef.current += dt
+    o.material.opacity = Math.max(0, 1 - tRef.current / 1.4)
+  })
+  if (!points) return null
+  return <Line ref={ref} points={points} color="#ff3b3b" lineWidth={4} transparent opacity={1} />
+}
+
 function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur }) {
   const cases = []
   for (let f = 0; f < 8; f++) for (let r = 0; r < 8; r++) {
@@ -97,6 +128,7 @@ function Scene({ partie, orientation, inter, pieceSur }) {
         <Piece3D key={p.square} nodes={nodes} nodeName={NOEUDS_PIECES_3D?.[p.couleur]?.[p.type]}
           cible={squareVers3D(p.square, orientation)} type={p.type} />
       ))}
+      <TrajectoireCoup dernierCoup={partie.dernierCoup} orientation={orientation} />
     </>
   )
 }
