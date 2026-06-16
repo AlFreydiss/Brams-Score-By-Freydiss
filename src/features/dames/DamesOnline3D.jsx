@@ -58,6 +58,7 @@ export default function DamesOnline3D() {
     const delta = g.myColor === P ? m.elo_change_pirate : m.elo_change_marine
     setResult({ winner: m.winner, myDelta: typeof delta === 'number' ? delta : null })
     setPhase('finished'); drawMarkers(); loadLb()
+    rdrRef.current?.[m.winner === g.myColor ? 'sfxWin' : 'sfxLose']?.()
   }, [drawMarkers, loadLb])
 
   // Coup adverse reçu via Realtime → on l'anime.
