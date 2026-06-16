@@ -57,14 +57,17 @@ def main():
         except ClientError: return False
     for ep in sorted(files):
         f=files[ep]; base=f'S01E{ep:03d}'
-        # deja encode+uploade lors d'un run precedent (temp local supprime) -> ne pas re-encoder
-        if ep in by_ep and on_r2(f'{KEY_PREFIX}/{base}-vostfr.mp4'):
-            print('skip ep',ep,'(deja sur R2)'); continue
+        # resumable HQ : skip seulement si deja (re)encode en HQ (flag hq) ET present sur R2.
+        # Les EP 1-100 du run NVENC precedent n'ont pas le flag -> re-encode en x264 crf16.
+        if ep in by_ep and by_ep[ep].get('hq') and on_r2(f'{KEY_PREFIX}/{base}-vostfr.mp4'):
+            print('skip ep',ep,'(deja HQ sur R2)'); continue
         print('\nEp',ep)
         vo=TMP/f'{base}-vostfr.mp4'; vtt=TMP/f'{base}-fr.vtt'; thumb=TMP/f'{base}.jpg'
         if not vo.exists():
-            ff(['-i',str(f),'-map','0:v:0','-map','0:a:0','-c:v','h264_nvenc','-preset','p4','-cq','23',
-                '-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart',str(vo)])
+            # MAX QUALITE : x265 10bit -> x264 slow crf16 tune animation (profil High, 8bit web).
+            # Bien meilleur que NVENC cq23 sur l'anime (pas de banding). Standard campagne HQ.
+            ff(['-i',str(f),'-map','0:v:0','-map','0:a:0','-c:v','libx264','-preset','slow','-crf','16',
+                '-tune','animation','-profile:v','high','-pix_fmt','yuv420p','-c:a','aac','-b:a','256k','-movflags','+faststart',str(vo)])
         has_sub=False
         if not vtt.exists():
             for smap in ('0:s:m:language:fre','0:s:0'):
@@ -78,7 +81,7 @@ def main():
         url_thumb=upload(thumb,f'{KEY_PREFIX}/thumbnails/{base}.jpg') if thumb.exists() else None
         e={'episode':ep,'title':f'Épisode {ep}','episodeLabel':base,'src':url_vo,
            'season':'S01','arc':'Bleach','preferredAudioLang':'ja','progressKey':base,'badge':'VOSTFR',
-           'audio':[{'label':'VOSTFR','srclang':'ja','default':True}]}
+           'hq':True,'audio':[{'label':'VOSTFR','srclang':'ja','default':True}]}
         if url_thumb: e['thumbnail']=url_thumb
         if has_sub: e['subtitles']=[{'label':'Français','srclang':'fr','src':upload(vtt,f'{KEY_PREFIX}/{base}-fr.vtt'),'default':True}]
         by_ep[ep]=e
