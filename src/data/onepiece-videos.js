@@ -74,13 +74,15 @@ const EPISODE_TITLES = {
   "1154": "La verite derriere le plan secret ! Vegapunk declare victoire",
   "1155": "L'horizon promis ! En route vers Elbaph tant attendu",
   "1163": "Episode 1163",
-  "1165": "Episode 1165"
+  "1165": "Episode 1165",
+  "1166": "Episode 1166"
 }
 
 const EPISODES = [
   ...Array.from({ length: 70 }, (_, index) => 1086 + index),
   1163,
   1165,
+  1166,
 ]
 
 export default EPISODES.map((episode) => {
