@@ -59,8 +59,8 @@ function makeMedallion(side, king) {
   const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S
   const ctx = cv.getContext('2d'); const cx = S / 2, cy = S / 2, R = S * 0.46
   const g = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R * 1.08)
-  if (side === P) { g.addColorStop(0, '#d9594d'); g.addColorStop(.55, '#a8281f'); g.addColorStop(1, '#5e1110') }
-  else { g.addColorStop(0, '#5a97d6'); g.addColorStop(.55, '#27598f'); g.addColorStop(1, '#0e2444') }
+  if (side === P) { g.addColorStop(0, '#bf5a4e'); g.addColorStop(.55, '#7e2a22'); g.addColorStop(1, '#491310') }
+  else { g.addColorStop(0, '#5b82a6'); g.addColorStop(.55, '#2e4f6e'); g.addColorStop(1, '#152f49') }
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill()
   ctx.lineWidth = S * 0.035; ctx.strokeStyle = king ? '#e7c878' : (side === P ? '#3c0c0b' : '#0a1c33')
   ctx.beginPath(); ctx.arc(cx, cy, R * 0.9, 0, 7); ctx.stroke()
@@ -103,14 +103,15 @@ function useMaterials() {
   return useMemo(() => {
     const med = { [P]: makeMedallion(P, false), [M]: makeMedallion(M, false), [P + 'K']: makeMedallion(P, true), [M + 'K']: makeMedallion(M, true) }
     const wood = makeWoodBump()
-    const pirateSide = new THREE.MeshPhysicalMaterial({ color: 0x6e160f, metalness: 0.25, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.12, envMapIntensity: 1.1, emissive: 0x7a1606, emissiveIntensity: 0.25 })
-    const marineSide = new THREE.MeshPhysicalMaterial({ color: 0x14385f, metalness: 0.85, roughness: 0.26, clearcoat: 0.8, clearcoatRoughness: 0.18, iridescence: 0.5, iridescenceIOR: 1.6, envMapIntensity: 1.25 })
+    // pièces sobres : peu d'émissif, peu d'iridescence, semi-mat (DA premium, pas "RGB")
+    const pirateSide = new THREE.MeshPhysicalMaterial({ color: 0x8a352c, metalness: 0.2, roughness: 0.44, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.85, emissive: 0x1c0805, emissiveIntensity: 0.05 })
+    const marineSide = new THREE.MeshPhysicalMaterial({ color: 0x2c4d6c, metalness: 0.55, roughness: 0.42, clearcoat: 0.45, clearcoatRoughness: 0.3, iridescence: 0.12, iridescenceIOR: 1.3, envMapIntensity: 1.0 })
     const mk = (side, king) => new THREE.MeshStandardMaterial({ map: med[side + (king ? 'K' : '')], bumpMap: med[side + (king ? 'K' : '')], bumpScale: 0.3, metalness: 0.35, roughness: 0.42, envMapIntensity: 0.95 })
     const top = { [P]: mk(P, false), [M]: mk(M, false), [P + 'K']: mk(P, true), [M + 'K']: mk(M, true) }
     const bot = { [P]: new THREE.MeshStandardMaterial({ color: 0x4a0f0a, metalness: 0.3, roughness: 0.6 }), [M]: new THREE.MeshStandardMaterial({ color: 0x0c2038, metalness: 0.3, roughness: 0.6 }) }
     const rim = { [P]: new THREE.MeshStandardMaterial({ color: 0x3c0c08, metalness: 0.5, roughness: 0.45 }), [M]: new THREE.MeshStandardMaterial({ color: 0x0a1a30, metalness: 0.6, roughness: 0.4 }) }
     const gold = new THREE.MeshPhysicalMaterial({ color: 0xe7c46a, metalness: 1, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.16, envMapIntensity: 1.3, emissive: 0x6a4a12, emissiveIntensity: 0.55, toneMapped: true })
-    const gem = { [P]: new THREE.MeshStandardMaterial({ color: 0xd14b3a, metalness: 0.6, roughness: 0.2, emissive: 0x5a1206, emissiveIntensity: 0.9 }), [M]: new THREE.MeshStandardMaterial({ color: 0x4a90d9, metalness: 0.6, roughness: 0.2, emissive: 0x0a3060, emissiveIntensity: 0.9 }) }
+    const gem = { [P]: new THREE.MeshStandardMaterial({ color: 0xb8564a, metalness: 0.6, roughness: 0.28, emissive: 0x3a0d05, emissiveIntensity: 0.3 }), [M]: new THREE.MeshStandardMaterial({ color: 0x5a83ad, metalness: 0.6, roughness: 0.28, emissive: 0x0a2240, emissiveIntensity: 0.3 }) }
     const tileDark = new THREE.MeshStandardMaterial({ color: 0x6b4427, roughness: 0.62, metalness: 0.08, bumpMap: wood, bumpScale: 0.04 })
     const tileLight = new THREE.MeshStandardMaterial({ color: 0xe9d7af, roughness: 0.5, metalness: 0.04, bumpMap: wood, bumpScale: 0.03 })
     const frame = new THREE.MeshStandardMaterial({ color: 0x241710, roughness: 0.55, metalness: 0.2, bumpMap: wood, bumpScale: 0.05 })
@@ -120,10 +121,10 @@ function useMaterials() {
 }
 
 // ── une pièce (groupe) ─────────────────────────────────────────────────────────
-function Piece({ side, king, mats, innerRef }) {
+function Piece({ side, king, mats }) {
   const sideMat = side === P ? mats.pirateSide : mats.marineSide
   return (
-    <group ref={innerRef}>
+    <group>
       <mesh castShadow receiveShadow material={[sideMat, mats.top[side + (king ? 'K' : '')], mats.bot[side]]}>
         <cylinderGeometry args={[0.40, 0.43, 0.17, 56, 1]} />
       </mesh>
@@ -191,7 +192,7 @@ function Pieces({ store, audio }) {
 
   useFrame(() => {
     const now = performance.now()
-    mats.pirateSide.emissiveIntensity = 0.25 + 0.14 * Math.sin(now * 0.0021)  // pulse de lave (Pirates)
+    mats.pirateSide.emissiveIntensity = 0.05 + 0.025 * Math.sin(now * 0.0016)  // braise très subtile (Pirates)
     const sel = state.selected ? state.selected[0] + '_' + state.selected[1] : null
     const hk = hoverKey.current
     // repos / hover lift / bob de la sélection (le mover écrasera sa propre transform plus bas)
@@ -273,10 +274,11 @@ function Pieces({ store, audio }) {
         const movable = state.interactive && state.movableKeys.has(key)
         return (
           <group key={key} position={[w.x, PIECE_Y, w.z]}
+            ref={(el) => { if (el) refs.current[key] = el; else delete refs.current[key] }}
             onClick={(e) => click(e, r, c)}
             onPointerOver={(e) => { if (movable) { e.stopPropagation(); hoverKey.current = key; document.body.style.cursor = 'pointer' } }}
             onPointerOut={() => { if (hoverKey.current === key) { hoverKey.current = null; document.body.style.cursor = '' } }}>
-            <Piece side={cell.side} king={cell.king} mats={mats} innerRef={(el) => { if (el) refs.current[key] = el; else delete refs.current[key] }} />
+            <Piece side={cell.side} king={cell.king} mats={mats} />
           </group>
         )
       }))}
