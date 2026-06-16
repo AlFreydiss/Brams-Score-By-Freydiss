@@ -21,6 +21,7 @@ const PIECE_Y = 0.18, MARK_Y = 0.105
 const isDark = (r, c) => (r + c) % 2 === 1
 const worldPos = (r, c) => ({ x: c - 4.5, z: r - 4.5 })
 const easeInOut = (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2)
+const SUN = [-26, 5, -40]   // soleil couchant bas (chaud) — derrière/à gauche du plateau
 
 // ── textures procédurales (gravures crâne/ancre + grain de bois) ───────────────
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath() }
@@ -80,6 +81,20 @@ function makeWoodBump() {
   }
   for (let i = 0; i < 1600; i++) { const a = Math.random() * 40 - 20; ctx.fillStyle = `rgba(${128 + a | 0},${128 + a | 0},${128 + a | 0},.5)`; ctx.fillRect(Math.random() * S, Math.random() * S, 1, 1) }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); t.needsUpdate = true
+  return t
+}
+// normal map de vagues (somme de sinus) — anime l'océan via offset défilant
+function makeWaveNormal() {
+  const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S
+  const ctx = cv.getContext('2d'); const img = ctx.createImageData(S, S), d = img.data
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const hx = Math.cos(x * 0.08) * 0.04 + Math.cos(x * 0.05 + y * 0.07) * 0.025
+    const hy = Math.cos(y * 0.11) * 0.033 + Math.cos(x * 0.05 + y * 0.07) * 0.035
+    const nx = -hx, ny = -hy, nz = 1, len = Math.hypot(nx, ny, nz), i = (y * S + x) * 4
+    d[i] = (nx / len * 0.5 + 0.5) * 255; d[i + 1] = (ny / len * 0.5 + 0.5) * 255; d[i + 2] = (nz / len * 0.5 + 0.5) * 255; d[i + 3] = 255
+  }
+  ctx.putImageData(img, 0, 0)
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 10); t.needsUpdate = true
   return t
 }
 
@@ -351,15 +366,16 @@ function HintPath({ points }) {
 
 // ── océan + ciel + particules d'ambiance ───────────────────────────────────────
 function Ocean({ quality }) {
-  const matRef = useRef()
-  useFrame((st) => { if (matRef.current) { const t = st.clock.elapsedTime * 0.04; if (matRef.current.map) { matRef.current.map.offset.set(t, t * 0.6) } } })
+  const normal = useMemo(() => makeWaveNormal(), [])
+  useFrame((st) => { const t = st.clock.elapsedTime; normal.offset.set(t * 0.03, t * 0.017) })
   if (quality === 'low') {
-    return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}><planeGeometry args={[160, 160]} /><meshStandardMaterial color={0x1a2c3e} roughness={0.4} metalness={0.5} /></mesh>
+    return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}><planeGeometry args={[400, 400]} /><meshStandardMaterial color={0x2a4258} roughness={0.25} metalness={0.7} normalMap={normal} /></mesh>
   }
+  // miroir net + faible roughness → reflète le ciel couchant chaud (glint sur l'eau)
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-      <planeGeometry args={[200, 200]} />
-      <MeshReflectorMaterial resolution={quality === 'high' ? 1024 : 512} mixBlur={8} mixStrength={28} blur={[300, 80]} minDepthThreshold={0.4} maxDepthThreshold={1.2} depthScale={1.1} depthToBlurRatioBias={0.25} mirror={0.55} color="#16344e" metalness={0.75} roughness={0.42} />
+      <planeGeometry args={[400, 400]} />
+      <MeshReflectorMaterial resolution={quality === 'high' ? 1024 : 512} mixBlur={1.4} mixStrength={3.2} blur={[140, 50]} minDepthThreshold={0.2} maxDepthThreshold={1.4} depthScale={0.9} depthToBlurRatioBias={0.2} mirror={0.82} color="#22455f" metalness={0.9} roughness={0.16} normalMap={normal} normalScale={[0.22, 0.22]} />
     </mesh>
   )
 }
@@ -470,13 +486,14 @@ export default function DamesScene({ store, onSquareClick, audio }) {
         onPointerMissed={() => { if (store.api.onMiss) store.api.onMiss() }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
-        <fogExp2 attach="fog" args={[0x0a141d, 0.012]} />
-        <Sky distance={4500} sunPosition={[-12, 1.6, -8]} inclination={0.49} azimuth={0.25} turbidity={9} rayleigh={2.2} mieCoefficient={0.01} mieDirectionalG={0.85} />
-        <Environment preset="sunset" environmentIntensity={0.55} />
-        <hemisphereLight args={[0xffe2bd, 0x10202c, 0.45]} />
-        <directionalLight position={[7, 16, 9]} intensity={1.05} color={0xfff1da} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={50} />
-        <pointLight position={[-7, 7, -5]} intensity={28} color={0xffce8a} distance={45} decay={1.4} />
-        <directionalLight position={[-6, 8, 6]} intensity={0.3} color={0x9fb8e0} />
+        <fogExp2 attach="fog" args={[0xc77a44, 0.0072]} />{/* lueur d'horizon couchant chaude — fond l'océan lointain dans le soleil */}
+        <Sky distance={3000} sunPosition={SUN} turbidity={10} rayleigh={1.25} mieCoefficient={0.05} mieDirectionalG={0.97} />
+        <Environment preset="sunset" environmentIntensity={0.72} />
+        <hemisphereLight args={[0xffdcae, 0x16202c, 0.5]} />
+        <directionalLight position={[7, 16, 9]} intensity={1.0} color={0xfff1da} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={50} />
+        <directionalLight position={[-20, 3.5, -28]} intensity={1.15} color={0xff9248} />{/* soleil couchant : rim chaud + glint sur l'eau */}
+        <pointLight position={[-7, 7, -5]} intensity={22} color={0xffc070} distance={45} decay={1.4} />
+        <directionalLight position={[-6, 8, 6]} intensity={0.25} color={0x9fb8e0} />
 
         <Board store={store} />
         <Pieces store={store} audio={audio} />
