@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { initBoard, generateMoves, applyMove, opp, countPieces, P, M } from './engine/draughts-engine.js'
 import { ensureRating, matchmake, cancelQueue, getMatch, submitMove, resign, subscribeMatch, leaderboard } from './online/damesRanked.js'
+import { eloToTier, formatPrime } from '../../lib/dames/damesRank.js'
 
 const GOLD = '#d9b870', PARCH = '#efe6d4', MUTED = '#9a8f7d'
 const panel = { width: '100%', maxWidth: 560, background: 'rgba(18,13,8,.72)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 16, padding: 20, textAlign: 'center' }
@@ -159,7 +160,11 @@ export default function DamesOnline3D() {
             <span style={{ width: 20, textAlign: 'center', fontWeight: 900, color: i === 0 ? GOLD : MUTED }}>{i + 1}</span>
             <span style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', background: 'rgba(255,255,255,.08)', display: 'grid', placeItems: 'center', fontSize: 11, color: '#fff' }}>{r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (r.username || '?').slice(0, 2).toUpperCase()}</span>
             <span style={{ flex: 1, color: PARCH, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.username}</span>
-            <span style={{ color: GOLD, fontWeight: 800, fontFamily: "'Fraunces',serif" }}>{r.rating}</span>
+            {(() => { const t = eloToTier(r.rating); return (
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
+                <span style={{ color: t.color, fontWeight: 800, fontSize: 13 }}>{t.emoji} {formatPrime(t.prime)}</span>
+                <span style={{ color: MUTED, fontSize: 10 }}>{r.rating} ELO</span>
+              </span>) })()}
           </div>
         ))}
     </div>
@@ -171,7 +176,9 @@ export default function DamesOnline3D() {
         <div style={panel}>
           <div style={{ fontSize: 40, marginBottom: 6 }}>🌐</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: PARCH, marginBottom: 4 }}>En ligne classé</div>
-          <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}>Ton ELO : <strong style={{ color: GOLD }}>{rating ? rating.rating : '—'}</strong>{rating ? ` · ${rating.wins}V ${rating.losses}D ${rating.draws}N` : ''}</div>
+          {rating ? (() => { const t = eloToTier(rating.rating); return (
+            <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}><span style={{ color: t.color, fontWeight: 800 }}>{t.emoji} {t.label}</span> · <strong style={{ color: GOLD }}>{formatPrime(t.prime)}</strong> · {rating.rating} ELO · {rating.wins}V {rating.losses}D {rating.draws}N</div>
+          ) })() : <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}>Ton ELO : <strong style={{ color: GOLD }}>—</strong></div>}
           {err && <div style={{ color: '#ef8a7c', fontSize: 13, marginBottom: 12 }}>{err}</div>}
           {phase === 'searching'
             ? <div><div style={{ fontSize: 15, color: PARCH, marginBottom: 14 }}>🧭 Recherche d'un adversaire…</div><button style={ghost} onClick={cancel}>Annuler</button></div>
@@ -206,7 +213,7 @@ export default function DamesOnline3D() {
             {[['☠️', pir, '#5e1110'], ['⚓', mar, '#0e2444']].map(([ic, n, bg]) => (
               <div key={ic} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(14,10,7,.74)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 12, padding: '6px 12px' }}>
                 <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 12, background: bg }}>{ic}</span>
-                <span style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 18, color: PARCH }}>{n}</span>
+                <span style={{ fontFamily: "'Pirata One',cursive", fontWeight: 700, fontSize: 18, color: PARCH }}>{n}</span>
               </div>
             ))}
             {G.current.status === 'active' && <button style={{ ...ghost, padding: '6px 14px' }} onClick={doResign}>🏳️ Abandonner</button>}
@@ -216,7 +223,7 @@ export default function DamesOnline3D() {
           <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'radial-gradient(circle at 50% 45%, rgba(10,8,6,.6), rgba(5,4,3,.92))', backdropFilter: 'blur(6px)' }}>
             <div style={{ ...panel, maxWidth: 380 }}>
               <div style={{ fontSize: 44 }}>{result.winner === 'draw' ? '🤝' : won ? '🏆' : '☠️'}</div>
-              <h2 style={{ fontFamily: "'Fraunces',serif", fontWeight: 700, fontSize: 24, color: '#e8cf92', margin: '6px 0 6px' }}>{result.winner === 'draw' ? 'Match nul' : won ? 'Victoire !' : 'Défaite'}</h2>
+              <h2 style={{ fontFamily: "'Pirata One',cursive", fontWeight: 700, fontSize: 24, color: '#e8cf92', margin: '6px 0 6px' }}>{result.winner === 'draw' ? 'Match nul' : won ? 'Victoire !' : 'Défaite'}</h2>
               {typeof result.myDelta === 'number' && <p style={{ color: result.myDelta >= 0 ? '#9fe0a0' : '#ef8a7c', fontWeight: 800, marginBottom: 16 }}>{result.myDelta >= 0 ? '+' : ''}{result.myDelta} ELO</p>}
               <button style={primary} onClick={leave}>↻ Rejouer</button>
             </div>
