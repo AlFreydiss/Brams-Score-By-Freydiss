@@ -76,7 +76,7 @@ export default function DamesGame3D() {
     const notation = moveToNotation(mv); const mover = g.turn
     const before = g.board; const { board: nb, promoted } = applyMove(g.board, mv)
     rdr.setHint(null); setHud(h => ({ ...h, hinting: false }))
-    rdr.playMove(mv, before, { promoted }).then(() => {
+    rdr.playMove(mv, before, { promoted, ai: g.mode === 'ai' && mover === g.aiSide }).then(() => {
       g.board = nb; g.turn = opp(g.turn); g.last = mv; g.inputLocked = false
       setMoves(ms => [...ms, { side: mover, n: notation }])
       refreshTurn()

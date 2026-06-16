@@ -68,7 +68,7 @@ export default function DamesOnline3D() {
     if (row.ply <= g.ply) return
     const before = g.board; const { promoted } = applyMove(before, row.move)
     g.last = row.move; g.locked = true
-    rdrRef.current?.playMove(row.move, before, { promoted }).then(() => {
+    rdrRef.current?.playMove(row.move, before, { promoted, ai: true }).then(() => {
       g.board = row.board_after; g.turn = g.myColor; g.ply = row.ply; g.locked = false; refreshLocal()
     })
   }, [refreshLocal])

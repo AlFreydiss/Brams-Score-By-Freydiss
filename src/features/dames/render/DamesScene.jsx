@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useRef, useMemo, useEffect, useSyncExternalStore } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Environment, Sky, MeshReflectorMaterial, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Environment, Sky, MeshReflectorMaterial, ContactShadows, Line } from '@react-three/drei'
 import { EffectComposer, N8AO, SMAA, Bloom, DepthOfField, Vignette, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { BlendFunction, ToneMappingMode } from 'postprocessing'
 import { Leva, useControls } from 'leva'
@@ -128,7 +128,7 @@ function Piece({ side, king, mats, innerRef }) {
   )
 }
 
-// ── couche pièces + animation des coups + sparks de capture/promotion ──────────
+// ── couche pièces + juice (hover, squash/stretch, capture FX, cérémonie) ───────
 function Pieces({ store, audio }) {
   const state = useSyncExternalStore(store.subscribe, store.getState)
   const mats = useMaterials()
@@ -136,59 +136,100 @@ function Pieces({ store, audio }) {
   const anim = useRef(null)          // animation de coup en cours
   const sparkRef = useRef(null)      // InstancedMesh des éclats
   const sparks = useRef([])          // état JS des éclats
+  const hoverKey = useRef(null)      // case survolée (pièce jouable)
+  const glowMesh = useRef(null)      // halo émissif sous la pièce sélectionnée
+  const hoverMesh = useRef(null)     // ring de survol
   const reduced = state.reduced
-  const SPARKS = 120
+  const SPARKS = 200
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
-  const fxBurst = (r, c, hue) => {
+  // éclats : scale ↑ avec le combo (l'intensité monte à chaque prise d'une rafle)
+  const fxBurst = (r, c, hue, scale = 1) => {
     if (reduced) return
-    const w = worldPos(r, c)
-    for (let k = 0; k < 18; k++) {
+    const w = worldPos(r, c); const n = Math.min(40, Math.round(18 * scale))
+    for (let k = 0; k < n; k++) {
       const s = sparks.current.find(x => x.life <= 0); if (!s) break
       s.x = w.x; s.y = 0.22; s.z = w.z
-      s.vx = (Math.random() - 0.5) * 2.0; s.vy = 0.9 + Math.random() * 1.3; s.vz = (Math.random() - 0.5) * 2.0
+      s.vx = (Math.random() - 0.5) * 2.0 * scale; s.vy = (0.9 + Math.random() * 1.3) * scale; s.vz = (Math.random() - 0.5) * 2.0 * scale
       s.life = s.max = 0.55 + Math.random() * 0.35; s.col = hue === 'gold' ? (Math.random() < 0.5 ? 0xf2d27a : 0xffae4d) : (Math.random() < 0.5 ? 0xe6c878 : 0xff6a2c)
     }
   }
 
   // expose l'API impérative à la façade
   useEffect(() => {
-    store.api.playMove = (move, before, { promoted = false } = {}) => new Promise((resolve) => {
+    store.api.playMove = (move, before, { promoted = false, ai = false } = {}) => new Promise((resolve) => {
       const fromKey = move.from[0] + '_' + move.from[1]
       const grp = refs.current[fromKey]
       const caps = move.caps || [], path = move.path || [move.to], isCap = caps.length > 0
+      if (ai && store.api.focusMove) store.api.focusMove(move.from, move.to)  // caméra suit le coup IA/adverse
       if (!grp || reduced) {
-        if (isCap) { caps.forEach(([r, c]) => { const m = refs.current[r + '_' + c]; if (m) m.visible = false; fxBurst(r, c) }); audio.capture() }
-        if (promoted) { fxBurst(move.to[0], move.to[1], 'gold'); audio.king() } else audio.move()
+        if (isCap) { caps.forEach(([r, c], idx) => { const m = refs.current[r + '_' + c]; if (m) m.visible = false; fxBurst(r, c, 'fire', 1 + idx * 0.3); if (idx >= 1) store.api.combo?.(idx + 1) }); audio.capture(); store.api.shake?.(0.12); store.api.flash?.(0.3) }
+        if (promoted) { fxBurst(move.to[0], move.to[1], 'gold', 2); store.api.flash?.(0.4); audio.king() } else audio.move()
         resolve(); return
       }
       audio.move()
-      anim.current = { grp, path, caps, isCap, i: 0, seg0: { ...worldPos(move.from[0], move.from[1]) }, t0: performance.now(), promoted, to: move.to, resolve, capDone: new Set() }
+      anim.current = { grp, path, caps, isCap, i: 0, seg0: { ...worldPos(move.from[0], move.from[1]) }, t0: performance.now(), promoted, to: move.to, resolve, capDone: new Set(), combo: 0, phase: 'hop' }
     })
     return () => { store.api.playMove = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduced])
 
-  useFrame((st) => {
+  useFrame(() => {
     const now = performance.now()
-    // pulse de lave (Pirates)
-    mats.pirateSide.emissiveIntensity = 0.25 + 0.14 * Math.sin(now * 0.0021)
-    // bob de la pièce sélectionnée
+    mats.pirateSide.emissiveIntensity = 0.25 + 0.14 * Math.sin(now * 0.0021)  // pulse de lave (Pirates)
     const sel = state.selected ? state.selected[0] + '_' + state.selected[1] : null
-    if (!anim.current) {
-      for (const k in refs.current) { const m = refs.current[k]; if (!m) continue; m.position.y = (k === sel && state.interactive) ? PIECE_Y + 0.12 + Math.sin(now * 0.005) * 0.04 : PIECE_Y }
+    const hk = hoverKey.current
+    // repos / hover lift / bob de la sélection (le mover écrasera sa propre transform plus bas)
+    for (const k in refs.current) {
+      const m = refs.current[k]; if (!m) continue
+      let y = PIECE_Y
+      if (k === sel && state.interactive) y = PIECE_Y + 0.12 + Math.sin(now * 0.005) * 0.04
+      else if (k === hk && state.movableKeys.has(k) && state.interactive) y = PIECE_Y + 0.07
+      m.position.y = y; m.scale.set(1, 1, 1)
     }
-    // animation d'un coup (saut/arc + capture en vol)
+    // halo émissif (outline qui passe dans le bloom) sous la pièce sélectionnée
+    if (glowMesh.current) {
+      if (sel && state.interactive && !anim.current) { const w = worldPos(state.selected[0], state.selected[1]); glowMesh.current.position.set(w.x, 0.12, w.z); glowMesh.current.visible = true; glowMesh.current.material.opacity = 0.6 + 0.35 * Math.sin(now * 0.006); const s = 1 + 0.05 * Math.sin(now * 0.006); glowMesh.current.scale.set(s, s, 1) }
+      else glowMesh.current.visible = false
+    }
+    // ring de survol
+    if (hoverMesh.current) {
+      if (hk && state.movableKeys.has(hk) && hk !== sel && state.interactive && !anim.current) { const [r, c] = hk.split('_').map(Number); const w = worldPos(r, c); hoverMesh.current.position.set(w.x, MARK_Y, w.z); hoverMesh.current.visible = true; hoverMesh.current.material.opacity = 0.4 + 0.25 * Math.sin(now * 0.008) }
+      else hoverMesh.current.visible = false
+    }
+    // animation d'un coup
     const a = anim.current
     if (a) {
-      const b = worldPos(a.path[a.i][0], a.path[a.i][1]), s0 = a.seg0
-      const dist = Math.hypot(b.x - s0.x, b.z - s0.z)
-      const dur = a.isCap ? 320 : Math.max(240, dist * 70), hopH = a.isCap ? 0.55 : 0.14
-      let p = (now - a.t0) / dur; if (p > 1) p = 1
-      const e = easeInOut(p)
-      a.grp.position.set(s0.x + (b.x - s0.x) * e, PIECE_Y + Math.sin(p * Math.PI) * hopH, s0.z + (b.z - s0.z) * e)
-      if (a.isCap && p > 0.5 && !a.capDone.has(a.i)) { a.capDone.add(a.i); const cap = a.caps[a.i]; if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; if (cm) cm.visible = false; fxBurst(cap[0], cap[1]); audio.capture() } }
-      if (p >= 1) { a.seg0 = b; a.i++; a.t0 = now; if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); if (a.promoted) { fxBurst(a.to[0], a.to[1], 'gold'); audio.king() } anim.current = null; a.resolve() } }
+      if (a.phase === 'hop') {
+        const b = worldPos(a.path[a.i][0], a.path[a.i][1]), s0 = a.seg0
+        const dist = Math.hypot(b.x - s0.x, b.z - s0.z)
+        const dur = a.isCap ? 320 : Math.max(240, dist * 70), hopH = a.isCap ? 0.55 : 0.16
+        let p = (now - a.t0) / dur; if (p > 1) p = 1
+        const e = easeInOut(p)
+        a.grp.position.set(s0.x + (b.x - s0.x) * e, PIECE_Y + Math.sin(p * Math.PI) * hopH, s0.z + (b.z - s0.z) * e)
+        const stretch = 1 + 0.16 * Math.sin(p * Math.PI)             // stretch en vol (squash/stretch)
+        a.grp.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch))
+        if (a.isCap && p > 0.5 && !a.capDone.has(a.i)) {
+          a.capDone.add(a.i); const cap = a.caps[a.i]
+          if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; if (cm) cm.visible = false; a.combo++; fxBurst(cap[0], cap[1], 'fire', 1 + a.combo * 0.28); audio.capture(); store.api.shake?.(0.13 + a.combo * 0.05); store.api.flash?.(0.28 + a.combo * 0.07); if (a.combo >= 2) store.api.combo?.(a.combo) }
+        }
+        if (p >= 1) {
+          a.seg0 = b; a.i++; a.t0 = now
+          if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4) } }
+        }
+      } else if (a.phase === 'settle') {                            // petit rebond d'atterrissage (overshoot)
+        let p = (now - a.t0) / 150; if (p > 1) p = 1
+        const sy = 1 - 0.16 * Math.sin(p * Math.PI); a.grp.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy))
+        if (p >= 1) { a.grp.scale.set(1, 1, 1); const r = a.resolve; anim.current = null; r() }
+      } else if (a.phase === 'ceremony') {                          // cérémonie de promotion (~900ms) : s'élève + tourne
+        let p = (now - a.t0) / 900; if (p > 1) p = 1
+        const wt = worldPos(a.to[0], a.to[1])
+        a.grp.position.set(wt.x, PIECE_Y + Math.sin(p * Math.PI) * 0.55, wt.z)
+        a.grp.rotation.y = p * Math.PI * 3
+        const s = 1 + 0.12 * Math.sin(p * Math.PI); a.grp.scale.set(s, s, s)
+        if (!a.cerBurst && p > 0.45) { a.cerBurst = true; fxBurst(a.to[0], a.to[1], 'gold', 3); store.api.flash?.(0.55) }
+        if (p >= 1) { a.grp.rotation.y = 0; a.grp.position.set(wt.x, PIECE_Y, wt.z); a.grp.scale.set(1, 1, 1); const r = a.resolve; anim.current = null; r() }
+      }
     }
     // éclats
     const im = sparkRef.current
@@ -214,12 +255,24 @@ function Pieces({ store, audio }) {
       {board && board.flatMap((row, r) => row.map((cell, c) => {
         if (!cell) return null
         const key = r + '_' + c, w = worldPos(r, c)
+        const movable = state.interactive && state.movableKeys.has(key)
         return (
-          <group key={key} position={[w.x, PIECE_Y, w.z]} onClick={(e) => click(e, r, c)}>
+          <group key={key} position={[w.x, PIECE_Y, w.z]}
+            onClick={(e) => click(e, r, c)}
+            onPointerOver={(e) => { if (movable) { e.stopPropagation(); hoverKey.current = key; document.body.style.cursor = 'pointer' } }}
+            onPointerOut={() => { if (hoverKey.current === key) { hoverKey.current = null; document.body.style.cursor = '' } }}>
             <Piece side={cell.side} king={cell.king} mats={mats} innerRef={(el) => { if (el) refs.current[key] = el; else delete refs.current[key] }} />
           </group>
         )
       }))}
+      <mesh ref={glowMesh} visible={false} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.47, 0.05, 14, 48]} />
+        <meshBasicMaterial color={0xffe6a0} transparent opacity={0.9} toneMapped={false} />
+      </mesh>
+      <mesh ref={hoverMesh} visible={false} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.44, 0.022, 10, 40]} />
+        <meshBasicMaterial color={0xd9b870} transparent opacity={0.5} toneMapped={false} />
+      </mesh>
       <instancedMesh ref={sparkRef} args={[null, null, SPARKS]} frustumCulled={false}>
         <icosahedronGeometry args={[1, 0]} />
         <meshBasicMaterial toneMapped={false} vertexColors={false} />
@@ -281,9 +334,19 @@ function Markers({ store }) {
   } else if (s.interactive && !s.gameOver) {
     s.movableKeys.forEach(k => { const [r, c] = k.split('_').map(Number); rings.push(<Ring key={'d' + k} r={r} c={c} kind="dot" />) })
   }
-  if (s.hint) { rings.push(<Ring key="hf" r={s.hint.from[0]} c={s.hint.from[1]} kind="hint" />); rings.push(<Ring key="ht" r={s.hint.to[0]} c={s.hint.to[1]} kind="hint" blink={2} />) }
+  if (s.hint) {
+    rings.push(<Ring key="hf" r={s.hint.from[0]} c={s.hint.from[1]} kind="hint" />); rings.push(<Ring key="ht" r={s.hint.to[0]} c={s.hint.to[1]} kind="hint" blink={2} />)
+    const pts = [s.hint.from, ...(s.hint.path || [s.hint.to])].map(([r, c]) => { const w = worldPos(r, c); return [w.x, MARK_Y + 0.06, w.z] })
+    if (pts.length >= 2) rings.push(<HintPath key="hpath" points={pts} />)
+  }
   if (s.cursor) rings.push(<Ring key="cur" r={s.cursor[0]} c={s.cursor[1]} kind="cursor" />)
   return <group>{rings}</group>
+}
+// chemin d'indice : ligne cyan lumineuse pulsée du coup suggéré
+function HintPath({ points }) {
+  const ref = useRef()
+  useFrame(() => { if (ref.current && ref.current.material) ref.current.material.opacity = 0.5 + 0.4 * Math.sin(performance.now() * 0.006) })
+  return <Line ref={ref} points={points} color="#6fe0ff" lineWidth={3} transparent opacity={0.9} toneMapped={false} dashed dashSize={0.22} gapSize={0.12} />
 }
 
 // ── océan + ciel + particules d'ambiance ───────────────────────────────────────
@@ -313,11 +376,15 @@ function CameraRig({ store }) {
   const { camera } = useThree()
   const ctrl = useRef()
   const intro = useRef({ t: 0, on: !store.getState().reduced })
+  const shakeMag = useRef(0)
+  const focus = useRef(null)   // { mid:{x,y,z}, t0, dur }
   useEffect(() => {
     store.api.resetView = () => { camera.position.set(0, 11.5, 13.5); if (ctrl.current) { ctrl.current.target.set(0, 0, 0); ctrl.current.update() } }
+    store.api.shake = (amt = 0.15) => { shakeMag.current = Math.min(0.55, Math.max(shakeMag.current, amt)) }   // micro-shake (capture)
+    store.api.focusMove = (from, to) => { const a = worldPos(from[0], from[1]), b = worldPos(to[0], to[1]); focus.current = { mid: { x: (a.x + b.x) / 2, y: 0.3, z: (a.z + b.z) / 2 }, t0: performance.now(), dur: 1100 } }
     if (intro.current.on) camera.position.set(-9.5, 18.5, 16.5)
     else store.api.resetView()
-    return () => { store.api.resetView = null }
+    return () => { store.api.resetView = null; store.api.shake = null; store.api.focusMove = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useFrame((st, dt) => {
@@ -327,9 +394,19 @@ function CameraRig({ store }) {
       camera.position.set(-9.5 + 9.5 * e, 18.5 + (11.5 - 18.5) * e, 16.5 + (13.5 - 16.5) * e)
       camera.lookAt(0, 0, 0)
       if (intro.current.t >= 1) { intro.current.on = false; if (ctrl.current) { ctrl.current.target.set(0, 0, 0); ctrl.current.enabled = true; ctrl.current.update() } }
+      return
     }
+    if (!ctrl.current) return
+    const now = performance.now()
+    // suivi du coup : la cible glisse vers le milieu du coup puis revient au centre
+    let bx = 0, by = 0, bz = 0; const f = focus.current
+    if (f) { const p = (now - f.t0) / f.dur; if (p >= 1) focus.current = null; else { const k = p < 0.4 ? p / 0.4 : 1 - (p - 0.4) / 0.6; const e = k * k * (3 - 2 * k); bx = f.mid.x * e; by = f.mid.y * e; bz = f.mid.z * e } }
+    // micro-shake : jitter décroissant appliqué sur la cible (indépendant de l'ordre des contrôles)
+    let jx = 0, jy = 0, jz = 0
+    if (shakeMag.current > 0.002) { shakeMag.current *= 0.85; const m = shakeMag.current; jx = (Math.random() - 0.5) * m; jy = (Math.random() - 0.5) * m * 0.6; jz = (Math.random() - 0.5) * m } else shakeMag.current = 0
+    ctrl.current.target.set(bx + jx, by + jy, bz + jz)
   })
-  return <OrbitControls ref={ctrl} enabled={!intro.current.on} enableDamping dampingFactor={0.08} enablePan={false} minDistance={9} maxDistance={28} minPolarAngle={0.2} maxPolarAngle={1.45} rotateSpeed={0.8} zoomSpeed={0.9} />
+  return <OrbitControls ref={ctrl} makeDefault enabled={!intro.current.on} enableDamping dampingFactor={0.08} enablePan={false} minDistance={9} maxDistance={28} minPolarAngle={0.2} maxPolarAngle={1.45} rotateSpeed={0.8} zoomSpeed={0.9} />
 }
 
 // ── stack post-processing (gated par quality + tunable en dev via leva) ─────────
@@ -366,13 +443,24 @@ function Effects({ quality }) {
 // ── scène complète ──────────────────────────────────────────────────────────────
 export default function DamesScene({ store, onSquareClick, audio }) {
   const down = useRef({ x: 0, y: 0 })
+  const flashRef = useRef(null)
+  const comboRef = useRef(null)
   // garde clic-vs-drag : on n'émet le clic que si le pointeur n'a quasi pas bougé
   store._click = (e, r, c) => { const d = Math.abs(e.clientX - down.current.x) + Math.abs(e.clientY - down.current.y); if (d < 7) { e.stopPropagation(); onSquareClick(r, c) } }
   const s = useSyncExternalStore(store.subscribe, store.getState)
   const quality = s.quality
+  // overlays 2D : flash écran (capture) + compteur de combo (rafle)
+  useEffect(() => {
+    store.api.flash = (intensity = 0.35) => { const el = flashRef.current; if (el && el.animate) el.animate([{ opacity: Math.min(0.7, intensity) }, { opacity: 0 }], { duration: 230, easing: 'ease-out' }) }
+    store.api.combo = (n) => { const el = comboRef.current; if (!el) return; el.textContent = '×' + n + ' !'; if (el.animate) el.animate([{ transform: 'translate(-50%,-50%) scale(.4) rotate(-6deg)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.5) rotate(3deg)', opacity: 1, offset: 0.3 }, { transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 1, offset: 0.62 }, { opacity: 0 }], { duration: 850, easing: 'cubic-bezier(.2,1.4,.4,1)' }) }
+    return () => { store.api.flash = null; store.api.combo = null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   return (
     <>
       {DEV && <Leva collapsed />}
+      <div ref={flashRef} aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 55%, #fff,rgba(255,238,200,.6) 55%,transparent 75%)', opacity: 0, pointerEvents: 'none', mixBlendMode: 'screen', zIndex: 3 }} />
+      <div ref={comboRef} aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%) scale(.4)', opacity: 0, pointerEvents: 'none', zIndex: 4, fontFamily: "'Pirata One','Cinzel',serif", fontSize: 'clamp(38px,7vw,82px)', fontWeight: 700, color: '#ffd56a', textShadow: '0 0 22px rgba(255,180,60,.85), 0 4px 14px rgba(0,0,0,.6)', WebkitTextStroke: '1px rgba(90,30,5,.5)' }} />
       <Canvas
         shadows
         dpr={[1, 2]}
