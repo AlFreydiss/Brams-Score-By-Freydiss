@@ -136,6 +136,10 @@ export function evaluate(board) {
     if (!p.king) {
       const adv = p.side === P ? (9 - r) : r; v += adv * 5
       if (c === 0 || c === 9) v += 4
+      // défense de la dernière rangée : tant qu'un pion y reste, l'adversaire ne peut pas promouvoir ici
+      if ((p.side === P && r === 9) || (p.side === M && r === 0)) v += 8
+      // contrôle du centre (colonnes centrales = plus de mobilité)
+      v += (4 - Math.abs(c - 4.5)) * 1.5
     } else {
       const cd = Math.abs(c - 4.5) + Math.abs(r - 4.5); v += (10 - cd) * 2
     }
@@ -152,17 +156,29 @@ function hashBoard(board) {
   for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) { const p = board[r][c]; s += p ? (p.side === P ? (p.king ? 'A' : 'a') : (p.king ? 'B' : 'b')) : '.' }
   return s
 }
-// Tri des coups : on évalue à 1 pli le résultat (meilleur d'abord) → l'élagage
-// alpha-bêta coupe bien plus. Le coup « ttMove » (meilleur de l'itération précédente) passe en tête.
-function orderMoves(board, side, moves, ttMove) {
-  const scored = moves.map(m => ({ m, s: evalSide(applyMove(board, m).board, side) }))
-  scored.sort((a, b) => b.s - a.s)
-  const arr = scored.map(x => x.m)
-  if (ttMove) { const i = arr.findIndex(m => sameMove(m, ttMove)); if (i > 0) arr.unshift(arr.splice(i, 1)[0]) }
-  return arr
+// Score statique d'un coup (PAS de clone de plateau) : ordering rapide → on cherche
+// plus profond dans le même budget. Capture > avance/promotion > centre.
+function moveScore(board, side, m) {
+  let s = 0
+  if (m.isCapture) s += 1000 + m.caps.length * 60
+  const [fr, fc] = m.from, [tr, tc] = m.to, piece = board[fr][fc]
+  if (piece && !piece.king) {
+    s += (side === P ? (fr - tr) : (tr - fr)) * 4                 // progression vers la promotion
+    if ((side === P && tr === 0) || (side === M && tr === SIZE - 1)) s += 220
+    s += 4 - Math.abs(tc - 4.5)                                   // biais centre
+  }
+  return s
 }
-let _tt
-// Negamax + alpha-bêta + table de transposition (ordering) + quiescence sur les rafles.
+// Tri : ttMove (meilleur de l'itération précédente) en tête, puis killer moves
+// (coups qui ont provoqué une coupure à cette profondeur), puis heuristique statique.
+function orderMoves(board, side, moves, ttMove, depth) {
+  const killers = _killers[depth] || []
+  return moves
+    .map(m => { let s = moveScore(board, side, m); if (ttMove && sameMove(m, ttMove)) s += 1e6; else if (sameMove(m, killers[0])) s += 9000; else if (sameMove(m, killers[1])) s += 8000; return { m, s } })
+    .sort((a, b) => b.s - a.s).map(x => x.m)
+}
+let _tt, _killers
+// Negamax + alpha-bêta + table de transposition (ordering) + killer moves + quiescence sur les rafles.
 function negamax(board, side, depth, alpha, beta) {
   if (Date.now() > searchDeadline) return evalSide(board, side)
   const moves = generateMoves(board, side)
@@ -172,14 +188,17 @@ function negamax(board, side, depth, alpha, beta) {
   if (depth <= 0 && !moves[0].isCapture) return evalSide(board, side)
   const key = hashBoard(board) + side
   const ttMove = _tt.get(key)
-  const ordered = orderMoves(board, side, moves, ttMove)
+  const ordered = orderMoves(board, side, moves, ttMove, depth)
   let best = -Infinity, bestMove = null
   for (const m of ordered) {
     const nd = m.isCapture ? Math.max(depth - 1, 0) : depth - 1   // les rafles prolongent (quiescence)
     const v = -negamax(applyMove(board, m).board, opp(side), nd, -beta, -alpha)
     if (v > best) { best = v; bestMove = m }
     if (v > alpha) alpha = v
-    if (alpha >= beta) break
+    if (alpha >= beta) {                                          // coupure : mémorise un killer (coup quiet)
+      if (!m.isCapture) { const k = _killers[depth] || (_killers[depth] = []); if (!sameMove(k[0], m)) { k[1] = k[0]; k[0] = m } }
+      break
+    }
   }
   if (bestMove) _tt.set(key, bestMove)
   return best
@@ -189,11 +208,11 @@ function negamax(board, side, depth, alpha, beta) {
 export function chooseAIMove(board, side, maxDepth, budgetMs) {
   const moves = generateMoves(board, side); if (!moves.length) return null
   if (moves.length === 1) return moves[0]
-  searchDeadline = Date.now() + (budgetMs || 900); _tt = new Map()
+  searchDeadline = Date.now() + (budgetMs || 900); _tt = new Map(); _killers = []
   let best = moves[0]
   for (let d = 1; d <= maxDepth; d++) {
     let curBest = null, curV = -Infinity, alpha = -Infinity
-    const ordered = orderMoves(board, side, moves, best)
+    const ordered = orderMoves(board, side, moves, best, d)
     let completed = true
     for (const m of ordered) {
       if (Date.now() > searchDeadline) { completed = false; break }
