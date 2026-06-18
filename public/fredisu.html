@@ -340,8 +340,11 @@ body.playing{cursor:none}
         <button class="btn chip mod" data-m="hd" title="Hidden : les cercles disparaissent">HD</button>
         <button class="btn chip mod" data-m="hr" title="Hard Rock : tout plus dur">HR</button>
         <button class="btn chip mod" data-m="dt" title="Double Time : x1.5">DT</button>
+        <button class="btn chip mod" data-m="ht" title="Half Time : x0.75 (plus lent, score ×0.5)">HT</button>
         <button class="btn chip mod" data-m="fl" title="Flashlight : vision réduite">FL</button>
         <button class="btn chip mod" data-m="nf" title="No Fail : impossible de perdre (score ×0.5)">NF</button>
+        <button class="btn chip mod" data-m="sd" title="Sudden Death : un seul raté et c'est fini">SD</button>
+        <button class="btn chip mod" data-m="pf" title="Perfect : tout doit être parfait (GREAT)">PF</button>
       </div>
     </div>
   </div>
@@ -611,7 +614,7 @@ const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+
 
 /* ════ OPTIONS & MODS ════ */
 const opt={volM:.8,volS:.9,ar:8,cs:4,od:7,dim:.25,aim:35,offset:0,k1:'z',k2:'x',curSize:1.25,trail:true,fx:true,snake:true,skinBeige:false,hd2x:true,diff:1,sens:1,rawInput:false};
-const mods={hd:false,hr:false,dt:false,fl:false,nf:false};
+const mods={hd:false,hr:false,dt:false,fl:false,nf:false,ht:false,sd:false,pf:false};
 Object.assign(opt,store.get('opt',{}));
 Object.assign(mods,store.get('mods',{}));
 if(opt.cs>10)opt.cs=clamp((54.4-opt.cs)/4.48,0,10); // migration : ancien réglage en px → CS osu!
@@ -622,8 +625,8 @@ if(!store.get('aimReset2',false)){opt.aim=0;store.set('aimReset2',true);}
 applyDPR(); // taille initiale du canvas (HD si dispo)
 if(IS_MOBILE)mods.fl=false; // FL injouable au doigt : le doigt cache le trou de lumière
 const saveOpt=()=>{store.set('opt',opt);store.set('mods',mods);};
-const modStr=()=>['hd','hr','dt','fl','nf'].filter(m=>mods[m]).map(m=>m.toUpperCase()).join(' ');
-const scoreMul=()=>(mods.hd?1.06:1)*(mods.hr?1.06:1)*(mods.dt?1.12:1)*(mods.fl?1.12:1)*(mods.nf?.5:1);
+const modStr=()=>['hd','hr','dt','ht','fl','nf','sd','pf'].filter(m=>mods[m]).map(m=>m.toUpperCase()).join(' ');
+const scoreMul=()=>(mods.hd?1.06:1)*(mods.hr?1.06:1)*(mods.dt?1.12:1)*(mods.ht?.5:1)*(mods.fl?1.12:1)*(mods.nf?.5:1);
 /* AR / CS / OD appartiennent au NIVEAU (taille/vitesse moyennes bien réglées),
    plus aux options — comme les vraies maps osu. */
 const DIFFS=[
@@ -645,7 +648,7 @@ function computeParams(){
   CS_EFF=cs;
   // Formules officielles osu! — voir https://osu.ppy.sh/wiki (AR / OD / CS)
   R=(54.4-4.48*cs)*PF.s;                                  // rayon : r = 54.4 − 4.48 × CS (osu!px → écran)
-  RATE=mods.dt?1.5:1;
+  RATE=mods.dt?1.5:mods.ht?0.75:1;
   PRE=ar<5?1200+600*(5-ar)/5:ar>5?1200-750*(ar-5)/5:1200; // preempt exact
   FADE=400*Math.min(1,PRE/450);                           // fade_in = 400 × min(1, preempt/450)
   W3=80-6*od;W1=140-8*od;W50=200-10*od;                   // fenêtres 300/100/50
@@ -1273,7 +1276,12 @@ const calcSc=q=>Math.round(q*(1+Math.floor(combo/10)*.08)*scoreMul());
 
 function addCombo(){
   combo++;if(combo>maxCombo)maxCombo=combo;
-  if(combo>0&&combo%100===0&&combo!==lastBurst){
+  if(combo>0&&combo%250===0&&combo!==lastBurst){
+    lastBurst=combo; // palier ÉPIQUE : accord montant + gros flash + secousse
+    tone(660,'sine',.26,.16);tone(880,'sine',.26,.14);tone(1318,'sine',.32,.12);tone(1760,'sine',.34,.1);
+    vfxList.push(new HitFX(W/2,120,300,'#ffd700',combo+'x !!!'));
+    shake=Math.max(shake,9);bgFlash=Math.max(bgFlash,.75);kiaiRingT=performance.now();
+  }else if(combo>0&&combo%100===0&&combo!==lastBurst){
     lastBurst=combo;
     tone(880,'sine',.18,.14);tone(1108,'sine',.18,.1);tone(1318,'sine',.22,.1);
     vfxList.push(new HitFX(W/2,130,300,'#ffd700',combo+'x !!'));
@@ -1293,6 +1301,7 @@ function countHit(q,x,y,c,withCombo=true){
   }else{breakCombo();hp=clamp(hp-.17,0,1);shake=Math.max(shake,7);}
   bgFlash=q>0?.9:.4;cfFlash=1;sfx(q);
   vfxList.push(new HitFX(x,y,q,c));
+  if(mods.pf&&q<300&&state==='playing')fail(); // Perfect : tout < GREAT = fini
 }
 
 /* ════ VFX ════ */
@@ -2038,6 +2047,7 @@ let clickTimes=[],comboBreakFX=null,lbLive=null,lbLiveY=null;
 function breakCombo(){
   if(combo>5)comboBreakFX={v:combo,t:performance.now()};
   combo=0;
+  if(mods.sd&&state==='playing')fail(); // Sudden Death : un raté = fini
 }
 function hudLabel(txt,x,y,align='left'){
   cx.font='700 11px '+SKIN.FONT;cx.textAlign=align;
@@ -2617,7 +2627,7 @@ function diffColor(st){
 }
 function starsOf(d){
   const base=[1.6,2.6,3.9,5.1,6.4,7.7,9.1][d]??5.1;
-  return Math.max(.5,base+(mods.hr?.55:0)+(mods.dt?.75:0));
+  return Math.max(.5,base+(mods.hr?.55:0)+(mods.dt?.75:0)-(mods.ht?.45:0));
 }
 const STAT_COLORS=['#4FC0FF','#88E55C','#FFD12B','#FF8068','#FF5E5E','#a06bff','#66CCFF'];
 function updatePreview(){
@@ -2990,7 +3000,11 @@ document.querySelectorAll('#modRow .chip').forEach(b=>{
     const m=b.dataset.m;
     if(m==='fl'&&IS_MOBILE)return; // FL désactivé sur mobile
     mods[m]=!mods[m];
-    b.classList.toggle('sel',mods[m]);updatePreview();saveOpt();
+    // DT et HT s'excluent (vitesse de lecture opposée)
+    if(m==='dt'&&mods.dt)mods.ht=false;
+    if(m==='ht'&&mods.ht)mods.dt=false;
+    document.querySelectorAll('#modRow .chip').forEach(x=>x.classList.toggle('sel',!!mods[x.dataset.m]));
+    updatePreview();saveOpt();
   };
 });
 let optRet='sMenu';
