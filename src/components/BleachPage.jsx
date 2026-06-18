@@ -31,7 +31,7 @@ const AWARDS = [
   { icon: '🌙', label: 'Soul Society' },
 ]
 
-const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/bleach/poster.jpg'
+const COVER = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart/bleach.jpg'
 
 // Saisons officielles Bleach (plages d'épisodes — les vidéos sont toutes labellisées S01)
 const SEASONS = [

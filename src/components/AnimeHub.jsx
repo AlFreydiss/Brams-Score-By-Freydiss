@@ -12,6 +12,7 @@ import BLUELOCK_VIDEOS from '../data/bluelock-videos.json'
 import BUNNY_VIDEOS from '../data/bunny-girl-videos.json'
 import CAROLE_TUESDAY_VIDEOS from '../data/carole-tuesday-videos.json'
 import FIREFORCE_VIDEOS from '../data/fireforce-videos.json'
+import BLEACH_VIDEOS from '../data/bleach-videos.json'
 import KAIJU_VIDEOS from '../data/kaiju-videos.json'
 import JJK_VIDEOS from '../data/jjk-videos.json'
 import KINGDOM_VIDEOS from '../data/kingdom-videos.json'
@@ -539,8 +540,26 @@ export const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#f4511e',
   },
-  // Bleach masque le 2026-06-13 : R2 vide (re-encode max qualite a venir, source a re-telecharger).
-  // Page + routing conserves. Restaurer cette entree + l'import + 'bleach' dans NEW_IDS apres re-upload.
+  // Bleach restauré le 2026-06-18 : ep 1-100 ré-encodés HQ x264 et présents sur R2 (101-366 à venir).
+  {
+    id: 'bleach',
+    title: 'Bleach',
+    subtitle: 'Shinigami',
+    emoji: '⚔️',
+    color: '#f4511e',
+    colorDark: '#3a0f06',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart/bleach.jpg',
+    coverPosition: 'center center',
+    genres: ['Action', 'Surnaturel', 'Shōnen'],
+    description: "Ichigo Kurosaki devient Shinigami et protège les vivants des Hollows tout en guidant les âmes vers la Soul Society.",
+    stats: [
+      { label: 'Vidéos', value: videoCountLabel(BLEACH_VIDEOS.length, 366) },
+      { label: 'Statut', value: availabilityLabel(BLEACH_VIDEOS.length) },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#f4511e',
+  },
   {
     id: 'kaiju-no-8',
     title: 'Kaiju No. 8',
@@ -646,6 +665,7 @@ export const SEARCH_ALIASES = {
   bc: ['black clover', 'asta', 'yuno', 'trefle', 'magie'],
   mha: ['mha', 'my hero academia', 'boku no hero academia', 'bnha', 'deku', 'izuku'],
   fireforce: ['fire force', 'enen no shouboutai', 'shouboutai', 'shinra'],
+  bleach: ['bleach', 'ichigo', 'kurosaki', 'shinigami', 'soul society', 'rukia', 'aizen', 'zanpakuto', 'bankai'],
   bluelock: ['blue lock', 'bluelock', 'football', 'isagi', 'ego'],
 }
 

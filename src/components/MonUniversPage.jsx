@@ -11,6 +11,7 @@ import { onLiveProgress } from '../lib/liveSync.js'
 const HUB_ANIMES = [
   { id: 'aot', title: "L'Attaque des Titans", emoji: '🗡️', color: '#546e7a', colorDark: '#1c313a', cover: '/aot-poster.jpg', ns: 'aot', hasChapters: true, videoTarget: 38 },
   { id: 'fireforce', title: 'Fire Force', emoji: '🔥', color: '#f4511e', colorDark: '#4a1a0a', cover: '/fireforce-poster.jpg', ns: 'fireforce', hasChapters: true, videoTarget: 48 },
+  { id: 'bleach', title: 'Bleach', emoji: '⚔️', color: '#f4511e', colorDark: '#3a0f06', cover: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart/bleach.jpg', ns: 'bleach', hasChapters: true, videoTarget: 366 },
   { id: 'bluelock', title: 'Blue Lock', emoji: '⚽', color: '#1565c0', colorDark: '#0a2e5c', cover: '/bluelock-poster.jpg', ns: 'bluelock', hasChapters: true, videoTarget: 24 },
   { id: 'bunny-girl', title: 'Bunny Girl Senpai', emoji: '🐰', color: '#8b5cf6', colorDark: '#3b2a6e', cover: '/bunny-girl-poster.jpg', ns: 'bunny-girl', hasChapters: false, videoTarget: 26 },
   { id: 'rent-girlfriend', title: 'Rent-a-Girlfriend', emoji: '💖', color: '#14b8a6', colorDark: '#0f3d3a', cover: '/rent-girlfriend-poster.jpg', ns: 'rent-girlfriend', hasChapters: false, videoTarget: 48 },
@@ -85,7 +86,7 @@ function computeChapter(ns, all) {
   const keys = Object.keys(prog)
   const read = keys.filter(k => prog[k] === 'read').length
   // fallback count from known or default
-  const known = { aot: 81, fireforce: 235, bluelock: 341, kingdom: 874, kny: 206, nnt: 342, sl: 202, bc: 280, tpn: 184, dbs: 101, jjk: 263, mha: 0, onepiece: 56 }
+  const known = { aot: 81, fireforce: 235, bleach: 686, bluelock: 341, kingdom: 874, kny: 206, nnt: 342, sl: 202, bc: 280, tpn: 184, dbs: 101, jjk: 263, mha: 0, onepiece: 56 }
   const total = known[ns] || Math.max(50, keys.length)
   const pct = total > 0 ? Math.round((read / total) * 100) : 0
   return { read, total, pct }
@@ -181,7 +182,7 @@ const P5_CSS = `
 
 export default function MonUniversPage({
   onClose,
-  onOpenAot, onOpenFireforce, onOpenBluelock, onOpenBunnyGirl, onOpenRentGirlfriend,
+  onOpenAot, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenBunnyGirl, onOpenRentGirlfriend,
   onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenKny, onOpenNnt, onOpenSl,
   onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday,
   onOpenBc, onOpenMha, onOpenOnepiece, onOpenYourLie, onOpenKaguya, onOpenHxh
@@ -218,7 +219,7 @@ export default function MonUniversPage({
   }, [])
 
   const onOpenMap = {
-    aot: onOpenAot, fireforce: onOpenFireforce, bluelock: onOpenBluelock,
+    aot: onOpenAot, fireforce: onOpenFireforce, bleach: onOpenBleach, bluelock: onOpenBluelock,
     'bunny-girl': onOpenBunnyGirl, 'rent-girlfriend': onOpenRentGirlfriend,
     tpn: onOpenTpn, drstone: onOpenDrstone, jjk: onOpenJjk, kingdom: onOpenKingdom,
     kny: onOpenKny, nnt: onOpenNnt, sl: onOpenSl, dbs: onOpenDbs,

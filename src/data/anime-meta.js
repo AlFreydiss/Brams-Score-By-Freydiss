@@ -25,6 +25,7 @@ export const ANIME_META = {
   bc:                  { title: 'Black Clover',                   note: 8.2, youtube: null },
   mha:                 { title: 'My Hero Academia',               note: 7.9, youtube: null },
   fireforce:           { title: 'Fire Force',                     note: 7.6, youtube: null },
+  bleach:              { title: 'Bleach',                         note: 7.9, youtube: null },
   bluelock:            { title: 'Blue Lock',                      note: 8.2, youtube: null },
   'fate-zero':         { title: 'Fate/Zero',                      note: 8.3, youtube: null },
   'your-name':         { title: 'Your Name',                      note: 8.8, youtube: null },

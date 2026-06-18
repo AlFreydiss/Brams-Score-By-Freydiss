@@ -12,7 +12,7 @@ import { getAnimeMeta } from '../data/anime-meta.js'
 // ns (id animé) -> slug du manga ; le bouton "Lire le scan" n'apparaît que si le
 // fichier de scans existe réellement (glob), donc auto au fur et à mesure des uploads.
 const MANGA_FILES = import.meta.glob('../data/manga/*.json')
-const NS_TO_MANGA = { aot:'aot', sl:'solo-leveling', jjk:'jjk', kny:'kny', bluelock:'blue-lock', bc:'black-clover', fireforce:'fire-force', drstone:'dr-stone', kingdom:'kingdom', mha:'mha', nnt:'nnt', dbs:'dbs', tpn:'tpn' }
+const NS_TO_MANGA = { aot:'aot', sl:'solo-leveling', jjk:'jjk', kny:'kny', bluelock:'blue-lock', bc:'black-clover', fireforce:'fire-force', bleach:'bleach', drstone:'dr-stone', kingdom:'kingdom', mha:'mha', nnt:'nnt', dbs:'dbs', tpn:'tpn' }
 
 export default function EpisodeWatch({
   videos, startIdx, ns, storageKey,
