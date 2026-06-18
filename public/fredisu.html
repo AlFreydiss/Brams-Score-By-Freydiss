@@ -229,7 +229,68 @@ body.playing{cursor:none}
 .res-grade .grade{font-size:128px;filter:drop-shadow(0 0 34px currentColor)}
 .grade.ss{animation:gradeIn .65s cubic-bezier(.22,1,.36,1) both,ssShine 1.6s ease-in-out .7s infinite!important}
 @keyframes ssShine{0%,100%{filter:drop-shadow(0 0 34px currentColor) brightness(1)}50%{filter:drop-shadow(0 0 60px currentColor) brightness(1.35)}}
-@media (prefers-reduced-motion:reduce){.grade.ss{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.grade.ss{animation:none!important}}/* ════ ÉCRAN TITRE — REFONTE CINÉMATIQUE (additif, néon premium) ════ */
+#menuFX{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+  background:
+    radial-gradient(120% 90% at 50% -10%,rgba(212,160,23,.10),transparent 60%),
+    radial-gradient(90% 80% at 18% 12%,rgba(0,223,200,.10),transparent 55%),
+    radial-gradient(90% 80% at 82% 88%,rgba(160,107,255,.12),transparent 55%),
+    #07060c;
+  --mpx:0;--mpy:0}
+/* aurores qui dérivent doucement derrière tout */
+#menuFX .aura{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;
+  mix-blend-mode:screen;will-change:transform}
+#menuFX .aura.a1{width:46vmax;height:46vmax;left:-8vmax;top:-10vmax;
+  background:radial-gradient(circle,rgba(0,223,200,.55),transparent 65%);animation:auraA 22s var(--m-soft) infinite alternate}
+#menuFX .aura.a2{width:40vmax;height:40vmax;right:-10vmax;bottom:-12vmax;
+  background:radial-gradient(circle,rgba(160,107,255,.6),transparent 65%);animation:auraB 28s var(--m-soft) infinite alternate}
+#menuFX .aura.a3{width:34vmax;height:34vmax;left:30vmax;top:34vmax;
+  background:radial-gradient(circle,rgba(212,160,23,.42),transparent 65%);animation:auraC 25s var(--m-soft) infinite alternate}
+@keyframes auraA{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(7vmax,5vmax,0) scale(1.18)}}
+@keyframes auraB{from{transform:translate3d(0,0,0) scale(1.05)}to{transform:translate3d(-8vmax,-4vmax,0) scale(.9)}}
+@keyframes auraC{from{transform:translate3d(0,0,0) scale(.95)}to{transform:translate3d(4vmax,-6vmax,0) scale(1.2)}}
+/* fines lignes de scan néon + grain léger pour la profondeur */
+#menuFX::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.06;
+  background:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px);
+  mix-blend-mode:overlay;animation:fxScan 9s linear infinite}
+@keyframes fxScan{from{transform:translateY(0)}to{transform:translateY(3px)}}
+/* vignette douce pour recentrer le regard sur le logo */
+#menuFX .vig{position:absolute;inset:0;
+  background:radial-gradient(120% 100% at 50% 42%,transparent 48%,rgba(4,3,9,.55) 100%)}
+/* canvas particules néon (dessiné en JS, très léger) */
+#menuParticles{position:absolute;inset:0;z-index:-1;pointer-events:none}
+/* micro-parallaxe du logo : déplacé en JS via --mpx/--mpy sur #menuFX, le wrap suit */
+.logo-wrap{transform:translate3d(calc(var(--mpx,0)*-14px),calc(var(--mpy,0)*-14px),0);
+  transition:transform .18s var(--m-soft);will-change:transform}
+/* logo plus premium : halo néon multicouche + pulse plus profond */
+.logo-halo{background:radial-gradient(circle,rgba(212,160,23,.5),rgba(0,223,200,.14) 50%,transparent 72%)}
+.logo{box-shadow:0 0 70px rgba(212,160,23,.55),0 0 130px rgba(0,223,200,.18),inset 0 0 40px #ffffff1c}
+.logo:hover{box-shadow:0 0 120px rgba(212,160,23,.85),0 0 170px rgba(160,107,255,.3),inset 0 0 40px #ffffff2e}
+/* anneau secondaire néon cyan en contre-rotation pour le côté "orbe vivant" */
+.logo-wrap::before{content:'';position:absolute;width:286px;height:286px;border-radius:50%;
+  pointer-events:none;border:1px solid rgba(0,223,200,.22);
+  box-shadow:0 0 24px rgba(0,223,200,.12) inset;
+  animation:fxSpin 18s linear infinite}
+@keyframes fxSpin{to{transform:rotate(360deg)}}
+/* boutons : hover plus juteux (glow néon + léger slide de lumière) */
+#sMenu .btn{overflow:hidden;isolation:isolate}
+#sMenu .btn::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.16) 50%,transparent 70%);
+  transform:translateX(-120%);transition:transform .55s var(--m-soft);z-index:-1}
+#sMenu .btn:hover::after{transform:translateX(120%)}
+#sMenu .btn:hover{transform:translateY(-3px) scale(1.025);
+  box-shadow:0 8px 30px var(--hglow),0 0 0 1px var(--m-glass-edge) inset}
+#sMenu .btn.go:hover{box-shadow:0 8px 44px rgba(212,160,23,.7),0 0 0 1px rgba(255,255,255,.4) inset}
+/* lisibilité mobile : aurores plus discrètes, parallaxe désactivée */
+@media (max-width:680px){#menuFX .aura{opacity:.4;filter:blur(54px)}.logo-wrap{transform:none}}
+/* respect total de prefers-reduced-motion : on fige tout le décor */
+@media (prefers-reduced-motion:reduce){
+  #menuFX .aura,#menuFX::after,.logo-wrap::before{animation:none!important}
+  .logo-wrap{transform:none!important;transition:none}
+  #sMenu .btn::after{display:none}
+  #sMenu .btn:hover{transform:none}
+  #menuParticles{display:none}
+}
 .res-right{flex:1;display:flex;flex-direction:column;gap:12px;align-items:stretch}
 .res-right .stats{grid-template-columns:auto auto auto auto;gap:8px 18px;font-size:13px}
 .res-right canvas{width:100%}
@@ -241,7 +302,11 @@ body.playing{cursor:none}
 <canvas id="cv"></canvas>
 <div id="ui">
 
-<div class="screen on" id="sMenu">
+<div class="screen on" id="sMenu">  <div id="menuFX" aria-hidden="true">
+    <span class="aura a1"></span><span class="aura a2"></span><span class="aura a3"></span>
+    <canvas id="menuParticles"></canvas>
+    <span class="vig"></span>
+  </div>
   <div class="logo-wrap">
     <div class="logo-halo" aria-hidden="true"></div>
     <div class="logo-ring" aria-hidden="true"></div>
@@ -1140,7 +1205,13 @@ function genMap(){
     }else{
       sCurve=0;
       // espacement = temps × intensité × refrain (vélocité plus haute au refrain)
-      dist=clamp(gap*.5*spc*(.7+(b.s||1)*.22)*(b.b===2?1.18:b.b?1.08:1)*(kiai?1.18:1),70,kiai?360:300);
+      dist=clamp(gap*.5*spc*(.7+(b.s||1)*.22)*(b.b===2?1.18:b.b?1.08:1)*(kiai?1.18:1),70,kiai?360:300);      // Montée de difficulté SPATIALE progressive : les jumps s'élargissent doucement
+      // au fil du morceau (ramp lisible, plus marquée en diff élevée). Pur x/y : aucun
+      // rng() consommé ici → le flux RNG, les .t et la sélection des beats sont intacts.
+      {const prog=sel.length>1?i/(sel.length-1):0;
+       const ramp=1+prog*(.06+opt.diff*.045);                 // ~+6% (Facile) … ~+33% (Cauchemar) en fin de map
+       const intens=.85+((b.s||1)>1.6?.18:0)+((mid||0)>(bass||0)?.05:0); // accents/voix portés → un peu plus d'air
+       dist=clamp(dist*ramp*intens,70,kiai?380:312);}
       if(patLeft>0){
         // au cœur d'un motif géométrique : angle ET distance fixes → forme nette
         inPat=true;ang+=patSign*patTurn;patLeft--;if(patDist)dist=patDist;
@@ -1229,7 +1300,7 @@ function genMap(){
       const ex=clamp(tx+Math.cos(sa)*slen,padS,W-padS);
       const ey=clamp(ty+Math.sin(sa)*slen,padT,H-padB);
       objs.push({k:1,t:b.t,dur:sdur,span:sdur*(rep+1),rep,x:tx,y:ty,num,ci,
-        path:mkPath(tx,ty,ex,ey,(rng()-.5)*slen*1.1),
+        path:mkPath(tx,ty,ex,ey,((rng()-.5)*1.1+(((ang%PI2)+PI2)%PI2<Math.PI?.28:-.28))*slen),
         hh:false,hj:false,ft:0,fEnd:false,done:false,tick:0,bn:0,kj:kiai?1:0});
       if(rep%2){x=tx;y=ty;}else{x=ex;y=ey;ang=Math.atan2(ey-ty,ex-tx);}
     }else{
@@ -1603,9 +1674,14 @@ function approach(x,y,col,el,t,alpha){
   if(mods.hd)return;
   const prog=clamp(1-(t-el)/PRE,0,1);
   const ar=R*(SKIN.APPROACH_FROM-(SKIN.APPROACH_FROM-1)*prog);
-  cx.save();cx.globalAlpha=Math.min(.9,alpha*.9);
+  cx.save();
+  // léger glow néon teinté combo qui s'intensifie à l'approche du timing parfait
+  const[ar_,ag_,ab_]=h2r(col);
+  cx.globalAlpha=Math.min(.9,alpha*.9);
   cx.beginPath();cx.arc(x,y,ar,0,PI2);
-  cx.strokeStyle=col;cx.lineWidth=Math.max(1.6,R*SKIN.APPROACH_W);cx.stroke();cx.restore();
+  cx.strokeStyle=col;cx.lineWidth=Math.max(1.6,R*SKIN.APPROACH_W);
+  if(prog>.55){cx.shadowBlur=8+10*prog;cx.shadowColor=`rgba(${Math.min(255,ar_+60)},${Math.min(255,ag_+60)},${Math.min(255,ab_+60)},.9)`;}
+  cx.stroke();cx.restore();
 }
 
 function drawCircleObj(o,el){
@@ -1632,7 +1708,19 @@ function drawCircleObj(o,el){
   // miss : teinte rouge, chute 8px, fade 100ms
   if(o.miss){
     const t=clamp((el-o.missAt)/TIMING.MISS_FADE,0,1);if(t>=1)return;
-    baseCircle(o.x,o.y+TIMING.MISS_DROP*t,'miss',1-t,o.num);
+    const my2=o.y+TIMING.MISS_DROP*t;
+    // feedback de miss plus clair : croix rouge brève + anneau qui s'évase
+    if(t<.6){
+      cx.save();cx.globalAlpha=(1-t/.6)*.85;
+      const cr=R*.42;cx.translate(o.x,my2);cx.rotate(Math.PI/4);
+      cx.strokeStyle=SKIN.MISS_RED;cx.lineWidth=Math.max(3,R*.13);cx.lineCap='round';
+      cx.beginPath();cx.moveTo(-cr,0);cx.lineTo(cr,0);cx.moveTo(0,-cr);cx.lineTo(0,cr);cx.stroke();
+      cx.restore();
+      cx.save();cx.globalAlpha=(1-t/.6)*.5;
+      cx.beginPath();cx.arc(o.x,my2,R*(1+t*1.2),0,PI2);
+      cx.strokeStyle=SKIN.MISS_RED;cx.lineWidth=Math.max(2,R*.06);cx.stroke();cx.restore();
+    }
+    baseCircle(o.x,my2,'miss',1-t,o.num);
     return;
   }
   const alpha=mods.hd?alphaHD(el,o.t):clamp((el-(o.t-PRE))/FADE,0,1);
@@ -1645,11 +1733,19 @@ function drawCircleObj(o,el){
   }
   approach(o.x+sx,o.y,col,el,o.t,alpha);
   baseCircle(o.x+sx,o.y,o.ci,alpha,o.num);
-  // flash de snap : l'approach colle le bord -> brève surbrillance (instant parfait)
+  // flash de snap : l'approach colle le bord -> surbrillance nette (instant parfait)
   if(!mods.hd&&o.t-el<90&&o.t-el>0){
-    cx.save();cx.globalAlpha=alpha*(1-(o.t-el)/90)*.3;
+    const sn=1-(o.t-el)/90; // 0 -> 1 pile au timing
+    cx.save();cx.globalAlpha=alpha*sn*.45;
     cx.beginPath();cx.arc(o.x+sx,o.y,R,0,PI2);
-    cx.strokeStyle='#fff';cx.lineWidth=Math.max(2.5,R*.08);cx.stroke();cx.restore();
+    cx.strokeStyle='#fff';cx.lineWidth=Math.max(2.5,R*.085);
+    cx.shadowBlur=6+10*sn;cx.shadowColor='rgba(255,255,255,.95)';cx.stroke();
+    if(sn>.7){ // micro-anneau qui se contracte au snap parfait
+      cx.globalAlpha=alpha*(sn-.7)/.3*.5;
+      cx.beginPath();cx.arc(o.x+sx,o.y,R*(1.18-.18*sn),0,PI2);
+      cx.shadowBlur=0;cx.lineWidth=Math.max(1.5,R*.05);cx.stroke();
+    }
+    cx.restore();
   }
   if(o.kj){ // note de section kiai : fin halo blanc pulsé au beat
     const bms=analysis&&analysis.bpm?60000/analysis.bpm:600;
@@ -1733,8 +1829,13 @@ function drawSliderObj(o,el){
       const tickIdx=Math.floor(i/(nticks+1)*4*(o.rep+1));
       if(o.tick>=tickIdx&&el>=o.t)continue;
       const tp=ptAt(p,i/(nticks+1));
-      cx.beginPath();cx.arc(tp.x,tp.y,Math.max(2.5,R*.09),0,PI2);
-      cx.fillStyle='rgba(255,255,255,.85)';cx.fill();
+      const tr=Math.max(2.5,R*.09);
+      cx.beginPath();cx.arc(tp.x,tp.y,tr*1.45,0,PI2);
+      cx.fillStyle='rgba(255,255,255,.12)';cx.fill(); // halo doux
+      cx.beginPath();cx.arc(tp.x,tp.y,tr,0,PI2);
+      cx.fillStyle='rgba(255,255,255,.9)';cx.fill();
+      cx.beginPath();cx.arc(tp.x-tr*.3,tp.y-tr*.3,tr*.4,0,PI2);
+      cx.fillStyle='rgba(255,255,255,.95)';cx.fill(); // reflet
     }
   }
   // cercle de fin
@@ -1789,10 +1890,10 @@ function drawSliderObj(o,el){
       strokeSub(p,Math.min(pos,back),Math.max(pos,back),R*1.35,
         `rgba(${Math.min(255,r+120)},${Math.min(255,g+120)},${Math.min(255,b+120)},1)`);
       cx.restore();
-      // halo doux pulsé sous la balle
+      // halo doux pulsé sous la balle (gonfle légèrement avec le tracking)
       const gl=SPRITES.glow&&SPRITES.glow[o.ci%4];
-      if(gl){const gs=gl._S;
-        cx.save();cx.globalAlpha=.45+.15*Math.sin(performance.now()/95);
+      if(gl){const gs=gl._S*(1+.08*Math.sin(performance.now()/95));
+        cx.save();cx.globalAlpha=.5+.18*Math.sin(performance.now()/95);
         cx.drawImage(gl,bp.x-gs/2,bp.y-gs/2,gs,gs);cx.restore();}
       // étincelles qui s'échappent derrière la balle (budget de particules partagé)
       if(opt.fx&&(o._pT===undefined||el-o._pT>50)){o._pT=el;
@@ -1850,11 +1951,14 @@ function drawSpinnerObj(o,el){
   // anneau extérieur fin + arc de progression épais arrondi (OR)
   cx.beginPath();cx.arc(cxx,cyy,Rm,0,PI2);
   cx.strokeStyle='rgba(255,255,255,.14)';cx.lineWidth=Math.max(3,Rm*.014);cx.stroke();
+  // anneau de remplissage doré dont le glow monte avec le RPM (plus spectaculaire)
+  const rpmN=Math.min(1,(o.rpm||0)/420);
   const ag=cx.createLinearGradient(cxx-Rm,cyy,cxx+Rm,cyy);
   ag.addColorStop(0,'#d4a017');ag.addColorStop(1,'#ffe9a8');
   cx.beginPath();cx.arc(cxx,cyy,Rm,-Math.PI/2,-Math.PI/2+PI2*ratio);
-  cx.strokeStyle=ratio>=1?'#ffe9a8':ag;cx.lineWidth=Math.max(7,Rm*.045);cx.lineCap='round';
-  if(ratio>=1){cx.shadowBlur=18;cx.shadowColor='rgba(255,233,168,.7)';}cx.stroke();cx.shadowBlur=0;
+  cx.strokeStyle=ratio>=1?'#ffe9a8':ag;cx.lineWidth=Math.max(7,Rm*.045*(1+.25*rpmN));cx.lineCap='round';
+  cx.shadowBlur=ratio>=1?20:8+22*rpmN;cx.shadowColor=ratio>=1?'rgba(255,233,168,.8)':'rgba(212,160,23,.65)';
+  cx.stroke();cx.shadowBlur=0;
   // approche : cercle qui rétrécit vers l'anneau
   if(el>=o.t&&!o.done){
     const ar2=Rm*1.4-(Rm*1.4-Rm)*prog;
@@ -3155,6 +3259,57 @@ document.querySelectorAll('#sMenu .btn, #sMenu .logo').forEach(el=>{
     if(AC&&AC.state==='running')tone(840,'sine',.035,.04);
   });
 });
+/* ── Écran titre : décor néon vivant (particules + micro-parallaxe), léger et coupé hors menu ── */
+(function menuFXInit(){
+  const fx=$('menuFX'),cvP=$('menuParticles'),menu=$('sMenu');
+  if(!fx||!cvP||!menu||REDUCED_MOTION)return;
+  const px=cvP.getContext('2d');
+  let dpr=1,wp=0,hp=0,parts=[];
+  function resize(){
+    dpr=Math.min(2,devicePixelRatio||1);
+    wp=innerWidth;hp=innerHeight;
+    cvP.width=wp*dpr;cvP.height=hp*dpr;
+    cvP.style.width=wp+'px';cvP.style.height=hp+'px';
+    px.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.round(Math.min(60,(wp*hp)/26000)); // densité bornée → cheap
+    parts=Array.from({length:n},()=>spawn());
+  }
+  const COLS=['rgba(0,223,200,','rgba(160,107,255,','rgba(212,160,23,'];
+  function spawn(){
+    return{x:Math.random()*innerWidth,y:Math.random()*innerHeight,
+      r:.6+Math.random()*2.1,vx:(Math.random()-.5)*.12,vy:-.12-Math.random()*.28,
+      a:.18+Math.random()*.4,tw:Math.random()*6.28,
+      c:COLS[(Math.random()*COLS.length)|0]};
+  }
+  let raf=0,t=0;
+  function frame(){
+    raf=0;
+    if(!menu.classList.contains('on'))return; // pause totale hors écran titre
+    t+=.016;
+    px.clearRect(0,0,wp,hp);
+    px.globalCompositeOperation='lighter';
+    for(const p of parts){
+      p.x+=p.vx;p.y+=p.vy;p.tw+=.05;
+      if(p.y<-6||p.x<-6||p.x>wp+6){const np=spawn();np.y=hp+5;Object.assign(p,np);}
+      const tw=.55+.45*Math.sin(p.tw),al=p.a*tw;
+      px.fillStyle=p.c+al+')';
+      px.beginPath();px.arc(p.x,p.y,p.r,0,6.283);px.fill();
+    }
+    px.globalCompositeOperation='source-over';
+    raf=requestAnimationFrame(frame);
+  }
+  function kick(){if(!raf&&menu.classList.contains('on'))raf=requestAnimationFrame(frame);}
+  addEventListener('resize',resize,{passive:true});
+  // relance la boucle quand on revient au menu (show() bascule la classe .on)
+  new MutationObserver(kick).observe(menu,{attributes:true,attributeFilter:['class']});
+  // micro-parallaxe : le wrap du logo suit la souris via --mpx/--mpy (CSS gère le transform)
+  menu.addEventListener('mousemove',e=>{
+    fx.style.setProperty('--mpx',((e.clientX/innerWidth)*2-1).toFixed(3));
+    fx.style.setProperty('--mpy',((e.clientY/innerHeight)*2-1).toFixed(3));
+  });
+  menu.addEventListener('mouseleave',()=>{fx.style.setProperty('--mpx',0);fx.style.setProperty('--mpy',0);});
+  resize();kick();
+})();
 
 /* ════ BOUCLE ════ */
 let prev=0;
