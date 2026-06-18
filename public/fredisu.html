@@ -111,7 +111,29 @@ body.playing{cursor:none}
 .small{font-size:11.5px;text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
 .hint{color:#ffffff55;font-size:12.5px;margin-top:6px;text-align:center;line-height:1.6}
 .failT{color:#ff5566;text-shadow:0 0 30px #ff556688;font-size:40px;font-family:var(--font-display)}
-.grade{font-size:108px;font-weight:700;font-family:var(--font-display);line-height:1;text-shadow:0 0 50px currentColor}
+.grade{font-size:108px;font-weight:700;font-family:var(--font-display);line-height:1;text-shadow:0 0 50px currentColor}/* ── results-fail premium (additif) ── */
+#gAccRing{position:absolute;top:0;left:50%;transform:translateX(-50%);width:190px;height:190px;pointer-events:none;z-index:1;overflow:visible}
+#gAccRing .arTrack{fill:none;stroke:#ffffff14;stroke-width:7}
+#gAccRing .arFill{fill:none;stroke-width:7;stroke-linecap:round;filter:drop-shadow(0 0 8px currentColor);transition:none}
+.gPerfBadge{display:inline-flex;align-items:center;gap:7px;min-height:24px;padding:4px 14px;border-radius:999px;font:700 12px/1 var(--m-font,sans-serif);letter-spacing:1.2px;text-transform:uppercase;color:#fff;background:linear-gradient(120deg,rgba(0,229,255,.18),rgba(155,92,255,.22));border:1px solid var(--m-glass-edge,#ffffff26);box-shadow:0 4px 18px #0008,inset 0 1px 0 #ffffff20;opacity:0;transform:translateY(8px) scale(.9)}
+.screen.on .gPerfBadge.in{animation:perfBadgeIn .5s cubic-bezier(.22,1,.36,1) .5s both}
+.gPerfBadge i{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor;font-style:normal}
+@keyframes perfBadgeIn{0%{opacity:0;transform:translateY(8px) scale(.9)}60%{opacity:1;transform:translateY(0) scale(1.05)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@media (prefers-reduced-motion:reduce){.screen.on .gPerfBadge.in{animation:none;opacity:1;transform:none}}
+/* fail screen dramatique */
+#sFail.on .card{animation:failShake .5s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes failShake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+.failVeil{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 42%,rgba(255,40,70,.28),transparent 60%),linear-gradient(180deg,rgba(40,0,8,.55),rgba(10,0,4,.78))}
+#sFail.on .failVeil{animation:failVeilIn 1s ease-out both}
+@keyframes failVeilIn{0%{opacity:0}30%{opacity:1}100%{opacity:.92}}
+.failBig{font-family:var(--font-display);font-weight:700;font-size:64px;line-height:.92;letter-spacing:2px;color:#ff3b54;text-shadow:0 0 36px #ff224488,0 6px 0 #5a0010;margin:0}
+#sFail.on .failBig{animation:failBigIn .6s cubic-bezier(.22,1,.36,1) both}
+@keyframes failBigIn{0%{opacity:0;transform:scale(1.7) rotate(-3deg);filter:blur(6px)}60%{opacity:1;transform:scale(.96)}100%{transform:scale(1)}}
+.btn.retryJuicy{position:relative;overflow:hidden;background:linear-gradient(120deg,#ff3b54,#ff7a4d)!important;border:0!important;box-shadow:0 8px 28px #ff224455,inset 0 1px 0 #ffffff44;color:#fff!important;font-weight:700}
+.btn.retryJuicy::after{content:'';position:absolute;inset:0;background:linear-gradient(120deg,transparent,#ffffff55,transparent);transform:translateX(-130%)}
+#sFail.on .btn.retryJuicy::after{animation:retrySheen 2.2s ease-in-out 1s infinite}
+@keyframes retrySheen{0%,55%{transform:translateX(-130%)}80%,100%{transform:translateX(130%)}}
+@media (prefers-reduced-motion:reduce){#sFail.on .card,#sFail.on .failVeil,#sFail.on .failBig,#sFail.on .btn.retryJuicy::after{animation:none;opacity:1;transform:none}}
 .stats{display:grid;grid-template-columns:auto auto;gap:6px 26px;font-size:14.5px;text-align:left}
 .stats b{font-size:16px}
 .stats span{color:#ffffff77;text-align:right}
@@ -294,7 +316,83 @@ body.playing{cursor:none}
 .res-right{flex:1;display:flex;flex-direction:column;gap:12px;align-items:stretch}
 .res-right .stats{grid-template-columns:auto auto auto auto;gap:8px 18px;font-size:13px}
 .res-right canvas{width:100%}
-@media (max-width:760px){.card.res{min-width:0}.res-top{flex-direction:column;gap:10px}.res-right .stats{grid-template-columns:auto auto}}
+@media (max-width:760px){.card.res{min-width:0}.res-top{flex-direction:column;gap:10px}.res-right .stats{grid-template-columns:auto auto}}/* ════ SONG SELECT — refonte cinématique néon (additif, ne retire rien) ════ */
+.ss-wrap{transition:opacity .35s var(--m-soft,ease)}
+.screen.on#sReady .ss-info,.screen.on#sReady .ss-lb,.screen.on#sReady .ss-search,.screen.on#sReady #mapRow,.screen.on#sReady #diffRow{animation:ssRise .5s cubic-bezier(.22,1,.36,1) both}
+.screen.on#sReady .ss-lb{animation-delay:.05s}
+.screen.on#sReady .ss-search{animation-delay:.04s}
+.screen.on#sReady #mapRow{animation-delay:.08s}
+.screen.on#sReady #diffRow{animation-delay:.12s}
+@keyframes ssRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* — Carte beatmap : glass néon plus premium, glow piloté par --gc (couleur de difficulté sélectionnée) — */
+.ss-info{position:relative;isolation:isolate;background:linear-gradient(135deg,rgba(16,12,28,.96),rgba(26,16,46,.92));box-shadow:0 22px 70px #000b,0 0 0 1px var(--m-glass-edge,#ffffff14) inset,0 0 46px -8px var(--gc,#9B5CFF55);transition:box-shadow .45s var(--m-soft,ease)}
+.ss-info::before{content:'';position:absolute;inset:0;border-radius:14px;padding:1px;pointer-events:none;z-index:-1;
+  background:linear-gradient(135deg,var(--gc,#9B5CFF),transparent 55%);opacity:.55;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;transition:opacity .4s ease}
+.ss-info::after{content:'';position:absolute;left:0;right:0;top:0;height:140px;border-radius:14px 14px 0 0;pointer-events:none;z-index:-1;
+  background:radial-gradient(120% 100% at 50% 0%,var(--gc,#9B5CFF)22,transparent 70%);opacity:.6}
+.ss-title{text-shadow:0 0 22px var(--gc,#9B5CFF)44}
+.ss-starpill{box-shadow:0 0 18px -2px var(--gc,#9B5CFF),0 0 0 1px #ffffff22 inset;transition:box-shadow .4s ease}
+
+/* — Stats en barres qui se remplissent (la ligne .tick existante devient le fill animé) — */
+.ss-stat{position:relative;padding-top:2px}
+.ss-stat .tick{position:relative;height:5px;border-radius:3px;overflow:hidden;
+  box-shadow:0 0 0 1px #ffffff10 inset,0 0 10px -3px currentColor;
+  background-image:none;color:inherit;
+  transform-origin:left center;animation:statFill .7s cubic-bezier(.22,1,.36,1) both}
+.ss-stat .tick::after{content:'';position:absolute;inset:0;border-radius:inherit;
+  background:linear-gradient(90deg,transparent,#ffffff66);mix-blend-mode:overlay;opacity:.7}
+.screen.on#sReady .ss-stat .tick{animation:statFill .7s cubic-bezier(.22,1,.36,1) both}
+.ss-stat:nth-child(2) .tick{animation-delay:.04s}.ss-stat:nth-child(3) .tick{animation-delay:.08s}
+.ss-stat:nth-child(4) .tick{animation-delay:.12s}.ss-stat:nth-child(5) .tick{animation-delay:.16s}
+.ss-stat:nth-child(6) .tick{animation-delay:.2s}.ss-stat:nth-child(7) .tick{animation-delay:.24s}
+@keyframes statFill{from{transform:scaleX(.05);opacity:.2}to{transform:scaleX(1);opacity:1}}
+.ss-stat .v{transition:color .25s ease}
+
+/* — Liste de difficultés : pills plus juteuses, la sélectionnée pulse dans sa couleur d'étoile — */
+.diffcard{position:relative;isolation:isolate}
+.diffcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px;
+  background:var(--dgc,transparent);opacity:0;transition:opacity .25s ease,width .25s ease;box-shadow:0 0 12px -2px var(--dgc,transparent)}
+.diffcard:hover{box-shadow:0 10px 30px -12px #000c,0 0 0 1px #ffffff1f inset}
+.diffcard:hover::before{opacity:.7;width:5px}
+.diffcard.sel{box-shadow:0 12px 36px -10px var(--dgc,#9B5CFF),0 0 28px -8px var(--dgc,#9B5CFF) inset;
+  animation:diffPulse 2.1s ease-in-out infinite}
+.diffcard.sel::before{opacity:1;width:6px;animation:diffEdge 2.1s ease-in-out infinite}
+.diffcard .dc-ico{transition:box-shadow .25s ease,transform .25s ease}
+.diffcard.sel .dc-ico{box-shadow:0 0 14px -1px currentColor;transform:scale(1.08)}
+.diffcard .dc-pill{box-shadow:0 0 12px -3px var(--dgc,transparent)}
+@keyframes diffPulse{0%,100%{box-shadow:0 12px 36px -10px var(--dgc,#9B5CFF),0 0 22px -10px var(--dgc,#9B5CFF) inset}50%{box-shadow:0 14px 44px -8px var(--dgc,#9B5CFF),0 0 40px -6px var(--dgc,#9B5CFF) inset}}
+@keyframes diffEdge{0%,100%{box-shadow:0 0 12px -2px var(--dgc,#9B5CFF)}50%{box-shadow:0 0 22px 0 var(--dgc,#9B5CFF)}}
+
+/* — Liste de morceaux : hover plus vivant, actif surligné néon — */
+.mapcard{transition:transform .22s cubic-bezier(.22,1,.36,1),border-color .2s,box-shadow .25s ease}
+.mapcard:hover{box-shadow:0 12px 30px -14px #000d,0 0 0 1px #ffffff2a inset}
+.mapcard.sel{box-shadow:0 14px 34px -12px var(--mc,#9B5CFF),0 0 22px -10px var(--mc,#9B5CFF) inset}
+.mapcard.sel .mc-title{text-shadow:0 0 14px var(--mc,#9B5CFF)66}
+.mapcard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mc,#39FF8A);opacity:0;transition:opacity .25s ease}
+.mapcard.sel::after{opacity:.9;box-shadow:0 0 14px 0 var(--mc,#39FF8A)}
+
+/* — Bouton PLAY (gold) : plus désirable — pulse, glow, flèche qui respire — */
+.ss-logo{position:relative;overflow:visible;transition:filter .15s,transform .2s var(--m-soft,ease),box-shadow .25s ease;
+  box-shadow:0 0 50px #d4a01788,0 0 90px -10px #d4a01755,inset 0 0 24px #ffffff22}
+.ss-logo::before{content:'';position:absolute;inset:-7px;border-radius:50%;pointer-events:none;
+  border:2px solid #ffd70066;animation:playRing 2.4s ease-in-out infinite}
+.ss-logo:hover{transform:scale(1.06);box-shadow:0 0 70px #ffd700aa,0 0 120px -8px #d4a017aa,inset 0 0 26px #ffffff33;filter:brightness(1.14)}
+.ss-logo:active{transform:scale(.97)}
+.ss-logo:focus-visible{outline:3px solid #ffe9a8;outline-offset:4px}
+@keyframes playRing{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.9;transform:scale(1.07)}}
+
+/* — respect total de prefers-reduced-motion : on fige les boucles, on garde l'état final — */
+@media (prefers-reduced-motion:reduce){
+  .screen.on#sReady .ss-info,.screen.on#sReady .ss-lb,.screen.on#sReady .ss-search,
+  .screen.on#sReady #mapRow,.screen.on#sReady #diffRow,.screen.on#sReady .ss-stat .tick{animation:none}
+  .ss-stat .tick{animation:none;transform:none}
+  .diffcard.sel,.diffcard.sel::before,.ss-logo::before{animation:none}
+  .ss-logo:hover,.diffcard:hover,.mapcard:hover{transform:none}
+}
+/* — responsive : barres et glow plus discrets sur petit écran — */
+@media (max-width:900px){.ss-info::after{display:none}.diffcard.sel{animation-duration:2.6s}}
 </style>
 </head>
 <body>
@@ -437,18 +535,20 @@ body.playing{cursor:none}
   <button class="btn ghost" id="bQuit1">Quitter</button>
 </div></div>
 
-<div class="screen" id="sFail"><div class="card">
-  <h2 class="failT">ÉCHEC…</h2>
-  <p class="muted">La barre de vie est tombée à zéro</p>
-  <button class="btn big go" id="bRetry2">Réessayer</button>
+<div class="screen" id="sFail"><div class="failVeil" aria-hidden="true"></div><div class="card">
+  <h2 class="failBig">RATÉ</h2>
+  <p class="muted" id="gFailSub">La barre de vie est tombée à zéro</p>
+  <button class="btn big go retryJuicy" id="bRetry2">Réessayer</button>
   <button class="btn ghost" id="bQuit2">Menu</button>
 </div></div>
 
 <div class="screen" id="sRes"><div class="card res">
   <div class="res-top">
     <div class="res-grade" id="gGradeWrap">
+      <svg id="gAccRing" viewBox="0 0 190 190" aria-hidden="true"><circle class="arTrack" cx="95" cy="95" r="88"/><circle class="arFill" cx="95" cy="95" r="88" pathLength="100" stroke-dasharray="0 100" transform="rotate(-90 95 95)"/></svg>
       <canvas id="gBurst" width="190" height="190"></canvas>
       <div class="grade" id="gGrade">S</div>
+      <span class="gPerfBadge" id="gPerf"><i></i><b></b></span>
       <p class="muted" id="gSub"></p>
     </div>
     <div class="res-right">
@@ -2128,19 +2228,33 @@ function segText(txt,x,y,h,color,align='left',dimLeadZeros=false){
   return tw;
 }
 
-/* Barre de vie lazer : fine, embout lumineux */
+/* Barre de vie lazer : fine, embout lumineux, danger pulsé */
 function drawHP(){
-  const bw=Math.min(W*.3,300),bh=5,x=12,y=14;
+  const bw=Math.min(W*.3,300),bh=6,x=12,y=14,r=bh/2;
+  const now=performance.now();
   cx.save();
-  cx.fillStyle='rgba(255,255,255,.10)';rrect(x,y,bw,bh,3);cx.fill();
-  const fw=bw*clamp(hp,0,1);
+  // rail : creux translucide + fines graduations aux seuils 25/50 %
+  cx.fillStyle='rgba(255,255,255,.10)';rrect(x,y,bw,bh,r);cx.fill();
+  cx.fillStyle='rgba(255,255,255,.16)';
+  cx.fillRect(x+bw*.25-.5,y,1,bh);cx.fillRect(x+bw*.5-.5,y,1,bh);
+  const h=clamp(hp,0,1),fw=bw*h;
   if(fw>2){
-    const hc=hp>.5?'#fff':hp>.25?'#FFD12B':'#FF5E5E';
+    const danger=h<=.25?clamp((.25-h)/.25,0,1):0;          // 0 hors danger → 1 à vide
+    const dpulse=danger?(.6+.4*Math.sin(now/90)):0;         // clignotement uniquement en danger
+    const hc=h>.5?'#fff':h>.25?'#FFD12B':'#FF5E5E';
     const gr=cx.createLinearGradient(x,0,x+fw,0);
     gr.addColorStop(0,'rgba(255,255,255,.55)');gr.addColorStop(1,hc);
-    cx.fillStyle=gr;rrect(x,y,fw,bh,3);cx.fill();
-    cx.beginPath();cx.arc(x+fw,y+bh/2,bh*1.3,0,PI2);   // embout lumineux
-    cx.fillStyle=hc;cx.shadowBlur=12;cx.shadowColor=hc;cx.fill();
+    cx.fillStyle=gr;rrect(x,y,fw,bh,r);cx.fill();
+    // voile de brillance interne (sheen) sur la moitié haute
+    const sh=cx.createLinearGradient(0,y,0,y+bh);
+    sh.addColorStop(0,'rgba(255,255,255,.45)');sh.addColorStop(.55,'rgba(255,255,255,0)');
+    cx.fillStyle=sh;rrect(x,y,fw,bh*.6,r);cx.fill();
+    // embout lumineux + glow renforcé quand la vie chute
+    cx.beginPath();cx.arc(x+fw,y+bh/2,bh*(1.25+danger*.5*dpulse),0,PI2);
+    cx.fillStyle=hc;cx.shadowBlur=12+danger*16*dpulse;cx.shadowColor=hc;cx.fill();
+    // halo d'alerte sous la barre quand on est presque mort
+    if(danger>.05){cx.globalAlpha=.18*danger*dpulse;cx.shadowBlur=0;
+      cx.fillStyle='#FF5E5E';rrect(x-2,y-2,fw+4,bh+4,r+2);cx.fill();}
   }
   cx.restore();
 }
@@ -2153,23 +2267,38 @@ function drawErrBar(){
   const w1px=W1/W50*cw,w3px=W3/W50*cw;
   cx.fillStyle='rgba(136,255,136,.2)';cx.fillRect(cx0-w1px,y,w1px*2,h);
   cx.fillStyle='rgba(255,238,68,.28)';cx.fillRect(cx0-w3px,y,w3px*2,h);
-  cx.fillStyle='#fff';cx.fillRect(cx0-1,y-2,2,h+4);
+  // graduations : bords des fenêtres 300/100/50 → on lit la tolérance d'un coup d'oeil
+  cx.fillStyle='rgba(255,255,255,.30)';
+  cx.fillRect(cx0-w3px-.5,y-1,1,h+2);cx.fillRect(cx0+w3px-.5,y-1,1,h+2);
+  cx.fillStyle='rgba(255,255,255,.18)';
+  cx.fillRect(cx0-w1px-.5,y,1,h);cx.fillRect(cx0+w1px-.5,y,1,h);
+  // ligne centrale nette + léger glow
+  cx.shadowBlur=6;cx.shadowColor='rgba(255,255,255,.7)';
+  cx.fillStyle='#fff';cx.fillRect(cx0-1,y-3,2,h+6);cx.shadowBlur=0;
   const now=performance.now();
   // purge de tête : la barre ne parcourt que les ~3 dernières secondes, pas toute la partie
   while(errs.length&&now-errs[0].rt>3000)errs.shift();
   let sum=0,cnt=0;
   for(const e of errs){
     const age=now-e.rt;if(age>3000)continue;
-    cx.globalAlpha=clamp(1-age/3000,0,1)*.9;
+    const fade=clamp(1-age/3000,0,1);
+    cx.globalAlpha=fade*.9;
     const px=cx0+clamp(e.d/W50,-1,1)*cw;
     cx.fillStyle=Math.abs(e.d)<=W3?'#ffee44':Math.abs(e.d)<=W1?'#88ff88':'#aaaaff';
-    cx.fillRect(px-1,y,2,h);
+    // tick plus visible quand il est frais
+    cx.fillRect(px-1,y-fade*2,2,h+fade*4);
     sum+=e.d;cnt++;
   }
   if(cnt){
-    cx.globalAlpha=.95;
-    const ax=cx0+clamp(sum/cnt/W50,-1,1)*cw;
-    cx.fillStyle='#ff66aa';
+    const avg=sum/cnt;
+    const ax=cx0+clamp(avg/W50,-1,1)*cw;
+    // teinte de la flèche selon la justesse de la moyenne (centré=vert, dérivé=rose)
+    const off=clamp(Math.abs(avg)/W3,0,1);
+    const acol=Math.abs(avg)<=W3?'#7CFF8A':Math.abs(avg)<=W1?'#ffd06a':'#ff66aa';
+    // liseré sombre derrière la flèche pour qu'elle ressorte sur les ticks
+    cx.globalAlpha=.95;cx.fillStyle='rgba(0,0,0,.55)';
+    cx.beginPath();cx.moveTo(ax,y-2);cx.lineTo(ax-5.5,y-10.5);cx.lineTo(ax+5.5,y-10.5);cx.closePath();cx.fill();
+    cx.fillStyle=acol;
     cx.beginPath();cx.moveTo(ax,y-3);cx.lineTo(ax-4,y-9);cx.lineTo(ax+4,y-9);cx.closePath();cx.fill();
   }
   cx.restore();
@@ -2190,17 +2319,30 @@ function hudLabel(txt,x,y,align='left'){
 }
 function drawKeyOverlay(){
   const bw=46,bh=42,x=W-bw-8;let y=H/2-bh*2-9;
+  const now=performance.now();
   cx.save();cx.textAlign='center';cx.textBaseline='middle';
   for(const k of keysOv){
     const press=k.on?1:0;
+    // détection de front montant → enregistre l'instant du press pour le pulse (render-local)
+    if(k.on&&!k._w)k._p=now;
+    k._w=k.on;
+    const pulse=k._p?clamp(1-(now-k._p)/140,0,1):0; // flash bref à l'appui
+    const cy0=y+bh/2,cx1=x+bw/2;
+    cx.save();cx.translate(cx1,cy0);cx.scale(1+pulse*.12,1+pulse*.12);cx.translate(-cx1,-cy0);
+    const px=press*2,py=press*1;
+    if(press){cx.shadowBlur=10+pulse*8;cx.shadowColor='#ff66aa';}
     cx.fillStyle=press?'rgba(255,102,170,.85)':'rgba(12,10,20,.6)';
-    rrect(x+press*2,y+press*1,bw-press*4,bh-press*2,7);cx.fill();
-    cx.strokeStyle=press?'#ff66aa':'rgba(255,255,255,.14)';cx.lineWidth=1.5;
-    rrect(x+press*2,y+press*1,bw-press*4,bh-press*2,7);cx.stroke();
-    cx.fillStyle=press?'#1a0a12':'rgba(255,255,255,.8)';
-    cx.font='800 14px '+SKIN.FONT;cx.fillText(k.lbl,x+bw/2,y+bh/2-7);
-    cx.font='700 10px '+SKIN.FONT;cx.fillStyle=press?'rgba(26,10,18,.8)':'rgba(255,255,255,.4)';
-    cx.fillText(k.n,x+bw/2,y+bh/2+10);
+    rrect(x+px,y+py,bw-px*2,bh-py*2,7);cx.fill();cx.shadowBlur=0;
+    cx.strokeStyle=press?'#ff8fc0':'rgba(255,255,255,.14)';cx.lineWidth=1.5;
+    rrect(x+px,y+py,bw-px*2,bh-py*2,7);cx.stroke();
+    // liseré d'accent en haut quand actif (rappel lazer)
+    if(press){cx.globalAlpha=.6+pulse*.4;cx.strokeStyle='#fff';cx.lineWidth=1;
+      rrect(x+px+3,y+py+2,bw-px*2-6,bh-py*2-4,5);cx.stroke();cx.globalAlpha=1;}
+    cx.fillStyle=press?'#1a0a12':'rgba(255,255,255,.85)';
+    cx.font='800 14px '+SKIN.FONT;cx.fillText(k.lbl,cx1,cy0-7);
+    cx.font='700 10px '+SKIN.FONT;cx.fillStyle=press?'rgba(26,10,18,.85)':'rgba(255,255,255,.45)';
+    cx.fillText(k.n,cx1,cy0+10);
+    cx.restore();
     y+=bh+6;
   }
   cx.restore();
@@ -2645,7 +2787,8 @@ function finish(){
     scEl.textContent=Math.round(scoreFin*e).toLocaleString('fr-FR');
     if(t<1&&state==='results')requestAnimationFrame(up);
   })();
-  gradeSlam(GRADE_COL[g]||'#ffffff');
+  gradeSlam(GRADE_COL[g]||'#ffffff');  drawAccRing(acc,GRADE_COL[g]||'#ffffff');
+  setPerfBadge(g,GRADE_COL[g]||'#ffffff',isRecord,maxCombo,nm);
   // graphe de timing : répartition des écarts (vert=300 / jaune=100 / bleu=50)
   const hc=$('gHisto').getContext('2d');hc.clearRect(0,0,300,56);
   if(errsAll.length){
@@ -2654,9 +2797,13 @@ function finish(){
     const mxB=Math.max(...bins,1);
     for(let i=0;i<30;i++){
       const d=Math.abs((i+.5)/30*2-1)*W50;
-      hc.fillStyle=d<=W3?'#FFD12B':d<=W1?'#88E55C':'#8FB3E8';
       const bh=bins[i]/mxB*46;
-      hc.fillRect(i*10+1,52-bh,8,bh);
+      if(bh<=0)continue;
+      const bx=i*10+1,col=d<=W3?'#FFD12B':d<=W1?'#88E55C':'#8FB3E8';
+      const gr=hc.createLinearGradient(0,52-bh,0,52);
+      const[gr_,gg_,gb_]=h2r(col);gr.addColorStop(0,'rgb('+gr_+','+gg_+','+gb_+')');gr.addColorStop(1,'rgba('+gr_+','+gg_+','+gb_+',.32)');
+      hc.save();hc.shadowColor=col;hc.shadowBlur=6;hc.fillStyle=gr;
+      hc.fillRect(bx,52-bh,8,bh);hc.restore();
     }
     hc.fillStyle='rgba(255,255,255,.5)';hc.fillRect(149,4,2,48);
   }
@@ -2664,7 +2811,36 @@ function finish(){
   const arp=g==='SS'||g==='S'?[660,880,1108,1318,1760]:g==='A'?[523,659,784,1046]:g==='B'?[494,587,740]:[392,494];
   arp.forEach((f,i)=>setTimeout(()=>tone(f,'sine',.32,.13),i*110));
 }
-// Slam cinématique du grade : flash coloré + burst de particules (canvas dédié, rAF propre, stoppe hors 'results')
+// Slam cinématique du grade : flash coloré + burst de particules (canvas dédié, rAF propre, stoppe hors 'results')// Anneau de précision : se trace de 0 → accuracy% (couleur = grade), rAF propre, stoppe hors 'results'
+function drawAccRing(acc,col){
+  const ring=$('gAccRing');if(!ring)return;const fill=ring.querySelector('.arFill');if(!fill)return;
+  fill.style.stroke=col||'#fff';
+  const target=Math.max(0,Math.min(100,acc));
+  const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(rm){fill.setAttribute('stroke-dasharray',target.toFixed(2)+' '+(100-target).toFixed(2));return;}
+  const t0=performance.now();
+  (function trace(now){
+    if(state!=='results')return;
+    const t=Math.min(1,(now-t0)/900),v=target*easeOut(t);
+    fill.setAttribute('stroke-dasharray',v.toFixed(2)+' '+(100-v).toFixed(2));
+    if(t<1)requestAnimationFrame(trace);
+  })(t0);
+}
+// Badge de performance : libellé selon le run (Full Combo / Sans-faute / Record / grade)
+function setPerfBadge(g,col,isRecord,maxCombo,misses){
+  const b=$('gPerf');if(!b)return;const lbl=b.querySelector('b'),dot=b.querySelector('i');
+  let txt;
+  if(g==='SS')txt='Perfect';
+  else if(misses===0)txt='Full Combo';
+  else if(g==='S')txt='Excellent';
+  else if(g==='A')txt='Solide';
+  else if(g==='B')txt='Correct';
+  else txt='À retenter';
+  if(isRecord)txt='Record · '+txt;
+  if(lbl)lbl.textContent=txt;if(dot)dot.style.color=col||'#fff';
+  b.style.color=col||'#fff';
+  b.classList.remove('in');void b.offsetWidth;b.classList.add('in');
+}
 function gradeSlam(col){
   const wrap=$('gGradeWrap');if(!wrap)return;
   const rm=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -2704,7 +2880,8 @@ function fail(){
     }catch(e){}
     srcNode=null;
   }
-  tone(220,'sawtooth',.6,.18);setTimeout(()=>tone(160,'sawtooth',.8,.15),250);
+  tone(220,'sawtooth',.6,.18);setTimeout(()=>tone(160,'sawtooth',.8,.15),250);setTimeout(()=>tone(98,'sawtooth',.9,.12),520);
+  const fsub=$('gFailSub');if(fsub)fsub.textContent='Combo '+maxCombo+'x · la barre de vie est tombée à zéro';
   show('sFail');
 }
 function quitToMenu(){
@@ -2870,7 +3047,37 @@ function updatePreview(){
   });
 }
 
-/* ════ BIBLIOTHÈQUE DE MAPS (session) — carrousel, covers, préview ════ */
+/* ════ BIBLIOTHÈQUE DE MAPS (session) — carrousel, covers, préview ════ *//* — Glow de difficulté : synchronise --gc (carte beatmap) et --dgc (pills) avec la couleur d'étoile,
+   sans toucher updatePreview/genMap/RNG : on lit simplement la couleur déjà posée par le moteur. — */
+function syncSongSelectGlow(){
+  try{
+    const sel=document.querySelector('#diffRow .diffcard.sel');
+    const info=document.querySelector('#sReady .ss-info');
+    if(sel){
+      const ico=sel.querySelector('.dc-ico');
+      // .dc-ico.color = couleur du spectre de difficulté déjà calculée par le moteur
+      const c=ico?getComputedStyle(ico).color:'';
+      if(c){sel.style.setProperty('--dgc',c);if(info)info.style.setProperty('--gc',c);}
+    }
+    document.querySelectorAll('#diffRow .diffcard').forEach(card=>{
+      const ico=card.querySelector('.dc-ico');
+      const c=ico?getComputedStyle(ico).color:'';
+      if(c)card.style.setProperty('--dgc',c);
+    });
+  }catch(e){}
+}
+// Observe les changements de classe/style posés par le moteur (sélection diff) et resynchronise le glow.
+(function bindSongSelectGlow(){
+  const row=document.getElementById('diffRow');
+  if(!row)return;
+  const mo=new MutationObserver(()=>requestAnimationFrame(syncSongSelectGlow));
+  mo.observe(row,{attributes:true,attributeFilter:['class','style'],subtree:true});
+  // resync aussi quand on (ré)affiche le song select
+  const sr=document.getElementById('sReady');
+  if(sr)new MutationObserver(()=>{if(sr.classList.contains('on'))requestAnimationFrame(syncSongSelectGlow);})
+    .observe(sr,{attributes:true,attributeFilter:['class']});
+  requestAnimationFrame(syncSongSelectGlow);
+})();
 let lastVideoFile=null;
 const library=FEATURED.map(f=>({...f,featured:true,buf:null,analysis:null,videoFile:null,cover:null}));
 let curEntry=null;
