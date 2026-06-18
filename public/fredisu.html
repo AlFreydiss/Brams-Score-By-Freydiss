@@ -1314,10 +1314,10 @@ class HitFX{
     this.lbl=txt!==undefined?txt:(q===300?'GREAT.':q===100?'OK':q===50?'MEH':'MISS');
     this.lc=txt!==undefined?c:q===300?'#FFE34A':q===100?'#7CE87C':q===50?'#8FB3E8':SKIN.MISS_RED;
     this.ptc=[];this.spk=null;
-    if(q>0&&txt===undefined){const n=q===300?13:q===100?8:5;
-      for(let i=0;i<n;i++){const a=PI2*i/n+Math.random()*.5,s=1.5+Math.random()*3.5;
+    if(q>0&&txt===undefined){const n=q===300?18:q===100?9:5;
+      for(let i=0;i<n;i++){const a=PI2*i/n+Math.random()*.5,s=1.5+Math.random()*(q===300?4.5:3.5);
         this.ptc.push({px:0,py:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1});}
-      if(q===300)this.spk=Array.from({length:5},()=>({a:Math.random()*PI2,v:1.6+Math.random()*2.2,l:1})); // étincelles radiales
+      if(q===300)this.spk=Array.from({length:8},()=>({a:Math.random()*PI2,v:1.6+Math.random()*2.6,l:1})); // étincelles radiales
     }
   }
   tick(dt){this.age+=dt;const fn=dt/16.667;
@@ -1436,10 +1436,16 @@ function drawBG(el,kiai){
     cx.restore();
   }
   if(kiai&&opt.fx){
-    cx.save();cx.globalAlpha=.25+bass*.45;
-    cx.strokeStyle='#ff66aa';cx.lineWidth=5;
-    cx.shadowBlur=34;cx.shadowColor='#ff66aa';
+    // Bloom de kiai amplifié : additif + double couche, respire au beat ET à la basse.
+    const beatBoost=Math.max(pulse,bass);
+    cx.save();cx.globalCompositeOperation='lighter';
+    cx.strokeStyle='#ff66aa';cx.shadowColor='#ff66aa';
+    cx.globalAlpha=(.18+bass*.4+pulse*.28)*dimF;
+    cx.lineWidth=5+beatBoost*7;cx.shadowBlur=34+beatBoost*42;
     cx.strokeRect(4,4,W-8,H-8);
+    // halo intérieur large et doux qui pulse à la basse
+    cx.globalAlpha=(.09+bass*.3)*dimF;cx.lineWidth=2;cx.shadowBlur=64+bass*70;
+    cx.strokeRect(16,16,W-32,H-32);
     cx.restore();
   }
 }
@@ -1925,6 +1931,20 @@ function drawCursor(){
       cx.globalAlpha=(1-a)*.5;
       cx.drawImage(SPRITES.dot,p.x-s/2,p.y-s/2,s,s);
     }
+    cx.restore();
+  }
+  // Aura de combo : halo additif autour du curseur qui grossit + pulse avec le combo
+  // (≥30). Plus tu enchaînes, plus tu rayonnes. Couleur or → blanc selon l'intensité.
+  if(state==='playing'&&combo>=30){
+    const lvl=Math.min(1,(combo-30)/220);                 // 30→250 = 0→1
+    const pulse=1+.07*Math.sin(now/110);
+    const rad=(34+lvl*52)*pulse*(opt.curSize||1.15);
+    cx.save();cx.globalCompositeOperation='lighter';
+    const g=cx.createRadialGradient(mx,my,rad*.25,mx,my,rad);
+    g.addColorStop(0,'rgba(255,221,140,'+(.09+lvl*.20)+')');
+    g.addColorStop(.6,'rgba(255,200,90,'+(.04+lvl*.10)+')');
+    g.addColorStop(1,'rgba(255,200,90,0)');
+    cx.fillStyle=g;cx.beginPath();cx.arc(mx,my,rad,0,PI2);cx.fill();
     cx.restore();
   }
   cursorSc+=((pressing?1.3:1)-cursorSc)*lerpF(.32); // expansion douce au clic, comme lazer
