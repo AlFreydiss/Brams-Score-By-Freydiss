@@ -1409,16 +1409,27 @@ function genMap(){
     }
     num++;if(num>9){num=1;ci=(ci+1)%CLR.length;}
   }
-  // Stacking osu! : notes superposées décalées en diagonale (≈ rayon/10 par niveau)
-  const stackOff=R/10;
-  for(let i=1;i<objs.length;i++){
-    const o=objs[i],p=objs[i-1];
-    if(o.k===2||p.k===2)continue;
-    if(o.t-p.t<PRE&&Math.hypot(o.x-p.x,o.y-p.y)<4){
-      const lvl=(p.stack||0)+1;o.stack=lvl;
-      o.x-=stackOff*lvl;o.y-=stackOff*lvl;
-      if(o.k===1&&o.path)o.path.pts.forEach(pt=>{pt.x-=stackOff*lvl;pt.y-=stackOff*lvl;});
+  // Stacking osu! (stack leniency) : des notes quasi-superposées et proches dans le temps
+  // sont décalées en ESCALIER vers le haut-gauche (≈ rayon/10 par niveau) pour qu'on les
+  // distingue. PASSE PUREMENT POST-GÉNÉRATION : ne lit que .t et les positions de base ; ne
+  // touche NI .t, NI le seed, NI la sélection des beats, NI le flux rng() (zéro rng consommé).
+  const stackOff=R*.1,stackDist=R*.1; // seuil "même position" + offset par niveau (signature osu!)
+  // positions de base figées AVANT tout décalage : le niveau de stack d'une note se calcule
+  // sur les coords d'origine des notes précédentes (pas sur celles déjà décalées) → l'escalier
+  // reste régulier même quand 3-4 notes s'empilent (comptage de tout le voisinage, pas juste i-1).
+  const baseX=objs.map(o=>o.x),baseY=objs.map(o=>o.y);
+  for(let i=0;i<objs.length;i++){
+    const o=objs[i];if(o.k===2)continue;
+    let lvl=0;
+    for(let j=i-1;j>=0&&o.t-objs[j].t<PRE;j--){
+      if(objs[j].k===2)continue;
+      if(Math.hypot(baseX[i]-baseX[j],baseY[i]-baseY[j])<stackDist){lvl=(objs[j].stack||0)+1;break;}
     }
+    if(!lvl)continue;
+    o.stack=lvl;
+    const dx=stackOff*lvl,dy=stackOff*lvl; // haut-gauche
+    o.x=clamp(o.x-dx,R+2,W-R-2);o.y=clamp(o.y-dy,R+2,H-R-2);
+    if(o.k===1&&o.path)o.path.pts.forEach(pt=>{pt.x-=dx;pt.y-=dy;});
   }
   return objs;
 }
@@ -1667,7 +1678,7 @@ function alphaHD(el,t){
 /* ════ SPRITES PRÉ-RENDUS — le cœur de l'opti : chaque cercle/balle/curseur est
    dessiné UNE fois sur un canvas hors écran (gradients compris), puis simplement
    blitté par drawImage. Zéro path/gradient dans la boucle de rendu. ════ */
-const SPRITES={key:'',circ:[],miss:null,ball:[],glow:[],cursor:null,cursorHi:null,dot:null};
+const SPRITES={key:'',circ:[],miss:null,ball:[],glow:[],light:[],cursor:null,cursorHi:null,dot:null};
 function _circSprite(col){
   const pad=Math.ceil(R*.24)+4,S=Math.ceil(R*2+pad*2)||16,c=document.createElement('canvas');
   c.width=c.height=Math.ceil(S*DPRv);c._S=S;
@@ -1716,6 +1727,20 @@ function _ballSprite(col){
   g.beginPath();g.arc(m,m,R*.85,0,PI2);g.fillStyle=gr;g.fill();
   g.beginPath();g.arc(m,m,R*.85,0,PI2);g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=Math.max(2,R*.06);g.stroke();
   return c;
+}/* Hit lighting osu! : halo additif teinté combo, baké une fois (1 drawImage en 'lighter' au hit).
+   Plus large et plus lumineux que _glowSprite, coeur blanc -> couleur combo -> transparent. */
+function _lightSprite(col){
+  const S=Math.ceil(R*4.2)||32,c=document.createElement('canvas');
+  c.width=c.height=Math.ceil(S*DPRv);c._S=S;
+  const g=c.getContext('2d');g.scale(DPRv,DPRv);
+  const m=S/2,[r,g2,b]=h2r(col);
+  const gr=g.createRadialGradient(m,m,0,m,m,m);
+  gr.addColorStop(0,'rgba(255,255,255,.95)');
+  gr.addColorStop(.28,`rgba(${Math.min(255,r+90)},${Math.min(255,g2+90)},${Math.min(255,b+90)},.78)`);
+  gr.addColorStop(.6,`rgba(${r},${g2},${b},.34)`);
+  gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.beginPath();g.arc(m,m,m,0,PI2);g.fillStyle=gr;g.fill();
+  return c;
 }
 /* Curseur lazer : disque dégradé rose + anneau blanc + halo doux, baked */
 function _cursorSprite(hi){
@@ -1752,6 +1777,7 @@ function buildSprites(){
   SPRITES.miss=_circSprite(SKIN.MISS_RED);
   SPRITES.ball=comboCLR().map(_ballSprite);
   SPRITES.glow=comboCLR().map(_glowSprite);
+  SPRITES.light=comboCLR().map(_lightSprite);
   if(!SPRITES.cursor){SPRITES.cursor=_cursorSprite(false);SPRITES.cursorHi=_cursorSprite(true);SPRITES.dot=_dotSprite();}
 }
 /* Hit circle Argon : blit du sprite + numéro (seul texte dynamique) */
@@ -1791,14 +1817,15 @@ function drawCircleObj(o,el){
   if(o.hit){
     const t=clamp((el-o.hitAt)/TIMING.HIT_FADE,0,1);if(t>=1)return;
     const e=easeOut(t);
-    cx.save();cx.globalAlpha=(1-e)*.26;
-    const[lr2,lg2,lb2]=h2r(col);
-    cx.beginPath();cx.arc(o.x,o.y,R*1.3,0,PI2);
-    const fl=cx.createRadialGradient(o.x,o.y,0,o.x,o.y,R*1.3);
-    fl.addColorStop(0,`rgba(${Math.min(255,lr2+120)},${Math.min(255,lg2+120)},${Math.min(255,lb2+120)},.85)`);
-    fl.addColorStop(1,`rgba(${lr2},${lg2},${lb2},0)`);
-    cx.fillStyle=fl;cx.fill();cx.restore();
-    baseCircle(o.x,o.y,o.ci,1-e,t<.4?o.num:null,1+.28*e); // disque doux, numéro vite parti
+    // HIT LIGHTING osu! : sprite additif baké, surgit derrière le cercle, scale-up + fade (1 drawImage)
+    const lt=SPRITES.light&&SPRITES.light[o.ci%4];
+    if(lt){
+      const ls=lt._S*(.78+.95*e); // grossit du petit vers le grand comme le lighting lazer
+      cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=(1-e)*.9;
+      cx.drawImage(lt,o.x-ls/2,o.y-ls/2,ls,ls);
+      cx.restore();
+    }
+    baseCircle(o.x,o.y,o.ci,1-e,t<.4?o.num:null,1+.42*e); // le cercle « explose » (scale-up + fade) comme lazer
     cx.save();cx.globalAlpha=(1-e)*.8;                    // l'anneau détaché file devant
     cx.beginPath();cx.arc(o.x,o.y,R*(1+e*.8),0,PI2);
     cx.strokeStyle='#fff';cx.lineWidth=Math.max(2,R*SKIN.RING_W*(1-e*.45));cx.stroke();
@@ -2031,6 +2058,57 @@ function drawSliderObj(o,el){
     }
     cx.restore();
   }
+}
+/* FOLLOW POINTS façon osu! : chaîne de petits points pointillés blancs reliant deux
+   objets CONSÉCUTIFS du MÊME combo (le suivant ne démarre pas un nouveau combo : num!==1).
+   Apparaissent ~ quand l'approach du suivant commence, avancent le long du segment, puis
+   se fondent quand l'objet actif est atteint — comme osu!. Lecture seule sur map/.t. */
+function fpExit(o){ // position de SORTIE de l'objet précédent (fin de slider selon parité de rep)
+  if(o.k===1&&o.path){
+    if(o.rep%2)return{x:o.x,y:o.y};               // rep impair : on revient au départ
+    const e=o.path.pts[o.path.pts.length-1];return{x:e.x,y:e.y};
+  }
+  return{x:o.x,y:o.y};
+}
+function fpEnd(o){ return o.k===1?o.t+o.span:o.t; } // instant où le précédent est "quitté"
+function drawFollowPoints(el){
+  const SP=Math.max(28,R*0.85);   // espacement régulier entre points le long du segment
+  const PR=R*0.11;                // rayon d'un point (~R*0.1)
+  const PREV_LEAD=PRE*0.55;       // les points apparaissent un peu avant l'approach du suivant
+  cx.save();
+  cx.fillStyle='rgba(255,255,255,.78)';
+  for(let oi=liveStart;oi<map.length;oi++){
+    const b=map[oi];
+    if(b.t-PRE>el)break;                 // au-delà de la fenêtre d'apparition : stop
+    if(b.k===2||b.num===1)continue;      // spinner OU début de nouveau combo → pas de lien
+    const a=map[oi-1];
+    if(!a||a.k===2)continue;             // pas de prédécesseur exploitable
+    const from=fpExit(a),to={x:b.x,y:b.y};
+    const dx=to.x-from.x,dy=to.y-from.y,len=Math.hypot(dx,dy);
+    if(len<R*1.6||len>820)continue;      // trop proches (empilés) ou saut énorme → osu! n'en trace pas
+    const t0=fpEnd(a),t1=b.t;            // fenêtre de vie : du "quitté" précédent jusqu'au suivant
+    const start=t1-PREV_LEAD;            // début d'apparition
+    if(el<start||el>t1+90)continue;
+    // progression du "front" qui révèle/avance les points vers l'objet à venir
+    const prog=clamp((el-start)/(t1-start||1),0,1);
+    const ux=dx/len,uy=dy/len;
+    const n=Math.max(1,Math.floor(len/SP));
+    const gap0=R*0.92;                   // on n'empile pas les points SUR les disques
+    for(let k=1;k<=n;k++){
+      const d=k*SP;
+      if(d<gap0||d>len-gap0)continue;
+      const frac=d/len;
+      // fade-in en tête de chaîne quand le front passe ; fade-out global à l'arrivée
+      const lead=clamp((prog-frac)/0.18+0.2,0,1);
+      const tail=el>t1?clamp(1-(el-t1)/90,0,1):1;
+      const al=lead*tail;
+      if(al<=0.02)continue;
+      const ox=from.x+ux*d,oy=from.y+uy*d;
+      cx.globalAlpha=al*0.78;
+      cx.beginPath();cx.arc(ox,oy,PR,0,PI2);cx.fill();
+    }
+  }
+  cx.restore();
 }
 
 function drawSpinnerObj(o,el){
@@ -3563,6 +3641,7 @@ function loop(now){
     const o=map[oi];if(o.t-600>el)break;
     if(o.k===2&&el>o.t-600&&el<o.t+o.dur+350)drawSpinnerObj(o,el);
   }
+  drawFollowPoints(el); // chaîne de points pointillés DERRIÈRE les cercles/sliders
   const vis=[];
   for(let oi=liveStart;oi<map.length;oi++){
     const o=map[oi];
