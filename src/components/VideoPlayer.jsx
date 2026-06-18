@@ -159,6 +159,8 @@ function cleanCueText(text) {
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
 // ── Bouton icône ─────────────────────────────────────────────────────────────
+// Sur écran tactile (IS_COARSE) les boutons passent à ≥44px (cible WCAG 2.5.8) avec
+// icônes plus grandes — au doigt les versions 32px/fontSize:16 étaient imprécises.
 function Btn({ onClick, title, children, disabled = false, active = false, color = 'rgba(255,255,255,0.85)' }) {
   const [hov, setHov] = useState(false)
   return (
@@ -166,16 +168,21 @@ function Btn({ onClick, title, children, disabled = false, active = false, color
       onClick={onClick}
       disabled={disabled}
       title={title}
+      aria-label={title}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
         background: active ? 'rgba(255,255,255,0.12)' : hov ? 'rgba(255,255,255,0.08)' : 'transparent',
         border: 'none', cursor: disabled ? 'default' : 'pointer',
         color: disabled ? 'rgba(255,255,255,0.2)' : color,
-        borderRadius: 8, padding: '5px 8px', fontSize: 16,
+        borderRadius: IS_COARSE ? 10 : 8,
+        padding: IS_COARSE ? '9px 12px' : '5px 8px',
+        fontSize: IS_COARSE ? 21 : 16,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background .15s, color .15s', flexShrink: 0,
-        minWidth: 32, height: 32,
+        minWidth: IS_COARSE ? 44 : 32,
+        height: IS_COARSE ? 44 : 32,
+        WebkitTapHighlightColor: 'transparent',
       }}
     >{children}</button>
   )
@@ -196,7 +203,9 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
   const getPos = useCallback((e) => {
     const rect = barRef.current?.getBoundingClientRect()
     if (!rect) return 0
-    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    // clientX direct (souris) ou via le 1er touch (tactile).
+    const clientX = e.clientX != null ? e.clientX : (e.touches?.[0]?.clientX ?? e.changedTouches?.[0]?.clientX ?? rect.left)
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }, [])
 
   // Aperçu de frame réelle : on déplace le currentTime de la <video> d'aperçu vers
@@ -226,20 +235,34 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
   useEffect(() => {
     if (!dragging) return
     const onMove = e => onSeek(getPos(e) * duration)
-    const onUp = e => { onSeek(getPos(e) * duration); setDragging(false) }
+    const onUp = e => { onSeek(getPos(e) * duration); setDragging(false); setHoverPct(null) }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    // Scrub tactile : passive:false pour pouvoir bloquer le scroll de page pendant le drag.
+    window.addEventListener('touchmove', onMove, { passive: false })
+    window.addEventListener('touchend', onUp)
+    window.addEventListener('touchcancel', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp)
+      window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onUp); window.removeEventListener('touchcancel', onUp)
+    }
   }, [dragging, duration, getPos, onSeek])
 
   const hasThumb = Boolean(scrubSrc || previewSrc)
+  // Tactile : zone de scrub plus haute (≥26px) + poignée plus grosse pour viser au doigt.
+  const barHeight = IS_COARSE ? 28 : 20
+  const railHeight = IS_COARSE ? 6 : 4
+  const thumbSize = IS_COARSE ? 20 : 12
+  const showThumb = IS_COARSE || hoverPct !== null || dragging
 
   return (
     <div ref={barRef}
       onMouseDown={handleDown}
       onMouseMove={e => { const p = getPos(e); setHoverPct(p); if (duration) requestPreview(p * duration) }}
-      onMouseLeave={() => setHoverPct(null)}
-      style={{ width: '100%', height: 20, display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative' }}
+      onMouseLeave={() => { if (!dragging) setHoverPct(null) }}
+      onTouchStart={e => { const p = getPos(e); setHoverPct(p); setDragging(true); onSeek(p * duration) }}
+      onTouchMove={e => { if (dragging) e.preventDefault(); const p = getPos(e); setHoverPct(p); onSeek(p * duration) }}
+      style={{ width: '100%', height: barHeight, display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative', touchAction: 'none' }}
     >
       {/* Tooltip : image RÉELLE du moment survolé (video d'aperçu calée sur le temps),
           repli sur la vignette statique si la source n'est pas seekable (HLS).
@@ -259,13 +282,13 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
           </div>
         </div>
       )}
-      <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 4, position: 'relative', overflow: 'visible' }}>
+      <div style={{ width: '100%', height: railHeight, background: 'rgba(255,255,255,0.15)', borderRadius: railHeight, position: 'relative', overflow: 'visible' }}>
         {/* Buffer */}
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${bufPct * 100}%`, background: 'rgba(255,255,255,0.25)', borderRadius: 4, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${bufPct * 100}%`, background: 'rgba(255,255,255,0.25)', borderRadius: railHeight, pointerEvents: 'none' }} />
         {/* Progress */}
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct * 100}%`, background: color, borderRadius: 4, pointerEvents: 'none', transition: dragging ? 'none' : 'width .1s linear' }} />
-        {/* Thumb */}
-        <div style={{ position: 'absolute', top: '50%', left: `${pct * 100}%`, transform: 'translate(-50%, -50%)', width: 12, height: 12, borderRadius: '50%', background: '#fff', boxShadow: `0 0 6px ${color}88`, pointerEvents: 'none', opacity: hoverPct !== null || dragging ? 1 : 0, transition: 'opacity .15s' }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct * 100}%`, background: color, borderRadius: railHeight, pointerEvents: 'none', transition: dragging ? 'none' : 'width .1s linear' }} />
+        {/* Thumb — toujours visible au doigt (tactile) pour donner une cible de scrub claire */}
+        <div style={{ position: 'absolute', top: '50%', left: `${pct * 100}%`, transform: 'translate(-50%, -50%)', width: thumbSize, height: thumbSize, borderRadius: '50%', background: '#fff', boxShadow: `0 0 6px ${color}88`, pointerEvents: 'none', opacity: showThumb ? 1 : 0, transition: 'opacity .15s' }} />
       </div>
     </div>
   )
@@ -1238,8 +1261,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 scrubSrc={scrubSrc}
               />
 
-              {/* Ligne de contrôles */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+              {/* Ligne de contrôles — espacement plus large au doigt (tactile) ; wrap
+                  autorisé sur tactile pour qu'aucun bouton agrandi ne soit rogné. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, marginTop: IS_COARSE ? 8 : 4, flexWrap: IS_COARSE ? 'wrap' : 'nowrap', rowGap: IS_COARSE ? 6 : 0 }}>
+
+                {/* Préc / Suiv (tactile uniquement : sur mobile la barre haute est souvent
+                    masquée en plein écran → on remet la navigation d'épisode à portée de pouce) */}
+                {IS_COARSE && (
+                  <>
+                    <Btn onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0} title="Épisode précédent" color={color}>⏮</Btn>
+                    <Btn onClick={() => setIdx(i => Math.min(videos.length - 1, i + 1))} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}>⏭</Btn>
+                  </>
+                )}
 
                 {/* Play/Pause */}
                 <Btn onClick={togglePlay} title={playing ? 'Pause (Espace)' : 'Lecture (Espace)'} color={color}>
@@ -1248,10 +1281,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 {/* Skip ±10s */}
                 <Btn onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.max(0, v.currentTime - 10) }} title="Reculer de 10s">
-                  <span style={{ fontSize: 13 }}>−10</span>
+                  <span style={{ fontSize: IS_COARSE ? 15 : 13, fontWeight: 700 }}>−10</span>
                 </Btn>
                 <Btn onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.min(v.duration || 0, v.currentTime + 10) }} title="Avancer de 10s">
-                  <span style={{ fontSize: 13 }}>+10</span>
+                  <span style={{ fontSize: IS_COARSE ? 15 : 13, fontWeight: 700 }}>+10</span>
                 </Btn>
 
                 {/* Volume */}
@@ -1269,16 +1302,22 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 }} title="Muet (M)">
                   {volIcon}
                 </Btn>
-                <input
-                  type="range" min="0" max="1" step="0.05"
-                  value={muted ? 0 : volume}
-                  onChange={handleVolume}
-                  onClick={e => e.stopPropagation()}
-                  style={{ width: 70, accentColor: color, cursor: 'pointer', height: 3 }}
-                />
+                {/* Slider volume : caché au doigt (un slider de 70px est inutilisable au
+                    pouce) → le bouton muet suffit ; sur le volume mobile, l'utilisateur
+                    a déjà les boutons physiques de l'appareil. */}
+                {!IS_COARSE && (
+                  <input
+                    type="range" min="0" max="1" step="0.05"
+                    value={muted ? 0 : volume}
+                    onChange={handleVolume}
+                    onClick={e => e.stopPropagation()}
+                    aria-label="Volume"
+                    style={{ width: 70, accentColor: color, cursor: 'pointer', height: 3 }}
+                  />
+                )}
 
                 {/* Temps */}
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', marginLeft: 4 }}>
+                <span style={{ fontSize: IS_COARSE ? 13 : 12, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', marginLeft: 4 }}>
                   {fmt(currentTime)} / {fmt(duration)}
                 </span>
 
@@ -1289,13 +1328,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   <button
                     onClick={e => { e.stopPropagation(); setShowSubMenu(s => !s); setShowSpdMenu(false); setShowAudioMenu(false); setShowQualityMenu(false) }}
                     title="Sous-titres"
+                    aria-label="Sous-titres"
                     style={{
                       background: subsOff ? 'transparent' : `${color}22`,
                       border: `1px solid ${subsOff ? 'rgba(255,255,255,0.15)' : color + '55'}`,
                       borderRadius: 7, color: subsOff ? 'rgba(255,255,255,0.4)' : color,
-                      // tactile : hit-zone élargie, le bouton CC était introuvable au doigt
-                      fontSize: IS_COARSE ? 13 : 11, fontWeight: 800,
-                      padding: IS_COARSE ? '9px 14px' : '4px 9px', cursor: hasSubs ? 'pointer' : 'default',
+                      // tactile : hit-zone élargie (≥44px), le bouton CC était introuvable au doigt
+                      fontSize: IS_COARSE ? 14 : 11, fontWeight: 800,
+                      padding: IS_COARSE ? '11px 15px' : '4px 9px', minHeight: IS_COARSE ? 44 : undefined,
+                      cursor: hasSubs ? 'pointer' : 'default',
                       letterSpacing: '0.05em', transition: 'all .15s',
                     }}
                   >CC {subLabel}</button>
@@ -1360,14 +1401,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   <button
                     onClick={e => { e.stopPropagation(); setShowAudioMenu(s => !s); setShowSubMenu(false); setShowSpdMenu(false); setShowQualityMenu(false) }}
                     title="Audio"
+                    aria-label="Piste audio"
                     style={{
                       background: hasAudioChoices ? `${color}18` : 'transparent',
                       border: `1px solid ${hasAudioChoices ? color + '44' : 'rgba(255,255,255,0.15)'}`,
                       borderRadius: 7,
                       color: hasAudioChoices ? color : 'rgba(255,255,255,0.4)',
-                      fontSize: 11,
+                      fontSize: IS_COARSE ? 14 : 11,
                       fontWeight: 800,
-                      padding: '4px 9px',
+                      padding: IS_COARSE ? '11px 15px' : '4px 9px',
+                      minHeight: IS_COARSE ? 44 : undefined,
                       cursor: hasAudioChoices ? 'pointer' : 'default',
                       letterSpacing: '0.05em',
                       transition: 'all .15s',
@@ -1398,7 +1441,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   <button
                     onClick={e => { e.stopPropagation(); setShowSpdMenu(s => !s); setShowSubMenu(false); setShowAudioMenu(false); setShowQualityMenu(false) }}
                     title="Vitesse de lecture"
-                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 800, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
+                    aria-label="Vitesse de lecture"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'rgba(255,255,255,0.85)', fontSize: IS_COARSE ? 14 : 11, fontWeight: 800, padding: IS_COARSE ? '11px 15px' : '4px 9px', minHeight: IS_COARSE ? 44 : undefined, cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{speed}×</button>
                   {showSpdMenu && (
                     <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 100, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
@@ -1415,10 +1459,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   )}
                 </div>
 
-                <div style={{ position: 'relative' }}>
+                {/* Qualité : indicateur détecté. Caché au doigt (redondant avec le badge
+                    en haut à droite) pour dégager de la place aux contrôles essentiels. */}
+                <div style={{ position: 'relative', display: IS_COARSE ? 'none' : 'block' }}>
                   <button
                     onClick={e => { e.stopPropagation(); setShowQualityMenu(q => !q); setShowSpdMenu(false); setShowSubMenu(false); setShowAudioMenu(false) }}
                     title="Qualité vidéo"
+                    aria-label="Qualité vidéo"
                     style={{ background: 'rgba(100,217,139,0.10)', border: '1px solid rgba(100,217,139,0.28)', borderRadius: 7, color: '#64d98b', fontSize: 11, fontWeight: 900, padding: '4px 9px', cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{qualityHint}</button>
                   {showQualityMenu && (
@@ -1445,10 +1492,26 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   <Btn onClick={() => videoRef.current?.requestPictureInPicture?.()} title="Picture in Picture">⧉</Btn>
                 )}
 
-                {/* Plein écran */}
-                <Btn onClick={toggleFullscreen} title={(fullscreen || cssFs) ? 'Quitter plein écran (F)' : 'Plein écran (F)'}>
-                  {(fullscreen || cssFs) ? '⊡' : '⛶'}
-                </Btn>
+                {/* Plein écran — c'est LE mode de visionnage principal au téléphone, donc
+                    sur tactile on le rend gros et bien visible (pastille accent ≥44px). */}
+                {IS_COARSE ? (
+                  <button
+                    onClick={toggleFullscreen}
+                    title={(fullscreen || cssFs) ? 'Quitter plein écran' : 'Plein écran'}
+                    aria-label={(fullscreen || cssFs) ? 'Quitter le plein écran' : 'Plein écran'}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      minWidth: 48, height: 48, borderRadius: 12, flexShrink: 0, marginLeft: 2,
+                      background: (fullscreen || cssFs) ? 'rgba(255,255,255,0.14)' : `${color}33`,
+                      border: `1px solid ${color}77`, color: '#fff', fontSize: 24, cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent', transition: 'background .15s',
+                    }}
+                  >{(fullscreen || cssFs) ? '⊡' : '⛶'}</button>
+                ) : (
+                  <Btn onClick={toggleFullscreen} title={(fullscreen || cssFs) ? 'Quitter plein écran (F)' : 'Plein écran (F)'}>
+                    {(fullscreen || cssFs) ? '⊡' : '⛶'}
+                  </Btn>
+                )}
               </div>
 
               {/* Légende raccourcis — CLAVIER uniquement : masquée sur tactile
