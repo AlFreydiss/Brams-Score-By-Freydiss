@@ -350,6 +350,7 @@ body.playing{cursor:none}
         <button class="btn chip mod" data-m="nf" title="No Fail : impossible de perdre (score ×0.5)">NF</button>
         <button class="btn chip mod" data-m="sd" title="Sudden Death : un seul raté et c'est fini">SD</button>
         <button class="btn chip mod" data-m="pf" title="Perfect : tout doit être parfait (GREAT)">PF</button>
+        <button class="btn chip mod" data-m="auto" title="Auto : le jeu joue tout seul (démo, hors classement)">AUTO</button>
       </div>
     </div>
   </div>
@@ -623,7 +624,7 @@ const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+
 
 /* ════ OPTIONS & MODS ════ */
 const opt={volM:.8,volS:.9,ar:8,cs:4,od:7,dim:.25,aim:35,offset:0,k1:'z',k2:'x',curSize:1.25,trail:true,fx:true,snake:true,skinBeige:false,skinNeon:false,hd2x:true,diff:1,sens:1,rawInput:false};
-const mods={hd:false,hr:false,dt:false,fl:false,nf:false,ht:false,sd:false,pf:false};
+const mods={hd:false,hr:false,dt:false,fl:false,nf:false,ht:false,sd:false,pf:false,auto:false};
 Object.assign(opt,store.get('opt',{}));
 Object.assign(mods,store.get('mods',{}));
 if(opt.cs>10)opt.cs=clamp((54.4-opt.cs)/4.48,0,10); // migration : ancien réglage en px → CS osu!
@@ -634,7 +635,7 @@ if(!store.get('aimReset2',false)){opt.aim=0;store.set('aimReset2',true);}
 applyDPR(); // taille initiale du canvas (HD si dispo)
 if(IS_MOBILE)mods.fl=false; // FL injouable au doigt : le doigt cache le trou de lumière
 const saveOpt=()=>{store.set('opt',opt);store.set('mods',mods);};
-const modStr=()=>['hd','hr','dt','ht','fl','nf','sd','pf'].filter(m=>mods[m]).map(m=>m.toUpperCase()).join(' ');
+const modStr=()=>['hd','hr','dt','ht','fl','nf','sd','pf','auto'].filter(m=>mods[m]).map(m=>m.toUpperCase()).join(' ');
 const scoreMul=()=>(mods.hd?1.06:1)*(mods.hr?1.06:1)*(mods.dt?1.12:1)*(mods.ht?.5:1)*(mods.fl?1.12:1)*(mods.nf?.5:1);
 /* AR / CS / OD appartiennent au NIVEAU (taille/vitesse moyennes bien réglées),
    plus aux options — comme les vraies maps osu. */
@@ -2343,7 +2344,41 @@ function tryHit(px,py){
 }
 
 let liveStart=0; // fenêtre glissante : index du premier objet encore vivant (map triée par t)
+
+// ── AUTO : le jeu joue tout seul (mod AUTO). Vise le curseur sur l'objet actif,
+// tape pile au bon timing, suit la bille des sliders, fait tourner les spinners.
+// Ne touche NI l'horloge audio NI le RNG : lit juste map[] et pilote mx/my/pressing.
+function autoPlay(el){
+  let o=null;
+  for(let i=liveStart;i<map.length;i++){
+    const t=map[i];
+    if(t.k===0){if(!t.hit&&!t.miss){o=t;break;}}
+    else if(!t.done){o=t;break;}
+  }
+  if(!o){pressing=false;return;}
+  if(o.k===0){                          // cercle : viser + taper à o.t
+    mx=o.x;my=o.y;
+    if(el>=o.t&&!o.hit&&!o.miss){pressing=true;tryHit(o.x,o.y);}else pressing=false;
+  }else if(o.k===1){                     // slider : start puis suivre la bille
+    if(el<o.t){mx=o.x;my=o.y;pressing=false;}
+    else{
+      const ph=clamp((el-o.t)/o.dur,0,o.rep+1);
+      const segI=Math.min(o.rep,Math.floor(ph)),frac=ph-Math.floor(ph);
+      const pos=Math.floor(ph)>o.rep?(o.rep%2?0:1):(segI%2?1-frac:frac);
+      const bp=ptAt(o.path,pos);
+      mx=bp.x;my=bp.y;pressing=true;
+      if(!o.hj)tryHit(o.x,o.y);
+    }
+  }else{                                 // spinner : tourner autour du centre
+    if(el>=o.t&&el<=o.t+o.dur){
+      pressing=true;
+      const cx0=W/2,cy0=H/2+12,a=el/1000*PI2*6;
+      mx=cx0+Math.cos(a)*70;my=cy0+Math.sin(a)*70;
+    }else{pressing=false;}
+  }
+}
 function updateGame(el,dt){
+  if(mods.auto)autoPlay(el);
   // drain passif — coupé pendant les BREAKS (pas d'objet à moins de 3 s), comme osu
   const nxt=map[liveStart];
   if(map.length&&el>map[0].t-1200&&!(nxt&&nxt.t-el>3000))
