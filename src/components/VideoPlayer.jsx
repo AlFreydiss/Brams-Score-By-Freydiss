@@ -325,6 +325,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [muted,        setMuted]       = useState(false)
   const [speed,        setSpeed]       = useState(1)
   const [fullscreen,   setFullscreen]  = useState(false)
+  const [cssFs,        setCssFs]       = useState(false)  // pseudo-plein-écran iOS (garde le canvas ST)
   const [showCtrl,     setShowCtrl]    = useState(true)
   const [started,      setStarted]     = useState(autoStart)  // false = interface "détail épisode" (pré-lecture) ; autoStart saute directement en lecture
   const [subIdx,       setSubIdx]      = useState(0)
@@ -576,7 +577,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         const text = cues && cues.length ? cleanCueText(Array.from(cues).map(c => c.text).join('\n')) : ''
         if (text) {
           const st = subtitleStyle
-          const size = (st.size || 30) * dpr
+          // Taille RELATIVE à la hauteur d'affichage de la vidéo. Sinon une taille
+          // absolue (30px) est énorme dans le lecteur embarqué mobile ET minuscule
+          // en plein écran (« on voit rien »). st.size reste la préférence du membre
+          // (référence ~30 pour une zone vidéo de ~420px de haut).
+          const baseH = ch || (cv.height / dpr) || 420
+          const sizeScale = Math.min(2.5, Math.max(0.72, baseH / 420))
+          const size = Math.min(70, Math.max(15, (st.size || 30) * sizeScale)) * dpr
           ctx.font = `${st.weight || 700} ${size}px Inter, system-ui, sans-serif`
           ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
           const maxW = cv.width * 0.84
@@ -591,7 +598,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             if (line) lines.push(line)
           })
           const lineH = size * 1.35
-          const bottom = Math.min(180, Math.max(36, Number(st.bottom) || 110)) * dpr
+          // Offset bas relatif à la hauteur (reste au-dessus des contrôles, scale en plein écran).
+          const bottomPref = Math.min(180, Math.max(36, Number(st.bottom) || 110)) / 110 // ~1 par défaut
+          const bottom = Math.max(22, Math.min(baseH * 0.4, baseH * 0.085 * bottomPref)) * dpr
           const baseY = cv.height - bottom
           const startY = baseY - (lines.length - 1) * lineH
           const cx = cv.width / 2
@@ -762,8 +771,25 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   const toggleFullscreen = () => {
     const el = containerRef.current
-    if (!document.fullscreenElement) el?.requestFullscreen?.()
-    else document.exitFullscreen?.()
+    // Sortie
+    if (document.fullscreenElement) { document.exitFullscreen?.(); return }
+    if (cssFs) {
+      setCssFs(false)
+      try { screen.orientation?.unlock?.() } catch {}
+      return
+    }
+    // Entrée : fullscreen natif d'élément si dispo (desktop/Android), SINON
+    // pseudo-plein-écran CSS — indispensable sur iOS où requestFullscreen
+    // d'un <div> n'existe pas : le fullscreen natif <video> masquerait le
+    // canvas des sous-titres (« on voit rien »).
+    if (el && el.requestFullscreen) {
+      el.requestFullscreen()
+        .then(() => { try { screen.orientation?.lock?.('landscape') } catch {} })
+        .catch(() => setCssFs(true))
+    } else {
+      setCssFs(true)
+      try { screen.orientation?.lock?.('landscape') } catch {}
+    }
   }
 
   // ── Raccourcis clavier ───────────────────────────────────────────────────
@@ -772,7 +798,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
       const v = videoRef.current
       switch (e.key) {
-        case 'Escape':      onClose(); break
+        case 'Escape':      if (cssFs) { setCssFs(false); try { screen.orientation?.unlock?.() } catch {} } else onClose(); break
         case ' ':           e.preventDefault(); v && (v.paused ? v.play() : v.pause()); break
         case 'ArrowLeft':   e.preventDefault(); v && (v.currentTime = Math.max(0, v.currentTime - 5)); break
         case 'ArrowRight':  e.preventDefault(); v && (v.currentTime = Math.min(v.duration, v.currentTime + 5)); break
@@ -787,7 +813,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [onClose])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, cssFs])
 
   // ── Handlers vidéo ───────────────────────────────────────────────────────
   const onPlay     = () => {
@@ -923,7 +950,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         onDoubleClick={toggleFullscreen}
         onMouseMove={showControls}
         onMouseLeave={() => { if (playing) hideTimer.current = setTimeout(() => setShowCtrl(false), 1500) }}
-        style={{ flex: 1, position: 'relative', background: '#000', cursor: 'default', overflow: 'hidden' }}
+        style={{
+          flex: 1, position: 'relative', background: '#000', cursor: 'default', overflow: 'hidden',
+          ...(cssFs ? { position: 'fixed', inset: 0, zIndex: 2147483647, width: '100vw', height: '100dvh', flex: 'none' } : null),
+        }}
       >
         {isLocal ? (
           <>
@@ -1416,8 +1446,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 )}
 
                 {/* Plein écran */}
-                <Btn onClick={toggleFullscreen} title={fullscreen ? 'Quitter plein écran (F)' : 'Plein écran (F)'}>
-                  {fullscreen ? '⊡' : '⛶'}
+                <Btn onClick={toggleFullscreen} title={(fullscreen || cssFs) ? 'Quitter plein écran (F)' : 'Plein écran (F)'}>
+                  {(fullscreen || cssFs) ? '⊡' : '⛶'}
                 </Btn>
               </div>
 
