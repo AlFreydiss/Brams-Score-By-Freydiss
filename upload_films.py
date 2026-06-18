@@ -96,7 +96,7 @@ def process(film):
 
 def main():
     entries = [process(f) for f in FILMS]
-    out = Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\films-videos.json')
+    out = Path(r'F:\brams-web-clone\src\data\films-videos.json')
     out.write_text(json.dumps(entries, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'\nOK -> films-videos.json ({len(entries)} films)')
 

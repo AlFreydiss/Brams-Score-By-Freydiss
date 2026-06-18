@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 PUB='https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev'
-DATA=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data')
+DATA=Path(r'F:\brams-web-clone\src\data')
 
 def patch(path, fix):
     j=json.loads(path.read_text(encoding='utf-8'))

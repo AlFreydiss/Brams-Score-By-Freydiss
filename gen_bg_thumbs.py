@@ -20,7 +20,7 @@ s3=boto3.client('s3',endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.co
     aws_access_key_id=env['R2_ACCESS_KEY'],aws_secret_access_key=env['R2_SECRET_KEY'],
     config=Config(signature_version='s3v4'),region_name='auto')
 
-WEB=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data')
+WEB=Path(r'F:\brams-web-clone\src\data')
 pairs={}
 for f in ['openingBgGenerated.js','opening-backgrounds.js']:
     txt=(WEB/f).read_text(encoding='utf-8')

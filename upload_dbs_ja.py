@@ -29,7 +29,7 @@ BUCKET     = 'bramscore'
 PUBLIC_URL = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev'
 
 SRC_DIR  = Path(r'F:\Brams-Score-By-Freydiss\brams-website\public\anime\Dragon Ball Super S01 MULTi 1080p WEB x264 AAC -Tsundere-Raws (ADN)')
-OUT_JSON = Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\dbs-videos.json')
+OUT_JSON = Path(r'F:\brams-web-clone\src\data\dbs-videos.json')
 TMP = Path(r'F:\dbs_ja_tmp')
 TMP.mkdir(parents=True, exist_ok=True)
 

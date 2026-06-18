@@ -25,7 +25,7 @@ s3=boto3.client('s3',endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.co
 TRANSFER=boto3.s3.transfer.TransferConfig(multipart_threshold=10*1024*1024,multipart_chunksize=50*1024*1024,max_concurrency=4)
 TMP=Path(r'F:\jjk_s3_tmp'); TMP.mkdir(parents=True,exist_ok=True)
 SRC=Path(r'F:\Brams-Score-By-Freydiss\brams-website\public\anime\Jujutsu.Kaisen.S03.MULTi.1080p.WEBRiP.x265-KAF')
-JSON=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\jjk-videos.json')
+JSON=Path(r'F:\brams-web-clone\src\data\jjk-videos.json')
 
 def ff(a): subprocess.run(['ffmpeg','-y','-hide_banner','-loglevel','error',*a],check=True)
 def ct(p): return {'.mp4':'video/mp4','.vtt':'text/vtt; charset=utf-8','.m4a':'audio/mp4'}.get(p.suffix.lower(),'application/octet-stream')

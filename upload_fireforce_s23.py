@@ -29,7 +29,7 @@ SEASONS={
     2: BASE/'Fire.Force.S02.VOSTFR.1080p.WEBRiP.x265-KAF',
     3: BASE/'Fire.Force.S03.MULTi.1080p.WEBRiP.x265-T3KASHi',
 }
-JSON=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\fireforce-videos.json')
+JSON=Path(r'F:\brams-web-clone\src\data\fireforce-videos.json')
 KEY_PREFIX='anime/fireforce'
 
 def ff(a): subprocess.run(['ffmpeg','-y','-hide_banner','-loglevel','error',*a],check=True)

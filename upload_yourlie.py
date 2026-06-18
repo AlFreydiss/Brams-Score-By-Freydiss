@@ -27,7 +27,7 @@ s3=boto3.client('s3',endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.co
 TRANSFER=boto3.s3.transfer.TransferConfig(multipart_threshold=10*1024*1024,multipart_chunksize=50*1024*1024,max_concurrency=4)
 TMP=Path(r'F:\yourlie_tmp'); TMP.mkdir(parents=True,exist_ok=True)
 SRC=Path(r'F:\Brams-Score-By-Freydiss-new\public\anime\Shigatsu wa Kimi no Uso - S01 VOSTFR [BD 1080p Opus] (Darki)')
-JSON=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\your-lie-videos.json')
+JSON=Path(r'F:\brams-web-clone\src\data\your-lie-videos.json')
 KEY_PREFIX='anime/your-lie'
 
 def ff(a): subprocess.run(['ffmpeg','-y','-hide_banner','-loglevel','error',*a],check=True)

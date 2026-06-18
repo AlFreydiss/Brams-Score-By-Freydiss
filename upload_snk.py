@@ -51,7 +51,7 @@ PUBLIC_URL = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev'
 SRC_ROOT = Path(r'F:\Brams-Score-By-Freydiss-new\dist\anime')
 S3_DIR   = SRC_ROOT / "[sekkusu&ok] L'Attaque des titans S3 (Shingeki no Kyojin) - VOSTFR-VF [Multi] [1080p WEB-DL]"
 S4_DIR   = SRC_ROOT / "[Tsundere-Raws] Shingeki no Kyojin S4 - BATCH VOSTFR (WKN) [1080p]"
-OUT_JSON = Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\aot-videos.json')
+OUT_JSON = Path(r'F:\brams-web-clone\src\data\aot-videos.json')
 
 s3 = boto3.client(
     's3',

@@ -57,7 +57,7 @@ def main():
     if has_sub:
         url_v=upload(vtt,'anime/kny/movie-mugen-train-fr.vtt')
         entry['subtitles']=[{'label':'Français','srclang':'fr','src':url_v}]
-    out=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\kny-videos.json')
+    out=Path(r'F:\brams-web-clone\src\data\kny-videos.json')
     out.write_text(json.dumps([entry],ensure_ascii=False,indent=2),encoding='utf-8')
     try: mp4.unlink()
     except OSError: pass

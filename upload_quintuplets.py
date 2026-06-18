@@ -29,7 +29,7 @@ BASE=Path(r'F:\Brams-Score-By-Freydiss-new\public\anime')
 S01=BASE/'The Quintessential Quintuplets S01 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Gotoubun no Hanayome)'
 S02=BASE/'The Quintessential Quintuplets S02 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Gotoubun no Hanayome)'
 MOVIE=BASE/'The Quintessential Quintuplets Movie (2022) VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR).mkv'
-JSON_OUT=Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\quintuplets-videos.json')
+JSON_OUT=Path(r'F:\brams-web-clone\src\data\quintuplets-videos.json')
 KEY_PREFIX='anime/quintuplets'
 
 def ff(a): subprocess.run(['ffmpeg','-y','-hide_banner','-loglevel','error',*a],check=True)

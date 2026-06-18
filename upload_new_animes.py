@@ -34,7 +34,7 @@ if not env.get('R2_ACCESS_KEY') or not env.get('R2_SECRET_KEY'):
     sys.exit('❌ Clés R2 manquantes (.env.upload)')
 
 SRC_ROOT = Path(r'F:\Brams-Score-By-Freydiss-new\public\anime')
-WEB_DATA = Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data')
+WEB_DATA = Path(r'F:\brams-web-clone\src\data')
 TMP = Path(r'F:\new_anime_tmp'); TMP.mkdir(parents=True, exist_ok=True)
 
 s3 = boto3.client('s3', endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.com',

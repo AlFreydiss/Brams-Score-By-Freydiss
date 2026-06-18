@@ -41,7 +41,7 @@ if not ACCESS_KEY or not SECRET_KEY:
     sys.exit('❌ Clés R2 manquantes : crée .env.upload (R2_ACCESS_KEY / R2_SECRET_KEY)')
 
 SRC_ROOT = Path(r'F:\Brams-Score-By-Freydiss-new\public\anime')
-OUT_JSON = Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\fate-zero-videos.json')
+OUT_JSON = Path(r'F:\brams-web-clone\src\data\fate-zero-videos.json')
 TMP = Path(r'F:\fz_remux')  # C: est plein → temp sur F: (disque source, 260 Go libres)
 TMP.mkdir(parents=True, exist_ok=True)
 

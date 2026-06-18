@@ -28,7 +28,7 @@ s3=boto3.client('s3',endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.co
     config=Config(signature_version='s3v4',max_pool_connections=20),region_name='auto')
 
 SRC_ROOT = Path(r'F:\Manga\TPN')
-OUT_DIR  = Path(r'C:\Users\Feydi\Desktop\brams-web-clone\src\data\manga')
+OUT_DIR  = Path(r'F:\brams-web-clone\src\data\manga')
 IMG_EXT  = {'.webp','.jpg','.jpeg','.png'}
 
 def ctype(p):
