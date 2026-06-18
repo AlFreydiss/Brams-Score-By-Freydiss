@@ -393,6 +393,85 @@ body.playing{cursor:none}
 }
 /* — responsive : barres et glow plus discrets sur petit écran — */
 @media (max-width:900px){.ss-info::after{display:none}.diffcard.sel{animation-duration:2.6s}}
+/* ════ RESPONSIVE MOBILE / TABLETTE (additif — ne touche pas au desktop) ════ */
+@media (max-width:900px){
+  /* écrans : on autorise le scroll vertical des cartes longues (options, résultats) */
+  .screen{justify-content:flex-start;padding:14px 0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .screen>.card,.screen>.logo-wrap,.screen #menuFX{margin:auto 0}
+  /* cartes : pleine largeur lisible, padding réduit */
+  .card{min-width:0;width:min(92vw,560px);padding:20px 18px;border-radius:22px}
+  .card h2{font-size:22px}
+  .opts{min-width:0;width:min(94vw,560px)}
+  /* options : label au-dessus du contrôle, cibles tactiles confortables */
+  .orow{flex-wrap:wrap;gap:6px 10px;padding:7px 0}
+  .orow label{width:100%;text-align:left}
+  .orow input[type=range]{flex:1 1 60%;height:6px}
+  .orow input[type=checkbox]{width:24px;height:24px}
+  .orow .btn.chip{min-height:38px}
+  /* ── SONG SELECT : passage en colonne, scroll global, panneaux empilés ── */
+  .ss-wrap{flex-direction:column;overflow-y:auto;padding:16px 14px 84px;gap:16px;align-items:stretch}
+  .ss-left,.ss-right{min-width:0;max-width:none;width:100%;margin:0}
+  /* on retire les skews/translations qui débordent sur petit écran */
+  .ss-info,.ss-info>*,.diffcard,.diffcard>*,.mapcard,.mc-body{transform:none}
+  .ss-info{margin-left:0;padding:18px 18px}
+  .mapcard:hover,.mapcard.sel{transform:none}
+  .diffcard:hover{transform:none}.diffcard.sel{transform:none;padding:14px 18px}
+  .ss-title{font-size:clamp(20px,5.5vw,30px)}
+  .ss-stats{grid-template-columns:repeat(4,1fr);gap:8px 6px}
+  #mapRow{max-height:34vh}
+  .mapcard{min-height:52px}
+  #diffRow .diffcard{min-height:44px}
+  #modRow{gap:7px}
+  #modRow .btn.chip{min-height:40px;padding:9px 15px;font-size:13px}
+  .ss-search{flex-wrap:wrap}
+  .ss-search input{flex:1 1 100%;min-height:42px}
+  .ss-search span{order:3}
+  .ss-search select{min-height:40px}
+  /* barre du bas : on garde Retour + PLAY accessibles, on cache le bloc central encombrant */
+  .ss-bottom{height:58px}
+  .ss-back{padding:0 26px 0 20px;font-size:14px}
+  .ss-cbtns{display:none}
+  .ss-logo{width:70px;height:70px;font-size:14px;margin:-22px 14px 0 auto}
+  /* RÉSULTATS : grade au-dessus, stats dessous, tout lisible */
+  .card.res{min-width:0;width:min(94vw,560px)}
+  .res-top{flex-direction:column;gap:14px}
+  .res-grade{flex:0 0 auto;width:100%}
+  .res-grade .grade{font-size:96px}
+  .res-right .stats{grid-template-columns:auto auto;gap:8px 16px}
+  #gHisto{max-width:100%}
+  .board{font-size:12px}
+  .board td{padding:3px 5px}
+  /* MENU : logo plus contenu, boutons empilés pleine largeur, cibles tactiles */
+  .logo,.logo-halo,.logo-ring{will-change:auto}
+  #sMenu .btnrow{flex-direction:column;width:min(86vw,360px);gap:10px}
+  #sMenu .btnrow .btn,#sMenu .btn.big{width:100%;justify-content:center;font-size:16px;padding:14px 22px}
+  #sMenu .hint{font-size:11px;max-width:88vw;padding:0 12px}
+  /* DUO : champs/boutons confortables */
+  #sDuo .btn{min-height:46px}
+}
+/* ── TÉLÉPHONE étroit (≤640px) : on resserre encore ── */
+@media (max-width:640px){
+  .logo{width:150px;height:150px;font-size:28px}
+  .logo-halo{width:240px;height:240px}.logo-ring{width:180px;height:180px}
+  .logo-wrap::before{width:210px;height:210px}
+  .grade{font-size:84px}
+  .failBig{font-size:46px}
+  .ss-stats{grid-template-columns:repeat(4,1fr)}
+  .ss-meta{font-size:12px;gap:10px}
+  .res-grade .grade{font-size:80px}
+  .res-right .stats{grid-template-columns:auto auto;font-size:12.5px}
+  #gAccRing{width:150px;height:150px}
+  .opts .ogrp{font-size:9.5px}
+  .pubrow{flex-direction:column}
+  .pubrow input{width:100%}
+}
+/* paysage très bas (téléphone couché) : on compacte le logo du menu */
+@media (max-width:900px) and (max-height:480px){
+  .logo{width:104px;height:104px;font-size:20px}
+  .logo-halo,.logo-ring,.logo-wrap::before{display:none}
+  #sMenu .btnrow{flex-direction:row;flex-wrap:wrap}
+  #sMenu .btnrow .btn,#sMenu .btn.big{width:auto}
+}
 </style>
 </head>
 <body>
