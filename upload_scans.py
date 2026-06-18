@@ -22,7 +22,7 @@ SUPABASE_URL  = os.environ.get('SUPABASE_URL', '').rstrip('/')
 SERVICE_KEY   = os.environ.get('SUPABASE_SERVICE_KEY', '')
 BUCKET        = os.environ.get('SUPABASE_BUCKET', 'scans')
 SCANS_DIR     = Path('brams-website/public/scans')
-CHAPTERS_JSON = Path('brams-website/src/data/chapters-data.json')
+CHAPTERS_JSON = Path(r'F:\brams-web-clone\src\data\chapters-data.json')
 MAX_WORKERS   = 6
 
 if not SUPABASE_URL or not SERVICE_KEY:
@@ -130,7 +130,7 @@ def main():
     print(f'✅  {updated} URLs mises à jour dans chapters-data.json')
     print()
     print('🚀  Maintenant lance :')
-    print('    git add brams-website/src/data/chapters-data.json')
+    print('    git add F:/brams-web-clone/src/data/chapters-data.json')
     print('    git commit -m "feat(scans): images hébergées sur Supabase Storage"')
     print('    git push')
 

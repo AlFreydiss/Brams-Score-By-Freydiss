@@ -4,12 +4,18 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding='utf-8')
 
 SUPABASE_URL = 'https://zeqetrmulqndxugfbojd.supabase.co'
-SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcWV0cm11bHFuZHh1Z2Zib2pkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjM3NTE3OSwiZXhwIjoyMDkxOTUxMTc5fQ.H3N7Zr_8UHqTAKCa11RLEQLOzXe6J-kY4mI1d8KDZJI'
+# service_role lue depuis .env.upload (gitignoré) — jamais en dur (repo public).
+_envu = {}
+for _l in (Path(__file__).parent / '.env.upload').read_text(encoding='utf-8').splitlines():
+    _l = _l.strip()
+    if _l and not _l.startswith('#') and '=' in _l:
+        _k, _v = _l.split('=', 1); _envu[_k.strip()] = _v.strip()
+SERVICE_KEY  = _envu.get('SUPABASE_SERVICE_KEY', '')
 BUCKET       = 'scans'
 WORKERS      = 10
 
 BASE_DIR = Path(r'F:\Manga\TPN\Dr. Stone')
-OUT_JSON = Path(r'F:\Brams-Score-By-Freydiss\brams-website\src\data\drstone-chapters.json')
+OUT_JSON = Path(r'F:\brams-web-clone\src\data\drstone-chapters.json')
 
 HEADERS = {'Authorization': f'Bearer {SERVICE_KEY}', 'apikey': SERVICE_KEY}
 

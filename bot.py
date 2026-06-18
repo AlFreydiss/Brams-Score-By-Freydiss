@@ -1171,10 +1171,14 @@ def _fetch_new_web_purchases():
 
 def _sync_flush_dirty() -> int:
     """Flush synchrone des UIDs dirty - appelé depuis le thread executor."""
+    global _DIRTY
     if not _DIRTY:
         return 0
-    to_flush = set(_DIRTY)
-    _DIRTY.clear()
+    # Échange atomique (rebind sous GIL) : un _DIRTY.add() concurrent depuis le thread
+    # event-loop ne peut pas être perdu entre la copie et le clear (l'ancien copy+clear
+    # avait cette fenêtre de race).
+    to_flush = _DIRTY
+    _DIRTY = set()
     # Applique les déductions boutique web avant d'écraser la DB
     _apply_berry_sync_for_uids(to_flush)
     _flush_uids_to_db(to_flush)
@@ -1370,9 +1374,16 @@ def clean_old_data(user, _now=None):
     user["messages"] = msgs_kept
 
 def total_seconds(sessions, join_time=None, extra=0, _now=None):
-    total = sum(s["end"] - s["start"] for s in sessions)
+    # Même durcissement que seconds_since : pas de fin dans le futur + plafond 24h/session.
+    # Sinon une session résiduelle corrompue gonfle les heures all-time ET sur-crédite
+    # des berries au sync rétro du démarrage (irréversible).
+    _now = _now or now_ts()
+    total = 0
+    for s in sessions:
+        end = min(s["end"], _now)
+        total += min(max(0, end - s["start"]), MAX_SESSION_SECONDS)
     if join_time:
-        total += (_now or now_ts()) - join_time
+        total += min(max(0, _now - join_time), MAX_SESSION_SECONDS)
     return total + extra
 
 def _is_counted_voice_channel(guild, channel) -> bool:

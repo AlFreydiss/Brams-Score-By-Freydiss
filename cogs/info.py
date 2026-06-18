@@ -234,6 +234,13 @@ _PERSON_FACT_RE = re.compile(
     r"^\s*(?P<name>[a-zA-ZÀ-ÿ0-9_ .'\-]{2,40})\s+(?:est|c['’]est)\s+(?P<fact>.+)$",
     re.IGNORECASE,
 )
+# Préfixe d'instruction explicite requis pour écrire une fiche-personne. Sans lui,
+# toute phrase « X est Y » d'un éditeur (ex: « Luffy est le plus fort non ? ») était
+# avalée comme écriture mémoire au lieu d'aller à l'IA.
+_MEMORY_INSTRUCTION_RE = re.compile(
+    r"^\s*(?:note|retiens|retient|enregistre|m[ée]morise|souviens(?:[- ]toi)?|fiche|pour\s+m[ée]moire|info)\s*(?:que\s+|qu['’]\s*|[:=,\-]\s*)?",
+    re.IGNORECASE,
+)
 _PERSON_NEGATED_FACT_RE = re.compile(
     r"^\s*(?P<names>[a-zA-ZÀ-ÿ0-9_ .'\-]+(?:\s+et\s+[a-zA-ZÀ-ÿ0-9_ .'\-]+)+)\s+ne\s+sont\s+pas\s+(?P<fact>.+)$",
     re.IGNORECASE,
@@ -451,13 +458,17 @@ def _handle_people_memory_update(content: str, user, bot, channel_id: int) -> tu
             _editor_targets[(user.id, channel_id)] = updated[-1]
             return f"c'est corrigé pour {', '.join(updated)}.", True
 
-    m = _PERSON_FACT_RE.search(text)
-    if m:
-        fact = _clean_fact(m.group("fact"))
-        if fact:
-            person = _upsert_person_fact(bot, m.group("name"), fact)
-            _editor_targets[(user.id, channel_id)] = person["name"]
-            return f"c'est noté pour {person['name']} : {fact}.", True
+    # Écriture mémoire-personne « X est Y » UNIQUEMENT si précédée d'une instruction
+    # explicite (note/retiens/mémorise…). Sinon on laisse passer vers l'IA.
+    _cmd = _MEMORY_INSTRUCTION_RE.match(text)
+    if _cmd:
+        m = _PERSON_FACT_RE.search(text[_cmd.end():])
+        if m:
+            fact = _clean_fact(m.group("fact"))
+            if fact:
+                person = _upsert_person_fact(bot, m.group("name"), fact)
+                _editor_targets[(user.id, channel_id)] = person["name"]
+                return f"c'est noté pour {person['name']} : {fact}.", True
 
     last_name = _editor_targets.get((user.id, channel_id))
     if last_name:

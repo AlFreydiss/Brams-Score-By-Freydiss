@@ -149,7 +149,7 @@ for manga_key, base_dir in SOURCES.items():
     upload_all(manga_key, chapters)
 
     json_data = build_json(manga_key, chapters, BASE_URL)
-    out_path  = Path(__file__).parent / 'brams-website' / 'src' / 'data' / f'{manga_key}-chapters.json'
+    out_path  = Path(r'F:\brams-web-clone\src\data') / f'{manga_key}-chapters.json'
     out_path.write_text(json.dumps(json_data, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'[JSON] {out_path.name} écrit ({len(json_data)} chapitres)')
 

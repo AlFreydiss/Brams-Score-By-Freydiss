@@ -116,7 +116,7 @@ json_data = [
     for ch in chapters
 ]
 
-out_path = Path(__file__).parent / 'brams-website' / 'src' / 'data' / 'chapters-data.json'
+out_path = Path(r'F:\brams-web-clone\src\data') / 'chapters-data.json'
 out_path.write_text(json.dumps(json_data, ensure_ascii=False, indent=2), encoding='utf-8')
 print(f'[JSON] chapters-data.json écrit ({len(json_data)} chapitres)')
 print('Terminé !')

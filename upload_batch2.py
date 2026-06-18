@@ -99,7 +99,7 @@ for manga_key, base_dir in SOURCES.items():
     if not chapters: print('Aucun chapitre trouvé.'); continue
     upload_all(manga_key, chapters)
     json_data = [{'num': ch['num_raw'], 'title': ch['title'], 'pages': [f"{BASE_URL}/{ch['storage_prefix']}/{p.name}" for p in ch['pages']]} for ch in chapters]
-    out_path = Path(__file__).parent / 'brams-website' / 'src' / 'data' / f'{manga_key}-chapters.json'
+    out_path = Path(r'F:\brams-web-clone\src\data') / f'{manga_key}-chapters.json'
     out_path.write_text(json.dumps(json_data, ensure_ascii=False, indent=2), encoding='utf-8')
     print(f'[JSON] {out_path.name} écrit ({len(json_data)} chapitres)')
 

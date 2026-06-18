@@ -1,10 +1,17 @@
 import sys, boto3
+from pathlib import Path
 from botocore.config import Config
 sys.stdout.reconfigure(encoding='utf-8')
 
 ACCOUNT_ID = '166b8357e5229b31a88cf104058ed5ee'
-ACCESS_KEY = '4f39550055d95fe0f9999e5011c91d68'
-SECRET_KEY = 'dc832c19090b450439e85e03290339127957047fc61c447a179e5e2def52ba93'
+# Clés R2 lues depuis .env.upload (gitignoré) — jamais en dur (repo public).
+_envu = {}
+for _l in (Path(__file__).parent / '.env.upload').read_text(encoding='utf-8').splitlines():
+    _l = _l.strip()
+    if _l and not _l.startswith('#') and '=' in _l:
+        _k, _v = _l.split('=', 1); _envu[_k.strip()] = _v.strip()
+ACCESS_KEY  = _envu['R2_ACCESS_KEY']
+SECRET_KEY  = _envu['R2_SECRET_KEY']
 BUCKET     = 'bramscore'
 
 s3 = boto3.client(

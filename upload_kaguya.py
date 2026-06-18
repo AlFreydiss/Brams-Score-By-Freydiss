@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Kaguya-sama: Love is War — intégrale VOSTFR (S1 12 + S2 12 + S3 13 + Film 4 parties + OVA)
--> R2 + génère kaguya-videos.json (dans F:\\brams-web-test\\src\\data).
+-> R2 + génère kaguya-videos.json (dans F:\\brams-web-clone\\src\\data).
 Source Tsundere-Raws WEB x264 AAC -> REMUX (pas de réencodage) : video copy, audio
 copy si AAC sinon -> aac (OVA en FLAC), sous-titres ASS -> vtt, 1 miniature/ep.
 Resumable (head_object + temp local). Lancer : py upload_kaguya.py
@@ -26,7 +26,7 @@ s3=boto3.client('s3',endpoint_url=f'https://{ACCOUNT_ID}.r2.cloudflarestorage.co
 TRANSFER=boto3.s3.transfer.TransferConfig(multipart_threshold=10*1024*1024,multipart_chunksize=50*1024*1024,max_concurrency=4)
 TMP=Path(r'F:\kaguya_tmp'); TMP.mkdir(parents=True,exist_ok=True)
 ROOT=Path(r'F:\Brams-Score-By-Freydiss-new\public\anime\KAGUYA-SAMA LOVE IS WAR iNTEGRALE VOSTFR-VF 1080p WEB x264 AAC -Tsundere-Raws\VOSTFR')
-JSON_OUT=Path(r'F:\brams-web-test\src\data\kaguya-videos.json')
+JSON_OUT=Path(r'F:\brams-web-clone\src\data\kaguya-videos.json')
 KEY_PREFIX='anime/kaguya'
 
 def ff(a): subprocess.run(['ffmpeg','-y','-hide_banner','-loglevel','error',*a],check=True)

@@ -310,7 +310,7 @@ class AIExtraCog(commands.Cog):
         data = await _adv_call(session)
         if not data:
             if mise > 0:
-                self.bot.add_berrys(str(uid), mise, track="earned")
+                self.bot.add_berrys(str(uid), mise, track="refund")  # remboursement ≠ gain
             await interaction.followup.send(embed=_err_embed("Le narrateur a le mal de mer. Mise remboursée."))
             return
 
@@ -342,7 +342,7 @@ class AIExtraCog(commands.Cog):
             session["ended"] = True
             _ADV_SESSIONS.pop(uid, None)
             if session["bet"] > 0:
-                self.bot.add_berrys(str(uid), session["bet"], track="earned")
+                self.bot.add_berrys(str(uid), session["bet"], track="refund")  # remboursement ≠ gain
             try:
                 await interaction.edit_original_response(embed=_err_embed("Le narrateur s'est noyé en pleine histoire. Mise remboursée."), view=None)
             except Exception:
@@ -362,7 +362,8 @@ class AIExtraCog(commands.Cog):
                 payout = f"💰 **+{_fmt(gain)} ฿** ! Solde : `{_fmt(bal)} ฿`"
             elif outcome == "survie":
                 gain = bet if bet else _ADV_FREE_SURVIE
-                bal = self.bot.add_berrys(str(uid), gain, track="earned")
+                # mise remboursée = refund (≠ gain) ; prime de survie sans mise = vrai gain
+                bal = self.bot.add_berrys(str(uid), gain, track="refund" if bet else "earned")
                 payout = (f"💰 Mise remboursée : **{_fmt(gain)} ฿**. Solde : `{_fmt(bal)} ฿`" if bet
                           else f"💰 Prime de survie : **+{_fmt(gain)} ฿**. Solde : `{_fmt(bal)} ฿`")
             else:
