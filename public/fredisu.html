@@ -599,6 +599,8 @@ body.playing{cursor:none}
     <button class="btn glass" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Duo Relais</button>
     <button class="btn glass" id="bOpt1" style="--hglow:rgba(160,107,255,.4)"><span class="ic">⚙</span> Options</button>
     <button class="btn glass" id="bBoard" style="--hglow:rgba(255,209,43,.35)"><span class="ic">🏆</span> Classement</button>
+  </div>  <div class="btnrow">
+    <button class="btn glass" id="bMedals" style="--hglow:rgba(255,200,90,.4)"><span class="ic">🏅</span> Médailles</button>
   </div>
   <p class="hint">MP3 · MP4 · MKV · WebM — map générée par analyse spectrale, calée sur le BPM<br><kbd>Clic</kbd><kbd>Z</kbd><kbd>X</kbd> jouer · <kbd>Échap</kbd> pause · <kbd>Espace</kbd> skip intro · <kbd>²</kbd> retry</p>
   <input type="file" id="file" accept="audio/*,video/mp4,video/webm,video/x-matroska,.mp4,.mkv,.webm,.mov,.m4a" hidden>
@@ -762,6 +764,36 @@ body.playing{cursor:none}
   <table class="board" id="wbTable"></table>
   <button class="btn ghost" id="bBoardClose">Fermer</button>
 </div></div>
+<!-- ════ MÉDAILLES (additif) ════ -->
+<div class="screen" id="sMedals"><div class="card med-card">
+  <h2>🏅 Médailles</h2>
+  <p class="muted" id="medCount">0 / 0 débloquées</p>
+  <div id="medGrid" class="med-grid"></div>
+  <button class="btn ghost" id="bMedalsClose">Fermer</button>
+</div></div>
+<style>
+.med-card{min-width:min(560px,94vw);max-width:680px}
+.med-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;width:100%;max-height:58vh;overflow-y:auto;padding:4px 2px 2px;margin-top:4px}
+.med-cell{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:14px 8px 12px;border-radius:18px;border:1px solid #ffffff14;background:rgba(20,16,28,.55);min-height:118px}
+.med-cell .mi{font-size:34px;line-height:1;filter:grayscale(1) brightness(.5);transition:filter .25s,transform .25s var(--m-pop)}
+.med-cell .mn{font-size:12.5px;font-weight:800;font-family:var(--m-font,sans-serif);color:#ffffff80;letter-spacing:.2px}
+.med-cell .md{font-size:10.5px;color:#ffffff48;line-height:1.35}
+.med-cell .mdate{font-size:9.5px;letter-spacing:.6px;color:#ffffff3a;text-transform:uppercase}
+.med-cell.unlocked{border-color:rgba(255,200,90,.4);background:linear-gradient(160deg,rgba(48,38,16,.6),rgba(24,18,10,.72));box-shadow:0 8px 28px #0007,inset 0 1px 0 var(--m-glass-edge,#ffffff20),0 0 22px rgba(255,200,90,.1)}
+.med-cell.unlocked .mi{filter:none;text-shadow:0 0 14px rgba(255,200,90,.55)}
+.med-cell.unlocked .mn{color:#ffe9b0}
+.med-cell.unlocked .md{color:#ffffff7a}
+.med-cell.unlocked:hover .mi{transform:scale(1.12) rotate(-6deg)}
+#medalToast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:10px;pointer-events:none;align-items:center;width:max-content;max-width:92vw}
+.med-toast{display:flex;align-items:center;gap:12px;padding:11px 18px 11px 14px;border-radius:16px;background:linear-gradient(120deg,rgba(48,38,16,.92),rgba(20,15,9,.94));border:1px solid rgba(255,200,90,.45);box-shadow:0 12px 40px #000b,inset 0 1px 0 #ffffff20,0 0 26px rgba(255,200,90,.18);color:#fff;font-family:var(--m-font,sans-serif);animation:medToastIn .5s var(--m-pop,cubic-bezier(.34,1.56,.64,1)) both}
+.med-toast .ti{font-size:30px;line-height:1;filter:drop-shadow(0 0 10px rgba(255,200,90,.6))}
+.med-toast .tl{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#ffd27a}
+.med-toast .tn{font-size:14px;font-weight:800;color:#fff;margin-top:1px}
+.med-toast.out{animation:medToastOut .4s ease forwards}
+@keyframes medToastIn{from{opacity:0;transform:translateY(-16px) scale(.92)}to{opacity:1;transform:none}}
+@keyframes medToastOut{to{opacity:0;transform:translateY(-12px) scale(.96)}}
+@media (prefers-reduced-motion:reduce){.med-toast,.med-toast.out{animation:none!important}.med-cell.unlocked:hover .mi{transform:none}.med-cell .mi{transition:none}}
+</style>
 
 <div class="screen" id="sOpt"><div class="card opts">
   <h2>Options</h2>
@@ -784,6 +816,7 @@ body.playing{cursor:none}
   <div class="orow"><label>Effets réactifs au son</label><input type="checkbox" id="oFx" checked><span class="val"></span></div>
   <div class="orow"><label>Traînée du curseur</label><input type="checkbox" id="oTrail" checked><span class="val"></span></div>  <div class="orow"><label>Couleur du curseur</label><select id="oCurColor" style="flex:1;background:#1a1320;color:#fff;border:1px solid #ffffff20;border-radius:7px;padding:5px 8px;min-height:24px;accent-color:var(--pk);font-family:inherit;cursor:pointer"><option value="rose">Rose</option><option value="cyan">Cyan</option><option value="violet">Violet</option><option value="vert">Vert</option><option value="or">Or</option><option value="blanc">Blanc</option></select><span class="val"></span></div>
   <div class="orow"><label>Traînée néon (additive)</label><input type="checkbox" id="oTrailNeon"><span class="val"></span></div>
+  <div class="orow"><label>Son de touche (clic satisfaisant)</label><input type="checkbox" id="oKeySfx" checked><span class="val"></span></div>
   <div class="orow"><label>Sliders qui se déploient</label><input type="checkbox" id="oSnake" checked><span class="val"></span></div>
   <div class="orow"><label>Skin classique beige</label><input type="checkbox" id="oBeige"><span class="val"></span></div>
   <div class="orow"><label>Skin Freydiss néon</label><input type="checkbox" id="oNeon"><span class="val"></span></div>
@@ -981,7 +1014,7 @@ const h2r=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.sli
 const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 
 /* ════ OPTIONS & MODS ════ */
-const opt={volM:.8,volS:.9,ar:8,cs:4,od:7,dim:.25,aim:35,offset:0,k1:'z',k2:'x',curSize:1.25,trail:true,fx:true,snake:true,skinBeige:false,skinNeon:false,skinVapor:false,skinMono:false,hd2x:true,diff:1,sens:1,rawInput:false,curColor:'rose',trailNeon:false};
+const opt={volM:.8,volS:.9,ar:8,cs:4,od:7,dim:.25,aim:35,offset:0,k1:'z',k2:'x',curSize:1.25,trail:true,fx:true,snake:true,skinBeige:false,skinNeon:false,skinVapor:false,skinMono:false,hd2x:true,diff:1,sens:1,rawInput:false,curColor:'rose',trailNeon:false,keySfx:true};
 /* Palette curseur/trail personnalisable (additif, ne touche pas comboCLR/skins).
    Chaque preset : core (disque clair), edge (bord saturé), trail (ruban), trailHi (ruban au clic), dot (point lumineux). */
 const CUR_PRESETS={
@@ -1092,6 +1125,14 @@ function sfx(q){
     tone(110,'sawtooth',.22,.15);                 // combobreak sourd
     noiseHit(600,.12,.22);
   }
+}
+/* Clic de touche satisfaisant à CHAQUE appui (k1/k2/souris/tactile), façon mécanique :
+   court burst de bruit + petite pointe, plus doux que le hitsound (se superpose sans le couvrir).
+   Réglable via opt.keySfx (défaut on). */
+function keyClick(){
+  if(opt.keySfx===false||!AC||AC.state!=='running')return;
+  noiseHit(2700,.028,.15);          // « tac » percussif court
+  tone(560,'triangle',.022,.05);    // pointe nette satisfaisante
 }
 function startMusic(){
   manualStop=false;
@@ -3166,6 +3207,14 @@ function finish(){
   // arpège de fin selon le grade : triomphal pour SS/S, doux pour le reste
   const arp=g==='SS'||g==='S'?[660,880,1108,1318,1760]:g==='A'?[523,659,784,1046]:g==='B'?[494,587,740]:[392,494];
   arp.forEach((f,i)=>setTimeout(()=>tone(f,'sine',.32,.13),i*110));
+  // ── Médailles : compteur de parties + évaluation des exploits (additif) ──
+  if(typeof evalMedals==='function'){
+    const plays=(store.get('plays',0)|0)+1;store.set('plays',plays);
+    const skinKey=opt.skinBeige?'beige':opt.skinNeon?'neon':opt.skinVapor?'vapor':opt.skinMono?'mono':'lazer';
+    const seen=store.get('skinsSeen',{});if(!seen[skinKey]){seen[skinKey]=1;store.set('skinsSeen',seen);}
+    evalMedals({g,acc,maxCombo,nm,diff:opt.diff,plays,failed:false,
+      pf:!!mods.pf,auto:!!mods.auto,skinsSeen:Object.keys(store.get('skinsSeen',{})).length});
+  }
 }
 // Slam cinématique du grade : flash coloré + burst de particules (canvas dédié, rAF propre, stoppe hors 'results')// Anneau de précision : se trace de 0 → accuracy% (couleur = grade), rAF propre, stoppe hors 'results'
 function drawAccRing(acc,col){
@@ -3646,6 +3695,67 @@ $('bBoard').onclick=async()=>{
   }catch(e){$('wbTable').innerHTML='<tr><td style="color:#ffffff66">Classement indisponible</td></tr>';}
 };
 $('bBoardClose').onclick=()=>show('sMenu');
+/* ════ MÉDAILLES — système additif (persisté via store) ══════════════════
+   Point module propre : aucune fonction existante n'est rouverte. Les checks
+   ne lisent que des états déjà calculés (grade, opt, mods, compteurs store). */
+const MEDALS=[
+  {id:'first',     name:'Premier pas',     icon:'🎮', desc:'Termine ta toute première partie.',          check:s=>s.plays>=1},
+  {id:'fc',        name:'Sans faute',      icon:'🟢', desc:'Finis une map sans aucun Miss.',             check:s=>s.nm===0},
+  {id:'ss',        name:'Perfection',      icon:'🌟', desc:'Décroche un rang SS (100%).',                check:s=>s.g==='SS'},
+  {id:'srank',     name:'Classe S',        icon:'💠', desc:'Décroche un rang S ou mieux.',               check:s=>s.g==='SS'||s.g==='S'},
+  {id:'acc95',     name:'Main sûre',       icon:'🎯', desc:'Atteins 95% de précision sur une map.',      check:s=>s.acc>=95},
+  {id:'acc99',     name:'Chirurgien',      icon:'🔬', desc:'Atteins 99% de précision sur une map.',      check:s=>s.acc>=99},
+  {id:'combo100',  name:'Centurion',       icon:'🔥', desc:'Enchaîne un combo de 100.',                  check:s=>s.maxCombo>=100},
+  {id:'combo250',  name:'En fusion',       icon:'⚡', desc:'Enchaîne un combo de 250.',                  check:s=>s.maxCombo>=250},
+  {id:'combo500',  name:'Inarrêtable',     icon:'☄️', desc:'Enchaîne un combo de 500.',                  check:s=>s.maxCombo>=500},
+  {id:'insane',    name:'Cœur solide',     icon:'😈', desc:'Réussis une map en Insane ou plus dur.',     check:s=>s.diff>=4&&s.nm===0&&!s.failed},
+  {id:'pf',        name:'Tout ou rien',    icon:'💀', desc:'Termine une map en mod Perfect (PF).',       check:s=>!!s.pf&&!s.failed},
+  {id:'auto',      name:'Spectateur',      icon:'🤖', desc:'Lance une map avec le mod Auto.',            check:s=>!!s.auto},
+  {id:'plays10',   name:'Régulier',        icon:'📅', desc:'Joue 10 parties au total.',                 check:s=>s.plays>=10},
+  {id:'skins',     name:'Caméléon',        icon:'🎨', desc:'Essaie les 4 skins (Beige/Néon/Vapor/Mono).',check:s=>s.skinsSeen>=4}
+];
+function medalsUnlocked(){return store.get('medals',{});}
+function medalNote(ctx){
+  // mémorise les skins essayés (cumulatif) pour la médaille Caméléon
+  if(ctx&&ctx.skinKey){
+    const seen=store.get('skinsSeen',{});
+    if(!seen[ctx.skinKey]){seen[ctx.skinKey]=1;store.set('skinsSeen',seen);}
+  }
+}
+function renderMedals(){
+  const grid=$('medGrid');if(!grid)return;
+  const got=medalsUnlocked();
+  $('medCount').textContent=Object.keys(got).length+' / '+MEDALS.length+' débloquées';
+  grid.innerHTML=MEDALS.map(m=>{
+    const ts=got[m.id];
+    if(ts){
+      const d=new Date(ts),date=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+      return '<div class="med-cell unlocked"><span class="mi">'+m.icon+'</span><span class="mn">'+m.name+'</span><span class="md">'+m.desc+'</span><span class="mdate">'+date+'</span></div>';
+    }
+    return '<div class="med-cell"><span class="mi">🔒</span><span class="mn">???</span><span class="md">'+m.desc+'</span></div>';
+  }).join('');
+}
+function medalToast(m){
+  let wrap=$('medalToast');
+  if(!wrap){wrap=document.createElement('div');wrap.id='medalToast';document.body.appendChild(wrap);}
+  const el=document.createElement('div');el.className='med-toast';
+  el.innerHTML='<span class="ti">'+m.icon+'</span><span><span class="tl">Médaille débloquée</span><span class="tn">'+m.name+'</span></span>';
+  wrap.appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),420);},3600);
+}
+/* Appelé depuis finish() après le calcul du grade. Évalue tous les checks,
+   débloque les nouveaux, persiste et notifie. */
+function evalMedals(ctx){
+  const got=medalsUnlocked();let changed=false;
+  for(const m of MEDALS){
+    if(got[m.id])continue;
+    let ok=false;try{ok=m.check(ctx);}catch(e){}
+    if(ok){got[m.id]=Date.now();changed=true;medalToast(m);}
+  }
+  if(changed)store.set('medals',got);
+}
+if($('bMedals'))$('bMedals').onclick=()=>{renderMedals();show('sMedals');};
+if($('bMedalsClose'))$('bMedalsClose').onclick=()=>show('sMenu');
 
 /* ════ INPUT ════ */
 // Souris brute (raw input) : verrouille le pointeur et déplace le curseur en relatif × sensibilité.
@@ -3660,14 +3770,14 @@ addEventListener('mousedown',e=>{
   pressing=true;
   const ki=e.button===2?3:2;
   keysOv[ki].on=true;
-  if(state==='playing'){keysOv[ki].n++;clickTimes.push(performance.now());tryHit(mx,my);}
+  if(state==='playing'){keysOv[ki].n++;clickTimes.push(performance.now());keyClick();tryHit(mx,my);}
 });
 addEventListener('mouseup',e=>{pressing=false;keysOv[2].on=false;keysOv[3].on=false;});
 addEventListener('touchstart',e=>{
   if(e.target.closest('.screen'))return;
   e.preventDefault();pressing=true;
   const t=e.touches[0];mx=t.clientX;my=t.clientY;
-  if(state==='playing')tryHit(t.clientX,t.clientY);
+  if(state==='playing'){keyClick();tryHit(t.clientX,t.clientY);}
 },{passive:false});
 addEventListener('touchmove',e=>{
   if(e.target.closest('.screen'))return;
@@ -3680,7 +3790,7 @@ addEventListener('keydown',e=>{
   if((gk===opt.k1||gk===opt.k2)&&state==='playing'){
     const ki=gk===opt.k1?0:1;
     keysOv[ki].on=true;keysOv[ki].n++;clickTimes.push(performance.now());
-    pressing=true;tryHit(mx,my);}
+    keyClick();pressing=true;tryHit(mx,my);}
   if(e.key==='Escape'){
     if(state==='playing')doPause();
     else if(state==='paused')doResume();
@@ -3780,6 +3890,7 @@ bindR('oDim','vDim',v=>{opt.dim=v/100;},v=>v+'%');
 bindR('oAim','vAim',v=>{opt.aim=v;},v=>v+'%');
 $('oTrail').onchange=e=>{opt.trail=e.target.checked;saveOpt();};$('oCurColor').onchange=e=>{opt.curColor=e.target.value;saveOpt();SPRITES._curKey='';buildSprites();}; // rebake curseur+dot à la teinte choisie
 $('oTrailNeon').onchange=e=>{opt.trailNeon=e.target.checked;saveOpt();};
+$('oKeySfx').onchange=e=>{opt.keySfx=e.target.checked;saveOpt();};
 $('oFx').onchange=e=>{opt.fx=e.target.checked;saveOpt();};
 $('oSnake').onchange=e=>{opt.snake=e.target.checked;saveOpt();};
 $('oBeige').onchange=e=>{opt.skinBeige=e.target.checked;if(opt.skinBeige){opt.skinNeon=opt.skinVapor=opt.skinMono=false;$('oNeon').checked=$('oVapor').checked=$('oMono').checked=false;}saveOpt();SPRITES.key='';buildSprites();};
@@ -3805,7 +3916,7 @@ $('bGo').onkeydown=e=>{if(e.key==='Enter')$('bGo').click();};
   $('oDim').value=Math.round(opt.dim*100);$('vDim').textContent=Math.round(opt.dim*100)+'%';
   $('oK1').textContent=(opt.k1||'z').toUpperCase();$('oK2').textContent=(opt.k2||'x').toUpperCase();
   $('oAim').value=opt.aim;$('vAim').textContent=opt.aim+'%';
-  $('oFx').checked=opt.fx;$('oTrail').checked=opt.trail;  $('oCurColor').value=opt.curColor||'rose';$('oTrailNeon').checked=!!opt.trailNeon;
+  $('oFx').checked=opt.fx;$('oTrail').checked=opt.trail;  $('oCurColor').value=opt.curColor||'rose';$('oTrailNeon').checked=!!opt.trailNeon;$('oKeySfx').checked=opt.keySfx!==false;
   $('oSnake').checked=opt.snake;$('oBeige').checked=opt.skinBeige;$('oNeon').checked=opt.skinNeon;
   $('oVapor').checked=opt.skinVapor;$('oMono').checked=opt.skinMono;
   $('oHd').checked=opt.hd2x!==false;
