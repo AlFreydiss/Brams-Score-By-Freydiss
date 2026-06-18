@@ -2251,10 +2251,11 @@ function bakeSliderBody(o,lr,lg,lb,r,g,b){
   const seg=(width,style)=>{g2.beginPath();g2.moveTo(p.pts[0].x,p.pts[0].y);
     for(let i=1;i<p.pts.length;i++)g2.lineTo(p.pts[i].x,p.pts[i].y);
     g2.lineWidth=width;g2.strokeStyle=style;g2.stroke();};
-  // référence client : bordure blanche teintée, intérieur SOMBRE translucide
-  seg(R*2,'rgba(255,255,255,.95)');
-  seg(R*2*(1-SKIN.SLIDER_BORDER),`rgba(${r*.22|0},${g*.22|0},${b*.22|0},.52)`);
-  seg(R*1.05,'rgba(0,0,0,.22)');
+  // tube néon façon osu!lazer : bordure blanche nette + anneau de couleur combo VIF
+  // + centre plus sombre (effet de profondeur/tube). Avant : teinte écrasée à 22% = gris terne.
+  seg(R*2,'rgba(255,255,255,.92)');
+  seg(R*2*(1-SKIN.SLIDER_BORDER),`rgba(${Math.min(255,r+30)},${Math.min(255,g+30)},${Math.min(255,b+30)},.78)`);
+  seg(R*1.34,`rgba(${r*.34|0},${g*.34|0},${b*.34|0},.92)`);
   o.bodyX=x0-pad;o.bodyY=y0-pad;
   return c;
 }
@@ -2458,9 +2459,9 @@ function drawSpinnerObj(o,el){
   cx.fillStyle='rgba(8,6,3,.85)';cx.fillRect(0,0,W,H); // assombrit le terrain pendant le spinner
   cx.restore();
   cx.save();cx.globalAlpha=alpha;
-  // halo doré derrière le spinner
+  // halo néon derrière le spinner (cohérent avec le thème)
   const hg=cx.createRadialGradient(cxx,cyy,Rm*.3,cxx,cyy,Rm*1.5);
-  hg.addColorStop(0,'rgba(212,160,23,.18)');hg.addColorStop(1,'transparent');
+  hg.addColorStop(0,'rgba(0,229,255,.16)');hg.addColorStop(1,'transparent');
   cx.fillStyle=hg;cx.beginPath();cx.arc(cxx,cyy,Rm*1.5,0,PI2);cx.fill();
   // anneau extérieur fin + arc de progression épais arrondi (OR)
   cx.beginPath();cx.arc(cxx,cyy,Rm,0,PI2);
@@ -2468,27 +2469,27 @@ function drawSpinnerObj(o,el){
   // anneau de remplissage doré dont le glow monte avec le RPM (plus spectaculaire)
   const rpmN=Math.min(1,(o.rpm||0)/420);
   const ag=cx.createLinearGradient(cxx-Rm,cyy,cxx+Rm,cyy);
-  ag.addColorStop(0,'#d4a017');ag.addColorStop(1,'#ffe9a8');
+  ag.addColorStop(0,'#00E5FF');ag.addColorStop(1,'#c8f8ff');
   cx.beginPath();cx.arc(cxx,cyy,Rm,-Math.PI/2,-Math.PI/2+PI2*ratio);
-  cx.strokeStyle=ratio>=1?'#ffe9a8':ag;cx.lineWidth=Math.max(7,Rm*.045*(1+.25*rpmN));cx.lineCap='round';
-  cx.shadowBlur=ratio>=1?20:8+22*rpmN;cx.shadowColor=ratio>=1?'rgba(255,233,168,.8)':'rgba(212,160,23,.65)';
+  cx.strokeStyle=ratio>=1?'#c8f8ff':ag;cx.lineWidth=Math.max(7,Rm*.045*(1+.25*rpmN));cx.lineCap='round';
+  cx.shadowBlur=ratio>=1?20:8+22*rpmN;cx.shadowColor=ratio>=1?'rgba(200,248,255,.85)':'rgba(0,229,255,.7)';
   cx.stroke();cx.shadowBlur=0;
   // approche : cercle qui rétrécit vers l'anneau
   if(el>=o.t&&!o.done){
     const ar2=Rm*1.4-(Rm*1.4-Rm)*prog;
     cx.beginPath();cx.arc(cxx,cyy,ar2,0,PI2);
-    cx.strokeStyle='rgba(255,233,168,.32)';cx.lineWidth=2;cx.stroke();
+    cx.strokeStyle='rgba(200,248,255,.32)';cx.lineWidth=2;cx.stroke();
   }
-  // disque central OR gravé + rayons (la rotation devient ultra lisible), gonfle avec le RPM
+  // disque central néon gravé + rayons (la rotation reste ultra lisible), gonfle avec le RPM
   const dr=Rm*.42*(1+Math.min(.1,(o.rpm||0)/3500));
   cx.translate(cxx,cyy);cx.rotate(o.vr);
   const gr=cx.createRadialGradient(-dr*.3,-dr*.3,dr*.1,0,0,dr);
-  gr.addColorStop(0,'#fff3cf');gr.addColorStop(.45,'#d4a017');gr.addColorStop(1,'#7a5810');
+  gr.addColorStop(0,'#e6fdff');gr.addColorStop(.45,'#00E5FF');gr.addColorStop(1,'#0a4f5c');
   cx.beginPath();cx.arc(0,0,dr,0,PI2);cx.fillStyle=gr;cx.fill();
   cx.beginPath();cx.arc(0,0,dr,0,PI2);cx.strokeStyle='rgba(26,20,7,.55)';cx.lineWidth=2.5;cx.stroke();
   cx.strokeStyle='rgba(26,20,7,.32)';cx.lineWidth=2;
   for(let i=0;i<8;i++){const a=i/8*PI2;cx.beginPath();cx.moveTo(Math.cos(a)*dr*.34,Math.sin(a)*dr*.34);cx.lineTo(Math.cos(a)*dr*.9,Math.sin(a)*dr*.9);cx.stroke();}
-  cx.beginPath();cx.arc(0,0,dr*.26,0,PI2);cx.fillStyle='#fff3cf';cx.fill();
+  cx.beginPath();cx.arc(0,0,dr*.26,0,PI2);cx.fillStyle='#e6fdff';cx.fill();
   // encoche claire : on VOIT la rotation
   cx.beginPath();cx.arc(0,-dr*.66,dr*.12,0,PI2);cx.fillStyle='#fff';cx.fill();
   cx.restore();
@@ -2502,7 +2503,7 @@ function drawSpinnerObj(o,el){
       const bt=clamp((el-o.clearAt)/TIMING.SPIN_CLEAR_BOUNCE,0,1);
       const sc=1+.55*(1-bt)*Math.sin(bt*Math.PI*2.2)*Math.exp(-bt*2);
       cx.save();cx.translate(cxx,cyy-Rm-34);cx.scale(sc,sc);
-      cx.font='800 30px '+SKIN.FONT;cx.fillStyle='#ffe9a8';cx.shadowBlur=16;cx.shadowColor='#d4a017';
+      cx.font='800 30px '+SKIN.FONT;cx.fillStyle='#c8f8ff';cx.shadowBlur=16;cx.shadowColor='#00E5FF';
       cx.fillText('CLEAR !',0,0);cx.restore();
     }else{
       const bms=analysis&&analysis.bpm?60000/analysis.bpm:600;
