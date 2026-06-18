@@ -984,6 +984,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               ref={videoRef}
               key={effectiveMediaSrc || 'no-src'}
               crossOrigin={hasSubs ? 'anonymous' : undefined}
+              // CRUCIAL iOS : sans playsInline, l'iPhone force la lecture en plein
+              // écran NATIF → nos contrôles custom + le canvas des sous-titres sont
+              // bypassés ("pas de sous-titres + galère"). playsInline = lecture inline
+              // → notre UI + canvas ST fonctionnent. webkit-playsinline pour vieux iOS.
+              playsInline
+              {...{ 'webkit-playsinline': 'true', 'x5-playsinline': 'true' }}
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               preload={started ? 'metadata' : 'none'}
               onPlay={onPlay}
