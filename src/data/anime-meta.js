@@ -29,6 +29,13 @@ export const ANIME_META = {
   bluelock:            { title: 'Blue Lock',                      note: 8.2, youtube: null },
   'fate-zero':         { title: 'Fate/Zero',                      note: 8.3, youtube: null },
   'your-name':         { title: 'Your Name',                      note: 8.8, youtube: null },
+  hxh:                 { title: 'Hunter x Hunter',                note: 9.0, youtube: null },
+  kaguya:              { title: 'Kaguya-sama: Love is War',       note: 8.4, youtube: null },
+  'kaiju-no-8':        { title: 'Kaiju No. 8',                    note: 8.3, youtube: null },
+  quintuplets:         { title: 'The Quintessential Quintuplets', note: 8.0, youtube: null },
+  'your-lie':          { title: 'Your Lie in April',              note: 8.6, youtube: null },
+  'koi-ameagari':      { title: 'After the Rain',                 note: 7.6, youtube: null },
+  'domestic-na-kanojo':{ title: 'Domestic Girlfriend',            note: 6.9, youtube: null },
 }
 
 export function getAnimeMeta(id) {

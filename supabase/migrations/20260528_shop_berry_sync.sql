@@ -153,9 +153,11 @@ BEGIN
     RETURN '{"ok":false,"error":"Tu possèdes déjà cet article"}'::jsonb;
   END IF;
 
-  -- Lire le solde depuis la table du bot
+  -- Lire le solde depuis la table du bot. FOR UPDATE verrouille la ligne user →
+  -- sérialise les achats concurrents du même membre (anti double-spend / solde négatif).
   SELECT COALESCE((data->>'berrys')::bigint, 0) INTO v_balance
-  FROM users WHERE uid = v_discord_id;
+  FROM users WHERE uid = v_discord_id
+  FOR UPDATE;
 
   IF v_balance IS NULL THEN
     RETURN '{"ok":false,"error":"Compte introuvable — utilise le bot Discord d''abord"}'::jsonb;
@@ -168,17 +170,22 @@ BEGIN
     );
   END IF;
 
+  -- Décrémenter le stock AVANT de débiter, de façon atomique (WHERE stock > 0) →
+  -- empêche la survente concurrente d'un item limité (stock négatif).
+  IF v_item.stock IS NOT NULL THEN
+    UPDATE shop_items SET stock = stock - 1, updated_at = now()
+    WHERE id = p_item_id AND stock > 0;
+    IF NOT FOUND THEN
+      RETURN '{"ok":false,"error":"Stock épuisé"}'::jsonb;
+    END IF;
+  END IF;
+
   v_new_balance := v_balance - v_item.price;
 
-  -- Déduire les berries dans la table du bot
+  -- Déduire les berries dans la table du bot (ligne user verrouillée FOR UPDATE plus haut)
   UPDATE users
   SET data = jsonb_set(data, '{berrys}', to_jsonb(v_new_balance))
   WHERE uid = v_discord_id;
-
-  -- Décrémenter le stock si limité
-  IF v_item.stock IS NOT NULL THEN
-    UPDATE shop_items SET stock = stock - 1, updated_at = now() WHERE id = p_item_id;
-  END IF;
 
   -- Ajouter à l'inventaire
   INSERT INTO user_inventory (discord_id, item_id, quantity, equipped)

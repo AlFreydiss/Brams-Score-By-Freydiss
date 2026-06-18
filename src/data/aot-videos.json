@@ -682,6 +682,17 @@
     "thumbnail": "/aot-poster.jpg"
   },
   {
+    "episode": 5,
+    "title": "Declaration of War",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E05.mp4",
+    "season": "S04",
+    "arc": "Saison 4",
+    "badge": "VOSTFR",
+    "preferredAudioLang": "ja",
+    "progressKey": "s4-5",
+    "thumbnail": "/aot-poster.jpg"
+  },
+  {
     "episode": 6,
     "title": "Declaration of War",
     "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/aot/S04E06.mp4",

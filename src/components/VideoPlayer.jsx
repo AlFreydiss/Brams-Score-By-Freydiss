@@ -741,6 +741,37 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     if (videoRef.current) videoRef.current.playbackRate = speed
   }, [speed])
 
+  // ── Sync piste audio externe (VF/JP séparée) sur l'état de la vidéo ───────
+  // Sans ça, l'<audio> ne suivait JAMAIS pause/seek/avance/vitesse de la vidéo
+  // → voix désynchronisée dès qu'on met en pause ou qu'on scrubbe (Violet VF,
+  // Kaiju, Vivy). On miroite via les events natifs de la <video> : ils couvrent
+  // d'un coup tous les chemins (barre, ±10s, flèches, double-tap, vitesse).
+  useEffect(() => {
+    if (!usesExternalAudio) return
+    const v = videoRef.current
+    if (!v) return
+    const au = () => audioRef.current
+    const onPlay = () => { const a = au(); if (a) { a.currentTime = v.currentTime; a.playbackRate = v.playbackRate; a.play().catch(() => {}) } }
+    const onPause = () => { const a = au(); if (a) a.pause() }
+    const onSeek = () => { const a = au(); if (a) a.currentTime = v.currentTime }
+    const onRate = () => { const a = au(); if (a) a.playbackRate = v.playbackRate }
+    const onTime = () => { const a = au(); if (a && !v.paused && Math.abs(a.currentTime - v.currentTime) > 0.35) a.currentTime = v.currentTime }
+    v.addEventListener('play', onPlay)
+    v.addEventListener('pause', onPause)
+    v.addEventListener('seeking', onSeek)
+    v.addEventListener('seeked', onSeek)
+    v.addEventListener('ratechange', onRate)
+    v.addEventListener('timeupdate', onTime)
+    return () => {
+      v.removeEventListener('play', onPlay)
+      v.removeEventListener('pause', onPause)
+      v.removeEventListener('seeking', onSeek)
+      v.removeEventListener('seeked', onSeek)
+      v.removeEventListener('ratechange', onRate)
+      v.removeEventListener('timeupdate', onTime)
+    }
+  }, [usesExternalAudio, effectiveMediaSrc])
+
   // ── Boost de loudness par vidéo (ex. films Violet trop bas) ───────────────
   // Ne route dans Web Audio que les vidéos avec gain>1 → zéro risque ailleurs.
   // Le lecteur a déjà crossOrigin='anonymous' quand il y a des sous-titres, et
