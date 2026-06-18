@@ -601,6 +601,7 @@ body.playing{cursor:none}
     <button class="btn glass" id="bBoard" style="--hglow:rgba(255,209,43,.35)"><span class="ic">🏆</span> Classement</button>
   </div>  <div class="btnrow">
     <button class="btn glass" id="bMedals" style="--hglow:rgba(255,200,90,.4)"><span class="ic">🏅</span> Médailles</button>
+    <button class="btn glass" id="bProfile" style="--hglow:rgba(0,229,255,.4)"><span class="ic">👤</span> Profil</button>
   </div>
   <p class="hint">MP3 · MP4 · MKV · WebM — map générée par analyse spectrale, calée sur le BPM<br><kbd>Clic</kbd><kbd>Z</kbd><kbd>X</kbd> jouer · <kbd>Échap</kbd> pause · <kbd>Espace</kbd> skip intro · <kbd>²</kbd> retry</p>
   <input type="file" id="file" accept="audio/*,video/mp4,video/webm,video/x-matroska,.mp4,.mkv,.webm,.mov,.m4a" hidden>
@@ -771,6 +772,17 @@ body.playing{cursor:none}
   <div id="medGrid" class="med-grid"></div>
   <button class="btn ghost" id="bMedalsClose">Fermer</button>
 </div></div>
+<!-- ════ PROFIL / STATS JOUEUR (additif, lecture seule du store) ════ -->
+<div class="screen" id="sProfile"><div class="card prof-card">
+  <h2 id="profName">👤 Profil</h2>
+  <p class="muted" id="profSub">—</p>
+  <div id="profKpis" class="prof-kpis"></div>
+  <div id="profGrades" class="prof-section"></div>
+  <div id="profFav" class="prof-section"></div>
+  <div id="profTop" class="prof-section"></div>
+  <div id="profMedals" class="prof-section"></div>
+  <button class="btn ghost" id="bProfileClose">Retour</button>
+</div></div>
 <style>
 .med-card{min-width:min(560px,94vw);max-width:680px}
 .med-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;width:100%;max-height:58vh;overflow-y:auto;padding:4px 2px 2px;margin-top:4px}
@@ -793,6 +805,35 @@ body.playing{cursor:none}
 @keyframes medToastIn{from{opacity:0;transform:translateY(-16px) scale(.92)}to{opacity:1;transform:none}}
 @keyframes medToastOut{to{opacity:0;transform:translateY(-12px) scale(.96)}}
 @media (prefers-reduced-motion:reduce){.med-toast,.med-toast.out{animation:none!important}.med-cell.unlocked:hover .mi{transform:none}.med-cell .mi{transition:none}}
+</style><style>
+/* ── Profil / Stats joueur (néon, lecture seule) ── */
+.prof-card{min-width:min(620px,95vw);max-width:740px;max-height:90vh;overflow-y:auto;align-items:stretch;text-align:left}
+.prof-card h2{text-align:center}
+.prof-card .muted{text-align:center}
+.prof-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;width:100%;margin-top:4px}
+.prof-kpi{padding:12px 10px;border-radius:16px;border:1px solid var(--m-glass-edge,#ffffff14);background:linear-gradient(160deg,rgba(0,229,255,.07),rgba(155,92,255,.08));text-align:center}
+.prof-kpi .pk-v{font:800 21px/1 var(--m-font,sans-serif);background:linear-gradient(120deg,#00E5FF,#9B5CFF 55%,#FF2FB9);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+.prof-kpi .pk-l{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#ffffff7a;margin-top:5px}
+.prof-section{width:100%;margin-top:6px;display:flex;flex-direction:column;gap:8px}
+.prof-h{font:800 10.5px/1 var(--m-font,sans-serif);letter-spacing:.18em;text-transform:uppercase;color:#39FF8A;border-bottom:1px solid #ffffff10;padding-bottom:6px;text-shadow:0 0 10px #39FF8A44}
+.prof-grades{display:flex;flex-wrap:wrap;gap:8px}
+.prof-gpill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;min-height:24px;border-radius:999px;font:800 12.5px/1 var(--m-font,sans-serif);border:1px solid #ffffff1a;background:rgba(255,255,255,.04)}
+.prof-gpill b{color:var(--gc,#fff);text-shadow:0 0 9px var(--gc,#fff);font-variant-numeric:tabular-nums}
+.prof-gpill i{width:8px;height:8px;border-radius:50%;background:var(--gc,#fff);box-shadow:0 0 8px var(--gc,#fff);font-style:normal}
+.prof-fav{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#fff}
+.prof-fav .pf-name{font:800 15px/1 var(--m-font,sans-serif);color:#9B5CFF;text-shadow:0 0 12px #9B5CFF55}
+.prof-fav .pf-cnt{color:#ffffff88;font-size:12px}
+.prof-top{display:flex;flex-direction:column;gap:6px}
+.prof-trow{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;padding:7px 12px;border-radius:12px;border:1px solid #ffffff10;background:rgba(20,16,28,.5);min-height:24px}
+.prof-trow .pt-g{font:900 15px/1 var(--m-font,sans-serif);color:var(--gc,#fff);text-shadow:0 0 9px var(--gc,#fff);text-align:center}
+.prof-trow .pt-map{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#fff}
+.prof-trow .pt-map em{font-style:normal;color:#ffffff66;font-size:11px}
+.prof-trow .pt-num{text-align:right;font-size:12px;color:#ffffffcc;font-variant-numeric:tabular-nums}
+.prof-trow .pt-num b{color:#fff;font-weight:800}
+.prof-meds{display:flex;flex-wrap:wrap;gap:8px}
+.prof-med{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;border:1px solid rgba(255,200,90,.4);background:linear-gradient(160deg,rgba(48,38,16,.55),rgba(24,18,10,.7));box-shadow:0 0 16px rgba(255,200,90,.12)}
+.prof-empty{color:#ffffff55;font-size:12.5px}
+@media (max-width:760px){.prof-card{text-align:left}.prof-kpis{grid-template-columns:repeat(2,1fr)}}
 </style>
 
 <div class="screen" id="sOpt"><div class="card opts">
@@ -3756,6 +3797,62 @@ function evalMedals(ctx){
 }
 if($('bMedals'))$('bMedals').onclick=()=>{renderMedals();show('sMedals');};
 if($('bMedalsClose'))$('bMedalsClose').onclick=()=>show('sMenu');
+/* ── Profil / Stats : calcule tout depuis le store (lecture seule) à l'ouverture ── */
+function renderProfile(){
+  const bd=store.get('board',{}),plays=store.get('plays',0)|0,got=store.get('medals',{});
+  const pseudo=(store.get('pseudo','')||'').trim()||'Joueur';
+  // aplatit toutes les entrées + retient leur clé (song|diff|mods)
+  const rows=[];for(const k in bd){const arr=bd[k];if(Array.isArray(arr))for(const e of arr)rows.push({k,e});}
+  const n=rows.length;
+  let accSum=0,accBest=0,comboMax=0,scoreTot=0;
+  const gc={SS:0,S:0,A:0,B:0,C:0,D:0};
+  const diffCount={}; // index diff -> nb de scores
+  for(const {k,e} of rows){
+    const acc=+e.acc||0;accSum+=acc;if(acc>accBest)accBest=acc;
+    if((+e.maxCombo||0)>comboMax)comboMax=+e.maxCombo||0;
+    scoreTot+=(+e.score||0);
+    if(e.g&&gc[e.g]!=null)gc[e.g]++;
+    const di=+(k.split('|')[1]);if(!isNaN(di))diffCount[di]=(diffCount[di]||0)+1;
+  }
+  const accMoy=n?accSum/n:0;
+  const nMed=Object.keys(got).length;
+  const fmt=v=>Number(v).toLocaleString('fr-FR');
+  // entête
+  $('profName').textContent='👤 '+pseudo;
+  $('profSub').textContent=plays+' partie'+(plays>1?'s':'')+' · '+n+' score'+(n>1?'s':'')+' · '+nMed+'/'+MEDALS.length+' médailles';
+  // KPIs
+  $('profKpis').innerHTML=[
+    ['Précision moy.',(accMoy).toFixed(2)+'%'],
+    ['Meilleure préc.',accBest.toFixed(2)+'%'],
+    ['Combo max',comboMax+'x'],
+    ['Score cumulé',fmt(scoreTot)],
+    ['Parties',fmt(plays)],
+    ['Médailles',nMed+'/'+MEDALS.length]
+  ].map(([l,v])=>'<div class="prof-kpi"><div class="pk-v">'+v+'</div><div class="pk-l">'+l+'</div></div>').join('');
+  // répartition des grades (pastilles colorées via GRADE_COL)
+  $('profGrades').innerHTML='<div class="prof-h">Répartition des grades</div><div class="prof-grades">'+
+    ['SS','S','A','B','C','D'].map(g=>'<span class="prof-gpill" style="--gc:'+(GRADE_COL[g]||'#fff')+'"><i></i>'+g+' <b>'+gc[g]+'</b></span>').join('')+'</div>';
+  // difficulté préférée (la plus jouée)
+  let favI=-1,favN=0;for(const di in diffCount){if(diffCount[di]>favN){favN=diffCount[di];favI=+di;}}
+  const favName=(favI>=0&&DIFFS[favI])?DIFFS[favI].n:'—';
+  $('profFav').innerHTML='<div class="prof-h">Difficulté préférée</div><div class="prof-fav"><span class="pf-name">'+esc(favName)+'</span>'+(favI>=0?'<span class="pf-cnt">'+favN+' score'+(favN>1?'s':'')+'</span>':'<span class="pf-cnt">Aucun score enregistré</span>')+'</div>';
+  // top 5 meilleurs scores (toutes maps)
+  const top=rows.slice().sort((a,b)=>(+b.e.score||0)-(+a.e.score||0)).slice(0,5);
+  $('profTop').innerHTML='<div class="prof-h">Top 5 — meilleurs scores</div>'+(top.length?
+    '<div class="prof-top">'+top.map(({k,e})=>{
+      const p=k.split('|'),map=p[0]||'?',di=DIFFS[+p[1]]?DIFFS[+p[1]].n:'',g=e.g||'?';
+      return '<div class="prof-trow" style="--gc:'+(GRADE_COL[g]||'#fff')+'"><span class="pt-g">'+g+'</span>'+
+        '<span class="pt-map">'+esc(map)+(di?' <em>'+esc(di)+'</em>':'')+'</span>'+
+        '<span class="pt-num"><b>'+fmt(+e.score||0)+'</b> · '+(+e.acc||0).toFixed(1)+'% · '+(+e.maxCombo||0)+'x</span></div>';
+    }).join('')+'</div>'
+    :'<div class="prof-empty">Joue une map pour enregistrer ton premier score.</div>');
+  // dernières médailles débloquées
+  const med=Object.keys(got).sort((a,b)=>got[b]-got[a]).slice(0,8)
+    .map(id=>{const m=MEDALS.find(x=>x.id===id);return m?'<span class="prof-med" title="'+esc(m.name)+'">'+m.icon+'</span>':'';}).join('');
+  $('profMedals').innerHTML='<div class="prof-h">Dernières médailles</div>'+(med?'<div class="prof-meds">'+med+'</div>':'<div class="prof-empty">Aucune médaille débloquée pour l\'instant.</div>');
+}
+if($('bProfile'))$('bProfile').onclick=()=>{renderProfile();show('sProfile');};
+if($('bProfileClose'))$('bProfileClose').onclick=()=>show('sMenu');
 
 /* ════ INPUT ════ */
 // Souris brute (raw input) : verrouille le pointeur et déplace le curseur en relatif × sensibilité.
