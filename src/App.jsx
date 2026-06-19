@@ -544,10 +544,10 @@ export default function App() {
             Hero translucide transparaissait derriÃ¨re la barre du haut ("hero derriÃ¨re"). */}
         <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
           <Hero />
-          {/* Voile UNIQUE et uniforme (0.5) sur toute la page (overlay fixe plus haut)
-              â†’ l'AMV reste visible de faÃ§on homogÃ¨ne partout, AUCUNE coupure entre le
-              hero et les sections. Le bloc sections est donc transparent. */}
-          <div style={{ background: 'transparent' }}>
+          {/* Sous le hero : fond OPAQUE #08090D. L'AMV ne reste visible QUE derrière le
+              hero ; les sections ne sont plus translucides (le bleed AMV "washed" n'était
+              pas voulu). Le hero garde sa transparence (au-dessus, hors de ce bloc). */}
+          <div style={{ background: '#08090D' }}>
             <QuoteSection />
             <Ranks />
             {/* Classement vocal remontÃ© juste sous 'Grimpe les rangs' (Ã©tait trop bas, aprÃ¨s Equipage/Soutenir) */}
