@@ -39,6 +39,17 @@ function persistTrail(id) {
   window.dispatchEvent(new Event(TRAIL_EVENT))
 }
 
+// Traînée PAR DÉFAUT (aucune équipée) : or de marque, très sobre — transparente,
+// légère, lumineuse (additif), courte vie = fluide. Ambiance Brams, sans en faire trop.
+const DEFAULT_TRAIL = {
+  colors: ['#bfa46a', '#e8c878', '#d4a017'],
+  composite: 'lighter',
+  maxParts: 150, maxEmit: 6, emitDivisor: 7.5, minDist: 5,
+  speed: 0.2, drift: 0.1, gravity: 0.01,
+  sizeBase: 0.95, sizeRand: 1.05,
+  decay: 0.08, shadow: 4, alpha: 0.3,
+}
+
 // ── Rend la traînée équipée partout (App.jsx). Lit localStorage + event. ───────
 export function GlobalTrailLayer() {
   const [id, setId] = useState(null)
@@ -50,7 +61,8 @@ export function GlobalTrailLayer() {
     return () => { window.removeEventListener(TRAIL_EVENT, read); window.removeEventListener('storage', read) }
   }, [])
   const skin = id ? trailSkin(id) : null
-  if (!skin) return null
+  // Rien d'équipé → traînée or sobre par défaut (CursorTrail hérite des gardes drawOpen/story/preview).
+  if (!skin) return <CursorTrail skin={DEFAULT_TRAIL} isGlobal />
   // Toucher d'Or = particules dorées (CursorTrail, via les colors du skin) + recolor
   // de l'interface au survol (InterfaceTrail). Les deux montés ensemble.
   if (skin.effect === 'midas') return <><CursorTrail skin={skin} isGlobal /><InterfaceTrail config={skin} isGlobal /></>
