@@ -4247,7 +4247,7 @@ requestAnimationFrame(loop);
   function trackSelf(extra){
     if(!D.chan) return
     const cur=D.peers[D.me]||{}
-    D.peers[D.me]={ id:D.me, name:D.name, host:D.host, ready:!!(extra&&'ready'in extra?extra.ready:cur.ready) }
+    D.peers[D.me]={ id:D.me, name:D.name, host:D.host, ready:!!(extra&&'ready'in extra?extra.ready:cur.ready), ts:Date.now() }
     D.chan.track(D.peers[D.me])
   }
 
@@ -4256,7 +4256,11 @@ requestAnimationFrame(loop);
     D.chan=ch
     ch.on('presence',{event:'sync'},()=>{
       const st=ch.presenceState(); const peers={}
-      for(const k in st){ const m=st[k][0]; if(m) peers[m.id]=m }
+      // Un re-track() (toggle « prêt ») crée une NOUVELLE présence sans supprimer l'ancienne
+      // tout de suite → st[k] peut contenir [ancien(ready:false), nouveau(ready:true)].
+      // Prendre [0] gardait l'état périmé (le prêt ne remontait jamais, même le sien).
+      // On garde le meta le plus récent (ts max) par joueur.
+      for(const k in st){ const arr=st[k]||[]; let m=null; for(const e of arr){ if(!m||(e&&(e.ts||0)>=(m.ts||0))) m=e; } if(m&&m.id) peers[m.id]=m }
       D.peers=peers; renderPeers()
     })
     // sync horloge (Cristian) : l'invité ping, l'hôte répond.
