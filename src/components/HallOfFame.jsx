@@ -1,7 +1,8 @@
 import { useInView } from '../hooks/useInView.js'
 
-// Une couleur signature par légende (c = couleur structurelle pour bord/glow/ombre).
-// ??? = arc-en-ciel : flag `rainbow` → les accents visibles passent en dégradé.
+// Une couleur signature par légende (c = couleur structurelle pour bord/glow/hairline/prime).
+// ??? = arc-en-ciel : flag `rainbow` → le dégradé animé est confiné au ring + hairline +
+// filet sous la prime ; le TEXTE reste argent clair pour rester parfaitement lisible.
 const LEGENDS = [
   {
     name: 'Brams', pseudo: 'Le Fondateur', icon: '👑', c: '#f5c945',
@@ -60,87 +61,89 @@ export default function HallOfFame() {
       <style>{`
         .hof-shell { width: 100%; max-width: 1320px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
 
-        .hof-grid { display: grid; grid-template-columns: 1.32fr 1fr; gap: 24px; align-items: stretch; }
-        .hof-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        /* dégradé arc-en-ciel commun, animé via background-position */
+        .hof-rainbow-src { --rainbow: linear-gradient(110deg,#ff5d6c,#ff9f45,#ffe24d 32%,#4be08a 50%,#49c6ff 68%,#9b7bff 84%,#ff6fd6); }
+        @keyframes hofRainbow { to { background-position: 220% 0; } }
 
-        /* dégradé arc-en-ciel commun (réutilisé pour bar / ring / textes) */
-        .hof-card { --rainbow: linear-gradient(105deg,#ff5d6c,#ff9f45,#ffe24d 38%,#4be08a 55%,#49c6ff 72%,#9b7bff 88%,#ff6fd6); }
-
-        .hof-card {
+        /* ---------- Surface translucide commune (laisse passer le fond One Piece) ---------- */
+        .hof-surface {
           position: relative;
-          border-radius: 20px;
-          overflow: hidden;
+          border-radius: 18px;
           background:
-            radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--c) 13%, transparent), transparent 60%),
-            linear-gradient(180deg, rgba(18,19,27,.80), rgba(9,10,15,.86));
-          -webkit-backdrop-filter: blur(11px);
-          backdrop-filter: blur(11px);
-          border: 1px solid color-mix(in srgb, var(--c) 34%, transparent);
-          box-shadow: 0 22px 55px -26px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05);
-          transition: transform .3s cubic-bezier(.22,1,.36,1), border-color .3s, box-shadow .3s;
+            radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--c) 12%, transparent), transparent 58%),
+            linear-gradient(180deg, rgba(17,18,26,.78), rgba(8,9,14,.85));
+          -webkit-backdrop-filter: blur(13px) saturate(115%);
+          backdrop-filter: blur(13px) saturate(115%);
+          border: 1px solid color-mix(in srgb, var(--c) 26%, rgba(255,255,255,.05));
+          box-shadow: 0 26px 60px -28px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05);
+          overflow: hidden;
+          transition: transform .35s cubic-bezier(.22,1,.36,1), border-color .35s, box-shadow .35s;
         }
-        .hof-card:hover {
-          transform: translateY(-6px);
-          border-color: color-mix(in srgb, var(--c) 72%, transparent);
-          box-shadow: 0 30px 65px -24px color-mix(in srgb, var(--c) 42%, transparent),
-                      inset 0 1px 0 rgba(255,255,255,.07);
-        }
-        .hof-card.featured { grid-row: span 2; }
-
-        /* halo coloré diffus en fond de carte */
-        .hof-card::after {
-          content: ''; position: absolute; inset: -1px; pointer-events: none; opacity: .5;
-          background: radial-gradient(70% 50% at 80% 8%, color-mix(in srgb, var(--c) 22%, transparent), transparent 70%);
-        }
-        .hof-card.rainbow::after {
-          opacity: .42;
-          background: radial-gradient(80% 55% at 50% 0%, rgba(155,123,255,.22), rgba(73,198,255,.14) 45%, transparent 72%);
+        .hof-surface:hover {
+          border-color: color-mix(in srgb, var(--c) 60%, transparent);
+          box-shadow: 0 34px 70px -26px color-mix(in srgb, var(--c) 40%, transparent), inset 0 1px 0 rgba(255,255,255,.07);
         }
 
-        .hof-accent { height: 3px; background: linear-gradient(90deg, transparent, var(--c), transparent); }
-        .rainbow .hof-accent { background: var(--rainbow); }
+        /* hairline supérieure = signature couleur (éditorial) */
+        .hof-hairline { position: absolute; top: 0; left: 0; right: 0; height: 2px;
+          background: linear-gradient(90deg, transparent, var(--c) 18%, var(--c) 82%, transparent); opacity: .9; }
+        .rainbow .hof-hairline { background: var(--rainbow); background-size: 220% 100%; animation: hofRainbow 7s linear infinite; opacity: 1; }
 
-        .hof-ring { padding: 2px; border-radius: 50%; background: var(--c); flex-shrink: 0;
-          box-shadow: 0 0 26px -4px var(--c); }
-        .rainbow .hof-ring { background: var(--rainbow); box-shadow: 0 0 26px -4px rgba(155,123,255,.7); }
-        .hof-ring-in { border-radius: 50%; background: #13141d; display: flex; align-items: center; justify-content: center; }
+        /* ring d'icône */
+        .hof-ring { padding: 2px; border-radius: 50%; background: var(--c); flex-shrink: 0; box-shadow: 0 0 28px -6px var(--c); }
+        .rainbow .hof-ring { background: var(--rainbow); background-size: 220% 100%; animation: hofRainbow 7s linear infinite; box-shadow: 0 0 30px -6px rgba(155,123,255,.75); }
+        .hof-ring-in { border-radius: 50%; background: radial-gradient(120% 120% at 30% 25%, #1a1b25, #0d0e15); display: flex; align-items: center; justify-content: center; }
 
+        /* typographie */
+        .hof-name { font-family: var(--pirate); color: #f6f2e8; line-height: 1; }
         .hof-pseudo { color: var(--c); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-        .hof-title-pill {
-          align-self: flex-start; font-weight: 900; letter-spacing: .16em;
-          color: var(--c);
-          border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-          background: color-mix(in srgb, var(--c) 9%, transparent);
-          border-radius: 5px;
-        }
-        .hof-prime { color: var(--c); font-family: var(--pirate); font-weight: 800; }
+        .hof-eyebrow { font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: color-mix(in srgb, var(--c) 78%, #f4f0e6); }
+        .hof-prime { font-family: var(--pirate); color: var(--c); line-height: .9; letter-spacing: .01em;
+          text-shadow: 0 2px 26px color-mix(in srgb, var(--c) 35%, transparent); }
+        .hof-label { font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,240,230,.4); font-weight: 700; }
 
-        /* textes arc-en-ciel */
-        .rainbow .hof-pseudo, .rainbow .hof-prime, .rainbow .hof-name {
-          background: var(--rainbow); -webkit-background-clip: text; background-clip: text;
-          -webkit-text-fill-color: transparent; color: transparent;
-        }
-        .rainbow .hof-title-pill {
-          background: var(--rainbow); -webkit-background-clip: text; background-clip: text;
-          -webkit-text-fill-color: transparent; color: transparent;
-          border-color: rgba(255,255,255,.16);
-        }
+        /* ??? : on garde le texte argent clair, on n'applique le rainbow QU'au hairline/ring/filet */
+        .rainbow .hof-pseudo { color: #cdd2e0; }
+        .rainbow .hof-prime { color: #eef1f8; text-shadow: 0 2px 26px rgba(155,123,255,.4); }
+        .rainbow .hof-eyebrow { color: #c9cedd; }
+        .hof-rule { height: 2px; border-radius: 2px; background: var(--c); opacity: .65; }
+        .rainbow .hof-rule { background: var(--rainbow); background-size: 220% 100%; animation: hofRainbow 7s linear infinite; opacity: 1; }
 
-        .hof-name { font-family: var(--pirate); color: #f4f0e6; line-height: 1; }
-        .hof-meta-box { background: rgba(255,255,255,.035); border: 1px solid color-mix(in srgb, var(--c) 26%, transparent); border-radius: 12px; }
+        /* ========================= BANNIÈRE BRAMS (pleine largeur, horizontale) ========================= */
+        .hof-banner { display: flex; align-items: stretch; gap: 0; margin-bottom: 26px; }
+        .hof-banner-id { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 30px; padding: 30px 38px; }
+        .hof-banner-prime {
+          flex: 0 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 14px;
+          padding: 30px 42px; min-width: 340px;
+          border-left: 1px solid color-mix(in srgb, var(--c) 22%, rgba(255,255,255,.06));
+          background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c) 7%, transparent));
+        }
+        .hof-banner-desc { color: rgba(244,240,230,.62); line-height: 1.65; font-size: 14px; margin: 12px 0 0; max-width: 460px; }
+
+        /* ========================= RANGÉE DES 4 LÉGENDES ========================= */
+        .hof-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+        .hof-card-pad { padding: 26px 24px; display: flex; flex-direction: column; height: 100%; }
+        .hof-card-desc { color: rgba(244,240,230,.55); line-height: 1.62; font-size: 12.5px; flex: 1; margin: 16px 0 20px; }
+        .hof-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-top: 16px;
+          border-top: 1px solid color-mix(in srgb, var(--c) 16%, rgba(255,255,255,.04)); }
 
         @media (max-width: 1024px) {
-          .hof-grid { grid-template-columns: 1fr; }
-          .hof-card.featured { grid-row: auto; }
+          .hof-row { grid-template-columns: repeat(2, 1fr); }
         }
-        @media (max-width: 720px) {
-          .hof-sub-grid { grid-template-columns: 1fr; }
+        @media (max-width: 760px) {
+          .hof-banner { flex-direction: column; }
+          .hof-banner-prime { min-width: 0; border-left: none; border-top: 1px solid color-mix(in srgb, var(--c) 22%, rgba(255,255,255,.06));
+            background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--c) 7%, transparent)); flex-direction: row; align-items: center; justify-content: space-between; }
+        }
+        @media (max-width: 600px) {
+          .hof-row { grid-template-columns: 1fr; }
           .hof-shell { padding: 0 20px; }
+          .hof-banner-id { flex-direction: column; align-items: flex-start; text-align: left; gap: 20px; padding: 26px 24px; }
         }
       `}</style>
 
       <div className="hof-shell">
-        <div className={`reveal ${inView ? 'visible' : ''}`} style={{ textAlign: 'center', marginBottom: 58 }}>
+        <div className={`reveal ${inView ? 'visible' : ''}`} style={{ textAlign: 'center', marginBottom: 54 }}>
           <div className="label" style={{ color: '#BFA46A' }}>👑 Légendes</div>
           <h2 className="h2" style={{ textAlign: 'center', fontFamily: "'Clash Display','Syne',system-ui" }}>Hall of Fame</h2>
           <p className="sub" style={{ textAlign: 'center', margin: '0 auto', color: 'rgba(244,240,230,0.6)' }}>
@@ -148,68 +151,79 @@ export default function HallOfFame() {
           </p>
         </div>
 
-        <div className="hof-grid">
-          {/* Carte vedette — Brams */}
-          <article className={`hof-card featured${featured.rainbow ? ' rainbow' : ''}`} style={{ '--c': featured.c, display: 'flex', flexDirection: 'column' }}>
-            <div className="hof-accent" />
-            <div style={{ padding: '42px 40px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <span className="hof-title-pill" style={{ fontSize: 10.5, padding: '6px 15px', marginBottom: 32 }}>{featured.title}</span>
+        {/* ===== BANNIÈRE BRAMS — pleine largeur, éditoriale ===== */}
+        <article
+          className={`hof-surface hof-banner${featured.rainbow ? ' rainbow' : ''}`}
+          style={{ '--c': featured.c }}
+        >
+          <div className="hof-hairline" />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 28 }}>
-                <div className="hof-ring"><div className="hof-ring-in" style={{ width: 104, height: 104, fontSize: 52 }}>{featured.icon}</div></div>
-                <div>
-                  <div className="hof-name" style={{ fontSize: 46 }}>{featured.name}</div>
-                  <div className="hof-pseudo" style={{ fontSize: 12.5, marginTop: 9 }}>🏴‍☠️ {featured.pseudo}</div>
-                </div>
-              </div>
-
-              <p style={{ fontSize: 15, color: 'rgba(244,240,230,0.64)', lineHeight: 1.8, marginBottom: 30, flex: 1 }}>{featured.desc}</p>
-
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <div className="hof-meta-box" style={{ '--c': featured.c, padding: '11px 19px' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(244,240,230,0.42)', letterSpacing: '.14em', marginBottom: 4 }}>PRIME</div>
-                  <div className="hof-prime" style={{ fontSize: 17 }}>{featured.prime}</div>
-                </div>
-                <div className="hof-meta-box" style={{ '--c': featured.c, padding: '11px 19px' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(244,240,230,0.42)', letterSpacing: '.14em', marginBottom: 4 }}>🍎 FRUIT DU DÉMON</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#f4f0e6' }}>{featured.fruit}</div>
-                </div>
-              </div>
+          <div className="hof-banner-id">
+            <div className="hof-ring">
+              <div className="hof-ring-in" style={{ width: 92, height: 92, fontSize: 46 }}>{featured.icon}</div>
             </div>
-          </article>
+            <div style={{ minWidth: 0 }}>
+              <div className="hof-eyebrow" style={{ fontSize: 10, marginBottom: 12 }}>{featured.title}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, flexWrap: 'wrap' }}>
+                <div className="hof-name" style={{ fontSize: 50 }}>{featured.name}</div>
+                <div className="hof-pseudo" style={{ fontSize: 12 }}>🏴‍☠️ {featured.pseudo}</div>
+              </div>
+              <p className="hof-banner-desc">{featured.desc}</p>
+            </div>
+          </div>
 
-          {/* Les 4 autres légendes */}
-          <div className="hof-sub-grid">
-            {rest.map((l, i) => (
-              <article key={i} className={`hof-card${l.rainbow ? ' rainbow' : ''}`} style={{ '--c': l.c, display: 'flex', flexDirection: 'column' }}>
-                <div className="hof-accent" />
-                <div style={{ padding: '24px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                    <div className="hof-ring"><div className="hof-ring-in" style={{ width: 54, height: 54, fontSize: 27 }}>{l.icon}</div></div>
-                    <div style={{ minWidth: 0 }}>
-                      <div className="hof-name" style={{ fontSize: 25 }}>{l.name}</div>
-                      <div className="hof-pseudo" style={{ fontSize: 10, marginTop: 5 }}>{l.pseudo}</div>
-                    </div>
+          <div className="hof-banner-prime">
+            <div>
+              <div className="hof-label" style={{ marginBottom: 8 }}>Prime — Wanted</div>
+              <div className="hof-prime" style={{ fontSize: 'clamp(26px, 3.2vw, 40px)' }}>{featured.prime}</div>
+            </div>
+            <div className="hof-rule" style={{ width: 54 }} />
+            <div>
+              <div className="hof-label" style={{ marginBottom: 5 }}>🍎 Fruit du Démon</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#f4f0e6' }}>{featured.fruit}</div>
+            </div>
+          </div>
+        </article>
+
+        {/* ===== LES 4 AUTRES LÉGENDES ===== */}
+        <div className="hof-row">
+          {rest.map((l, i) => (
+            <article
+              key={i}
+              className={`hof-surface${l.rainbow ? ' rainbow hof-rainbow-src' : ''}`}
+              style={{ '--c': l.c }}
+            >
+              <div className="hof-hairline" />
+              <div className="hof-card-pad">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 4 }}>
+                  <div className="hof-ring">
+                    <div className="hof-ring-in" style={{ width: 50, height: 50, fontSize: 25 }}>{l.icon}</div>
                   </div>
-
-                  <span className="hof-title-pill" style={{ fontSize: 8.5, padding: '4px 10px', marginBottom: 15 }}>{l.title}</span>
-
-                  <p style={{ fontSize: 12.5, color: 'rgba(244,240,230,0.56)', lineHeight: 1.65, marginBottom: 18, flex: 1 }}>{l.desc}</p>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 10, paddingTop: 14, borderTop: '1px solid color-mix(in srgb, var(--c) 18%, transparent)' }}>
-                    <div>
-                      <div style={{ fontSize: 8, color: 'rgba(244,240,230,0.4)', letterSpacing: '.12em', marginBottom: 3 }}>PRIME</div>
-                      <div className="hof-prime" style={{ fontSize: 13.5 }}>{l.prime}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 8, color: 'rgba(244,240,230,0.4)', letterSpacing: '.1em', marginBottom: 3 }}>🍎 FRUIT</div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#f4f0e6' }}>{l.fruit}</div>
-                    </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="hof-name" style={{ fontSize: 26 }}>{l.name}</div>
+                    <div className="hof-pseudo" style={{ fontSize: 9.5, marginTop: 5 }}>{l.pseudo}</div>
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
+
+                <div className="hof-eyebrow" style={{ fontSize: 8.5, marginTop: 18 }}>{l.title}</div>
+
+                <p className="hof-card-desc">{l.desc}</p>
+
+                <div>
+                  <div className="hof-label" style={{ marginBottom: 7 }}>Prime</div>
+                  <div className="hof-prime" style={{ fontSize: 'clamp(20px, 1.8vw, 26px)' }}>{l.prime}</div>
+                  <div className="hof-rule" style={{ width: 40, margin: '12px 0 0' }} />
+                </div>
+
+                <div className="hof-foot">
+                  <div>
+                    <div className="hof-label" style={{ marginBottom: 4 }}>🍎 Fruit</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#f4f0e6' }}>{l.fruit}</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
