@@ -323,9 +323,8 @@ body.playing{cursor:none}
 .judge-panel .jtrack{position:relative;height:9px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;box-shadow:inset 0 0 0 1px var(--m-glass-edge,#ffffff14)}
 .judge-panel .jbar{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--jc,#fff) 55%,transparent),var(--jc,#fff));box-shadow:0 0 10px var(--jc,#fff);transition:width .7s var(--m-soft,ease)}
 .judge-panel .jcnt{min-width:34px;text-align:right;font:700 13px/1 var(--font-display,sans-serif);color:#fff;font-variant-numeric:tabular-nums}
-.judge-panel .jrow[data-k="300"]{--jc:#39FF8A}
-.judge-panel .jrow[data-k="100"]{--jc:#39FF8A}
 .judge-panel .jrow[data-k="300"]{--jc:#7FE3FF}
+.judge-panel .jrow[data-k="100"]{--jc:#39FF8A}
 .judge-panel .jrow[data-k="50"]{--jc:#FFD12B}
 .judge-panel .jrow[data-k="miss"]{--jc:#FF2FB9}
 .judge-panel .jmeta{display:flex;align-items:center;justify-content:space-between;margin-top:3px;padding-top:8px;border-top:1px solid var(--m-glass-edge,#ffffff14)}
@@ -335,7 +334,24 @@ body.playing{cursor:none}
 .judge-panel .jrating em{font:700 10px/1 var(--font-display,sans-serif);letter-spacing:1.5px;text-transform:uppercase;color:var(--pk,#d4a017);font-style:normal}
 @media (prefers-reduced-motion:reduce){.judge-panel .jbar{transition:none}}
 
-@media (max-width:760px){.card.res{min-width:0}.res-top{flex-direction:column;gap:10px}.res-right .stats{grid-template-columns:auto auto}}/* ════ SONG SELECT — refonte cinématique néon (additif, ne retire rien) ════ */
+@media (max-width:760px){.card.res{min-width:0}.res-top{flex-direction:column;gap:10px}.res-right .stats{grid-template-columns:auto auto}}
+/* ── Résultats : aura de la carte teintée du grade + barre de précision (additif, cosmétique) ── */
+.card.res{position:relative;isolation:isolate;--gcol:#ffee44;
+  box-shadow:0 18px 80px #000d,inset 0 1px 0 var(--m-glass-edge),0 0 80px -18px var(--gcol);
+  transition:box-shadow .6s var(--m-soft,ease)}
+.card.res::after{content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;z-index:-1;
+  background:linear-gradient(135deg,var(--gcol),transparent 55%);opacity:.4;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;transition:opacity .5s ease}
+.res-accbar{width:100%;height:8px;border-radius:999px;position:relative;overflow:hidden;
+  background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--m-glass-edge,#ffffff14)}
+.res-accbar .fill{position:absolute;inset:0;width:0;border-radius:999px;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--gcol,#ffee44) 50%,transparent),var(--gcol,#ffee44));
+  box-shadow:0 0 14px -1px var(--gcol,#ffee44);transition:width .85s var(--m-soft,ease)}
+.res-accbar .fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:18px;
+  background:linear-gradient(90deg,transparent,#ffffffaa);mix-blend-mode:overlay}
+@media (prefers-reduced-motion:reduce){.card.res,.res-accbar .fill{transition:none}}
+/* ════ SONG SELECT — refonte cinématique néon (additif, ne retire rien) ════ */
 .ss-wrap{transition:opacity .35s var(--m-soft,ease)}
 .screen.on#sReady .ss-info,.screen.on#sReady .ss-lb,.screen.on#sReady .ss-search,.screen.on#sReady #mapRow,.screen.on#sReady #diffRow{animation:ssRise .5s cubic-bezier(.22,1,.36,1) both}
 .screen.on#sReady .ss-lb{animation-delay:.05s}
@@ -519,6 +535,28 @@ body.playing{cursor:none}
 #sPause .btn:not(.go):not(.ghost):hover{
   border-color:#00E5FF66;box-shadow:0 8px 30px rgba(0,229,255,.22),inset 0 1px 0 var(--m-glass-edge)}
 #sPause .btn.go{box-shadow:0 0 34px rgba(212,160,23,.48),inset 0 1px 0 rgba(255,255,255,.35)}
+/* — PAUSE : entrée animée de la carte + boutons en cascade (additif) — */
+#sPause.on .card{animation:pauseCardIn .42s cubic-bezier(.22,1,.36,1) both}
+@keyframes pauseCardIn{0%{opacity:0;transform:translateY(16px) scale(.97)}100%{opacity:1;transform:translateY(0) scale(1)}}
+#sPause.on .card>*{animation:pauseRowIn .4s cubic-bezier(.22,1,.36,1) both}
+#sPause.on .card>h2{animation-delay:.04s}
+#sPause.on .card>.btn:nth-of-type(1){animation-delay:.08s}
+#sPause.on .card>.btn:nth-of-type(2){animation-delay:.12s}
+#sPause.on .card>.btn:nth-of-type(3){animation-delay:.16s}
+#sPause.on .card>.btn:nth-of-type(4){animation-delay:.2s}
+@keyframes pauseRowIn{0%{opacity:0;transform:translateY(9px)}100%{opacity:1;transform:translateY(0)}}
+/* — PAUSE : icône ‖ qui respire à côté du titre (deux barres via dégradé répété) — */
+#sPause .card h2{display:inline-flex;align-items:center;gap:12px}
+#sPause .card h2::before{content:'';width:16px;height:20px;flex:0 0 auto;border-radius:2px;
+  background:linear-gradient(180deg,#00E5FF,#9B5CFF);
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 5px,transparent 5px 11px);
+  mask:repeating-linear-gradient(90deg,#000 0 5px,transparent 5px 11px);
+  filter:drop-shadow(0 0 7px rgba(0,229,255,.6));
+  animation:pauseBars 1.8s ease-in-out infinite}
+@keyframes pauseBars{0%,100%{opacity:.7;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.08)}}
+@media (prefers-reduced-motion:reduce){
+  #sPause.on .card,#sPause.on .card>*{animation:none;opacity:1;transform:none}
+  #sPause .card h2::before{animation:none}}
 
 /* — LOADING : passe du spin nu à un bloc glass néon centré — */
 #sLoad{gap:20px}
@@ -739,6 +777,7 @@ body.playing{cursor:none}
     </div>
     <div class="res-right">
       <div class="stats" id="gStats"></div>
+      <div class="res-accbar" aria-hidden="true"><span class="fill" id="gAccBar"></span></div>
       <canvas id="gHisto" width="300" height="56" style="border-radius:8px;background:rgba(255,255,255,.04)"></canvas>      <div id="gJudge" class="judge-panel" aria-label="Détail des jugements">
         <div class="jrow" data-k="300"><span class="jlbl">300</span><div class="jtrack"><i class="jbar"></i></div><b class="jcnt">0</b></div>
         <div class="jrow" data-k="100"><span class="jlbl">100</span><div class="jtrack"><i class="jbar"></i></div><b class="jcnt">0</b></div>
@@ -2909,7 +2948,9 @@ function drawHUD(el,kiai){
   const tx0=216,tx1=W-104;
   cx.fillStyle='rgba(255,255,255,.12)';cx.fillRect(tx0,tlY,tx1-tx0,2.5);
   cx.fillStyle='#ff66aa';cx.fillRect(tx0,tlY,(tx1-tx0)*p,2.5);
+  cx.save();cx.shadowColor='#ff66aa';cx.shadowBlur=8;
   cx.beginPath();cx.arc(tx0+(tx1-tx0)*p,tlY+1.2,4,0,PI2);cx.fillStyle='#fff';cx.fill();
+  cx.restore();
   /* — Métadonnées d'intro (comme le vrai client : titre + difficulté au lead-in) — */
   const metaA=clamp((-el-200)/400,0,1);
   if(metaA>0){
@@ -3249,6 +3290,16 @@ function finish(){
   ).join('');
   show('sRes');
   pubReset();
+  // aura de la carte teintée du grade + barre de précision (cosmétique, lecture seule de acc/grade)
+  const resCard=document.querySelector('#sRes .card.res');
+  if(resCard)resCard.style.setProperty('--gcol',c||'#ffee44');
+  const accBar=$('gAccBar');
+  if(accBar){
+    const aw=Math.max(0,Math.min(100,acc)).toFixed(2)+'%';
+    const rm0=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if(rm0)accBar.style.width=aw;
+    else{accBar.style.width='0';requestAnimationFrame(()=>requestAnimationFrame(()=>{accBar.style.width=aw;}));}
+  }
   // précision ET score en compteur qui monte (≈800 ms, easing doux)
   const accEl=$('gAccUp'),scEl=$('gScoreUp'),scoreFin=score,t0=performance.now();
   (function up(){
