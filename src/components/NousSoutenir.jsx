@@ -1,5 +1,6 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useSoundEffect } from '../hooks/useSoundEffect.js'
+import { CINE, GOLD_GRAD, CineStyles, Reveal, CineSection, SectionHead, GoldButton } from './home/cine.jsx'
 
 const LEETCHI_URL = 'https://www.leetchi.com/fr/c/brams-score-by-freydiss-1073815?utm_source=copylink&utm_medium=social_sharing'
 
@@ -10,7 +11,6 @@ const SUPPORTS = [
     desc: 'Participe à la cagnotte officielle du Brams Score. Chaque contribution aide à couvrir les frais d\'hébergement et de développement du bot.',
     cta: 'Contribuer sur Leetchi',
     href: LEETCHI_URL,
-    color: '#f9a825',
     badge: '💰 Cagnotte',
   },
   {
@@ -19,7 +19,6 @@ const SUPPORTS = [
     desc: 'Un boost Discord débloque des perks exclusifs pour toute la communauté : meilleure qualité audio, plus d\'emojis, bannière animée.',
     cta: 'Booster sur Discord',
     href: 'https://discord.gg/4FgezPpnGU',
-    color: '#9b59b6',
     badge: 'Impactant',
   },
   {
@@ -28,7 +27,6 @@ const SUPPORTS = [
     desc: 'Rejoins les lives Twitch de Brams. Chaque vue, chaque sub compte pour faire grandir la communauté One Piece.',
     cta: 'Suivre sur Twitch',
     href: 'https://www.twitch.tv/bouledog_',
-    color: '#9147ff',
     badge: 'Gratuit',
   },
   {
@@ -37,7 +35,6 @@ const SUPPORTS = [
     desc: 'Abonne-toi à la chaîne YouTube de Brams pour ne rater aucune vidéo. Like et partage = meilleure visibilité.',
     cta: 'S\'abonner',
     href: 'https://www.youtube.com/@BouleDogg/featured',
-    color: '#ff0000',
     badge: 'Gratuit',
   },
   {
@@ -46,7 +43,6 @@ const SUPPORTS = [
     desc: 'Invite tes amis sur le serveur. Plus on est nombreux, plus l\'aventure est épique. La Brams Community grandit grâce à toi.',
     cta: 'Inviter des amis',
     href: 'https://discord.gg/4FgezPpnGU',
-    color: '#e0524a',
     badge: 'Communauté',
   },
 ]
@@ -56,23 +52,25 @@ export default function NousSoutenir() {
   const { play } = useSoundEffect()
 
   return (
-    <section id="soutenir" style={{ padding: '110px 0', position: 'relative', overflow: 'hidden' }}>
-      {/* Orbe fond */}
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,89,182,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+    <CineSection id="soutenir">
+      <CineStyles />
 
-      <div className="container">
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div className="label">❤️ Soutien</div>
-          <h2 className="h2" style={{ textAlign: 'center' }}>Nous soutenir</h2>
-          <p className="sub" style={{ textAlign: 'center', margin: '0 auto' }}>
-            Brams Community est 100% gratuit. Si tu veux aider l'aventure à continuer, voici comment.
-          </p>
-        </div>
+      <SectionHead
+        eyebrow="❤️ Soutien"
+        title="Nous"
+        accent="soutenir"
+        lead="Brams Community est 100% gratuit. Si tu veux aider l'aventure à continuer, voici comment."
+        align="center"
+        max={620}
+      />
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, maxWidth: 960, margin: '0 auto 56px' }}>
-          {SUPPORTS.map((s, i) => (
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: 18, margin: '56px 0 64px', width: '100%',
+      }}>
+        {SUPPORTS.map((s, i) => (
+          <Reveal key={i} delay={i * 70}>
             <a
-              key={i}
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
@@ -80,64 +78,66 @@ export default function NousSoutenir() {
               onMouseLeave={() => setHovered(null)}
               onClick={() => play('click')}
               style={{
-                display: 'flex', flexDirection: 'column', gap: 12,
-                background: hovered === i ? `${s.color}12` : 'var(--card)',
-                border: `1px solid ${hovered === i ? s.color + '40' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 16, padding: '24px 20px',
-                transition: 'all 0.25s ease',
+                display: 'flex', flexDirection: 'column', gap: 14, height: '100%',
+                boxSizing: 'border-box',
+                background: hovered === i ? CINE.panel2 : CINE.panel,
+                border: `1px solid ${hovered === i ? CINE.gold : CINE.hair}`,
+                borderRadius: 18, padding: '26px 24px',
+                transition: 'transform .35s cubic-bezier(.22,1,.36,1), background .3s, border-color .3s, box-shadow .35s',
                 transform: hovered === i ? 'translateY(-4px)' : 'none',
-                boxShadow: hovered === i ? `0 12px 40px ${s.color}20` : '0 4px 20px rgba(0,0,0,0.2)',
-                textDecoration: 'none',
-                cursor: 'pointer',
+                boxShadow: hovered === i ? '0 18px 50px rgba(0,0,0,0.45)' : '0 6px 24px rgba(0,0,0,0.25)',
+                textDecoration: 'none', cursor: 'pointer',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{
-                  width: 48, height: 48, borderRadius: 12,
-                  background: `${s.color}18`, border: `1px solid ${s.color}30`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                  width: 50, height: 50, borderRadius: 13,
+                  background: 'rgba(191,164,106,0.10)', border: `1px solid ${CINE.goldDim}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 23,
                 }}>{s.icon}</div>
                 <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
-                  background: `${s.color}15`, color: s.color, border: `1px solid ${s.color}30`,
-                  textTransform: 'uppercase', letterSpacing: '0.1em',
+                  fontSize: 10, fontWeight: 700, padding: '4px 11px', borderRadius: 20,
+                  background: 'rgba(191,164,106,0.08)', color: CINE.gold, border: `1px solid ${CINE.goldDim}`,
+                  textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: CINE.title,
                 }}>{s.badge}</span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>{s.title}</div>
-              <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.65, flex: 1 }}>{s.desc}</div>
+              <div style={{ fontWeight: 700, fontSize: 17, color: CINE.ink, fontFamily: CINE.title, letterSpacing: '-0.01em' }}>{s.title}</div>
+              <div style={{ fontSize: 13.5, color: CINE.inkSoft, lineHeight: 1.65, flex: 1 }}>{s.desc}</div>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                fontSize: 13, fontWeight: 700, color: s.color,
+                fontSize: 13, fontWeight: 700, color: CINE.gold, fontFamily: CINE.title,
                 marginTop: 4,
               }}>
                 {s.cta} →
               </div>
             </a>
-          ))}
-        </div>
+          </Reveal>
+        ))}
+      </div>
 
-        {/* Bloc remerciement */}
+      {/* Bloc remerciement */}
+      <Reveal delay={120}>
         <div style={{
-          maxWidth: 600, margin: '0 auto', textAlign: 'center',
-          background: 'linear-gradient(135deg, rgba(224,82,74,0.06), rgba(155,89,182,0.06))',
-          border: '1px solid rgba(255,255,255,0.06)',
-          borderRadius: 20, padding: '32px 40px',
+          maxWidth: 640, margin: '0 auto', textAlign: 'center',
+          background: CINE.panel,
+          border: `1px solid ${CINE.hairTop}`,
+          borderRadius: 22, padding: 'clamp(28px, 5vw, 40px)',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
         }}>
-          <div style={{ fontSize: 40, marginBottom: 14 }}>🏴‍☠️</div>
-          <h3 style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 10 }}>
-            Merci à tous les nakamas
+          <div style={{ fontSize: 42, marginBottom: 16 }}>🏴‍☠️</div>
+          <h3 style={{ fontFamily: CINE.title, fontWeight: 700, fontSize: 'clamp(20px, 2.6vw, 26px)', color: CINE.ink, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+            Merci à tous les <span style={{ background: GOLD_GRAD, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>nakamas</span>
           </h3>
-          <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 20 }}>
-            Ce serveur et ce bot sont développés bénévolement par <strong style={{ color: '#00C2FF' }}>Freydiss</strong>.
+          <p style={{ fontSize: 14.5, color: CINE.inkSoft, lineHeight: 1.8, margin: '0 auto 24px', maxWidth: 480 }}>
+            Ce serveur et ce bot sont développés bénévolement par <strong style={{ color: CINE.gold }}>Freydiss</strong>.
             Chaque soutien — boost, sub, like — fait une vraie différence. Merci à tous !
           </p>
-          <a href="https://discord.gg/4FgezPpnGU" target="_blank" rel="noopener noreferrer"
-            className="btn btn-primary" style={{ fontSize: 14 }}
+          <GoldButton href="https://discord.gg/4FgezPpnGU" target="_blank" rel="noopener noreferrer"
             onMouseEnter={() => play('hover')} onClick={() => play('click')}>
             Rejoindre l'aventure →
-          </a>
+          </GoldButton>
         </div>
-      </div>
-    </section>
+      </Reveal>
+    </CineSection>
   )
 }
