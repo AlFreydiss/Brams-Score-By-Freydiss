@@ -545,10 +545,9 @@ export default function App() {
             Hero translucide transparaissait derriÃ¨re la barre du haut ("hero derriÃ¨re"). */}
         <div style={{ display: mediaOverlayOpen ? 'none' : 'block' }}>
           <Hero />
-          {/* Sous le hero : voile sombre TRANSLUCIDE (pas opaque). Le fond OP (AMV /
-              fond d'opening équipé) reste visible derrière toutes les sections au lieu
-              d'un grand aplat noir mort, tout en gardant le texte lisible. */}
-          <div style={{ background: 'rgba(8,9,13,0.80)' }}>
+          {/* Sous le hero : AUCUN voile. Le fond OP (AMV / fond d'opening équipé) reste
+              visible à pleine intensité, identique au hero, sur toute la page. */}
+          <div style={{ background: 'transparent' }}>
             <QuoteSection />
             <Ranks />
             {/* Classement vocal remontÃ© juste sous 'Grimpe les rangs' (Ã©tait trop bas, aprÃ¨s Equipage/Soutenir) */}
