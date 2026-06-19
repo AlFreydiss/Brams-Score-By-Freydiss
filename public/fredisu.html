@@ -4598,9 +4598,16 @@ requestAnimationFrame(loop);
     D.segMs=p.segMs||D.segMs; D.guestDiff=p.diff;
     const entry=(typeof library!=='undefined')&&library.find(x=>x.id===p.id);
     if(!entry){ setMapInfo('Map inconnue'); return; }
-    if(D.guestEntryId===p.id&&entry.buf){ D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true,from:D.me,id:p.id}); return; }
-    D.guestEntryId=p.id; D.mapReady=false; safeSend('state',{ctl:'mready',v:false,from:D.me,id:p.id});
-    const ok=await silentLoad(entry);
+    // Déjà chargée (peu importe guestEntryId) → prêt direct, on confirme à l'hôte.
+    if(entry.buf&&entry.analysis){ D.guestEntryId=p.id; D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true,from:D.me,id:p.id}); return; }
+    // GARDE ANTI-RÉENTRÉE : l'hôte rediffuse 'map' toutes les 2,5s (heartbeat). Sans cette garde,
+    // chaque rediffusion relançait un silentLoad PENDANT que le précédent téléchargeait encore
+    // → téléchargements + décodages audio empilés à l'infini ("téléchargement/audio infini").
+    if(D._loadingId===p.id) return;
+    D.guestEntryId=p.id; D.mapReady=false; D._loadingId=p.id;
+    safeSend('state',{ctl:'mready',v:false,from:D.me,id:p.id});
+    let ok=false;
+    try{ ok=await silentLoad(entry); } finally { if(D._loadingId===p.id) D._loadingId=null; }
     if(ok&&D.guestEntryId===p.id){ D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true,from:D.me,id:p.id}); }
   }
 
@@ -4744,7 +4751,9 @@ requestAnimationFrame(loop);
   // ── heartbeat lobby : montre le bouton « choisir la map » à l'hôte + rediffuse la map ──
   setInterval(()=>{
     const pick=$('duoPickMap'); if(pick) pick.style.display=(D.host&&D.room&&!D.active)?'block':'none';
-    if(D.host&&D.room&&!D.active&&typeof curEntry!=='undefined'&&curEntry&&curEntry.featured) broadcastMap();
+    // Rediffuse la map tant que TOUS les invités ne l'ont pas chargée (couvre les retardataires) ;
+    // une fois tout le monde prêt, on arrête le spam (moins de churn réseau + moins de re-mready).
+    if(D.host&&D.room&&!D.active&&typeof curEntry!=='undefined'&&curEntry&&curEntry.featured&&!allGuestsMapReady()) broadcastMap();
   },2500);
 
   function bind2(){ const pick=$('duoPickMap'); if(pick) pick.onclick=()=>{ const bl=$('bLevels'); if(bl)bl.click(); }; }
