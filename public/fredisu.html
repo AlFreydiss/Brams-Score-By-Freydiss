@@ -1522,7 +1522,11 @@ function ptAt(p,t){
 let map=[];
 function genMap(){
   const d=DIFFS[opt.diff];
-  seedRng(Math.floor(analysis.dur*1000)+opt.diff*7777+Math.round(R)*31);
+  // Duo Relais : seed PARTAGÉ par l'hôte (sans le rayon R, qui dépend de la résolution) →
+  // les 2 clients tirent la même séquence RNG → mêmes positions/angles de notes.
+  seedRng((window.__duo&&window.__duo.active&&window.__duo.seed!=null)
+    ? (window.__duo.seed>>>0)
+    : (Math.floor(analysis.dur*1000)+opt.diff*7777+Math.round(R)*31));
   // Bornes du playfield 4:3 (512×384 osu!px scalé/centré) — la génération reste en px écran
   const padS=Math.max(PF.ox+R+6,R+42),padT=Math.max(PF.oy+R+6,95);
   const padB=Math.max(H-(PF.oy+OSU_H*PF.s)+R+6,R+58);
@@ -3876,7 +3880,7 @@ addEventListener('mousedown',e=>{
   const ki=e.button===2?3:2;
   keysOv[ki].on=true;
   if(state==='playing'){keysOv[ki].n++;clickTimes.push(performance.now());keyClick();tryHit(mx,my);
-    if(window.__duo&&window.__duo.active)window.__duo.send('click',{x:mx,y:my});}
+    if(window.__duo&&window.__duo.active&&window.__duo.sendClick)window.__duo.sendClick(mx,my);}
 });
 addEventListener('mouseup',e=>{if(duoSpectating())return;pressing=false;keysOv[2].on=false;keysOv[3].on=false;});
 addEventListener('touchstart',e=>{
@@ -3885,7 +3889,7 @@ addEventListener('touchstart',e=>{
   e.preventDefault();pressing=true;
   const t=e.touches[0];mx=t.clientX;my=t.clientY;
   if(state==='playing'){keyClick();tryHit(t.clientX,t.clientY);
-    if(window.__duo&&window.__duo.active)window.__duo.send('click',{x:t.clientX,y:t.clientY});}
+    if(window.__duo&&window.__duo.active&&window.__duo.sendClick)window.__duo.sendClick(t.clientX,t.clientY);}
 },{passive:false});
 addEventListener('touchmove',e=>{
   if(e.target.closest('.screen'))return;
@@ -3900,7 +3904,7 @@ addEventListener('keydown',e=>{
     const ki=gk===opt.k1?0:1;
     keysOv[ki].on=true;keysOv[ki].n++;clickTimes.push(performance.now());
     keyClick();pressing=true;tryHit(mx,my);
-    if(window.__duo&&window.__duo.active)window.__duo.send('click',{x:mx,y:my});}
+    if(window.__duo&&window.__duo.active&&window.__duo.sendClick)window.__duo.sendClick(mx,my);}
   if(e.key==='Escape'){
     if(state==='playing')doPause();
     else if(state==='paused')doResume();
@@ -4262,6 +4266,7 @@ requestAnimationFrame(loop);
     ch.on('broadcast',{event:'start'},({payload})=>{ if(D.onStart) D.onStart(payload) })
     ch.on('broadcast',{event:'hit'},({payload})=>{ if(D.onNet) D.onNet('hit',payload) })
     ch.on('broadcast',{event:'miss'},({payload})=>{ if(D.onNet) D.onNet('miss',payload) })
+    ch.on('broadcast',{event:'click'},({payload})=>{ if(D.onNet) D.onNet('click',payload) })
     ch.on('broadcast',{event:'cursor'},({payload})=>{ if(D.onNet) D.onNet('cursor',payload) })
     ch.on('broadcast',{event:'state'},({payload})=>{ if(D.onNet) D.onNet('state',payload) })
     ch.on('broadcast',{event:'pause'},({payload})=>{ if(D.onNet) D.onNet('pause',payload) })
@@ -4355,6 +4360,14 @@ requestAnimationFrame(loop);
   }
   D.iAmOwner=iAmOwnerNow;
   const safeSend=(ev,p)=>{ try{ if(typeof D.send==='function') D.send(ev,p); }catch(e){} };
+
+  // Curseur/clics échangés en COORDONNÉES OSU (0-512 × 0-384) via PF, pas en pixels écran :
+  // les 2 joueurs peuvent avoir des fenêtres de tailles différentes → un curseur en px ne
+  // tomberait pas sur la même note. pfx(x)=PF.ox+x*PF.s donc l'inverse = (x-PF.ox)/PF.s.
+  const PFok=()=>typeof PF!=='undefined'&&PF&&PF.s>0;
+  const toOsu=(x,y)=>PFok()?{x:(x-PF.ox)/PF.s,y:(y-PF.oy)/PF.s}:{x,y};
+  const fromOsu=(X,Y)=>PFok()?{x:PF.ox+X*PF.s,y:PF.oy+Y*PF.s}:{x:X,y:Y};
+  D.sendClick=(x,y)=>{ const o=toOsu(x,y); safeSend('click',{x:o.x,y:o.y}); };
 
   // ── overlay HUD + décompte (injecté une fois) ──
   let host=$('duoFx');
@@ -4467,13 +4480,16 @@ requestAnimationFrame(loop);
   D.onLaunch=function(){
     if(!D.canLaunch()){ setMapInfo(D.guestMapReady?'Choisis une map CLASSÉE d\'abord.':'Le partenaire charge encore la map…'); return; }
     const startAt=Date.now()+3000;
-    safeSend('start',{startAt,segMs:D.segMs});
+    // seed PARTAGÉ, dérivé de l'analyse (résolution-indépendant, sans R) → mêmes positions de notes
+    D.seed=(Math.floor(analysis.dur*1000)+opt.diff*7777)>>>0;
+    safeSend('start',{startAt,segMs:D.segMs,seed:D.seed});
     D.active=true;
     countdownThenStart(startAt);
   };
   D.onStart=function(p){ // invité reçoit le go
     if(D.host)return;
     D.segMs=(p&&p.segMs)||D.segMs;
+    if(p&&p.seed!=null) D.seed=p.seed>>>0;
     D.active=true;
     const localTarget=(p&&p.startAt||Date.now())-(D.offset||0); // host_wall - offset = heure locale invité
     countdownThenStart(localTarget);
@@ -4488,8 +4504,8 @@ requestAnimationFrame(loop);
     if(ev==='state'&&p&&p.ctl){ handleCtl(p); return; } // canal de contrôle lobby
     if(!D.active||typeof state==='undefined'||state!=='playing')return;
     if(iAmOwnerNow())return; // le joueur actif ignore le flux du partenaire
-    if(ev==='cursor'){ mx=p.x; my=p.y; pressing=!!p.p; }
-    else if(ev==='click'){ mx=p.x; my=p.y; try{ tryHit(p.x,p.y); }catch(e){} }
+    if(ev==='cursor'){ const q=fromOsu(p.x,p.y); mx=q.x; my=q.y; pressing=!!p.p; }
+    else if(ev==='click'){ const q=fromOsu(p.x,p.y); mx=q.x; my=q.y; try{ tryHit(q.x,q.y); }catch(e){} }
     else if(ev==='state'){ applyState(p); }
   };
 
@@ -4513,8 +4529,8 @@ requestAnimationFrame(loop);
     }
     const now=Date.now();
     if(amOwner){
-      if(now-D._lastCur>=33){ D._lastCur=now; safeSend('cursor',{x:mx,y:my,p:pressing?1:0}); }
-      if(now-D._lastState>=550){ D._lastState=now; safeSend('state',{s:score,c:combo,mc:maxCombo,hp:hp,n3:n3,n1:n1,n5:n5,nm:nm}); }
+      if(now-D._lastCur>=33){ D._lastCur=now; const o=toOsu(mx,my); safeSend('cursor',{x:o.x,y:o.y,p:pressing?1:0}); }
+      if(now-D._lastState>=250){ D._lastState=now; safeSend('state',{s:score,c:combo,mc:maxCombo,hp:hp,n3:n3,n1:n1,n5:n5,nm:nm}); }
     }
     updateHud(amOwner,el);
   }
