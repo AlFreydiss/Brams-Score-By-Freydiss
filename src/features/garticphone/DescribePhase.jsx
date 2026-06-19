@@ -7,10 +7,14 @@ import { Btn, PhaseFrame, Waiting } from './ui.jsx'
 
 export default function DescribePhase({ remaining, total, mySubmitted, prevPage, submit }) {
   const [img, setImg] = useState(null)
+  // null = on attend encore (loader bref) ; '' = grâce épuisée → fallback ; sinon = URL.
   const [loadingImg, setLoadingImg] = useState(true)
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const submittedRef = useRef(false)
+  // remaining live, lu dans le poll sans relancer l'effet à chaque tick.
+  const remainingRef = useRef(remaining)
+  remainingRef.current = remaining
   // Garde anti faux auto-submit : on n'auto-soumet QUE si la phase a réellement eu du temps
   // (remaining vu > 2s). Sinon un transitoire où remaining lit 0 au tout début de la phase
   // (reconnexion / propagation du nouveau phase_ends_at) verrouillait le joueur en "envoyé"
@@ -18,19 +22,34 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
   const sawTimeRef = useRef(false)
 
   // Le dessin à décrire peut encore être en cours d'upload R2 quand cette phase démarre
-  // (upload lent terminé après l'avance de l'hôte). On re-tente quelques fois avant
-  // d'afficher « indisponible », au lieu de figer le placeholder sur le premier fetch vide.
+  // (upload lent terminé après l'avance de l'hôte). On re-tente en arrière-plan SANS bloquer
+  // l'UI : le textarea est utilisable tout de suite (fallback affiché), et l'image est
+  // injectée si/quand elle arrive. La grâce est bornée par le temps (≈7 s) OU le temps de
+  // phase restant — sur une phase « rush » de 25 s un fetch lent (10 s de timeout chacun) ne
+  // doit pas voler tout le temps de réflexion du joueur.
   useEffect(() => {
-    let alive = true, tries = 0
+    let alive = true
+    const t0 = Date.now()
     setLoadingImg(true)
+    const stop = () => { if (alive) setLoadingImg(false) }
     const poll = () => {
       prevPage().then((p) => {
         if (!alive) return
         const c = p?.content || ''
-        if (c) { setImg(c); setLoadingImg(false); return }
-        if (++tries < 6) { setTimeout(poll, 1200); return } // ~7 s de grâce
-        setImg(''); setLoadingImg(false)
-      }).catch(() => { if (alive) { if (++tries < 6) setTimeout(poll, 1200); else setLoadingImg(false) } })
+        if (c) { setImg(c); setLoadingImg(false); return } // image arrivée, même tardive
+        const elapsed = (Date.now() - t0) / 1000
+        const rem = remainingRef.current
+        // Arrêt si : grâce épuisée (~7 s), OU phase presque finie (≤3 s → place pour taper),
+        // OU la grâce restante dépasse le temps de phase restant.
+        if (elapsed >= 7 || (rem != null && rem <= 3) || (rem != null && rem < elapsed + 1.2)) { stop(); return }
+        setTimeout(poll, 1200)
+      }).catch(() => {
+        if (!alive) return
+        const elapsed = (Date.now() - t0) / 1000
+        const rem = remainingRef.current
+        if (elapsed >= 7 || (rem != null && rem <= 3)) { stop(); return }
+        setTimeout(poll, 1200)
+      })
     }
     poll()
     return () => { alive = false }
@@ -70,10 +89,12 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
         footer={<Btn variant="gold" disabled={busy || !text.trim()} onClick={() => doSubmit(false)}>{busy ? 'Envoi…' : 'Valider ma description'}</Btn>}
       >
         <div style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.hairTop}`, background: '#fff', marginBottom: 14, minHeight: 200, display: 'grid', placeItems: 'center' }}>
-          {loadingImg ? (
-            <div style={{ ...type.body, color: '#888', padding: 40 }}>Chargement du dessin…</div>
-          ) : img ? (
+          {img ? (
             <img src={img} alt="Dessin à décrire" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 460, objectFit: 'contain' }} />
+          ) : loadingImg ? (
+            <div style={{ ...type.body, color: '#888', padding: 40, textAlign: 'center' }}>
+              Chargement du dessin… <span style={{ display: 'block', marginTop: 6, ...type.small, color: C.textFaint }}>tu peux déjà commencer à décrire ce que tu imagines.</span>
+            </div>
           ) : (
             <div style={{ ...type.body, color: '#888', padding: 40, textAlign: 'center' }}>Dessin indisponible — décris ce que tu imagines.</div>
           )}

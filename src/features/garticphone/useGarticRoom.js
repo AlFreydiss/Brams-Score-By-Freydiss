@@ -152,6 +152,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     return players.map((p) => ({ ...p, connected: presence.has(String(p.user_id)) || p.connected }))
   }, [players, presence])
 
+  // connectedPlayers obtient une nouvelle référence à chaque sync presence (poll 3,5s, broadcast,
+  // postgres_changes) → le garder dans un ref évite de relancer la boucle hôte (et son setInterval)
+  // à chaque rafraîchissement, ce qui retardait/sautait l'avance « tous soumis ».
+  const connectedPlayersRef = useRef([])
+  useEffect(() => { connectedPlayersRef.current = connectedPlayers }, [connectedPlayers])
+
   const remaining = useMemo(() => {
     if (!phaseEndsAtMs) return null
     return Math.max(0, (phaseEndsAtMs - serverNowMs()) / 1000)
@@ -229,7 +235,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       if (round !== room.current_round) return
       const decision = shouldAdvance(
         { status: room.status, phaseEndsAtMs, current_round: round },
-        connectedPlayers, seats, serverNowMs(),
+        connectedPlayersRef.current, seats, serverNowMs(),
       )
       if (!decision) return
       advancingRef.current = true
@@ -244,7 +250,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     }, 2000)
     return () => { stop = true; clearInterval(loop) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHost, room?.status, room?.current_round, phaseEndsAtMs, connectedPlayers, n, code])
+  }, [isHost, room?.status, room?.current_round, phaseEndsAtMs, code])
 
   // ── Migration d'hôte : pré-filtre local, validation serveur ───────────────
   // Déclencheur local (host mort >22s, plus petit siège connecté) ; le serveur

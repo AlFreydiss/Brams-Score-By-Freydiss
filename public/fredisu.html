@@ -3699,6 +3699,19 @@ async function lbReq(qs,init){
   if(!r.ok)throw new Error('HTTP '+r.status);
   return(init&&init.method==='POST')?null:r.json();
 }
+// Soumission d'un score : passe par la RPC SECURITY DEFINER osu_submit_score
+// (valide la plausibilité côté serveur). On NE fait plus d'INSERT anon brut.
+async function lbSubmit(payload){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/osu_submit_score',{method:'POST',
+    headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+SUPABASE_ANON_KEY,
+      'Content-Type':'application/json'},
+    body:JSON.stringify({p_pseudo:payload.pseudo,p_song:payload.song,p_diff:payload.diff,
+      p_mods:payload.mods,p_score:payload.score,p_acc:payload.acc,
+      p_max_combo:payload.max_combo,p_grade:payload.grade})});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const res=await r.json();
+  if(res&&res.ok===false)throw new Error(res.error||'Score refusé');
+}
 const lbTop=()=>lbReq('?song=eq.'+encodeURIComponent(songName)+'&diff=eq.'+opt.diff+
   '&mods=eq.'+encodeURIComponent(modStr())+'&order=score.desc&limit=10');
 function lbRows(el,rows,hl){
@@ -3726,8 +3739,8 @@ $('bPub').onclick=async()=>{
   store.set('pseudo',p);lastPub=Date.now();$('bPub').disabled=true;
   pubMsg('Envoi…');
   try{
-    await lbReq('',{method:'POST',body:JSON.stringify({pseudo:p,song:songName,diff:opt.diff,
-      mods:modStr(),score,acc:+getAcc().toFixed(2),max_combo:maxCombo,grade:gradeOf()[0]})});
+    await lbSubmit({pseudo:p,song:songName,diff:opt.diff,
+      mods:modStr(),score,acc:+getAcc().toFixed(2),max_combo:maxCombo,grade:gradeOf()[0]});
     pubMsg('Score publié ! 🏆','ok');
     lbRows($('gWorld'),await lbTop(),p);
   }catch(e){pubMsg('Échec de la publication 😕','err');$('bPub').disabled=false;}
