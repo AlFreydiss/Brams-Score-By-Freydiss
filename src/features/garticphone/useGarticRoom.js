@@ -188,15 +188,15 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
 
   const setReady = useCallback(async (b) => { await apiSetReady(code, b) }, [code])
 
-  const submit = useCallback(async (content) => {
-    const out = await submitPage(code, content)
+  const submit = useCallback(async (content, round) => {
+    const out = await submitPage(code, content, Number.isInteger(round) ? round : room?.current_round)
     if (!out.error) {
       setMySubmitted(true)
       if (me?.seat != null) setSubmittedSeats((s) => new Set(s).add(me.seat))
       chRef.current?.send('player_submitted', { seat: me?.seat })
     }
     return out
-  }, [code, me])
+  }, [code, me, room?.current_round])
 
   const prevPage = useCallback(async () => fetchPrevPage(code), [code])
   const allPages = useCallback(async () => fetchAllPages(code), [code])

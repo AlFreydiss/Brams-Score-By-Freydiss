@@ -97,9 +97,15 @@ export async function fetchRoom(code)    { return (await roomState(code))?.room 
 export async function fetchPlayers(code) { return (await roomState(code))?.players ?? [] }
 
 // ── Pages (siège + round résolus serveur) ───────────────────────────────────
-export async function submitPage(code, content) {
+// round = la manche où le client a réellement produit la page. Un upload de dessin lent
+// peut se terminer APRÈS que l'hôte ait fait avancer la partie : sans ce round figé, le
+// serveur écrirait la page sur la mauvaise manche et laisserait le placeholder « Dessin
+// manquant ». gartic_submit tolère round == current_round ou current_round-1.
+export async function submitPage(code, content, round) {
   const tok = getToken(code); if (!tok) return { error: 'no_token' }
-  const { data } = await rpc('gartic_submit', { p_code: String(code), p_token: tok, p_content: content ?? '' })
+  const args = { p_code: String(code), p_token: tok, p_content: content ?? '' }
+  if (Number.isInteger(round)) args.p_round = round
+  const { data } = await rpc('gartic_submit', args)
   const out = Array.isArray(data) ? data[0] : data
   return out?.ok ? { error: null } : { error: out?.error || 'fail' }
 }

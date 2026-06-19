@@ -14,6 +14,10 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const submittedRef = useRef(false)
+  // Round figé au montage de CETTE phase dessin. L'upload R2 est lent : si l'hôte avance
+  // pendant l'envoi, le serveur écrirait la page sur la mauvaise manche → « Dessin manquant ».
+  // (DrawPhase remonte à chaque phase via key={status}, donc ce ref = la bonne manche.)
+  const drawRoundRef = useRef(room?.current_round)
 
   useEffect(() => {
     let alive = true
@@ -30,7 +34,7 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
     try {
       const url = await uploadDrawing(canvasRef.current, room.code)
       submittedRef.current = true
-      await submit(url)
+      await submit(url, drawRoundRef.current)
     } catch (e) {
       if (e?.code === 'login_required') setErr('Connecte-toi pour dessiner et envoyer.')
       else setErr('Envoi du dessin impossible. Réessaie.')
@@ -40,9 +44,10 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
     }
   }
 
-  // Auto-submit à 0s.
+  // Auto-submit ~1,5 s AVANT la fin : l'upload R2 (toBlob → presign → PUT) prend 1-3 s.
+  // Démarrer pile à 0 s perdait la course contre l'avance de l'hôte → dessin manquant.
   useEffect(() => {
-    if (remaining != null && remaining <= 0 && !submittedRef.current && !mySubmitted) doSubmit(true)
+    if (remaining != null && remaining <= 1.5 && !submittedRef.current && !busy && !mySubmitted) doSubmit(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining, mySubmitted])
 

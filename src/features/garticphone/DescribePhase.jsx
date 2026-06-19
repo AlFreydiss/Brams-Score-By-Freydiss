@@ -12,11 +12,22 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
   const [busy, setBusy] = useState(false)
   const submittedRef = useRef(false)
 
+  // Le dessin à décrire peut encore être en cours d'upload R2 quand cette phase démarre
+  // (upload lent terminé après l'avance de l'hôte). On re-tente quelques fois avant
+  // d'afficher « indisponible », au lieu de figer le placeholder sur le premier fetch vide.
   useEffect(() => {
-    let alive = true
+    let alive = true, tries = 0
     setLoadingImg(true)
-    prevPage().then((p) => { if (alive) { setImg(p?.content || ''); setLoadingImg(false) } })
-      .catch(() => { if (alive) setLoadingImg(false) })
+    const poll = () => {
+      prevPage().then((p) => {
+        if (!alive) return
+        const c = p?.content || ''
+        if (c) { setImg(c); setLoadingImg(false); return }
+        if (++tries < 6) { setTimeout(poll, 1200); return } // ~7 s de grâce
+        setImg(''); setLoadingImg(false)
+      }).catch(() => { if (alive) { if (++tries < 6) setTimeout(poll, 1200); else setLoadingImg(false) } })
+    }
+    poll()
     return () => { alive = false }
   }, [prevPage])
 
