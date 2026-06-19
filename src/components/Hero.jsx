@@ -6,7 +6,6 @@ import { fetchStats, fetchDonors, addDonor, deleteDonor } from '../lib/supabase.
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { isStaff } from '../lib/roles.js'
 import CagnotteSection from './CagnotteSection.jsx'
-import { CINE } from './home/cine.jsx'
 
 const STARS = Array.from({ length: 26 }, (_, i) => ({
   id: i,
@@ -126,11 +125,11 @@ function StatBlock({ value, label, icon, live = false, liveVal = null, sub = nul
       <div style={{ height: 56, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
         {icon && <div style={{ fontSize: 15, opacity: 0.85, marginBottom: 5 }}>{icon}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {live && <span style={{ width: 7, height: 7, borderRadius: '50%', background: CINE.live, boxShadow: `0 0 8px ${CINE.live}`, animation: 'pulse 2s infinite', flexShrink: 0 }} />}
+          {live && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ECC71', boxShadow: '0 0 8px #2ECC71', animation: 'pulse 2s infinite', flexShrink: 0 }} />}
           <div className="premium-stat-value">{shown}</div>
         </div>
       </div>
-      <div style={{ height: 2, width: '100%', background: `linear-gradient(90deg, ${CINE.gold}, ${CINE.goldHi})`, borderRadius: 2, margin: '8px 0 10px', transform: active ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)' }} />
+      <div style={{ height: 2, width: '100%', background: 'linear-gradient(90deg, #bfa46a, #d8bd7e)', borderRadius: 2, margin: '8px 0 10px', transform: active ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.9s 0.3s cubic-bezier(0.22,1,0.36,1)' }} />
       <div className="premium-stat-label">{label}</div>
       {sub && <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,.28)', marginTop: 2, letterSpacing: '.03em', lineHeight: 1.3 }}>{sub}</div>}
     </div>
@@ -204,13 +203,13 @@ function DonorsMarquee() {
           border: '1px solid rgba(191,164,106,0.18)', borderRadius: 12, background: 'rgba(191,164,106,0.04)', overflow: 'hidden' }}>
         <style>{`@keyframes donors-scroll{from{transform:translateX(0)}to{transform:translateX(-33.333%)}} .donors-track:hover{animation-play-state:paused}`}</style>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <span style={{ flexShrink: 0, padding: '9px 13px', fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: CINE.goldHi, borderRight: '1px solid rgba(191,164,106,0.18)', whiteSpace: 'nowrap' }}>💛 Top soutiens</span>
+          <span style={{ flexShrink: 0, padding: '9px 13px', fontSize: 10, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: '#d8bd7e', borderRight: '1px solid rgba(191,164,106,0.18)', whiteSpace: 'nowrap' }}>💛 Top soutiens</span>
           <div style={{ overflow: 'hidden', flex: 1 }}>
             <div className="donors-track" style={{ display: 'inline-flex', whiteSpace: 'nowrap', animation: 'donors-scroll 22s linear infinite' }}>
               {loop.map((d, i) => (
                 <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', fontSize: 12.5, color: 'rgba(255,255,255,0.6)' }}>
                   <span style={{ fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{d.name}</span>
-                  <span style={{ fontWeight: 800, color: CINE.goldHi }}>{d.amount} €</span>
+                  <span style={{ fontWeight: 800, color: '#d8bd7e' }}>{d.amount} €</span>
                   <span style={{ color: 'rgba(191,164,106,0.35)' }}>•</span>
                 </span>
               ))}
@@ -283,32 +282,23 @@ export default function Hero() {
         @keyframes heroAuroraA { 0%,100%{transform:translate(0,0) scale(1)}       50%{transform:translate(5%,3%) scale(1.14)} }
         @keyframes heroAuroraB { 0%,100%{transform:translate(0,0) scale(1.12)}    50%{transform:translate(-4%,-3%) scale(1)} }
         @keyframes heroSweep   { 0%{transform:translateX(-40%) rotate(9deg);opacity:0} 30%{opacity:.55} 65%{opacity:0} 100%{transform:translateX(120%) rotate(9deg);opacity:0} }
-        @keyframes scrollCueDot{ 0%{transform:translateY(0);opacity:0} 18%{opacity:1} 72%{opacity:1} 100%{transform:translateY(13px);opacity:0} }
-        @keyframes heroBadgeSheen{ 0%{background-position:-160% 0} 60%,100%{background-position:160% 0} }
-        @media (prefers-reduced-motion:reduce){ .hero-badge::after{animation:none!important} }
+        @keyframes scrollCueDot{ 0%{transform:translateY(0);opacity:0} 25%{opacity:1} 75%{opacity:1} 100%{transform:translateY(12px);opacity:0} }
       `}</style>
       <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {/* Aurores/balayage retirés → le hero a le MÊME fond (AMV + voile uniforme)
             que le reste de la page : plus aucune coupure hero/sections. */}
         {/* fondu haut léger (juste pour la lisibilité de la navbar) — n'écrase plus l'AMV */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '18%',
-          background: `linear-gradient(180deg, ${CINE.bg}99 0%, transparent 100%)` }} />
-        {/* Fondu bas profond → le hero fond dans les sections en dessous (raccord cinématique) */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '34%',
-          background: `linear-gradient(180deg, transparent 0%, ${CINE.bg}66 58%, ${CINE.bg} 100%)` }} />
-        {/* Vignette radiale douce → focalise le regard vers le contenu */}
-        <div style={{ position: 'absolute', inset: 0,
-          background: `radial-gradient(120% 80% at 50% 38%, transparent 52%, ${CINE.bg}55 100%)` }} />
+          background: 'linear-gradient(180deg, rgba(8,9,13,0.55) 0%, transparent 100%)' }} />
       </div>
       <StarField />
       <EmberField />
 
       {/* Indice de scroll (souris) — invite à descendre, discret et doré */}
       {!isMobile && (
-        <div aria-hidden style={{ position: 'absolute', bottom: 22, left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
-          <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.32em', textTransform: 'uppercase', color: CINE.goldDim, fontFamily: CINE.title }}>Découvrir</span>
-          <div style={{ width: 23, height: 36, borderRadius: 13, border: `1.5px solid ${CINE.goldDim}`, display: 'flex', justifyContent: 'center', paddingTop: 6, boxShadow: `0 0 16px ${CINE.bg}, inset 0 0 8px rgba(191,164,106,0.08)` }}>
-            <div style={{ width: 3, height: 7, borderRadius: 2, background: CINE.goldHi, animation: 'scrollCueDot 1.8s ease-in-out infinite' }} />
+        <div aria-hidden style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }}>
+          <div style={{ width: 23, height: 36, borderRadius: 13, border: '1.5px solid rgba(191,164,106,0.34)', display: 'flex', justifyContent: 'center', paddingTop: 6 }}>
+            <div style={{ width: 3, height: 7, borderRadius: 2, background: 'rgba(212,176,110,0.9)', animation: 'scrollCueDot 1.8s ease-in-out infinite' }} />
           </div>
         </div>
       )}
@@ -320,17 +310,11 @@ export default function Hero() {
           {/* minWidth:0 → la piste 1fr peut rétrécir sous la largeur du titre (sinon
               "Community" en grande police force ~500px et déborde le mobile). */}
           <div style={{ minWidth: 0 }}>
-            <div className="fade-up hero-badge" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(46,204,113,0.06)', border: '1px solid rgba(46,204,113,0.22)', borderRadius: 100, padding: '6px 16px', marginBottom: 30, overflow: 'hidden', backdropFilter: 'blur(6px)' }}>
-              <span style={{ position: 'relative', width: 7, height: 7, flexShrink: 0 }}>
-                <span style={{ position: 'absolute', inset: -3, borderRadius: '50%', background: CINE.live, opacity: 0.28, animation: 'pulse 2s infinite' }} />
-                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: CINE.live, boxShadow: `0 0 10px ${CINE.live}` }} />
-              </span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.68)', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+            <div className="fade-up" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(46,204,113,0.07)', border: '1px solid rgba(46,204,113,0.2)', borderRadius: 100, padding: '6px 15px', marginBottom: 30 }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2ECC71', boxShadow: '0 0 10px #2ECC71', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,.62)', fontWeight: 600, letterSpacing: '.07em', textTransform: 'uppercase' }}>
                 {stats ? `${stats.membersTracked}+ nakamas · ` : ''}Actif maintenant
               </span>
-              <span aria-hidden style={{ position: 'absolute', inset: 0, borderRadius: 100, pointerEvents: 'none',
-                background: 'linear-gradient(110deg, transparent 35%, rgba(216,189,126,0.14) 50%, transparent 65%)',
-                backgroundSize: '220% 100%', animation: 'heroBadgeSheen 5.5s ease-in-out infinite' }} />
             </div>
 
             {/* Titre — serif premium, sobre, accent or sur "Community" */}
@@ -338,11 +322,11 @@ export default function Hero() {
               margin: '0 0 18px', fontFamily: "'Clash Display', 'Syne', 'Inter', system-ui, sans-serif",
               fontSize: 'clamp(34px, 8.2vw, 108px)', lineHeight: 0.98, letterSpacing: '-0.03em', fontWeight: 700,
             }}>
-              <span style={{ display: 'block', color: CINE.ink, textShadow: '0 2px 34px rgba(0,0,0,0.5)' }}>Brams</span>
+              <span style={{ display: 'block', color: '#f4f0e6', textShadow: '0 2px 28px rgba(0,0,0,0.45)' }}>Brams</span>
               {/* paddingBottom : laisse respirer la descendante du « y » (sinon coupée) */}
               <span style={{ display: 'block', fontWeight: 700, lineHeight: 1.05, paddingBottom: '0.08em',
-                background: `linear-gradient(96deg, #e6cf94 0%, ${CINE.goldHi} 45%, #b89a5a 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                filter: 'drop-shadow(0 4px 26px rgba(191,164,106,0.22))' }}>
+                background: 'linear-gradient(96deg, #e6cf94 0%, #d8bd7e 45%, #b89a5a 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                filter: 'drop-shadow(0 3px 22px rgba(191,164,106,0.18))' }}>
                 Community
               </span>
             </h1>
@@ -402,10 +386,10 @@ export default function Hero() {
               onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.28)'; e.currentTarget.style.borderColor = 'rgba(191,164,106,0.30)' }}>
               <span style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 10px rgba(191,164,106,0.4))' }}>💛</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: CINE.title, fontSize: 18, fontWeight: 800, color: CINE.ink, letterSpacing: '-.01em' }}>Nous soutenir</div>
+                <div style={{ fontFamily: "'Clash Display','Syne','Inter',system-ui,sans-serif", fontSize: 18, fontWeight: 800, color: '#f4ecd8', letterSpacing: '-.01em' }}>Nous soutenir</div>
                 <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.62)', marginTop: 2, lineHeight: 1.45 }}>Aide Brams Community à grandir — chaque soutien compte.</div>
               </div>
-              <span style={{ flexShrink: 0, color: CINE.goldHi, fontSize: 20, fontWeight: 700 }}>→</span>
+              <span style={{ flexShrink: 0, color: '#d8bd7e', fontSize: 20, fontWeight: 700 }}>→</span>
             </Link>
           </div>
         </div>
