@@ -7,7 +7,7 @@ import { Btn, PhaseFrame, Waiting } from './ui.jsx'
 import DrawCanvas from './DrawCanvas.jsx'
 import { uploadDrawing } from '../../lib/garticUpload.js'
 
-export default function DrawPhase({ room, remaining, total, mySubmitted, prevPage, submit }) {
+export default function DrawPhase({ room, remaining, total, mySubmitted, prevPage, submit, draftKey }) {
   const canvasRef = useRef(null)
   const [prompt, setPrompt] = useState(null)
   const [loadingPrompt, setLoadingPrompt] = useState(true)
@@ -38,6 +38,7 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
       const url = await uploadDrawing(canvasRef.current, room.code)
       submittedRef.current = true
       await submit(url, drawRoundRef.current)
+      try { if (draftKey) localStorage.removeItem(draftKey) } catch {}
     } catch (e) {
       if (e?.code === 'login_required') setErr('Connecte-toi pour dessiner et envoyer.')
       else setErr('Envoi du dessin impossible. Réessaie.')
@@ -81,7 +82,7 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
           <span style={{ ...type.eyebrow, color: C.gold }}>À illustrer</span>
           <div style={{ ...type.body, color: C.text, marginTop: 4 }}>{loadingPrompt ? 'Chargement…' : (prompt || '—')}</div>
         </div>
-        <DrawCanvas canvasRef={canvasRef} disabled={busy} />
+        <DrawCanvas canvasRef={canvasRef} disabled={busy} draftKey={draftKey} />
       </PhaseFrame>
     </>
   )

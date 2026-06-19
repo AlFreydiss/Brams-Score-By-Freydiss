@@ -243,14 +243,14 @@ function Room({ code, identity, navigate, copied, onCopy }) {
 
       {!spectator && status === 'writing' && (
         myTask
-          ? <WritePhase remaining={remaining} total={total} mySubmitted={mySubmitted} submit={submit} />
+          ? <WritePhase remaining={remaining} total={total} mySubmitted={mySubmitted} submit={submit} draftKey={me && room ? `bp_d_${room.code}_w_${room.current_round}_${me.seat}` : null} />
           : <div style={{ ...panel, maxWidth: 600, margin: '0 auto', padding: 30 }}><Waiting label="Préparation de la partie…" /></div>
       )}
       {!spectator && status === 'drawing' && myTask && (
-        <DrawPhase room={room} remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} />
+        <DrawPhase room={room} remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} draftKey={me && room ? `bp_d_${room.code}_d_${room.current_round}_${me.seat}` : null} />
       )}
       {!spectator && status === 'describing' && myTask && (
-        <DescribePhase remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} />
+        <DescribePhase remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} draftKey={me && room ? `bp_d_${room.code}_s_${room.current_round}_${me.seat}` : null} />
       )}
       {!spectator && (status === 'drawing' || status === 'describing') && !myTask && (
         <div style={{ ...panel, maxWidth: 600, margin: '0 auto', padding: 30 }}><Waiting label="En attente du round suivant…" /></div>

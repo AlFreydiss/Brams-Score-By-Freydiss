@@ -5,11 +5,11 @@ import { type, fonts } from '../../styles/typography.js'
 import { C, alpha, KEYFRAMES } from './theme.js'
 import { Btn, PhaseFrame, Waiting } from './ui.jsx'
 
-export default function DescribePhase({ remaining, total, mySubmitted, prevPage, submit }) {
+export default function DescribePhase({ remaining, total, mySubmitted, prevPage, submit, draftKey }) {
   const [img, setImg] = useState(null)
   // null = on attend encore (loader bref) ; '' = grâce épuisée → fallback ; sinon = URL.
   const [loadingImg, setLoadingImg] = useState(true)
-  const [text, setText] = useState('')
+  const [text, setText] = useState(() => { try { return (draftKey && localStorage.getItem(draftKey)) || '' } catch { return '' } })
   const [busy, setBusy] = useState(false)
   const submittedRef = useRef(false)
   // remaining live, lu dans le poll sans relancer l'effet à chaque tick.
@@ -55,6 +55,12 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
     return () => { alive = false }
   }, [prevPage])
 
+  // Brouillon : persiste la légende (survit refresh/reco), purgée à la soumission.
+  useEffect(() => {
+    if (!draftKey) return
+    try { text ? localStorage.setItem(draftKey, text) : localStorage.removeItem(draftKey) } catch {}
+  }, [text, draftKey])
+
   const doSubmit = async (auto) => {
     if (submittedRef.current || busy) return
     const val = text.trim()
@@ -62,6 +68,7 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
     setBusy(true)
     submittedRef.current = true
     await submit(val || '—')
+    try { if (draftKey) localStorage.removeItem(draftKey) } catch {}
     setBusy(false)
   }
 

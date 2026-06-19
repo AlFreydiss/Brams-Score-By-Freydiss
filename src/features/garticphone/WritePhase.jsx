@@ -12,11 +12,17 @@ const IDEAS = [
   'Nami vend le Thousand Sunny aux enchères',
 ]
 
-export default function WritePhase({ remaining, total, mySubmitted, submit }) {
-  const [text, setText] = useState('')
+export default function WritePhase({ remaining, total, mySubmitted, submit, draftKey }) {
+  const [text, setText] = useState(() => { try { return (draftKey && localStorage.getItem(draftKey)) || '' } catch { return '' } })
   const [busy, setBusy] = useState(false)
   const submittedRef = useRef(false)
   const placeholder = useRef(IDEAS[Math.floor(Math.random() * IDEAS.length)])
+
+  // Brouillon : persiste le texte (survit refresh/reco), purgé à la soumission.
+  useEffect(() => {
+    if (!draftKey) return
+    try { text ? localStorage.setItem(draftKey, text) : localStorage.removeItem(draftKey) } catch {}
+  }, [text, draftKey])
 
   const doSubmit = async (auto) => {
     if (submittedRef.current || busy) return
@@ -25,6 +31,7 @@ export default function WritePhase({ remaining, total, mySubmitted, submit }) {
     setBusy(true)
     submittedRef.current = true
     await submit(val || '—')
+    try { if (draftKey) localStorage.removeItem(draftKey) } catch {}
     setBusy(false)
   }
 

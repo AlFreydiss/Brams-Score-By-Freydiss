@@ -25,7 +25,7 @@ function hexToRgba(hex) {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255, 255]
 }
 
-export default function DrawCanvas({ canvasRef, disabled }) {
+export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   const localRef = useRef(null)
   const wrapRef = useRef(null)
   const cursorRef = useRef(null)      // curseur custom (cercle taille pinceau), piloté en impératif
@@ -60,6 +60,17 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     ctxRef.current = ctx
     if (canvasRef) canvasRef.current = cv
     snapshot()
+    // Restaure un brouillon sauvegardé (reconnexion/refresh en pleine phase dessin).
+    if (draftKey) {
+      try {
+        const d = localStorage.getItem(draftKey)
+        if (d) {
+          const im = new Image()
+          im.onload = () => { try { ctx.drawImage(im, 0, 0, W, H); undoRef.current = []; redoRef.current = []; snapshot() } catch {} }
+          im.src = d
+        }
+      } catch {}
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -77,6 +88,14 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     const ctx = ctxRef.current; if (!ctx || !img) return
     ctx.putImageData(img, 0, 0)
   }, [])
+
+  // Brouillon : sauvegarde le dessin courant en localStorage → survit à un refresh/reco
+  // en pleine phase dessin (sinon canvas vierge, tout est perdu).
+  const saveDraft = useCallback(() => {
+    if (!draftKey) return
+    const cv = localRef.current; if (!cv) return
+    try { localStorage.setItem(draftKey, cv.toDataURL('image/png')) } catch {}
+  }, [draftKey])
 
   const undo = useCallback(() => {
     if (undoRef.current.length <= 1) return
@@ -96,8 +115,8 @@ export default function DrawCanvas({ canvasRef, disabled }) {
   const clearAll = useCallback(() => {
     const ctx = ctxRef.current; if (!ctx) return
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H)
-    snapshot()
-  }, [snapshot])
+    snapshot(); saveDraft()
+  }, [snapshot, saveDraft])
 
   // Coordonnées canvas depuis un pointer event.
   const pos = (e) => {
@@ -170,7 +189,7 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     if (disabled) return
     e.preventDefault()
     const p = pos(e)
-    if (tool === 'fill') { floodFill(p.x, p.y, color); snapshot(); return }
+    if (tool === 'fill') { floodFill(p.x, p.y, color); snapshot(); saveDraft(); return }
     if (tool === 'eyedropper') { pickColor(p.x, p.y); return }
     const ctx = ctxRef.current
     drawingRef.current = true
@@ -210,7 +229,7 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     drawingRef.current = false
     lastRef.current = null
     lastMidRef.current = null
-    snapshot()
+    snapshot(); saveDraft()
   }
 
   // Phase dessin active → coupe la traînée de curseur + le curseur custom GLOBAL du site
