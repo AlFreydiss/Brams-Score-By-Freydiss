@@ -1527,9 +1527,13 @@ function genMap(){
   seedRng((window.__duo&&window.__duo.active&&window.__duo.seed!=null)
     ? (window.__duo.seed>>>0)
     : (Math.floor(analysis.dur*1000)+opt.diff*7777+Math.round(R)*31));
-  // Bornes du playfield 4:3 (512×384 osu!px scalé/centré) — la génération reste en px écran
-  const padS=Math.max(PF.ox+R+6,R+42),padT=Math.max(PF.oy+R+6,95);
-  const padB=Math.max(H-(PF.oy+OSU_H*PF.s)+R+6,R+58);
+  // Génération en COORDONNÉES OSU (0..512 × 0..384) puis projection écran via pfx/pfy à
+  // l'assignation : 2 clients de tailles d'écran différentes calculent des coords osu IDENTIQUES
+  // (seed partagé) → le curseur réseau (osu) tombe exactement sur les notes. Le rendu et tryHit
+  // continuent de lire o.x/o.y et o.path en px ÉCRAN (projetés ici). Ro = rayon en osu!px.
+  const Ro=54.4-4.48*CS_EFF;
+  // Bornes du playfield osu! : marges = rayon + petite marge osu, top/bas un peu plus aérés
+  const padS=Ro+16,padT=Ro+8,padB=Ro+22;
   // Sélection rythmique : dans chaque fenêtre on garde l'onset le plus FORT
   // (pas le premier arrivé) → la map colle bien mieux aux accents de la musique.
   // courte respiration ENTRE deux phrases chantées (< 3 s) : on n'y met rien.
@@ -1566,7 +1570,7 @@ function genMap(){
   }
   if(sel.length>1300)sel.length=1300;
   const objs=[];
-  let num=1,ci=0,x=W/2,y=H/2,ang=rng()*PI2,lastSpin=-99999,sCurve=0;
+  let num=1,ci=0,x=OSU_W/2,y=OSU_H/2,ang=rng()*PI2,lastSpin=-99999,sCurve=0;
   // état de FLOW : sens de rotation courant + motif géométrique en cours (kiai)
   let flowSign=rng()<.5?-1:1,patLeft=0,patTurn=0,patSign=1,patDist=0;
   // combos calés sur les MESURES (4 temps) comme les vraies maps, en plus des longs trous
@@ -1584,26 +1588,26 @@ function genMap(){
     if(wantSpin){
       const dur=Math.min(4200,gap-900);
       objs.push({k:2,t:b.t,dur,rot:0,la:null,vr:0,rpm:0,bonus:0,done:false});
-      lastSpin=b.t+dur;x=W/2;y=H/2;num=1;ci=(ci+1)%CLR.length;
+      lastSpin=b.t+dur;x=OSU_W/2;y=OSU_H/2;num=1;ci=(ci+1)%CLR.length;
       continue;
     }
     const stream=gap<215;
     const spc=d.spc*(kiai?1.25:1); // REFRAIN : jumps plus larges (mais ça reste lisible)
     let dist,inPat=false;
     if(stream){
-      dist=clamp(gap*.38*spc,26,72);
+      dist=clamp(gap*.142*spc,10,27);              // osu!px (≈ ancien 26..72 px écran ÷ s≈2.67)
       if(Math.abs(sCurve)<.01)sCurve=(rng()<.5?-1:1)*.24;
       ang+=sCurve+(rng()-.5)*.3;
     }else{
       sCurve=0;
       // espacement = temps × intensité × refrain (vélocité plus haute au refrain)
-      dist=clamp(gap*.5*spc*(.7+(b.s||1)*.22)*(b.b===2?1.18:b.b?1.08:1)*(kiai?1.18:1),70,kiai?360:300);      // Montée de difficulté SPATIALE progressive : les jumps s'élargissent doucement
+      dist=clamp(gap*.187*spc*(.7+(b.s||1)*.22)*(b.b===2?1.18:b.b?1.08:1)*(kiai?1.18:1),26,kiai?135:112); // osu!px (≈ ancien px écran ÷ s≈2.67)      // Montée de difficulté SPATIALE progressive : les jumps s'élargissent doucement
       // au fil du morceau (ramp lisible, plus marquée en diff élevée). Pur x/y : aucun
       // rng() consommé ici → le flux RNG, les .t et la sélection des beats sont intacts.
       {const prog=sel.length>1?i/(sel.length-1):0;
        const ramp=1+prog*(.06+opt.diff*.045);                 // ~+6% (Facile) … ~+33% (Cauchemar) en fin de map
        const intens=.85+((b.s||1)>1.6?.18:0)+((mid||0)>(bass||0)?.05:0); // accents/voix portés → un peu plus d'air
-       dist=clamp(dist*ramp*intens,70,kiai?380:312);}
+       dist=clamp(dist*ramp*intens,26,kiai?142:117);}
       if(patLeft>0){
         // au cœur d'un motif géométrique : angle ET distance fixes → forme nette
         inPat=true;ang+=patSign*patTurn;patLeft--;if(patDist)dist=patDist;
@@ -1620,21 +1624,21 @@ function genMap(){
       }
     }
     let tx=x+Math.cos(ang)*dist,ty=y+Math.sin(ang)*dist,tr=0;
-    while((tx<padS||tx>W-padS||ty<padT||ty>H-padB)&&tr++<14){
+    while((tx<padS||tx>OSU_W-padS||ty<padT||ty>OSU_H-padB)&&tr++<14){
       ang+=.9;sCurve=-sCurve;patLeft=0; // un rebond de bord casse le motif en cours
       tx=x+Math.cos(ang)*dist;ty=y+Math.sin(ang)*dist;}
-    tx=clamp(tx,padS,W-padS);ty=clamp(ty,padT,H-padB);
+    tx=clamp(tx,padS,OSU_W-padS);ty=clamp(ty,padT,OSU_H-padB);
     // REFRAIN : jumps miroir ponctuels (saute à l'opposé) — assez rares pour rester lisible
     if(kiai&&!stream&&!inPat&&rng()<(opt.diff>=2?.22:.14)){
-      tx=clamp(W-tx+(rng()-.5)*60,padS,W-padS);
-      ty=clamp(H-ty+(rng()-.5)*45,padT,H-padB);
+      tx=clamp(OSU_W-tx+(rng()-.5)*22,padS,OSU_W-padS);   // miroir en osu!px (≈ ancien ±60/45 px ÷ s)
+      ty=clamp(OSU_H-ty+(rng()-.5)*17,padT,OSU_H-padB);
       ang=Math.atan2(ty-y,tx-x);
     }
     // anti-chevauchement : une note ne doit pas apparaître SUR une autre encore
     // affichée (approach en cours, t à moins de PRE). On fait PIVOTER la direction du
     // jump autour de la note précédente (distance gardée) jusqu'à une position libre.
     {
-      const minSep=R*2.05;
+      const minSep=Ro*2.05; // osu!px : objs.x/y restent en osu pendant la génération
       // ignore le voisin de chaîne immédiat (< 215 ms = stream/rythme serré voulu),
       // mais empêche de tomber sur une note plus ancienne encore à l'écran.
       const clear=(qx,qy)=>{
@@ -1653,8 +1657,8 @@ function genMap(){
         for(const dm of[1,.72,1.3,.55]){
           for(let s=1;s<=18&&!found;s++){
             const aa=ang+(s&1?1:-1)*.38*Math.ceil(s/2);
-            const dd=clamp(dist*dm,70,W);
-            const qx=clamp(x+Math.cos(aa)*dd,padS,W-padS),qy=clamp(y+Math.sin(aa)*dd,padT,H-padB);
+            const dd=clamp(dist*dm,26,OSU_W);
+            const qx=clamp(x+Math.cos(aa)*dd,padS,OSU_W-padS),qy=clamp(y+Math.sin(aa)*dd,padT,OSU_H-padB);
             if(clear(qx,qy)){tx=qx;ty=qy;ang=aa;found=true;}
           }
           if(found)break;
@@ -1666,8 +1670,8 @@ function genMap(){
             const dd=Math.hypot(tx-o2.x,ty-o2.y);if(dd<best){best=dd;nx2=o2.x;ny2=o2.y;}
           }
           let pa=Math.atan2(ty-ny2,tx-nx2);if(best<1e-2||!isFinite(pa))pa=ang+1.7;
-          tx=clamp(nx2+Math.cos(pa)*minSep,padS,W-padS);
-          ty=clamp(ny2+Math.sin(pa)*minSep,padT,H-padB);
+          tx=clamp(nx2+Math.cos(pa)*minSep,padS,OSU_W-padS);
+          ty=clamp(ny2+Math.sin(pa)*minSep,padT,OSU_H-padB);
         }
       }
       ang=Math.atan2(ty-y,tx-x);
@@ -1687,10 +1691,10 @@ function genMap(){
       const half=analysis.bpm?30000/analysis.bpm:0;
       if(half)sdur=clamp(Math.max(half,Math.round(sdur/half)*half),180,rep?700:1600);
       if((rep+1)*sdur>gap*.92)sdur=clamp(gap*.85/(rep+1),140,sdur); // jamais déborder sur la note suivante
-      const slen=clamp(sdur*.32*spc+40,90,440);
+      const slen=clamp(sdur*.12*spc+15,34,165);   // osu!px (≈ ancien 90..440 px écran ÷ s≈2.67)
       const sa=ang+(rng()-.5)*1.2;
-      const ex=clamp(tx+Math.cos(sa)*slen,padS,W-padS);
-      const ey=clamp(ty+Math.sin(sa)*slen,padT,H-padB);
+      const ex=clamp(tx+Math.cos(sa)*slen,padS,OSU_W-padS);
+      const ey=clamp(ty+Math.sin(sa)*slen,padT,OSU_H-padB);
       objs.push({k:1,t:b.t,dur:sdur,span:sdur*(rep+1),rep,x:tx,y:ty,num,ci,
         path:mkPath(tx,ty,ex,ey,((rng()-.5)*1.1+(((ang%PI2)+PI2)%PI2<Math.PI?.28:-.28))*slen),
         hh:false,hj:false,ft:0,fEnd:false,done:false,tick:0,bn:0,kj:kiai?1:0});
@@ -1705,7 +1709,7 @@ function genMap(){
   // sont décalées en ESCALIER vers le haut-gauche (≈ rayon/10 par niveau) pour qu'on les
   // distingue. PASSE PUREMENT POST-GÉNÉRATION : ne lit que .t et les positions de base ; ne
   // touche NI .t, NI le seed, NI la sélection des beats, NI le flux rng() (zéro rng consommé).
-  const stackOff=R*.1,stackDist=R*.1; // seuil "même position" + offset par niveau (signature osu!)
+  const stackOff=Ro*.1,stackDist=Ro*.1; // osu!px : seuil "même position" + offset par niveau (signature osu!)
   // positions de base figées AVANT tout décalage : le niveau de stack d'une note se calcule
   // sur les coords d'origine des notes précédentes (pas sur celles déjà décalées) → l'escalier
   // reste régulier même quand 3-4 notes s'empilent (comptage de tout le voisinage, pas juste i-1).
@@ -1719,9 +1723,24 @@ function genMap(){
     }
     if(!lvl)continue;
     o.stack=lvl;
-    const dx=stackOff*lvl,dy=stackOff*lvl; // haut-gauche
-    o.x=clamp(o.x-dx,R+2,W-R-2);o.y=clamp(o.y-dy,R+2,H-R-2);
+    const dx=stackOff*lvl,dy=stackOff*lvl; // haut-gauche (osu!px)
+    o.x=clamp(o.x-dx,Ro+2,OSU_W-Ro-2);o.y=clamp(o.y-dy,Ro+2,OSU_H-Ro-2);
     if(o.k===1&&o.path)o.path.pts.forEach(pt=>{pt.x-=dx;pt.y-=dy;});
+  }
+  // PROJECTION FINALE osu!→écran : jusqu'ici tout est en coords osu (identiques sur les 2 clients
+  // pour un seed partagé). On projette maintenant via pfx/pfy pour que le RENDU et tryHit lisent
+  // o.x/o.y et o.path en px ÉCRAN, exactement comme avant. Zéro rng() ici.
+  for(const o of objs){
+    if(o.k===2)continue;                 // spinner : centré à W/2,H/2 au rendu, pas de coords stockées
+    o.x=pfx(o.x);o.y=pfy(o.y);
+    if(o.k===1&&o.path){
+      const pts=o.path.pts;
+      for(const pt of pts){pt.x=pfx(pt.x);pt.y=pfy(pt.y);}
+      // recalcule cum/len en px écran (ptAt/vitesse de la bille lisent o.path.len/cum)
+      let len=0;o.path.cum[0]=0;
+      for(let i=1;i<pts.length;i++){len+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);o.path.cum[i]=len;}
+      o.path.len=len;
+    }
   }
   return objs;
 }
@@ -4325,6 +4344,9 @@ requestAnimationFrame(loop);
     }catch(e){ msg('Erreur : '+(e.message||e),false) }
   }
   function leaveRoom(){
+    // Réinitialise l'état duo : sinon D.active resté true verrouille TOUT input solo
+    // (duoSpectating() gate les listeners) lors d'une partie solo ultérieure.
+    D.active=false; D._finished=false; try{showFx&&showFx(false)}catch(e){}
     try{ if(D.chan) D.sb.removeChannel(D.chan) }catch(e){}
     if(D.room&&D.host){ try{ D.sb.from('osu_rooms').delete().eq('code',D.room.code) }catch(e){} }
     D.chan=null; D.room=null; D.host=false; D.peers={}
@@ -4371,9 +4393,14 @@ requestAnimationFrame(loop);
   D.hostEntry=null; D.hostDiff=null;
 
   const myParity=()=>D.host?0:1; // tranche 0 = hôte, tranche 1 = invité, alterne
+  // Horloge de PROPRIÉTÉ de tranche SANS opt.offset : opt.offset est le slider audio PRIVÉ de
+  // chaque joueur. L'utiliser pour décider qui possède la tranche fait diverger les 2 clients
+  // près des frontières (les deux se croient owner / aucun → freeze input ou double-hit).
+  // opt.offset reste sur l'horloge audio/jugement (elapsed()) uniquement.
+  const duoElapsed=()=>(AC.currentTime-t0ctx)*1000*RATE;
   function iAmOwnerNow(){
     if(typeof state==='undefined'||state!=='playing'||!D.active)return false;
-    return (Math.floor(Math.max(0,elapsed())/D.segMs)%2)===myParity();
+    return (Math.floor(Math.max(0,duoElapsed())/D.segMs)%2)===myParity();
   }
   D.iAmOwner=iAmOwnerNow;
   const safeSend=(ev,p)=>{ try{ if(typeof D.send==='function') D.send(ev,p); }catch(e){} };
@@ -4536,8 +4563,8 @@ requestAnimationFrame(loop);
       D.active=false; showFx(false); return;
     }
     if(state!=='playing'){ if(hud)hud.style.display='none'; return; }
-    const el=elapsed();
-    const ownerParity=Math.floor(Math.max(0,el)/D.segMs)%2;
+    const el=elapsed();                         // horloge audio/jugement (avec opt.offset) → HUD
+    const ownerParity=Math.floor(Math.max(0,duoElapsed())/D.segMs)%2; // propriété : SANS opt.offset
     const amOwner=ownerParity===myParity();
     if(D.lastOwner!==ownerParity){
       D.lastOwner=ownerParity; flashTurn(amOwner);
