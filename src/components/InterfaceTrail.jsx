@@ -43,6 +43,7 @@ export default function InterfaceTrail({ config, isGlobal = false }) {
     let last = null
     const onMove = (e) => {
       if (isGlobal && document.body.dataset.trailPreview === '1') return
+      if (isGlobal && document.body.dataset.drawOpen === 'true') return // pas d'effet pendant le dessin Brams Phone
       const el = document.elementFromPoint(e.clientX, e.clientY)
       if (!el || el === last) return
       last = el

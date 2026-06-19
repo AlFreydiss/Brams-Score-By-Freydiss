@@ -42,7 +42,8 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
 
   const settings = () => {
     const d = DURATION_PRESETS.find((x) => x.id === preset) || DURATION_PRESETS[1]
-    return { mode: 'classique', rounds: players.length, phaseDurations: { writing: d.writing, drawing: d.drawing, describing: d.describing } }
+    // n = nombre de sièges, figé au start (base stable de la rotation des carnets côté client/serveur).
+    return { mode: 'classique', n: players.length, rounds: players.length, phaseDurations: { writing: d.writing, drawing: d.drawing, describing: d.describing } }
   }
 
   return (

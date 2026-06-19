@@ -199,8 +199,17 @@ function CustomCursorOverlay({ id, emoji, glow }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export function GlobalCursorLayer() {
   const [equipped, setEquipped] = useState(null)
+  // Phase dessin Brams Phone : on rend le curseur natif au canvas (pas de curseur custom/none).
+  const [drawOpen, setDrawOpen] = useState(() => typeof document !== 'undefined' && document.body.dataset.drawOpen === 'true')
+  useEffect(() => {
+    const upd = () => setDrawOpen(document.body.dataset.drawOpen === 'true')
+    window.addEventListener('bp-draw-toggle', upd)
+    return () => window.removeEventListener('bp-draw-toggle', upd)
+  }, [])
   useEffect(() => {
     const read = () => {
+      // En dessin : ne touche pas au curseur (laisse le natif/canvas), pas d'overlay.
+      if (document.body.dataset.drawOpen === 'true') { document.body.style.cursor = ''; return }
       let payload = null
       try { const raw = localStorage.getItem(CURSOR_KEY); payload = raw ? JSON.parse(raw) : null } catch {}
       setEquipped(payload)
@@ -211,10 +220,11 @@ export function GlobalCursorLayer() {
     }
     read()
     window.addEventListener(CURSOR_EVENT, read)
+    window.addEventListener('bp-draw-toggle', read) // ré-applique en entrant/sortant du dessin
     window.addEventListener('storage', read) // sync entre onglets
-    return () => { window.removeEventListener(CURSOR_EVENT, read); window.removeEventListener('storage', read) }
+    return () => { window.removeEventListener(CURSOR_EVENT, read); window.removeEventListener('bp-draw-toggle', read); window.removeEventListener('storage', read) }
   }, [])
-  if (!equipped || !equipped.animated) return null
+  if (drawOpen || !equipped || !equipped.animated) return null
   return <CustomCursorOverlay id={equipped.id} emoji={equipped.emoji} glow={equipped.glow} />
 }
 

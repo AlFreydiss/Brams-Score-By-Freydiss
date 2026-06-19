@@ -213,6 +213,14 @@ export default function DrawCanvas({ canvasRef, disabled }) {
     snapshot()
   }
 
+  // Phase dessin active → coupe la traînée de curseur + le curseur custom GLOBAL du site
+  // (calques fixes par-dessus le canvas = "relou" + imprécis). Même mécanisme que storyOpen.
+  useEffect(() => {
+    document.body.dataset.drawOpen = 'true'
+    window.dispatchEvent(new Event('bp-draw-toggle'))
+    return () => { delete document.body.dataset.drawOpen; window.dispatchEvent(new Event('bp-draw-toggle')) }
+  }, [])
+
   // Clavier : Ctrl+Z / Ctrl+Y.
   useEffect(() => {
     const onKey = (e) => {

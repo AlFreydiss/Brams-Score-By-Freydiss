@@ -22,19 +22,22 @@ export function guestId() {
   } catch { return 'guest_' + Math.floor(Math.random() * 1e12) }
 }
 
-// ── Token secret par salon (mémoire + sessionStorage pour la reconnexion) ────
+// ── Token secret par salon (mémoire + localStorage pour la reconnexion) ──────
+// localStorage (pas sessionStorage) : survit à la fermeture d'onglet et se partage entre
+// onglets du même salon — sinon rouvrir le salon dans un nouvel onglet perdait le token →
+// le joueur était traité en spectateur (perte de siège). Aligné sur la persistance du guestId.
 const _tokens = new Map() // code -> secret_token
 function tokenKey(code) { return 'bp_token_' + String(code).toUpperCase() }
 export function getToken(code) {
   const c = String(code).toUpperCase()
   if (_tokens.has(c)) return _tokens.get(c)
-  try { const t = sessionStorage.getItem(tokenKey(c)); if (t) { _tokens.set(c, t); return t } } catch {}
+  try { const t = localStorage.getItem(tokenKey(c)) || sessionStorage.getItem(tokenKey(c)); if (t) { _tokens.set(c, t); return t } } catch {}
   return null
 }
 function setToken(code, tok) {
   const c = String(code).toUpperCase()
   _tokens.set(c, tok)
-  try { sessionStorage.setItem(tokenKey(c), tok) } catch {}
+  try { localStorage.setItem(tokenKey(c), tok) } catch {}
 }
 
 // REST direct borné 10s (le client supabase-js peut hang sur le verrou d'auth).

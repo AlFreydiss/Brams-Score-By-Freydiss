@@ -141,7 +141,11 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   // ── Dérivés ───────────────────────────────────────────────────────────────
   const serverNowMs = () => Date.now() + offsetRef.current
   const me = useMemo(() => players.find((p) => String(p.user_id) === String(userId)) || null, [players, userId])
-  const n = room?.settings?.n || players.length || 0
+  // n (base de la rotation des carnets) DOIT être figé au démarrage : sinon, dès qu'un joueur
+  // part, players.length chute → bookForSeat/seatTask se désynchronisent → des sièges pointent
+  // vers une page inexistante (écran vide "aucune phrase"). settings.rounds est gelé au start
+  // (= nombre de sièges) → on s'en sert comme n stable. Fallback live uniquement hors-jeu.
+  const n = room?.settings?.n || room?.settings?.rounds || players.length || 0
   const isHost = !!me?.is_host
   const phaseEndsAtMs = room?.phase_ends_at ? new Date(room.phase_ends_at).getTime() : null
 
@@ -166,6 +170,10 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
 
   const myTask = useMemo(() => {
     if (!me || me.seat == null) return null
+    // n invalide (0/NaN) ou siège hors-borne (sièges non-contigus, ex. trou laissé par un
+    // départ) → seatTask donnerait une rotation cassée. On rend null proprement (écran d'attente)
+    // au lieu d'un carnet fantôme.
+    if (!n || me.seat >= n) return null
     if (!['writing', 'drawing', 'describing'].includes(room?.status)) return null
     return seatTask(me.seat, room.current_round, n)
   }, [me, room?.status, room?.current_round, n])
@@ -180,6 +188,25 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     setSubmittedSeats(new Set())
     setMySubmitted(false)
   }, [room?.current_round, room?.status])
+
+  // Réhydrate « j'ai déjà soumis ce round » après reconnexion/refresh : mySubmitted est local
+  // (remis à false ci-dessus), donc au retour en pleine partie le joueur revoyait sa tâche
+  // déjà faite (canvas/textarea vierge) au lieu de l'écran d'attente — et pouvait re-soumettre.
+  // submittedSeats(code) est dérivé serveur (déjà exposé, aucune migration).
+  useEffect(() => {
+    if (!me || me.seat == null || spectator) return
+    if (!['writing', 'drawing', 'describing'].includes(room?.status)) return
+    let alive = true
+    apiSubmittedSeats(code).then(({ round, seats }) => {
+      if (!alive) return
+      if (round === room.current_round && seats?.has?.(me.seat)) {
+        setMySubmitted(true)
+        setSubmittedSeats((s) => new Set(s).add(me.seat))
+      }
+    }).catch(() => {})
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, me?.seat, room?.status, room?.current_round, spectator])
 
   // ── Actions exposées (token implicite via le code) ────────────────────────
   const start = useCallback(async (settings) => {
