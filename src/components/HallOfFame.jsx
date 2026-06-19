@@ -1,39 +1,37 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  CINE, GOLD_GRAD, CineStyles, Reveal, CineSection, SectionHead,
-} from './home/cine.jsx'
+import { useInView } from '../hooks/useInView.js'
 
 const LEGENDS = [
   {
-    name: 'Brams', pseudo: 'Le Fondateur', icon: '👑',
+    name: 'Brams', pseudo: 'Le Fondateur', icon: '👑', color: '#ffd700',
     prime: '5 000 000 000 ฿',
     desc: 'Fondateur de Brams Community. Créateur du serveur, à l\'origine de toute l\'aventure One Piece francophone.',
     fruit: 'Fruit du Roi',
     title: 'ROI DES PIRATES',
   },
   {
-    name: 'Freydiss', pseudo: 'L\'Architecte', icon: '⚙️',
+    name: 'Freydiss', pseudo: 'L\'Architecte', icon: '⚙️', color: '#9b59b6',
     prime: '3 200 000 000 ฿',
     desc: 'Développeur et admin du bot Brams Score. Bâtisseur de l\'empire technologique de la communauté.',
     fruit: 'Fruit du Code',
     title: 'DÉVELOPPEUR EN CHEF',
   },
   {
-    name: 'Benactief', pseudo: 'Le Fantôme', icon: '👻',
+    name: 'Benactief', pseudo: 'Le Fantôme', icon: '👻', color: '#74b9ff',
     prime: '2 100 000 000 ฿',
     desc: 'Maître du serveur dans l\'ombre. Sa présence vocale fait trembler les Yonkous.',
     fruit: 'Fruit de l\'Ombre',
     title: 'MAÎTRE DU SILENCE',
   },
   {
-    name: 'Berat', pseudo: 'Le Stratège', icon: '🗺️',
+    name: 'Berat', pseudo: 'Le Stratège', icon: '🗺️', color: '#00cec9',
     prime: '1 800 000 000 ฿',
     desc: 'Gestionnaire des événements. Chaque tournoi, chaque combat — c\'est son œuvre.',
     fruit: 'Fruit du Plan',
     title: 'MAÎTRE DES TOURNOIS',
   },
   {
-    name: '???', pseudo: 'Le Prochain Roi ?', icon: '❓',
+    name: '???', pseudo: 'Le Prochain Roi ?', icon: '❓', color: '#e0524a',
     prime: '??? ฿',
     desc: 'Le prochain Roi des Pirates est peut-être toi. Rejoins le Grand Line et prouve ta valeur.',
     fruit: '???',
@@ -41,132 +39,11 @@ const LEGENDS = [
   },
 ]
 
-// ── Carte « trône » : la légende mise en avant, encadrement or raffiné. ──────────
-function ThroneCard({ legend, animating }) {
-  return (
-    <div style={{
-      opacity: animating ? 0 : 1,
-      transform: animating ? 'scale(0.985) translateY(10px)' : 'scale(1) translateY(0)',
-      transition: 'opacity .35s cubic-bezier(.22,1,.36,1), transform .35s cubic-bezier(.22,1,.36,1)',
-      position: 'relative', borderRadius: 22, overflow: 'hidden',
-      background: `linear-gradient(150deg, ${CINE.panel2}, rgba(191,164,106,0.05))`,
-      border: `1px solid ${CINE.goldDim}`,
-      boxShadow: '0 28px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
-    }}>
-      {/* filet or supérieur */}
-      <div aria-hidden style={{ height: 2, background: `linear-gradient(90deg, transparent, ${CINE.gold}, transparent)` }} />
-
-      <div style={{ padding: 'clamp(28px, 4vw, 48px)' }}>
-        <span style={{
-          display: 'inline-block', fontFamily: CINE.title, fontSize: 11, fontWeight: 700,
-          letterSpacing: '.2em', textTransform: 'uppercase', color: CINE.gold,
-          background: 'rgba(191,164,106,0.1)', border: `1px solid ${CINE.goldDim}`,
-          borderRadius: 999, padding: '6px 16px', marginBottom: 28,
-        }}>★ {legend.title}</span>
-
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 'clamp(24px, 4vw, 44px)',
-          alignItems: 'center',
-        }}>
-          {/* Avatar + prime */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-            <div style={{
-              width: 'clamp(110px, 14vw, 150px)', height: 'clamp(110px, 14vw, 150px)', borderRadius: '50%',
-              background: 'radial-gradient(circle at 35% 30%, rgba(216,189,126,0.22), rgba(0,0,0,0.4))',
-              border: `2px solid ${CINE.gold}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'clamp(48px, 7vw, 70px)',
-              boxShadow: '0 0 0 6px rgba(191,164,106,0.08), inset 0 2px 10px rgba(0,0,0,0.4)',
-            }}>{legend.icon}</div>
-
-            <div style={{
-              background: 'rgba(0,0,0,0.35)', border: `1px solid ${CINE.hair}`,
-              borderRadius: 10, padding: '8px 18px', textAlign: 'center', minWidth: 130,
-            }}>
-              <div style={{ fontSize: 9, color: CINE.faint, letterSpacing: '.14em', marginBottom: 3 }}>PRIME</div>
-              <div style={{ fontFamily: 'var(--pirate)', fontSize: 15, fontWeight: 800, color: CINE.goldHi }}>{legend.prime}</div>
-            </div>
-          </div>
-
-          {/* Identité */}
-          <div>
-            <div style={{ fontFamily: 'var(--pirate)', fontSize: 'clamp(34px, 5vw, 54px)', color: CINE.ink, lineHeight: 1, marginBottom: 8 }}>{legend.name}</div>
-            <div style={{ fontFamily: CINE.title, fontSize: 12, color: CINE.gold, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 18 }}>
-              🏴‍☠️ {legend.pseudo}
-            </div>
-            <p style={{ fontFamily: CINE.body, fontSize: 'clamp(14px, 1.4vw, 16px)', color: CINE.inkSoft, lineHeight: 1.75, marginBottom: 22, maxWidth: 520 }}>{legend.desc}</p>
-
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: 'rgba(191,164,106,0.06)', border: `1px solid ${CINE.hair}`,
-              borderRadius: 10, padding: '9px 16px',
-            }}>
-              <span style={{ fontSize: 18 }}>🍎</span>
-              <div>
-                <div style={{ fontSize: 9, color: CINE.faint, letterSpacing: '.1em', marginBottom: 1 }}>FRUIT DU DÉMON</div>
-                <div style={{ fontFamily: CINE.title, fontSize: 13, fontWeight: 700, color: CINE.goldHi }}>{legend.fruit}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div aria-hidden style={{ height: 1, background: `linear-gradient(90deg, transparent, ${CINE.goldDim}, transparent)`, opacity: 0.5 }} />
-    </div>
-  )
-}
-
-// ── Vignette galerie : un champion du mur, cliquable pour le mettre sur le trône. ─
-function ChampCard({ legend, active, onSelect }) {
-  const [h, setH] = useState(false)
-  return (
-    <button
-      onClick={onSelect}
-      onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{
-        textAlign: 'left', cursor: 'pointer', width: '100%',
-        display: 'flex', flexDirection: 'column', gap: 12,
-        borderRadius: 16, padding: 18,
-        background: active ? CINE.panel2 : (h ? CINE.panel2 : CINE.panel),
-        border: `1px solid ${active ? CINE.gold : (h ? CINE.hairTop : CINE.hair)}`,
-        boxShadow: active
-          ? '0 18px 50px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(191,164,106,0.12)'
-          : (h ? '0 18px 50px rgba(0,0,0,0.45)' : '0 6px 24px rgba(0,0,0,0.25)'),
-        transform: h || active ? 'translateY(-4px)' : 'none',
-        transition: 'transform .35s cubic-bezier(.22,1,.36,1), background .3s, border-color .3s, box-shadow .35s',
-      }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
-          background: 'radial-gradient(circle at 35% 30%, rgba(216,189,126,0.18), rgba(0,0,0,0.35))',
-          border: `1px solid ${active ? CINE.gold : CINE.goldDim}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-        }}>{legend.icon}</div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--pirate)', fontSize: 22, color: CINE.ink, lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{legend.name}</div>
-          <div style={{ fontFamily: CINE.title, fontSize: 10.5, color: CINE.gold, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{legend.pseudo}</div>
-        </div>
-      </div>
-
-      <div style={{
-        fontFamily: CINE.title, fontSize: 9.5, fontWeight: 700, letterSpacing: '.12em',
-        color: active ? CINE.goldHi : CINE.muted, textTransform: 'uppercase',
-        background: 'rgba(191,164,106,0.06)', border: `1px solid ${CINE.hair}`,
-        borderRadius: 6, padding: '5px 10px', alignSelf: 'flex-start',
-      }}>{legend.title}</div>
-
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginTop: 'auto' }}>
-        <span style={{ fontSize: 9, color: CINE.faint, letterSpacing: '.12em' }}>PRIME</span>
-        <span style={{ fontFamily: 'var(--pirate)', fontSize: 13, fontWeight: 800, color: CINE.goldHi, whiteSpace: 'nowrap' }}>{legend.prime}</span>
-      </div>
-    </button>
-  )
-}
-
 export default function HallOfFame() {
   const [active, setActive] = useState(0)
   const [animating, setAnimating] = useState(false)
   const intervalRef = useRef(null)
+  const [ref, inView] = useInView()
 
   const go = (dir) => {
     if (animating) return
@@ -193,73 +70,150 @@ export default function HallOfFame() {
   const legend = LEGENDS[active]
 
   return (
-    <CineSection id="hall-of-fame">
-      <CineStyles />
+    <section id="hall-of-fame" style={{ padding: '110px 0', position: 'relative', overflow: 'hidden' }} ref={ref}>
+      {/* Fond radial doré */}
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, rgba(255,215,0,0.05) 0%, transparent 65%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '20%', left: '5%', width: 200, height: 200, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,215,0,0.04), transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '20%', right: '5%', width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle, rgba(155,89,182,0.05), transparent 70%)', pointerEvents: 'none' }} />
 
-      {/* halo or diffus, pleine largeur, sans glow agressif */}
-      <div aria-hidden style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-        background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(191,164,106,0.06), transparent 70%)',
-      }} />
+      <div className="container">
+        <div className={`reveal ${inView ? 'visible' : ''}`} style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div className="label" style={{ color: '#ffd700' }}>👑 Légendes</div>
+          <h2 className="h2" style={{ textAlign: 'center' }}>Hall of Fame</h2>
+          <p className="sub" style={{ textAlign: 'center', margin: '0 auto' }}>Les Rois des Pirates qui ont marqué Brams Community à jamais</p>
+        </div>
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <SectionHead
-          eyebrow="★ Légendes"
-          title="Hall of"
-          accent="Fame"
-          lead="Le mur des champions de Brams Community — les Rois des Pirates qui ont marqué le serveur à jamais."
-          align="center"
-        />
-
-        {/* Trône : la légende mise en avant */}
-        <Reveal delay={140} style={{ marginTop: 'clamp(40px, 6vw, 64px)' }}>
-          <ThroneCard legend={legend} animating={animating} />
-        </Reveal>
-
-        {/* Contrôles du carousel — flèches + points */}
-        <Reveal delay={180} style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, marginTop: 28,
-        }}>
-          <NavArrow dir="←" onClick={() => { clearInterval(intervalRef.current); go(-1); intervalRef.current = setInterval(() => go(1), 5500) }} />
-          <div style={{ display: 'flex', gap: 8 }}>
-            {LEGENDS.map((l, i) => (
-              <button key={i} aria-label={`Voir ${l.name}`} onClick={() => goTo(i)} style={{
-                width: i === active ? 30 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer',
-                background: i === active ? GOLD_GRAD : CINE.hairTop,
-                transition: 'all 0.35s cubic-bezier(.22,1,.36,1)', padding: 0,
+        <div style={{ maxWidth: 700, margin: '0 auto', position: 'relative' }}>
+          {/* Carte */}
+          <div style={{
+            opacity: animating ? 0 : 1,
+            transform: animating ? 'scale(0.97) translateY(8px)' : 'scale(1) translateY(0)',
+            transition: 'opacity 0.25s ease, transform 0.25s ease',
+          }}>
+            <div style={{
+              background: `linear-gradient(145deg, rgba(20,22,26,0.97), ${legend.color}14)`,
+              border: `1px solid ${legend.color}40`,
+              borderRadius: 24,
+              padding: '0',
+              boxShadow: `0 0 80px ${legend.color}18, 0 24px 80px rgba(0,0,0,0.55)`,
+              overflow: 'hidden',
+              position: 'relative',
+            }}>
+              {/* Bande supérieure couleur */}
+              <div style={{
+                height: 4,
+                background: `linear-gradient(90deg, transparent, ${legend.color}, transparent)`,
               }} />
+
+              <div style={{ padding: '44px 40px 36px' }}>
+                {/* Title badge */}
+                <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 900, letterSpacing: '.15em',
+                    background: `${legend.color}18`, color: legend.color,
+                    border: `1px solid ${legend.color}40`,
+                    borderRadius: 4, padding: '4px 14px',
+                  }}>{legend.title}</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 32, alignItems: 'start' }}>
+                  {/* Avatar */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 110, height: 110, borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${legend.color}30, ${legend.color}10)`,
+                      border: `3px solid ${legend.color}60`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 52,
+                      boxShadow: `0 0 40px ${legend.color}35, inset 0 0 20px ${legend.color}10`,
+                    }}>{legend.icon}</div>
+
+                    {/* Prime */}
+                    <div style={{
+                      background: 'rgba(0,0,0,0.4)', border: `1px solid ${legend.color}30`,
+                      borderRadius: 8, padding: '6px 14px', textAlign: 'center',
+                    }}>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', letterSpacing: '.1em', marginBottom: 2 }}>PRIME</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: legend.color, fontFamily: 'var(--pirate)' }}>{legend.prime}</div>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div>
+                    <div style={{ fontFamily: 'var(--pirate)', fontSize: 36, color: '#fff', lineHeight: 1, marginBottom: 4 }}>{legend.name}</div>
+                    <div style={{ fontSize: 12, color: legend.color, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 16 }}>
+                      🏴‍☠️ {legend.pseudo}
+                    </div>
+                    <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.65)', lineHeight: 1.75, marginBottom: 20 }}>{legend.desc}</p>
+
+                    {/* Fruit du démon */}
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8,
+                      background: `${legend.color}10`, border: `1px solid ${legend.color}25`,
+                      borderRadius: 8, padding: '7px 14px',
+                    }}>
+                      <span>🍎</span>
+                      <div>
+                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,.3)', letterSpacing: '.08em' }}>FRUIT DU DÉMON</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: legend.color }}>{legend.fruit}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bande inférieure */}
+              <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${legend.color}30, transparent)` }} />
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginTop: 36 }}>
+            <button onClick={() => { clearInterval(intervalRef.current); go(-1); intervalRef.current = setInterval(() => go(1), 5500) }}
+              style={{
+                width: 44, height: 44, borderRadius: '50%', border: `1px solid ${legend.color}30`,
+                background: `${legend.color}10`, color: '#fff', cursor: 'pointer', fontSize: 20,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = legend.color; e.currentTarget.style.boxShadow = `0 0 20px ${legend.color}30` }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = `${legend.color}30`; e.currentTarget.style.boxShadow = 'none' }}
+            >←</button>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              {LEGENDS.map((l, i) => (
+                <button key={i} onClick={() => goTo(i)} style={{
+                  width: i === active ? 28 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer',
+                  background: i === active ? legend.color : 'rgba(255,255,255,0.18)',
+                  transition: 'all 0.3s ease', padding: 0,
+                }} />
+              ))}
+            </div>
+
+            <button onClick={() => { clearInterval(intervalRef.current); go(1); intervalRef.current = setInterval(() => go(1), 5500) }}
+              style={{
+                width: 44, height: 44, borderRadius: '50%', border: `1px solid ${legend.color}30`,
+                background: `${legend.color}10`, color: '#fff', cursor: 'pointer', fontSize: 20,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = legend.color; e.currentTarget.style.boxShadow = `0 0 20px ${legend.color}30` }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = `${legend.color}30`; e.currentTarget.style.boxShadow = 'none' }}
+            >→</button>
+          </div>
+
+          {/* Miniatures */}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 24 }}>
+            {LEGENDS.map((l, i) => (
+              <button key={i} onClick={() => goTo(i)} style={{
+                width: 44, height: 44, borderRadius: 10,
+                background: i === active ? `${l.color}20` : 'rgba(255,255,255,0.04)',
+                border: `1px solid ${i === active ? l.color + '60' : 'rgba(255,255,255,0.08)'}`,
+                fontSize: 20, cursor: 'pointer', transition: 'all 0.25s',
+                transform: i === active ? 'scale(1.12)' : 'scale(1)',
+              }}>{l.icon}</button>
             ))}
           </div>
-          <NavArrow dir="→" onClick={() => { clearInterval(intervalRef.current); go(1); intervalRef.current = setInterval(() => go(1), 5500) }} />
-        </Reveal>
-
-        {/* Mur des champions — galerie pleine largeur */}
-        <Reveal delay={220} style={{
-          marginTop: 'clamp(40px, 6vw, 64px)',
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 18,
-        }}>
-          {LEGENDS.map((l, i) => (
-            <ChampCard key={i} legend={l} active={i === active} onSelect={() => goTo(i)} />
-          ))}
-        </Reveal>
+        </div>
       </div>
-    </CineSection>
-  )
-}
-
-function NavArrow({ dir, onClick }) {
-  const [h, setH] = useState(false)
-  return (
-    <button onClick={onClick}
-      onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      aria-label={dir === '←' ? 'Précédent' : 'Suivant'}
-      style={{
-        width: 44, height: 44, borderRadius: '50%',
-        border: `1px solid ${h ? CINE.gold : CINE.hairTop}`,
-        background: h ? CINE.panel2 : 'transparent', color: CINE.ink, cursor: 'pointer', fontSize: 18,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'border-color .25s, background .25s, transform .25s',
-        transform: h ? 'translateY(-2px)' : 'none',
-      }}>{dir}</button>
+    </section>
   )
 }
