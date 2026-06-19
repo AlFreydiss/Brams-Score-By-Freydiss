@@ -56,6 +56,30 @@ function OfflineBanner() {
 
 function normalize(c) { return (c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) }
 
+// ── Toast "Lien copié" ────────────────────────────────────────────────────────
+// Affiché brièvement quand `copied` passe à true (le timer de reset vit déjà dans
+// BramsPhonePage). Flottant, non bloquant (pointer-events:none), accents FR.
+function CopiedToast({ show }) {
+  if (!show) return null
+  return (
+    <div aria-hidden style={{ position: 'fixed', left: '50%', bottom: 30, zIndex: 70, pointerEvents: 'none', transform: 'translateX(-50%)' }}>
+      <style>{'@keyframes bp-toast-in{0%{opacity:0;transform:translateY(14px) scale(.94)}16%{opacity:1;transform:translateY(0) scale(1)}84%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-8px) scale(.98)}}'}</style>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', borderRadius: 999,
+        background: `linear-gradient(165deg, ${alpha(C.gold, 0.22)}, ${alpha(C.goldDeep, 0.18)})`,
+        border: `1px solid ${alpha(C.gold, 0.5)}`, color: C.parchment,
+        ...type.small, fontWeight: 800, letterSpacing: '0.01em',
+        boxShadow: `0 14px 38px rgba(0,0,0,0.5), 0 0 0 1px ${alpha(C.gold, 0.1)} inset`,
+        backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+        animation: 'bp-toast-in 1.8s cubic-bezier(.18,1,.3,1) forwards',
+      }}>
+        <span style={{ width: 20, height: 20, borderRadius: '50%', display: 'grid', placeItems: 'center', background: C.ok, color: '#06210f', fontSize: 12, fontWeight: 900 }}>✓</span>
+        Lien copié
+      </div>
+    </div>
+  )
+}
+
 // ── Splash d'intro de phase ───────────────────────────────────────────────────
 // Overlay bref (~1.2s, auto-disparait) qui annonce la consigne au changement de
 // phase. pointer-events:none → ne bloque jamais l'interaction. prefers-reduced-
@@ -258,6 +282,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
   return (
     <Shell>
       <OfflineBanner />
+      <CopiedToast show={copied} />
       <PhaseSplash phaseKey={splashPhase} />
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>

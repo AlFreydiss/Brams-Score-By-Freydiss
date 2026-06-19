@@ -1,7 +1,7 @@
 // Échiquier vrai 3D (react-three-fiber). MÊME interface que Plateau : drop-in.
 // Logique de coup déléguée à useInteractionEchecs ; pièces = nœuds clonés (profond)
 // du GLB, auto-ajustés (Box3) à la case. Matériaux d'origine (marbre blanc/noir).
-import { Suspense, useMemo, useRef, useEffect, useState } from 'react'
+import { Suspense, useMemo, useRef, useEffect, useLayoutEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, useGLTF, ContactShadows, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
@@ -45,10 +45,17 @@ function normaliserPiece(src) {
 }
 
 // Pièce vivante : lerp vers la case cible. `roiTombe` = roi maté qui bascule lentement.
-function Piece3D({ nodes, nodeName, cible, type, roiTombe = false, selectionnee = false }) {
+// `glideFrom` (optionnel) = coordonnées 3D de la case de DÉPART d'un coup simple : la pièce
+// monte à cette position puis le lerp existant la fait GLISSER jusqu'à `cible`. Sans glideFrom
+// (cas spéciaux / chargement / prefers-reduced-motion) elle apparaît directement sur `cible`.
+function Piece3D({ nodes, nodeName, cible, type, roiTombe = false, selectionnee = false, glideFrom = null }) {
   const ref = useRef()
   const obj = useMemo(() => normaliserPiece(nodeName && nodes[nodeName]), [nodes, nodeName])
   const tombeRef = useRef(0)
+  // Position initiale du mesh : départ du coup si glissement demandé, sinon la case cible.
+  // Figée au montage (la pièce est keyée par sa case d'arrivée → remontée à chaque coup),
+  // donc le lerp de useFrame interpole de ce point de départ jusqu'à `cible`.
+  const depart = glideFrom || cible
   useFrame(({ clock }, dt) => {
     const o = ref.current; if (!o) return
     const k = Math.min(1, dt * 9)
@@ -66,7 +73,7 @@ function Piece3D({ nodes, nodeName, cible, type, roiTombe = false, selectionnee 
     }
   })
   if (!obj) return null
-  return <group ref={ref} position={cible}><primitive object={obj} /></group>
+  return <group ref={ref} position={depart}><primitive object={obj} /></group>
 }
 
 // Trajectoire du dernier coup : arc laser de la case de départ à la case d'arrivée,
@@ -370,6 +377,47 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
   const { nodes } = useGLTF(MODELE_3D_URL)
   const pieces = useMemo(() => piecesDepuisFen(partie.fen), [partie.fen])
 
+  // ── Glissement d'un coup simple (de la case de départ à la case d'arrivée) ──
+  // 100 % VISUEL : on DIFFE la position courante vs la précédente (Map case → "type+couleur").
+  // Le glissement n'est activé QUE pour un coup simple non ambigu (exactement une case libérée,
+  // exactement une case nouvellement occupée, MÊME pièce type+couleur). Tout le reste = snap :
+  // roque (2 pièces bougent), en passant (capture hors case d'arrivée → 2 cases libérées),
+  // promotion (le type change → pas de correspondance), annulation/redo, chargement initial,
+  // ou tout diff ambigu. La pièce qui glisse est keyée par sa case d'arrivée → elle remonte
+  // au coup, et reçoit `glideFrom` = coords 3D de sa case de départ ; le lerp fait le reste.
+  const occupationRef = useRef(null)   // { fen, map: Map<square,"type+couleur"> } du dernier coup traité
+  const [glissement, setGlissement] = useState(null) // { fen, to, from3D } | null
+  // useLayoutEffect (et non useEffect) : le diff + setGlissement s'exécutent AVANT le paint,
+  // donc la pièce d'arrivée remonte avec `glideFrom` sans flash sur la case d'arrivée.
+  // Garde de signature FEN : on ne traite chaque position qu'UNE fois — idempotent même sous
+  // le double-montage de StrictMode (le 2e passage a la même FEN → no-op, glissement préservé).
+  useLayoutEffect(() => {
+    if (occupationRef.current?.fen === partie.fen) return       // déjà traité (re-render / StrictMode)
+    const courant = new Map(pieces.map((p) => [p.square, p.type + p.couleur]))
+    const precedent = occupationRef.current?.map
+    occupationRef.current = { fen: partie.fen, map: courant }
+    if (reduit || !precedent) { setGlissement(null); return }   // initial / réduit → snap
+
+    const libres = []   // cases occupées avant, vides maintenant (avec leur signature)
+    const nouvelles = [] // cases vides avant, occupées maintenant
+    for (const [sq, sig] of precedent) if (courant.get(sq) !== sig) libres.push([sq, sig])
+    for (const [sq, sig] of courant) if (precedent.get(sq) !== sig) nouvelles.push([sq, sig])
+
+    // Coup simple = 1 case nouvellement occupée, et sa pièce vient d'1 SEULE case libérée
+    // de même type+couleur. (Capture simple : `to` était occupée par l'adverse → comptée
+    // comme "changée" donc 1 nouvelle + ≥1 libre ; on exige juste 1 nouvelle case + un
+    // départ unique de signature identique → exclut roque/en-passant/promotion.)
+    if (nouvelles.length === 1) {
+      const [to, sig] = nouvelles[0]
+      const departs = libres.filter(([, s]) => s === sig)
+      if (departs.length === 1) {
+        setGlissement({ fen: partie.fen, to, from3D: squareVers3D(departs[0][0], orientation) })
+        return
+      }
+    }
+    setGlissement(null)
+  }, [partie.fen, pieces, orientation, reduit])
+
   // ── Détection de capture par diff de FEN ──────────────────────────────────
   // dernierCoup.captured (chess.js) signale une prise ; la case de prise = `to`
   // (sauf en passant, où c'est derrière, mais l'éclat à `to` reste lisible).
@@ -414,12 +462,21 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
       <CameraRig controlsRef={controlsRef} secousse={partie.caseRoiEnEchec} matVers={matVers} reduit={reduit} />
       <Echiquier orientation={orientation} surbrillances={surbrillances} onCaseClic={inter.onCaseClic}
         pieceSur={pieceSur} caseEchec={partie.caseRoiEnEchec} />
-      {pieces.map((p) => (
-        <Piece3D key={p.square} nodes={nodes} nodeName={NOEUDS_PIECES_3D?.[p.couleur]?.[p.type]}
-          cible={squareVers3D(p.square, orientation)} type={p.type}
-          selectionnee={inter.selection === p.square}
-          roiTombe={!!matInfo && p.square === matInfo.square && p.couleur === matInfo.camp} />
-      ))}
+      {pieces.map((p) => {
+        // Glissement actif sur CETTE pièce (case d'arrivée d'un coup simple, signature FEN à jour).
+        const glide = glissement && glissement.fen === partie.fen && glissement.to === p.square
+          ? glissement.from3D : null
+        // La clé prend un suffixe quand le glissement est résolu (1 frame après le coup) : la pièce
+        // d'arrivée — qui s'était téléportée au 1er rendu — REMONTE avec `glideFrom`, donc démarre
+        // sur la case de départ puis glisse. Indolore visuellement (téléport→glissement immédiat).
+        return (
+          <Piece3D key={p.square + (glide ? '-g' : '')} nodes={nodes} nodeName={NOEUDS_PIECES_3D?.[p.couleur]?.[p.type]}
+            cible={squareVers3D(p.square, orientation)} type={p.type}
+            glideFrom={glide}
+            selectionnee={inter.selection === p.square}
+            roiTombe={!!matInfo && p.square === matInfo.square && p.couleur === matInfo.camp} />
+        )
+      })}
       {eclats.map((e) => (
         <EclatCapture key={e.id} position={e.position} reduit={reduit}
           onTermine={() => setEclats((cur) => cur.filter((x) => x.id !== e.id))} />

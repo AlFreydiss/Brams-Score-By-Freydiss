@@ -566,10 +566,23 @@ function Ring({ r, c, kind, blink }) {
     </mesh>
   )
 }
+// tapis lumineux sous la case d'arrivée du dernier coup : disque additif doré qui
+// respire doucement (100% visuel, marque où la dernière pièce s'est posée)
+function LastTapis({ r, c }) {
+  const ref = useRef()
+  const w = worldPos(r, c)
+  useFrame(() => { if (ref.current) { const k = 0.5 + 0.5 * Math.sin(performance.now() * 0.0034); ref.current.material.opacity = 0.16 + 0.16 * k; const s = 0.86 + 0.06 * k; ref.current.scale.set(s, s, 1) } })
+  return (
+    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[w.x, MARK_Y - 0.002, w.z]}>
+      <circleGeometry args={[0.48, 40]} />
+      <meshBasicMaterial color={0xf2d68a} transparent opacity={0.22} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
+    </mesh>
+  )
+}
 function Markers({ store }) {
   const s = useSyncExternalStore(store.subscribe, store.getState)
   const rings = []
-  if (s.last) { rings.push(<Ring key="lf" r={s.last.from[0]} c={s.last.from[1]} kind="last" />); (s.last.path || []).forEach(([r, c], i) => rings.push(<Ring key={'lp' + i} r={r} c={c} kind="last" />)) }
+  if (s.last) { rings.push(<LastTapis key="ltapis" r={s.last.to[0]} c={s.last.to[1]} />); rings.push(<Ring key="lf" r={s.last.from[0]} c={s.last.from[1]} kind="last" />); (s.last.path || []).forEach(([r, c], i) => rings.push(<Ring key={'lp' + i} r={r} c={c} kind="last" />)) }
   if (s.selected) {
     rings.push(<Ring key="sel" r={s.selected[0]} c={s.selected[1]} kind="sel" />)
     for (const mv of s.legalMoves) if (mv.from[0] === s.selected[0] && mv.from[1] === s.selected[1]) rings.push(<Ring key={'m' + mv.to[0] + '_' + mv.to[1]} r={mv.to[0]} c={mv.to[1]} kind={mv.isCapture ? 'cap' : 'move'} blink={mv.to[0]} />)
