@@ -4514,9 +4514,24 @@ requestAnimationFrame(loop);
   // opt.offset reste sur l'horloge audio/jugement (elapsed()) uniquement.
   const duoElapsed=()=>(AC.currentTime-t0ctx)*1000*RATE;
   function ownerIndexNow(){ return Math.floor(Math.max(0,duoElapsed())/D.segMs)%rosterN(); }
+  // Owner EFFECTIF : la tranche brute (round-robin sur N) reste l'horloge déterministe, mais si le
+  // joueur censé jouer cette tranche a QUITTÉ (absent de la présence), sa tranche serait « morte »
+  // (personne ne tape → auto-miss pour tous jusqu'à segMs). On transfère alors l'input visuel au
+  // joueur PRÉSENT d'index le plus bas dans D.order. Calcul identique sur tous les clients (même
+  // D.order figé + même présence) → pas de désync ; N et l'horloge audio restent INTOUCHÉS, donc
+  // le jugement/RNG ne bougent pas (un trou éventuel = simples auto-miss déjà déterministes).
+  function effectiveOwnerIndex(){
+    const raw=ownerIndexNow();
+    if(!D.order||D.order.length<2) return raw; // fallback duo : comportement strictement inchangé
+    const peers=D.peers||{};
+    const ownerId=D.order[raw];
+    if(ownerId!=null && peers[ownerId]) return raw; // owner de tranche bien présent
+    for(let i=0;i<D.order.length;i++){ if(peers[D.order[i]]) return i; } // 1er présent
+    return raw; // aucun présent connu (ne devrait pas arriver : self est toujours dans peers)
+  }
   function iAmOwnerNow(){
     if(typeof state==='undefined'||state!=='playing'||!D.active)return false;
-    return ownerIndexNow()===myIndex();
+    return effectiveOwnerIndex()===myIndex();
   }
   D.iAmOwner=iAmOwnerNow;
   const safeSend=(ev,p)=>{ try{ if(typeof D.send==='function') D.send(ev,p); }catch(e){} };
@@ -4732,7 +4747,7 @@ requestAnimationFrame(loop);
     }
     if(state!=='playing'){ if(hud)hud.style.display='none'; return; }
     const el=elapsed();                         // horloge audio/jugement (avec opt.offset) → HUD
-    const ownerIdx=ownerIndexNow();             // propriété round-robin sur N : SANS opt.offset
+    const ownerIdx=effectiveOwnerIndex();       // propriété round-robin sur N (saute un owner absent) : SANS opt.offset
     const amOwner=ownerIdx===myIndex();
     if(D.lastOwner!==ownerIdx){
       D.lastOwner=ownerIdx; flashTurn(amOwner);
