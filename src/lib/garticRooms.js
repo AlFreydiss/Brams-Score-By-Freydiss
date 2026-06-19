@@ -79,7 +79,13 @@ export async function createRoom({ userId, displayName, avatarUrl }) {
 }
 
 export async function joinRoom({ code, userId, displayName, avatarUrl }) {
-  const { data } = await rpc('gartic_join', { p_code: String(code), p_user: String(userId), p_name: displayName, p_avatar: avatarUrl })
+  const base = { p_code: String(code), p_user: String(userId), p_name: displayName, p_avatar: avatarUrl }
+  // p_token = réclamation sécurisée de SA place (anti vol de token). Si la migration sécurité
+  // n'est pas encore appliquée (fonction 5-args absente → 404 → data null), on retombe sur
+  // l'ancienne signature 4-args pour ne pas casser les joins pendant le déploiement.
+  let r = await rpc('gartic_join', { ...base, p_token: getToken(code) })
+  if (r.data == null) r = await rpc('gartic_join', base)
+  const data = r.data
   const out = Array.isArray(data) ? data[0] : data
   if (!out || out.error === 'introuvable') return { error: 'introuvable' }
   if (out.spectator) return { room: out.room, spectator: true, error: null }

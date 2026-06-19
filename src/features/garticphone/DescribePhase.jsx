@@ -11,6 +11,11 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const submittedRef = useRef(false)
+  // Garde anti faux auto-submit : on n'auto-soumet QUE si la phase a réellement eu du temps
+  // (remaining vu > 2s). Sinon un transitoire où remaining lit 0 au tout début de la phase
+  // (reconnexion / propagation du nouveau phase_ends_at) verrouillait le joueur en "envoyé"
+  // sans qu'il ait rien fait.
+  const sawTimeRef = useRef(false)
 
   // Le dessin à décrire peut encore être en cours d'upload R2 quand cette phase démarre
   // (upload lent terminé après l'avance de l'hôte). On re-tente quelques fois avant
@@ -42,7 +47,8 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
   }
 
   useEffect(() => {
-    if (remaining != null && remaining <= 0 && !submittedRef.current && !mySubmitted) doSubmit(true)
+    if (remaining != null && remaining > 2) sawTimeRef.current = true
+    if (remaining != null && remaining <= 0 && sawTimeRef.current && !submittedRef.current && !mySubmitted) doSubmit(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining, mySubmitted])
 

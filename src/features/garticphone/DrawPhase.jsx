@@ -18,6 +18,9 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
   // pendant l'envoi, le serveur écrirait la page sur la mauvaise manche → « Dessin manquant ».
   // (DrawPhase remonte à chaque phase via key={status}, donc ce ref = la bonne manche.)
   const drawRoundRef = useRef(room?.current_round)
+  // Anti faux auto-submit : n'auto-soumet que si la phase a vraiment eu du temps (remaining
+  // vu > 3s). Sinon un transitoire remaining<=1.5 au tout début verrouillait le dessin.
+  const sawTimeRef = useRef(false)
 
   useEffect(() => {
     let alive = true
@@ -47,7 +50,8 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
   // Auto-submit ~1,5 s AVANT la fin : l'upload R2 (toBlob → presign → PUT) prend 1-3 s.
   // Démarrer pile à 0 s perdait la course contre l'avance de l'hôte → dessin manquant.
   useEffect(() => {
-    if (remaining != null && remaining <= 1.5 && !submittedRef.current && !busy && !mySubmitted) doSubmit(true)
+    if (remaining != null && remaining > 3) sawTimeRef.current = true
+    if (remaining != null && remaining <= 1.5 && sawTimeRef.current && !submittedRef.current && !busy && !mySubmitted) doSubmit(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining, mySubmitted])
 
