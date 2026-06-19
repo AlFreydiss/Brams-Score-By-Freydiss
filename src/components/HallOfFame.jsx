@@ -49,7 +49,7 @@ export default function HallOfFame() {
       id="hall-of-fame"
       ref={ref}
       style={{
-        background: '#08090D',
+        background: 'transparent',
         padding: '110px 0',
         position: 'relative',
         overflow: 'hidden',
