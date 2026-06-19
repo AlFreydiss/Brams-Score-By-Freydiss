@@ -635,7 +635,7 @@ body.playing{cursor:none}
     <button class="btn big glass" id="bImport" style="--hglow:rgba(0,223,200,.35)"><span class="ic">🎵</span> &nbsp;Importer un MP3 / MP4</button>
   </div>
   <div class="btnrow">
-    <button class="btn glass" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Duo Relais</button>
+    <button class="btn glass" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Relais</button>
     <button class="btn glass" id="bOpt1" style="--hglow:rgba(160,107,255,.4)"><span class="ic">⚙</span> Options</button>
     <button class="btn glass" id="bBoard" style="--hglow:rgba(255,209,43,.35)"><span class="ic">🏆</span> Classement</button>
   </div>  <div class="btnrow">
@@ -649,8 +649,8 @@ body.playing{cursor:none}
 <!-- ════ DUO RELAIS — lobby ════ -->
 <div class="screen" id="sDuo" style="gap:16px">
   <div class="card" style="min-width:min(440px,92vw);max-width:480px;gap:14px">
-    <h2 style="font-size:24px">👥 Duo Relais</h2>
-    <p class="muted" style="font-size:13px;margin-top:-4px">Une map, deux joueurs, à tour de rôle. Le combo se transmet — visez le plus gros score à deux. 🤝</p>
+    <h2 style="font-size:24px">👥 Relais</h2>
+    <p class="muted" style="font-size:13px;margin-top:-4px">Une map, 2–3 joueurs, à tour de rôle. Le combo se transmet — visez le plus gros score en équipe. 🤝</p>
     <div id="duoStart" style="display:flex;flex-direction:column;gap:10px;width:100%">
       <button class="btn big go" id="duoCreate">➕ Créer une room</button>
       <div style="display:flex;gap:8px;width:100%">
@@ -4315,6 +4315,7 @@ requestAnimationFrame(loop);
 <script>
 (function(){
   const $=id=>document.getElementById(id)
+  const MAX_PLAYERS=3
   const D={ sb:null, me:null, name:'', chan:null, room:null, host:false, segMs:30000, offset:0, peers:{}, started:false }
   window.__duo=D
   const msg=(t,ok)=>{const e=$('duoMsg');if(e){e.textContent=t||'';e.className='pubmsg'+(ok===true?' ok':ok===false?' err':'')}}
@@ -4376,7 +4377,23 @@ requestAnimationFrame(loop);
       // Prendre [0] gardait l'état périmé (le prêt ne remontait jamais, même le sien).
       // On garde le meta le plus récent (ts max) par joueur.
       for(const k in st){ const arr=st[k]||[]; let m=null; for(const e of arr){ if(!m||(e&&(e.ts||0)>=(m.ts||0))) m=e; } if(m&&m.id) peers[m.id]=m }
-      D.peers=peers; renderPeers()
+      D.peers=peers
+      // Capacité 3 max (presence). Si trop de joueurs et que JE suis le surnuméraire le plus
+      // récent (entré en dernier), je quitte proprement. Une fois la partie lancée, on ne
+      // s'auto-éjecte plus (le roster est figé → un pic transitoire ne doit pas casser la run).
+      // L'hôte ne s'auto-éjecte jamais (tuerait la room).
+      if(!D.active && !D.started && !D.host){
+        const ids=Object.keys(peers)
+        if(ids.length>MAX_PLAYERS){
+          const meTs=(peers[D.me]||{}).ts||0
+          // surnuméraire = celui dont le ts d'entrée est le plus grand (dernier arrivé). On exclut
+          // l'hôte de la sélection (départage déterministe par id à ts égal → un seul part).
+          let newest=null, newestTs=-1
+          for(const id of ids){ const pm=peers[id]||{}; if(pm.host) continue; const t=pm.ts||0; if(t>newestTs||(t===newestTs&&(newest===null||id>newest))){ newestTs=t; newest=id; } }
+          if(D.me===newest && meTs>0){ leaveRoom('Room pleine (3 max).'); return }
+        }
+      }
+      renderPeers()
     })
     // sync horloge (Cristian) : l'invité ping, l'hôte répond.
     ch.on('broadcast',{event:'ping'},({payload})=>{ if(D.host) ch.send({type:'broadcast',event:'pong',payload:{tg:payload.tg,th:Date.now(),to:payload.from}}) })
@@ -4408,7 +4425,7 @@ requestAnimationFrame(loop);
   }
 
   async function createRoom(){
-    try{ msg('Connexion…'); await initSB(); if(!D.me){ msg('Connecte-toi sur Brams pour jouer en duo.',false); return }
+    try{ msg('Connexion…'); await initSB(); if(!D.me){ msg('Connecte-toi sur Brams pour jouer en relais.',false); return }
       D.host=true; const code=code6()
       const { error } = await D.sb.from('osu_rooms').insert({ code, host:D.me, segment_ms:D.segMs, status:'lobby' })
       if(error){ msg(error.message,false); return }
@@ -4417,23 +4434,26 @@ requestAnimationFrame(loop);
   }
   async function joinRoom(){
     const code=($('duoCode').value||'').trim().toUpperCase(); if(code.length<4){ msg('Code invalide',false); return }
-    try{ msg('Connexion…'); await initSB(); if(!D.me){ msg('Connecte-toi sur Brams pour jouer en duo.',false); return }
+    try{ msg('Connexion…'); await initSB(); if(!D.me){ msg('Connecte-toi sur Brams pour jouer en relais.',false); return }
       const { data, error } = await D.sb.from('osu_rooms').select('*').eq('code',code).maybeSingle()
       if(error||!data){ msg('Room introuvable',false); return }
-      if(data.guest && data.guest!==D.me){ msg('Room déjà pleine',false); return }
+      // Capacité = 3 joueurs, gérée via la PRÉSENCE (cf. joinChannel) car la table n'a qu'un slot
+      // « guest ». On n'utilise PLUS « guest » comme verrou dur : un 3e joueur peut entrer.
       D.host=false; D.segMs=data.segment_ms||30000; D.room={ code }
-      await D.sb.from('osu_rooms').update({ guest:D.me }).eq('code',code)
+      // Écrit guest seulement s'il est vide (1er invité) — informatif, ne sert plus de gate.
+      if(!data.guest){ try{ await D.sb.from('osu_rooms').update({ guest:D.me }).eq('code',code) }catch(e){} }
       await joinChannel(); openRoomView()
     }catch(e){ msg('Erreur : '+(e.message||e),false) }
   }
-  function leaveRoom(){
-    // Réinitialise l'état duo : sinon D.active resté true verrouille TOUT input solo
+  function leaveRoom(reason){
+    // Réinitialise l'état relais : sinon D.active resté true verrouille TOUT input solo
     // (duoSpectating() gate les listeners) lors d'une partie solo ultérieure.
-    D.active=false; D._finished=false; try{showFx&&showFx(false)}catch(e){}
+    D.active=false; D._finished=false; D.started=false; try{showFx&&showFx(false)}catch(e){}
     try{ if(D.chan) D.sb.removeChannel(D.chan) }catch(e){}
     if(D.room&&D.host){ try{ D.sb.from('osu_rooms').delete().eq('code',D.room.code) }catch(e){} }
     D.chan=null; D.room=null; D.host=false; D.peers={}
-    $('duoRoom').style.display='none'; $('duoStart').style.display='flex'; msg('')
+    D.order=null; D.N=2; D.myIndex=undefined; D.guestReady={}; D.guestMapReady=false
+    $('duoRoom').style.display='none'; $('duoStart').style.display='flex'; msg(reason||'', reason?false:undefined)
   }
 
   // ── wiring UI ──
@@ -4474,16 +4494,29 @@ requestAnimationFrame(loop);
   D._lastCur=0; D._lastState=0; D.lastOwner=null; D._finished=false;
   D.guestMapReady=false; D.mapReady=false; D.guestEntryId=null; D.guestEntry=null; D.guestDiff=null;
   D.hostEntry=null; D.hostDiff=null;
+  D.guestReady={}; // host : id invité → bool (map chargée) ; pour 1 ou 2 invités
 
-  const myParity=()=>D.host?0:1; // tranche 0 = hôte, tranche 1 = invité, alterne
+  // ── roster relais (2 ou 3 joueurs) ──
+  // D.order = liste ORDONNÉE et FIGÉE des ids joueurs (déterministe : ids triés), construite au
+  // lancement et diffusée dans 'start' → TOUS les clients utilisent le même ordre/N. D.N = nombre
+  // de joueurs, D.myIndex = ma position dans l'ordre. Fallback DUO si pas de roster (rétrocompat) :
+  // N=2, index = hôte?0:1.
+  function rosterN(){ return (D.N&&D.N>=2)?D.N:2; }
+  function myIndex(){
+    if(typeof D.myIndex==='number'&&D.myIndex>=0) return D.myIndex; // figé par applyRoster
+    if(D.order&&D.order.length>=2){ const i=D.order.indexOf(D.me); return i>=0?i:(D.host?0:1); }
+    return D.host?0:1; // fallback duo
+  }
+  // tranche 0,1,2,… attribuée en round-robin sur N : owner = floor(elapsed/segMs) % N === myIndex.
   // Horloge de PROPRIÉTÉ de tranche SANS opt.offset : opt.offset est le slider audio PRIVÉ de
-  // chaque joueur. L'utiliser pour décider qui possède la tranche fait diverger les 2 clients
-  // près des frontières (les deux se croient owner / aucun → freeze input ou double-hit).
+  // chaque joueur. L'utiliser pour décider qui possède la tranche fait diverger les clients près
+  // des frontières (deux se croient owner / aucun → freeze input ou double-hit).
   // opt.offset reste sur l'horloge audio/jugement (elapsed()) uniquement.
   const duoElapsed=()=>(AC.currentTime-t0ctx)*1000*RATE;
+  function ownerIndexNow(){ return Math.floor(Math.max(0,duoElapsed())/D.segMs)%rosterN(); }
   function iAmOwnerNow(){
     if(typeof state==='undefined'||state!=='playing'||!D.active)return false;
-    return (Math.floor(Math.max(0,duoElapsed())/D.segMs)%2)===myParity();
+    return ownerIndexNow()===myIndex();
   }
   D.iAmOwner=iAmOwnerNow;
   const safeSend=(ev,p)=>{ try{ if(typeof D.send==='function') D.send(ev,p); }catch(e){} };
@@ -4516,11 +4549,19 @@ requestAnimationFrame(loop);
   const setMapInfo=t=>{ const mi=$('duoMapInfo'); if(mi)mi.textContent=t||''; };
 
   function showFx(on){ host.style.display=on?'block':'none'; if(!on){ if(hud)hud.style.display='none'; if(cd)cd.style.display='none'; } }
-  function updateHud(amOwner,el){
+  // nom du joueur dont c'est le tour (D.order[ownerIdx]) via la présence ; fallback générique.
+  function ownerName(ownerIdx){
+    if(D.order&&D.order[ownerIdx]!=null){
+      const id=D.order[ownerIdx]; const p=D.peers&&D.peers[id];
+      if(p&&p.name) return String(p.name).replace(/[<>&]/g,'');
+    }
+    return 'Partenaire';
+  }
+  function updateHud(amOwner,el,ownerIdx){
     if(!hud)return; hud.style.display='block';
     const rem=Math.max(0,Math.ceil((D.segMs-(Math.max(0,el)%D.segMs))/1000));
     if(amOwner){ hud.textContent='🟢 À TOI — '+rem+'s'; hud.style.color='#5fe68c'; hud.style.borderColor='#5fe68c66'; }
-    else{ hud.textContent='👀 PARTENAIRE JOUE — '+rem+'s'; hud.style.color='#ffae3b'; hud.style.borderColor='#ffae3b55'; }
+    else{ hud.textContent='👀 '+ownerName(ownerIdx)+' JOUE — '+rem+'s'; hud.style.color='#ffae3b'; hud.style.borderColor='#ffae3b55'; }
   }
   function flashTurn(amOwner){
     if(!flash)return;
@@ -4557,10 +4598,10 @@ requestAnimationFrame(loop);
     D.segMs=p.segMs||D.segMs; D.guestDiff=p.diff;
     const entry=(typeof library!=='undefined')&&library.find(x=>x.id===p.id);
     if(!entry){ setMapInfo('Map inconnue'); return; }
-    if(D.guestEntryId===p.id&&entry.buf){ D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true}); return; }
-    D.guestEntryId=p.id; D.mapReady=false; safeSend('state',{ctl:'mready',v:false});
+    if(D.guestEntryId===p.id&&entry.buf){ D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true,from:D.me,id:p.id}); return; }
+    D.guestEntryId=p.id; D.mapReady=false; safeSend('state',{ctl:'mready',v:false,from:D.me,id:p.id});
     const ok=await silentLoad(entry);
-    if(ok&&D.guestEntryId===p.id){ D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true}); }
+    if(ok&&D.guestEntryId===p.id){ D.guestEntry=entry; D.mapReady=true; setMapInfo('Map prête ✓ — '+entry.name); safeSend('state',{ctl:'mready',v:true,from:D.me,id:p.id}); }
   }
 
   function broadcastMap(){ if(D.host&&D.room&&typeof curEntry!=='undefined'&&curEntry&&curEntry.featured) safeSend('state',{ctl:'map',id:curEntry.id,diff:opt.diff,segMs:D.segMs}); }
@@ -4576,6 +4617,8 @@ requestAnimationFrame(loop);
   };
 
   D.canLaunch=function(){
+    // recalcule à la volée (un invité a pu partir/arriver depuis le dernier mready)
+    D.guestMapReady=allGuestsMapReady();
     return !!(D.host && typeof analysis!=='undefined' && analysis && typeof curEntry!=='undefined' && curEntry && curEntry.featured && D.guestMapReady);
   };
 
@@ -4604,12 +4647,29 @@ requestAnimationFrame(loop);
     buildPlay();
   }
 
+  // Roster FIGÉ au lancement : ids présents triés (déterministe), limité à MAX (3). Diffusé dans
+  // 'start' → tous les clients utilisent EXACTEMENT le même ordre et le même N. Une fois figé, un
+  // drop en cours ne change PAS N (sinon désync) : le roster reste constant toute la run.
+  const MAX_ROSTER=3;
+  function buildRoster(){
+    const ids=Object.keys(D.peers||{}).sort().slice(0,MAX_ROSTER);
+    return ids;
+  }
+  function applyRoster(order){
+    D.order=Array.isArray(order)&&order.length>=2?order.slice(0,MAX_ROSTER):null;
+    D.N=D.order?D.order.length:2;          // fallback duo : N=2
+    D.myIndex=D.order?D.order.indexOf(D.me):(D.host?0:1);
+    if(D.myIndex<0) D.myIndex=D.host?0:1;  // sécurité : pas dans le roster → fallback
+  }
   D.onLaunch=function(){
-    if(!D.canLaunch()){ setMapInfo(D.guestMapReady?'Choisis une map CLASSÉE d\'abord.':'Le partenaire charge encore la map…'); return; }
+    if(!D.canLaunch()){ setMapInfo(D.guestMapReady?'Choisis une map CLASSÉE d\'abord.':'Les joueurs chargent encore la map…'); return; }
     const startAt=Date.now()+3000;
     // seed PARTAGÉ, dérivé de l'analyse (résolution-indépendant, sans R) → mêmes positions de notes
     D.seed=(Math.floor(analysis.dur*1000)+opt.diff*7777)>>>0;
-    safeSend('start',{startAt,segMs:D.segMs,seed:D.seed});
+    const order=buildRoster();
+    applyRoster(order);
+    D.started=true;
+    safeSend('start',{startAt,segMs:D.segMs,seed:D.seed,order});
     D.active=true;
     countdownThenStart(startAt);
   };
@@ -4617,15 +4677,33 @@ requestAnimationFrame(loop);
     if(D.host)return;
     D.segMs=(p&&p.segMs)||D.segMs;
     if(p&&p.seed!=null) D.seed=p.seed>>>0;
+    applyRoster(p&&p.order);   // même ordre/N que l'hôte (fallback duo si absent)
+    D.started=true;
     D.active=true;
     const localTarget=(p&&p.startAt||Date.now())-(D.offset||0); // host_wall - offset = heure locale invité
     countdownThenStart(localTarget);
   };
 
   // ── événements réseau en jeu (relayés par le chunk 1) ──
+  // host : tous les invités présents (présence moins l'hôte) ont-ils chargé la map ?
+  function allGuestsMapReady(){
+    if(!D.host) return false;
+    const ids=Object.keys(D.peers||{}).filter(id=>id!==D.me);
+    if(!ids.length) return false; // pas d'invité → rien à lancer
+    return ids.every(id=>!!D.guestReady[id]);
+  }
   function handleCtl(p){
     if(p.ctl==='map'){ if(!D.host) guestReceiveMap(p); }
-    else if(p.ctl==='mready'){ if(D.host){ D.guestMapReady=!!p.v; setMapInfo(D.guestMapReady?'Partenaire : map prête ✓':'Partenaire : chargement de la map…'); if(D.renderPeers)D.renderPeers(); } }
+    else if(p.ctl==='mready'){
+      if(D.host){
+        // mready peut venir de plusieurs invités (relais 3) → on suit chacun par son id.
+        if(p.from) D.guestReady[p.from]=!!p.v;
+        D.guestMapReady=allGuestsMapReady();
+        const n=Object.keys(D.peers||{}).filter(id=>id!==D.me).length;
+        setMapInfo(D.guestMapReady?(n>1?'Invités : maps prêtes ✓':'Partenaire : map prête ✓'):'En attente du chargement de la map…');
+        if(D.renderPeers)D.renderPeers();
+      }
+    }
   }
   D.onNet=function(ev,p){
     if(ev==='state'&&p&&p.ctl){ handleCtl(p); return; } // canal de contrôle lobby
@@ -4643,14 +4721,14 @@ requestAnimationFrame(loop);
     if(typeof state==='undefined'){ return; }
     if(state==='results'||state==='failed'){
       if(!D._finished){ D._finished=true; safeSend('finish',{}); }
-      D.active=false; showFx(false); return;
+      D.active=false; D.started=false; showFx(false); return; // started=false → réouvre la capacité au lobby
     }
     if(state!=='playing'){ if(hud)hud.style.display='none'; return; }
     const el=elapsed();                         // horloge audio/jugement (avec opt.offset) → HUD
-    const ownerParity=Math.floor(Math.max(0,duoElapsed())/D.segMs)%2; // propriété : SANS opt.offset
-    const amOwner=ownerParity===myParity();
-    if(D.lastOwner!==ownerParity){
-      D.lastOwner=ownerParity; flashTurn(amOwner);
+    const ownerIdx=ownerIndexNow();             // propriété round-robin sur N : SANS opt.offset
+    const amOwner=ownerIdx===myIndex();
+    if(D.lastOwner!==ownerIdx){
+      D.lastOwner=ownerIdx; flashTurn(amOwner);
       if(amOwner){ if(opt.rawInput&&typeof lockMouse==='function')lockMouse(); }
       else{ try{ document.exitPointerLock&&document.exitPointerLock(); }catch(e){} pressing=false; }
     }
@@ -4659,7 +4737,7 @@ requestAnimationFrame(loop);
       if(now-D._lastCur>=33){ D._lastCur=now; const o=toOsu(mx,my); safeSend('cursor',{x:o.x,y:o.y,p:pressing?1:0}); }
       if(now-D._lastState>=250){ D._lastState=now; safeSend('state',{s:score,c:combo,mc:maxCombo,hp:hp,n3:n3,n1:n1,n5:n5,nm:nm}); }
     }
-    updateHud(amOwner,el);
+    updateHud(amOwner,el,ownerIdx);
   }
   requestAnimationFrame(duoTick);
 
