@@ -578,6 +578,7 @@ body.playing{cursor:none}
 <body>
 <a href="/" id="bramsBack" style="position:fixed;top:12px;left:12px;z-index:99999;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;background:rgba(8,9,13,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(212,160,23,.45);color:#f0d27a;font:700 13px 'Varela Round',system-ui,sans-serif;text-decoration:none">← Brams</a>
 <canvas id="cv"></canvas>
+<canvas id="curTop" style="position:fixed;inset:0;z-index:70;pointer-events:none"></canvas>
 <div id="ui">
 
 <div class="screen on" id="sMenu">  <div id="menuFX" aria-hidden="true">
@@ -1010,6 +1011,9 @@ const IS_MOBILE=(navigator.maxTouchPoints>0||'ontouchstart'in window)&&Math.min(
 const KIAI_MAX=IS_MOBILE?KIAI_MAX_MOBILE:KIAI_MAX_DESKTOP;
 
 const CV=document.getElementById('cv'),cx=CV.getContext('2d',{alpha:false}); // pas de desynchronized : scintille sur certains GPU Windows
+// Calque curseur dédié AU-DESSUS de #menuFX/#sMenu : le curseur de l'écran titre était
+// dessiné sur #cv (opaque) qui est masqué par #menuFX au menu → invisible. On le rend ici.
+const CT=document.getElementById('curTop'),ctTop=CT.getContext('2d');
 /* Rendu HD : le canvas est dimensionné en pixels PHYSIQUES (devicePixelRatio, cap 2)
    et tout le code continue de dessiner en px CSS via setTransform — cercles, textes
    et sliders nets sur écrans 1440p/4K. Désactivable (Options) et off sur mobile. */
@@ -1019,6 +1023,7 @@ function applyDPR(){
   W=innerWidth;H=innerHeight;
   CV.width=Math.round(W*DPRv);CV.height=Math.round(H*DPRv);
   CV.style.width=W+'px';CV.style.height=H+'px';
+  CT.width=CV.width;CT.height=CV.height;CT.style.width=W+'px';CT.style.height=H+'px';
   try{SPRITES.key='';}catch(e){} // re-bake des sprites (TDZ au tout premier appel : ignoré)
   if(typeof computePlayfield==='function'){computePlayfield();}
 }
@@ -2553,7 +2558,7 @@ function drawSpinnerObj(o,el){
 /* Curseur lazer : sprite disque rose dégradé + anneau blanc, qui S'ÉTEND au clic
    (lerp doux), traînée en sprites — zéro path, zéro shadowBlur par frame. */
 let cursorSc=1;
-function drawCursor(){
+function drawCursor(g=cx){
   const now=performance.now();
   if(opt.trail&&SPRITES.dot){
     // interpolation : la traînée reste continue même en mouvement rapide
@@ -2569,25 +2574,25 @@ function drawCursor(){
     while(trail.length&&now-trail[0].t>SKIN.CURSOR_TRAIL_MS)trail.shift();
     // ruban effilé : segments reliés, largeur et alpha décroissants (rendu lazer),
     // + halo doux par drawImage du dot aux extrémités récentes
-    cx.save();cx.lineCap='round';cx.lineJoin='round';
-    if(opt.trailNeon)cx.globalCompositeOperation='lighter'; // ruban néon additif optionnel
+    g.save();g.lineCap='round';g.lineJoin='round';
+    if(opt.trailNeon)g.globalCompositeOperation='lighter'; // ruban néon additif optionnel
     const _P=curPal();
-    cx.strokeStyle=pressing?_P.trailHi:_P.trail;
+    g.strokeStyle=pressing?_P.trailHi:_P.trail;
     for(let i=1;i<trail.length;i++){
       const p0=trail[i-1],p1=trail[i];
       const a=(now-p1.t)/SKIN.CURSOR_TRAIL_MS;
       if(a>=1)continue;
-      cx.globalAlpha=(1-a)*(pressing?.6:.45);
-      cx.lineWidth=(11*(1-a)+1.5)*(opt.curSize||1.25); // le ruban suit la taille du curseur
-      cx.beginPath();cx.moveTo(p0.x,p0.y);cx.lineTo(p1.x,p1.y);cx.stroke();
+      g.globalAlpha=(1-a)*(pressing?.6:.45);
+      g.lineWidth=(11*(1-a)+1.5)*(opt.curSize||1.25); // le ruban suit la taille du curseur
+      g.beginPath();g.moveTo(p0.x,p0.y);g.lineTo(p1.x,p1.y);g.stroke();
     }
     // points lumineux sur la portion fraîche du ruban
     for(let i=Math.max(0,trail.length-6);i<trail.length;i++){
       const p=trail[i],a=(now-p.t)/SKIN.CURSOR_TRAIL_MS,s=22*(1-a*.5);
-      cx.globalAlpha=(1-a)*.5;
-      cx.drawImage(SPRITES.dot,p.x-s/2,p.y-s/2,s,s);
+      g.globalAlpha=(1-a)*.5;
+      g.drawImage(SPRITES.dot,p.x-s/2,p.y-s/2,s,s);
     }
-    cx.restore();
+    g.restore();
   }
   // Aura de combo : halo additif autour du curseur qui grossit + pulse avec le combo
   // (≥30). Plus tu enchaînes, plus tu rayonnes. Couleur or → blanc selon l'intensité.
@@ -2595,19 +2600,19 @@ function drawCursor(){
     const lvl=Math.min(1,(combo-30)/220);                 // 30→250 = 0→1
     const pulse=1+.07*Math.sin(now/110);
     const rad=(34+lvl*52)*pulse*(opt.curSize||1.15);
-    cx.save();cx.globalCompositeOperation='lighter';
-    const g=cx.createRadialGradient(mx,my,rad*.25,mx,my,rad);
-    g.addColorStop(0,'rgba(255,221,140,'+(.09+lvl*.20)+')');
-    g.addColorStop(.6,'rgba(255,200,90,'+(.04+lvl*.10)+')');
-    g.addColorStop(1,'rgba(255,200,90,0)');
-    cx.fillStyle=g;cx.beginPath();cx.arc(mx,my,rad,0,PI2);cx.fill();
-    cx.restore();
+    g.save();g.globalCompositeOperation='lighter';
+    const gr=g.createRadialGradient(mx,my,rad*.25,mx,my,rad);
+    gr.addColorStop(0,'rgba(255,221,140,'+(.09+lvl*.20)+')');
+    gr.addColorStop(.6,'rgba(255,200,90,'+(.04+lvl*.10)+')');
+    gr.addColorStop(1,'rgba(255,200,90,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(mx,my,rad,0,PI2);g.fill();
+    g.restore();
   }
   cursorSc+=((pressing?1.3:1)-cursorSc)*lerpF(.32); // expansion douce au clic, comme lazer
   const sp=pressing?SPRITES.cursorHi:SPRITES.cursor;
   if(sp){
     const s=96*cursorSc*(opt.curSize||1.15); // gros par défaut, réglable dans les Options
-    cx.drawImage(sp,mx-s/2,my-s/2,s,s);
+    g.drawImage(sp,mx-s/2,my-s/2,s,s);
   }
 }
 
@@ -2942,6 +2947,8 @@ function initMenuTris(){
 let lastGradeCol='#ffee44';
 function drawMenuBG(){
   menuT+=.016*frameNorm;
+  // calque curseur top : nettoyé à chaque frame des écrans non-jeu (menu/load/ready/results/fail)
+  ctTop.setTransform(DPRv,0,0,DPRv,0,0);ctTop.clearRect(0,0,W,H);
   if(!menuTris)initMenuTris();
   // fond selon l'écran : menu violet, ÉCHEC rouge sombre, RÉSULTATS teinté du grade
   const mode=state==='failed'?'fail':state==='results'?'win':'menu';
@@ -2980,7 +2987,7 @@ function drawMenuBG(){
   }
   cx.globalAlpha=1;
   // curseur custom de l'écran titre (sprite + traînée, masqué par CSS cursor:none)
-  if(state==='menu'&&!REDUCED_MOTION&&SPRITES.cursor)drawCursor();
+  if(state==='menu'&&!REDUCED_MOTION){ensureMenuCursor();drawCursor(ctTop);}
 }
 /* Vignette rouge progressive façon osu : monte quand la vie passe sous 50 %, pulse */
 let vigGrad=null,vigKey='';
@@ -4037,7 +4044,7 @@ bindR('oVm','vVm',v=>{opt.volM=v/100;if(musicG&&state==='playing')musicG.gain.se
 bindR('oVs','vVs',v=>{opt.volS=v/100;if(sfxG)sfxG.gain.value=opt.volS;},v=>v+'%');
 bindR('oDim','vDim',v=>{opt.dim=v/100;},v=>v+'%');
 bindR('oAim','vAim',v=>{opt.aim=v;},v=>v+'%');
-$('oTrail').onchange=e=>{opt.trail=e.target.checked;saveOpt();};$('oCurColor').onchange=e=>{opt.curColor=e.target.value;saveOpt();SPRITES._curKey='';buildSprites();}; // rebake curseur+dot à la teinte choisie
+$('oTrail').onchange=e=>{opt.trail=e.target.checked;saveOpt();};$('oCurColor').onchange=e=>{opt.curColor=e.target.value;saveOpt();SPRITES._curKey='';SPRITES._menuCurKey='';buildSprites();ensureMenuCursor();}; // rebake curseur+dot à la teinte choisie
 $('oTrailNeon').onchange=e=>{opt.trailNeon=e.target.checked;saveOpt();};
 $('oKeySfx').onchange=e=>{opt.keySfx=e.target.checked;saveOpt();};
 $('oFx').onchange=e=>{opt.fx=e.target.checked;saveOpt();};
@@ -4220,6 +4227,10 @@ function loop(now){
   // fondu noir d'entrée de partie
   if(introT<1){cx.fillStyle='rgba(4,2,8,'+((1-introT)*.92).toFixed(3)+')';cx.fillRect(0,0,W,H);}
 }
+// Curseur du menu : bâtit les sprites curseur/point indépendamment de R (sinon buildSprites
+// sort tôt tant qu'aucune map n'est chargée → SPRITES.cursor=null → curseur invisible à l'écran titre).
+function ensureMenuCursor(){const k=DPRv+'|'+opt.curColor;if(SPRITES.cursor&&SPRITES._menuCurKey===k)return;SPRITES.cursor=_cursorSprite(false);SPRITES.cursorHi=_cursorSprite(true);SPRITES.dot=_dotSprite();SPRITES._menuCurKey=k;SPRITES._curKey='';}
+ensureMenuCursor();
 requestAnimationFrame(loop);
 </script>
 
