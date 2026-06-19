@@ -151,6 +151,15 @@ function CursorPreview({ cur, size = 56 }) {
   )
 }
 
+// Dernière position pointeur connue (module-level) : survit aux changements de route /
+// remontages de l'overlay. Sinon le curseur animé restait invisible tant que la souris
+// n'avait pas bougé après un chargement d'accueil (body cursor:none + overlay hors écran).
+let _lastPX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0
+let _lastPY = typeof window !== 'undefined' ? window.innerHeight / 2 : 0
+if (typeof window !== 'undefined') {
+  window.addEventListener('mousemove', (e) => { _lastPX = e.clientX; _lastPY = e.clientY }, { passive: true })
+}
+
 // Overlay animé qui suit la souris (curseurs MYTHIQUE/INTERDIT = pas faisable en
 // curseur natif animé). Position fixed, pointer-events none, au-dessus de tout.
 function CustomCursorOverlay({ id, emoji, glow }) {
@@ -160,16 +169,17 @@ function CustomCursorOverlay({ id, emoji, glow }) {
     if (!el) return
     // Déplacement via transform (compositor GPU) : zéro layout/paint par frame,
     // contrairement à left/top. translate3d isole la couche composite.
-    let raf = 0, x = -100, y = -100
-    const onMove = (e) => { x = e.clientX; y = e.clientY; if (!raf) raf = requestAnimationFrame(apply) }
+    let raf = 0, x = _lastPX, y = _lastPY
     const apply = () => { raf = 0; if (el) el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%,-50%)` }
+    const onMove = (e) => { x = e.clientX; y = e.clientY; if (!raf) raf = requestAnimationFrame(apply) }
+    apply() // peint immédiatement à la dernière position connue → jamais invisible au repos
     window.addEventListener('mousemove', onMove, { passive: true })
     return () => { window.removeEventListener('mousemove', onMove); if (raf) cancelAnimationFrame(raf) }
   }, [])
   return (
     <div ref={ref} aria-hidden style={{
       position: 'fixed', left: 0, top: 0, zIndex: 2147483647, pointerEvents: 'none',
-      transform: 'translate3d(-100px,-100px,0) translate(-50%,-50%)',
+      transform: `translate3d(${_lastPX}px,${_lastPY}px,0) translate(-50%,-50%)`,
       willChange: 'transform', fontSize: 30, lineHeight: 1,
       filter: `drop-shadow(0 0 7px ${glow || 'rgba(245,181,10,0.7)'})`,
     }}>
