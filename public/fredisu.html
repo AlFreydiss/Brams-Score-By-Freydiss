@@ -1835,6 +1835,21 @@ class HitFX{
     if(this.age>660)this.gone=true;}
   draw(){
     const t=Math.min(1,this.age/560); // jugements plus VIFS
+    // bloom additif central sur le 300 : courte fleur de lumière teintée combo (purement visuel)
+    if(this.spk){
+      const bt=Math.min(1,this.age/220);
+      if(bt<1){
+        const br=R*(.7+easeOut(bt)*1.35),ba=(1-bt)*(1-bt)*.55;
+        cx.save();cx.globalCompositeOperation='lighter';
+        const bg=cx.createRadialGradient(this.x,this.y,0,this.x,this.y,br);
+        bg.addColorStop(0,'rgba(255,255,255,'+(ba).toFixed(3)+')');
+        const[br_,bg_,bb_]=h2r(this.c);
+        bg.addColorStop(.45,'rgba('+br_+','+bg_+','+bb_+','+(ba*.7).toFixed(3)+')');
+        bg.addColorStop(1,'rgba('+br_+','+bg_+','+bb_+',0)');
+        cx.fillStyle=bg;cx.beginPath();cx.arc(this.x,this.y,br,0,PI2);cx.fill();
+        cx.restore();
+      }
+    }
     if(this.spk){ // étincelles directionnelles du 300 : traits qui fusent
       cx.save();cx.strokeStyle=this.c;cx.lineCap='round';
       for(const s of this.spk){
@@ -2867,7 +2882,13 @@ function drawHUD(el,kiai){
   const comboScale=1+.18*cfFlash;
   cx.save();cx.translate(16,H-26);cx.scale(comboScale,comboScale);
   hudLabel('combo',2,-36,'left');
-  segText(combo+'x',0,-28,30,combo>0?'#fff':'rgba(255,255,255,.35)','left');
+  // glow du combo : monte avec le palier (×50) + flash de hit, couleur or au-delà de 100x
+  if(combo>0){
+    const lvl=Math.min(1,combo/300);
+    const gcol=combo>=100?'#FFD66A':'#FFFFFF';
+    cx.shadowColor=gcol;cx.shadowBlur=(4+lvl*10)+cfFlash*10;
+  }
+  segText(combo+'x',0,-28,30,combo>=100?'#FFE9B0':combo>0?'#fff':'rgba(255,255,255,.35)','left');
   cx.restore();
   if(comboBreakFX){
     const bt=(performance.now()-comboBreakFX.t)/600;

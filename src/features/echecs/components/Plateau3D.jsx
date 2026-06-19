@@ -333,7 +333,7 @@ function CameraRig({ controlsRef, secousse, matVers, reduit }) {
   return null
 }
 
-function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec }) {
+function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec, coupsLegaux, trait, survolActif }) {
   const echecRef = useRef()
   // Throb rouge émissif sur la case du roi en échec.
   useFrame(({ clock }) => {
@@ -341,6 +341,24 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
     const v = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 7)
     m.emissiveIntensity = 0.4 + v * 1.1
   })
+
+  // ── Aperçu des coups légaux AU SURVOL (avant tout clic) ────────────────────
+  // 100 % visuel : quand aucune pièce n'est sélectionnée et qu'on survole une
+  // pièce du camp au trait, on montre ses cases d'arrivée en anneaux ATTÉNUÉS
+  // (plus discrets que la sélection cliquée). Ne touche ni la sélection ni la
+  // logique de coup. Désactivé pendant qu'une pièce est sélectionnée pour ne pas
+  // surcharger (les anneaux pleins de la sélection priment).
+  const [survol, setSurvol] = useState(null)
+  const apercu = useMemo(() => {
+    if (!survol || !survolActif) return null
+    if (pieceSur(survol) !== trait) return null          // que les pièces du camp au trait
+    const m = coupsLegaux?.(survol) || []
+    if (!m.length) return null
+    const map = {}
+    for (const c of m) map[c.to] = !!(c.captured || c.flags?.includes('e'))
+    return map
+  }, [survol, survolActif, trait, coupsLegaux, pieceSur])
+
   const cases = []
   for (let f = 0; f < 8; f++) for (let r = 0; r < 8; r++) {
     const square = FICHIERS[f] + (r + 1)
@@ -348,12 +366,14 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
     const claire = (f + r) % 2 === 1
     const sb = surbrillances[square]
     const estEchec = square === caseEchec
-    const cliquable = !!pieceSur(square) || !!sb?.legal
+    const propre = pieceSur(square)              // couleur de la pièce sur la case (ou null)
+    const cliquable = !!propre || !!sb?.legal
+    const survolable = survolActif && propre === trait   // pièce du camp au trait → aperçu au survol
     cases.push(
       <mesh key={square} position={[x, -0.06, z]} receiveShadow
         onClick={(e) => { e.stopPropagation(); onCaseClic(square, pieceSur(square)) }}
-        onPointerOver={cliquable ? (e) => { e.stopPropagation(); document.body.style.cursor = 'pointer' } : undefined}
-        onPointerOut={cliquable ? () => { document.body.style.cursor = 'auto' } : undefined}>
+        onPointerOver={(cliquable || survolable) ? (e) => { e.stopPropagation(); if (cliquable) document.body.style.cursor = 'pointer'; if (survolable) setSurvol(square) } : undefined}
+        onPointerOut={(cliquable || survolable) ? () => { if (cliquable) document.body.style.cursor = 'auto'; if (survolable) setSurvol((s) => (s === square ? null : s)) } : undefined}>
         <boxGeometry args={[1, 0.12, 1]} />
         <meshStandardMaterial
           ref={estEchec ? echecRef : undefined}
@@ -369,11 +389,21 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
         <meshStandardMaterial color={sb.capture ? C3D.echec : C3D.legal} emissive={sb.capture ? C3D.echec : C3D.legal} emissiveIntensity={0.7} transparent opacity={0.9} />
       </mesh>
     )
+    // Aperçu au survol : anneau atténué (skip si la case porte déjà un anneau de sélection).
+    if (apercu && apercu[square] !== undefined && !sb?.legal) {
+      const cap = apercu[square]
+      cases.push(
+        <mesh key={square + '-h'} position={[x, 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={cap ? [0.34, 0.46, 28] : [0.12, 0.2, 28]} />
+          <meshStandardMaterial color={cap ? C3D.echec : C3D.legal} emissive={cap ? C3D.echec : C3D.legal} emissiveIntensity={0.45} transparent opacity={0.42} depthWrite={false} />
+        </mesh>
+      )
+    }
   }
   return <group>{cases}</group>
 }
 
-function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
+function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, interactif }) {
   const { nodes } = useGLTF(MODELE_3D_URL)
   const pieces = useMemo(() => piecesDepuisFen(partie.fen), [partie.fen])
 
@@ -461,7 +491,9 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
     <>
       <CameraRig controlsRef={controlsRef} secousse={partie.caseRoiEnEchec} matVers={matVers} reduit={reduit} />
       <Echiquier orientation={orientation} surbrillances={surbrillances} onCaseClic={inter.onCaseClic}
-        pieceSur={pieceSur} caseEchec={partie.caseRoiEnEchec} />
+        pieceSur={pieceSur} caseEchec={partie.caseRoiEnEchec}
+        coupsLegaux={partie.coupsLegaux} trait={partie.trait}
+        survolActif={interactif && !inter.selection && !partie.fin?.terminee} />
       {pieces.map((p) => {
         // Glissement actif sur CETTE pièce (case d'arrivée d'un coup simple, signature FEN à jour).
         const glide = glissement && glissement.fen === partie.fen && glissement.to === p.square
@@ -522,7 +554,7 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
             <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbb26b', animation: 'echecsBlink 1s infinite .4s' }} />
           </span>
         </Html>}>
-          <Scene partie={partie} orientation={orientation} inter={inter} pieceSur={pieceSur} controlsRef={controlsRef} reduit={reduit} />
+          <Scene partie={partie} orientation={orientation} inter={inter} pieceSur={pieceSur} controlsRef={controlsRef} reduit={reduit} interactif={interactif} />
         </Suspense>
         <ContactShadows position={[0, -0.12, 0]} opacity={0.5} scale={14} blur={2.4} far={5} />
         <OrbitControls ref={controlsRef} enableDamping dampingFactor={0.08} enablePan={false} minDistance={6} maxDistance={18} maxPolarAngle={Math.PI / 2.15} target={[0, 0, 0]} />

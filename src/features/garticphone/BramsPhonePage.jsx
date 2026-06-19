@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { type, fonts } from '../../styles/typography.js'
 import { C, GRAD, alpha, panel, pageBg, dotGrid, KEYFRAMES } from './theme.js'
-import { Btn, Waiting } from './ui.jsx'
+import { Btn, Waiting, LiveRoster } from './ui.jsx'
 import { createRoom, genRoomCode, guestId } from '../../lib/garticRooms.js'
 import { useGarticRoom } from './useGarticRoom.js'
 import { playSound, vibrate, isMuted, toggleMuted } from './sound.js'
@@ -330,6 +330,11 @@ function Room({ code, identity, navigate, copied, onCopy }) {
       )}
       {!spectator && (status === 'drawing' || status === 'describing') && !myTask && (
         <div style={{ ...panel, maxWidth: 600, margin: '0 auto', padding: 30 }}><Waiting label="En attente du round suivant…" /></div>
+      )}
+
+      {/* Roster live : qui a déjà envoyé / qui on attend (toutes phases jouables, joueurs ET spectateurs). */}
+      {['writing', 'drawing', 'describing'].includes(status) && (
+        <LiveRoster players={players} submittedSeats={submittedSeats} meUserId={me?.user_id} />
       )}
 
       {(status === 'reveal' || status === 'finished') && (

@@ -92,6 +92,43 @@ export function PlayerChip({ player, host, submitted, me, compact }) {
   )
 }
 
+// ── Roster live pendant le jeu ────────────────────────────────────────────────
+// Pendant une phase jouable on ne voyait qu'un compteur texte ("3/5 pirates ont
+// envoyé") : impossible de savoir QUI on attend. Ce roster affiche chaque pirate
+// connecté (avatar + pseudo) avec un ✓ quand son siège a soumis. `submittedSeats`
+// est un Set de sièges (déjà exposé par le hook) ; `players` portent seat/host/me.
+export function LiveRoster({ players, submittedSeats, meUserId }) {
+  const list = (players || []).filter((p) => p.connected !== false && p.seat != null)
+  if (list.length < 1) return null
+  const done = list.filter((p) => submittedSeats?.has?.(p.seat)).length
+  return (
+    <div style={{ width: '100%', maxWidth: 880, margin: '12px auto 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+        <span style={{ ...type.eyebrow, color: C.textMut }}>Équipage</span>
+        <span style={{ ...type.small, color: done >= list.length ? C.ok : C.textMut, fontWeight: 800 }}>
+          {done}/{list.length} ont envoyé{done >= list.length ? ' ✓' : ''}
+        </span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {list.map((p) => {
+          const submitted = !!submittedSeats?.has?.(p.seat)
+          return (
+            <div key={p.user_id} data-bp-anim style={{ opacity: submitted ? 1 : 0.62, transition: 'opacity .25s' }}>
+              <PlayerChip
+                player={p}
+                host={!!p.is_host}
+                submitted={submitted}
+                me={String(p.user_id) === String(meUserId)}
+                compact
+              />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Cadre de phase : header (eyebrow + consigne + minuteur) + corps + footer ──
 export function PhaseFrame({ eyebrow, prompt, remaining, total, children, footer }) {
   return (

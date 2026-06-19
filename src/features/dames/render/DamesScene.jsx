@@ -559,6 +559,7 @@ const RING = {
   last: { col: 0xd9b870, inner: 0.40, tube: 0.03, op: 0.4, pulse: false },
   dot: { col: 0xd9b870, inner: 0.17, tube: 0.028, op: 0.5, pulse: false },
   cursor: { col: 0xffffff, inner: 0.40, tube: 0.05, op: 0.95, pulse: true },
+  caphop: { col: 0xff7a52, inner: 0.17, tube: 0.03, op: 0.55, pulse: false },  // case intermédiaire d'une rafle (aperçu du chemin de prise)
 }
 function Ring({ r, c, kind, blink }) {
   const ref = useRef()
@@ -591,7 +592,18 @@ function Markers({ store }) {
   if (s.last) { rings.push(<LastTapis key="ltapis" r={s.last.to[0]} c={s.last.to[1]} />); rings.push(<Ring key="lf" r={s.last.from[0]} c={s.last.from[1]} kind="last" />); (s.last.path || []).forEach(([r, c], i) => rings.push(<Ring key={'lp' + i} r={r} c={c} kind="last" />)) }
   if (s.selected) {
     rings.push(<Ring key="sel" r={s.selected[0]} c={s.selected[1]} kind="sel" />)
-    for (const mv of s.legalMoves) if (mv.from[0] === s.selected[0] && mv.from[1] === s.selected[1]) rings.push(<Ring key={'m' + mv.to[0] + '_' + mv.to[1]} r={mv.to[0]} c={mv.to[1]} kind={mv.isCapture ? 'cap' : 'move'} blink={mv.to[0]} />)
+    const own = s.legalMoves.filter(mv => mv.from[0] === s.selected[0] && mv.from[1] === s.selected[1])
+    for (const mv of own) rings.push(<Ring key={'m' + mv.to[0] + '_' + mv.to[1]} r={mv.to[0]} c={mv.to[1]} kind={mv.isCapture ? 'cap' : 'move'} blink={mv.to[0]} />)
+    // aperçu du chemin de RAFLE : si la seule prise possible avec ce pion est une rafle
+    // (≥2 sauts), on trace les cases intermédiaires + une ligne orange pour révéler le
+    // trajet et les pièces enlevées avant de jouer. Une seule rafle → zéro encombrement.
+    const raids = own.filter(mv => mv.isCapture && mv.path && mv.path.length >= 2)
+    if (raids.length === 1) {
+      const path = raids[0].path
+      path.slice(0, -1).forEach(([r, c], i) => rings.push(<Ring key={'cp' + i} r={r} c={c} kind="caphop" />))
+      const pts = [s.selected, ...path].map(([r, c]) => { const w = worldPos(r, c); return [w.x, MARK_Y + 0.05, w.z] })
+      rings.push(<PathLine key="cppath" points={pts} color="#ff8a5a" />)
+    }
   } else if (s.interactive && !s.gameOver) {
     s.movableKeys.forEach(k => { const [r, c] = k.split('_').map(Number); rings.push(<Ring key={'d' + k} r={r} c={c} kind="dot" />) })
   }
@@ -603,12 +615,13 @@ function Markers({ store }) {
   if (s.cursor) rings.push(<Ring key="cur" r={s.cursor[0]} c={s.cursor[1]} kind="cursor" />)
   return <group>{rings}</group>
 }
-// chemin d'indice : ligne cyan lumineuse pulsée du coup suggéré
-function HintPath({ points }) {
+// ligne de chemin pulsée (pointillés) : indice (cyan) ou aperçu de rafle (orange)
+function PathLine({ points, color }) {
   const ref = useRef()
   useFrame(() => { if (ref.current && ref.current.material) ref.current.material.opacity = 0.5 + 0.4 * Math.sin(performance.now() * 0.006) })
-  return <Line ref={ref} points={points} color="#6fe0ff" lineWidth={3} transparent opacity={0.9} toneMapped={false} dashed dashSize={0.22} gapSize={0.12} />
+  return <Line ref={ref} points={points} color={color} lineWidth={3} transparent opacity={0.9} toneMapped={false} dashed dashSize={0.22} gapSize={0.12} />
 }
+const HintPath = ({ points }) => <PathLine points={points} color="#6fe0ff" />
 
 // ── océan + ciel + particules d'ambiance ───────────────────────────────────────
 function Ocean({ quality, theme }) {
