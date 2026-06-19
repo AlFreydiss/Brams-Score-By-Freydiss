@@ -304,7 +304,11 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   }, [room, connectedPlayers, me, isHost, spectator, userId, tick, code])
 
   // ── Reveal : réactions emojis + synchro de page (broadcast canal room) ────
-  const sendReaction = useCallback((emoji) => { chRef.current?.send('reaction', { emoji, from: userId }) }, [userId])
+  // `extra` (optionnel) est fusionné au payload sans rien casser : les appels
+  // historiques sendReaction('🔥') restent identiques. Sert au vote « coup de
+  // cœur » du reveal : sendReaction('vote', { album: idx }) → payload porte
+  // { emoji:'vote', album, from } et transite sur le canal réactions existant.
+  const sendReaction = useCallback((emoji, extra) => { chRef.current?.send('reaction', { emoji, from: userId, ...(extra || null) }) }, [userId])
   const sendRevealStep = useCallback((step) => { chRef.current?.send('reveal_step', step) }, [])
   const onReaction = useCallback((cb) => {
     reactionCbsRef.current.add(cb)

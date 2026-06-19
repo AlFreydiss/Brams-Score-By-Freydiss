@@ -333,7 +333,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
       )}
 
       {(status === 'reveal' || status === 'finished') && (
-        <Reveal room={room} players={players} n={n} isHost={isHost} allPages={allPages}
+        <Reveal room={room} players={players} n={n} isHost={isHost} allPages={allPages} userId={identity.userId}
           revealStep={revealStep} sendRevealStep={sendRevealStep} sendReaction={sendReaction} onReaction={onReaction}
           onReplay={async () => { const ok = await replay(); if (!ok) navigate('/brams-phone') }} />
       )}

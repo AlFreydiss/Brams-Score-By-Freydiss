@@ -310,7 +310,13 @@ function Pieces({ store, audio, events }) {
         if (p >= 1) {
           a.seg0 = b; a.i++; a.t0 = now
           if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4); if (!reduced && quality !== 'low') beamState.current = { t0: now, x: wt.x, z: wt.z }; store.api.shake?.(0.18); events?.promote?.(a.moverSide) } }
+          else if (a.isCap) { a.grp.position.set(b.x, PIECE_Y, b.z); a.phase = 'pause' }   // rafle : marque un temps sur la case de chute avant le saut suivant (lecture du combo)
         }
+      } else if (a.phase === 'pause') {                             // mini-pause entre deux prises d'une rafle : la pièce se pose, accuse l'impact, puis repart
+        let p = (now - a.t0) / 170; if (p > 1) p = 1
+        const sy = 1 - 0.12 * Math.sin(Math.min(1, p * 1.6) * Math.PI); a.grp.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy))
+        a.grp.position.set(a.seg0.x, PIECE_Y, a.seg0.z)
+        if (p >= 1) { a.grp.scale.set(1, 1, 1); a.phase = 'hop'; a.t0 = now }
       } else if (a.phase === 'settle') {                            // petit rebond d'atterrissage (overshoot)
         let p = (now - a.t0) / 150; if (p > 1) p = 1
         const sy = 1 - 0.16 * Math.sin(p * Math.PI); a.grp.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy))

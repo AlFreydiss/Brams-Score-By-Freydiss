@@ -90,7 +90,7 @@ function PageCard({ page, players, kind, climax }) {
   )
 }
 
-export default function Reveal({ room, players, n, isHost, allPages, onReplay,
+export default function Reveal({ room, players, n, isHost, allPages, onReplay, userId,
   revealStep, sendRevealStep, sendReaction, onReaction }) {
   const [pages, setPages] = useState(null)
   const [albumIdx, setAlbumIdx] = useState(0)
@@ -102,6 +102,11 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   const burstRef = useRef(null)
   const [reactCounts, setReactCounts] = useState({}) // réactions cumulées par album (book → n)
   const lastBurstRef = useRef(-1)
+  // Vote « coup de cœur » : un bulletin par votant (clé = from), réécrasable s'il
+  // change d'avis. On stocke le book (siège auteur, stable) plutôt que l'index
+  // positionnel pour rester robuste si la liste filtrée diffère entre pairs.
+  const [votes, setVotes] = useState({}) // { [from]: book }
+  const [myVote, setMyVote] = useState(null) // book voté par moi (feedback local)
 
   const loadPages = useCallback(() => { allPages().then((p) => setPages(p || [])).catch(() => {}) }, [allPages])
   useEffect(() => { let alive = true; allPages().then((p) => { if (alive) setPages(p || []) }).catch(() => {}); return () => { alive = false } }, [allPages])
@@ -114,6 +119,23 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   const climax = lastPageOfAlbum && (album?.pages.length || 0) > 1
   const lastAlbum = albumIdx >= albums.length - 1
   const finished = lastAlbum && lastPageOfAlbum
+
+  // ── Agrégation des bulletins « coup de cœur » (1 par votant, clé=book) ───────
+  // tally[book] = nombre de cœurs ; on joint au libellé d'auteur du carnet et on
+  // trie pour le podium. totalVotes = participation affichée.
+  const voteTally = useMemo(() => {
+    const counts = {}
+    for (const book of Object.values(votes)) counts[book] = (counts[book] || 0) + 1
+    const rows = albums.map((a) => ({
+      book: a.book,
+      author: authorName(a.pages[0]),
+      count: counts[a.book] || 0,
+    }))
+    rows.sort((x, y) => y.count - x.count)
+    return rows
+  }, [votes, albums])
+  const totalVotes = useMemo(() => Object.keys(votes).length, [votes])
+  const topCount = voteTally[0]?.count || 0
 
   // ── Réactions flottantes (spawn DOM + animation CSS GPU, auto-retrait) ───────
   const spawn = useCallback((emoji) => {
@@ -155,6 +177,15 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   useEffect(() => {
     if (!onReaction) return
     return onReaction((p) => {
+      // Vote « coup de cœur » : transite sur le même canal réactions (emoji:'vote',
+      // book = album voté, from = votant). Pas un vrai emoji → on n'en fait PAS
+      // une particule flottante, on l'agrège dans le décompte des cœurs.
+      if (p?.emoji === 'vote') {
+        if (typeof p.album !== 'undefined' && p.from != null) {
+          setVotes((v) => ({ ...v, [String(p.from)]: p.album }))
+        }
+        return
+      }
       spawn(p?.emoji)
       if (p?.emoji) setReactCounts((m) => ({ ...m, [albumIdx]: (m[albumIdx] || 0) + 1 }))
     })
@@ -164,6 +195,18 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
     sendReaction?.(emoji); spawn(emoji)
     setReactCounts((m) => ({ ...m, [albumIdx]: (m[albumIdx] || 0) + 1 }))
   }
+
+  // Voter pour un carnet (par son book stable). Broadcast sur le canal réactions ;
+  // application optimiste locale immédiate. Un seul bulletin par votant (réécrasable).
+  const voteFor = useCallback((book) => {
+    if (book == null) return
+    sendReaction?.('vote', { album: book })
+    setMyVote(book)
+    // Clé alignée sur le `from` rebroadcasté → si le canal nous renvoie notre
+    // propre vote, il écrase ce bulletin optimiste au lieu d'en créer un second.
+    setVotes((v) => ({ ...v, [String(userId)]: book }))
+    playSound('reveal')
+  }, [sendReaction, userId])
 
   // Blip sonore au changement de page du dévoilement (feedback de défilement).
   useEffect(() => { if (album && pages) playSound('reveal') }, [albumIdx, pageIdx]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -240,6 +283,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
       <style>{`
         @keyframes bpReact { 0%{opacity:0;transform:translate(-50%,0) scale(.5)} 12%{opacity:1} 100%{opacity:0;transform:translate(-50%,-300px) scale(1.15) rotate(8deg)} }
         @keyframes bpGoldFlash { 0%{opacity:.55} 100%{opacity:0} }
+        @keyframes bp-podium-grow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+        @media (prefers-reduced-motion: reduce) { [data-bp-anim]{animation:none !important} }
       `}</style>
 
       {/* Header album */}
@@ -329,6 +374,80 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
           )}
         </div>
       </div>
+
+      {/* ── Coup de cœur : vote pour le meilleur carnet (fin du dévoilement) ─── */}
+      {finished && (
+        <div data-bp-anim style={{ ...panel, padding: 'clamp(18px,3vw,26px)', animation: 'bp-ready-pop .4s cubic-bezier(.2,1,.3,1)' }}>
+          <div style={{ textAlign: 'center', marginBottom: 18 }}>
+            <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 6 }}>Coup de cœur</div>
+            <div style={{ ...type.h2, color: C.parchment }}>🏆 Album le plus aimé</div>
+            <div style={{ ...type.small, color: C.textMut, marginTop: 4 }}>
+              {totalVotes > 0
+                ? `${totalVotes} vote${totalVotes > 1 ? 's' : ''} · ${myVote == null ? 'à toi de choisir' : 'tu peux changer d\'avis'}`
+                : 'Vote pour ton carnet préféré'}
+            </div>
+          </div>
+
+          {/* Bulletins : un bouton par carnet (auteur de départ) */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: voteTally.length ? 20 : 0 }}>
+            {albums.map((a) => {
+              const mine = myVote === a.book
+              return (
+                <button key={a.book} onClick={() => voteFor(a.book)}
+                  aria-pressed={mine} aria-label={`Voter pour le carnet de ${authorName(a.pages[0])}`}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+                    padding: '8px 14px', borderRadius: 999, ...type.small, fontWeight: 800,
+                    color: mine ? C.bgDeep : C.parchment,
+                    background: mine ? C.gold : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${mine ? C.gold : C.hairSoft}`,
+                    transition: 'transform .12s ease, border-color .12s ease, background .15s ease',
+                  }}
+                  onMouseEnter={(ev) => { if (!mine) { ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.borderColor = alpha(C.gold, 0.5) } }}
+                  onMouseLeave={(ev) => { ev.currentTarget.style.transform = 'none'; if (!mine) ev.currentTarget.style.borderColor = C.hairSoft }}
+                >
+                  {mine ? '💛' : '🤍'} {authorName(a.pages[0])}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Podium : carnets triés par cœurs reçus */}
+          {totalVotes > 0 && (
+            <div style={{ display: 'grid', gap: 8, maxWidth: 520, margin: '0 auto' }}>
+              {voteTally.filter((r) => r.count > 0).slice(0, 3).map((r, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'
+                const leader = i === 0 && r.count === topCount
+                const pct = topCount > 0 ? Math.round((r.count / topCount) * 100) : 0
+                return (
+                  <div key={r.book} data-bp-anim style={{
+                    position: 'relative', overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 16px', borderRadius: 14,
+                    background: leader ? alpha(C.gold, 0.1) : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${leader ? alpha(C.gold, 0.4) : C.hair}`,
+                    animation: `bp-ready-pop .35s cubic-bezier(.2,1.1,.3,1) ${i * 0.07}s both`,
+                  }}>
+                    {/* jauge proportionnelle au leader (fond) */}
+                    <div aria-hidden style={{
+                      position: 'absolute', inset: 0, width: `${pct}%`,
+                      background: `linear-gradient(90deg, ${alpha(C.gold, leader ? 0.18 : 0.08)}, transparent)`,
+                      transformOrigin: 'left', animation: 'bp-podium-grow .6s cubic-bezier(.2,.9,.3,1) both',
+                    }} />
+                    <span style={{ fontSize: 22, position: 'relative' }}>{medal}</span>
+                    <span style={{ ...type.body, color: leader ? C.parchment : C.text, fontWeight: leader ? 900 : 700, position: 'relative', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      Carnet de {r.author}
+                    </span>
+                    <span style={{ ...type.small, color: leader ? C.gold : C.textMut, fontWeight: 800, position: 'relative' }}>
+                      {r.count} 💛
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {finished && (
         <div style={{ ...panel, padding: 22, textAlign: 'center', background: GRAD.sea, color: '#eafaff', border: 'none' }}>
