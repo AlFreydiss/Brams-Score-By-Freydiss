@@ -8,7 +8,6 @@ import * as THREE from 'three'
 import { THEME, MODELE_3D_URL, NOEUDS_PIECES_3D, CREDIT_3D } from '../constants.js'
 import { squareVers3D, piecesDepuisFen } from '../lib/coords3d.js'
 import { useInteractionEchecs } from '../hooks/useInteractionEchecs.js'
-import { sons } from '../lib/sons.js'
 import SelecteurPromotion from './SelecteurPromotion.jsx'
 import Plateau from './Plateau.jsx'
 
@@ -46,17 +45,19 @@ function normaliserPiece(src) {
 }
 
 // Pièce vivante : lerp vers la case cible. `roiTombe` = roi maté qui bascule lentement.
-function Piece3D({ nodes, nodeName, cible, type, roiTombe = false }) {
+function Piece3D({ nodes, nodeName, cible, type, roiTombe = false, selectionnee = false }) {
   const ref = useRef()
   const obj = useMemo(() => normaliserPiece(nodeName && nodes[nodeName]), [nodes, nodeName])
   const tombeRef = useRef(0)
-  useFrame((_, dt) => {
+  useFrame(({ clock }, dt) => {
     const o = ref.current; if (!o) return
     const k = Math.min(1, dt * 9)
     o.position.x += (cible[0] - o.position.x) * k
     o.position.z += (cible[2] - o.position.z) * k
     const d = Math.hypot(cible[0] - o.position.x, cible[2] - o.position.z)
     o.position.y = type === 'n' ? Math.min(0.6, d) : 0 // petit saut pour le cavalier
+    // Sélection : légère lévitation oscillante (cosmétique, n'affecte pas la cible/logique).
+    if (selectionnee && !roiTombe) o.position.y += 0.18 + Math.sin(clock.elapsedTime * 4) * 0.04
     // Mat : le roi perdant bascule lentement (jusqu'à ~couché sur le flanc).
     if (roiTombe) {
       tombeRef.current = Math.min(1, tombeRef.current + dt * 1.4)
@@ -253,9 +254,12 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
     const claire = (f + r) % 2 === 1
     const sb = surbrillances[square]
     const estEchec = square === caseEchec
+    const cliquable = !!pieceSur(square) || !!sb?.legal
     cases.push(
       <mesh key={square} position={[x, -0.06, z]} receiveShadow
-        onClick={(e) => { e.stopPropagation(); onCaseClic(square, pieceSur(square)) }}>
+        onClick={(e) => { e.stopPropagation(); onCaseClic(square, pieceSur(square)) }}
+        onPointerOver={cliquable ? (e) => { e.stopPropagation(); document.body.style.cursor = 'pointer' } : undefined}
+        onPointerOut={cliquable ? () => { document.body.style.cursor = 'auto' } : undefined}>
         <boxGeometry args={[1, 0.12, 1]} />
         <meshStandardMaterial
           ref={estEchec ? echecRef : undefined}
@@ -267,8 +271,8 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
     )
     if (sb?.legal) cases.push(
       <mesh key={square + '-l'} position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.12, 0.2, 28]} />
-        <meshStandardMaterial color={C3D.legal} emissive={C3D.legal} emissiveIntensity={0.7} transparent opacity={0.9} />
+        <ringGeometry args={sb.capture ? [0.34, 0.46, 28] : [0.12, 0.2, 28]} />
+        <meshStandardMaterial color={sb.capture ? C3D.echec : C3D.legal} emissive={sb.capture ? C3D.echec : C3D.legal} emissiveIntensity={0.7} transparent opacity={0.9} />
       </mesh>
     )
   }
@@ -290,7 +294,8 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
     if (sig && sig !== lastMoveRef.current) {
       lastMoveRef.current = sig
       if (dc.captured) {
-        sons.capture()
+        // Son de capture déjà joué par chaque mode (onCoup local + onCoupRecu/IA adverse) :
+        // on ne garde ici que l'éclat visuel pour éviter un double-son en 3D.
         const pos = squareVers3D(dc.to, orientation)
         const id = sig + ':' + Math.random()
         setEclats((e) => [...e, { id, position: pos }])
@@ -310,7 +315,7 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
     const s = {}
     if (partie.dernierCoup) { s[partie.dernierCoup.from] = { color: C3D.dernier }; s[partie.dernierCoup.to] = { color: C3D.dernier } }
     if (inter.selection) s[inter.selection] = { color: C3D.selection }
-    for (const m of inter.coupsLegauxSel) s[m.to] = { ...(s[m.to] || {}), legal: true }
+    for (const m of inter.coupsLegauxSel) s[m.to] = { ...(s[m.to] || {}), legal: true, capture: !!(m.captured || m.flags?.includes('e')) }
     return s
   }, [partie.dernierCoup, inter.selection, inter.coupsLegauxSel])
 
@@ -324,6 +329,7 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
       {pieces.map((p) => (
         <Piece3D key={p.square} nodes={nodes} nodeName={NOEUDS_PIECES_3D?.[p.couleur]?.[p.type]}
           cible={squareVers3D(p.square, orientation)} type={p.type}
+          selectionnee={inter.selection === p.square}
           roiTombe={!!matInfo && p.square === matInfo.square && p.couleur === matInfo.camp} />
       ))}
       {eclats.map((e) => (
@@ -340,6 +346,8 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
   const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif })
   const controlsRef = useRef()
   const reduit = useMemo(() => prefersReducedMotion(), [])
+  // Restaure le curseur si on démonte le plateau en plein survol (sinon curseur bloqué).
+  useEffect(() => () => { document.body.style.cursor = 'auto' }, [])
   const pieceSur = useMemo(() => {
     const m = {}; for (const p of piecesDepuisFen(partie.fen)) m[p.square] = p.couleur
     return (sq) => m[sq] || null
@@ -358,7 +366,15 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
         <ambientLight intensity={0.6} />
         <directionalLight position={[6, 12, 6]} intensity={1.4} castShadow shadow-mapSize={[1024, 1024]} />
         <directionalLight position={[-6, 8, -4]} intensity={0.4} />
-        <Suspense fallback={<Html center style={{ color: '#cbb26b', font: '700 14px sans-serif', whiteSpace: 'nowrap' }}>Chargement de l'échiquier 3D…</Html>}>
+        <Suspense fallback={<Html center style={{ color: '#cbb26b', font: '700 14px sans-serif', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <style>{`@keyframes echecsBlink{0%,80%,100%{opacity:.25}40%{opacity:1}}`}</style>
+          Chargement de l'échiquier 3D
+          <span style={{ display: 'inline-flex', gap: 3 }}>
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbb26b', animation: 'echecsBlink 1s infinite 0s' }} />
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbb26b', animation: 'echecsBlink 1s infinite .2s' }} />
+            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbb26b', animation: 'echecsBlink 1s infinite .4s' }} />
+          </span>
+        </Html>}>
           <Scene partie={partie} orientation={orientation} inter={inter} pieceSur={pieceSur} controlsRef={controlsRef} reduit={reduit} />
         </Suspense>
         <ContactShadows position={[0, -0.12, 0]} opacity={0.5} scale={14} blur={2.4} far={5} />

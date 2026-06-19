@@ -114,8 +114,14 @@ export default function FinPartieModal({
   const couleurTitre = resultat === 'nulle' ? THEME.blue : gagne || !maCouleur ? THEME.gold : THEME.accent
   const rang = eloFinal != null ? rangPourElo(eloFinal) : null
 
+  useEffect(() => {
+    const k = (e) => { if (e.key === 'Escape') onFermer?.() }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [onFermer])
+
   return (
-    <div style={{
+    <div role="dialog" aria-modal="true" onClick={onFermer} style={{
       position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'rgba(8,9,11,0.72)', backdropFilter: 'blur(6px)', animation: 'echecsFadeIn .25s ease',
     }}>
@@ -124,7 +130,7 @@ export default function FinPartieModal({
         @keyframes echecsPop { from { opacity: 0; transform: translateY(18px) scale(.96) } to { opacity: 1; transform: none } }
       `}</style>
       <ConfettisOr actif={!!gagne} />
-      <div style={{
+      <div onClick={(e) => e.stopPropagation()} style={{
         position: 'relative', zIndex: 2,
         width: 'min(400px, calc(100vw - 40px))', padding: '30px 28px 24px', textAlign: 'center',
         background: 'linear-gradient(160deg, rgba(36,38,42,0.96), rgba(24,25,28,0.96))',

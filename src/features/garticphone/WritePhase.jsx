@@ -12,11 +12,11 @@ const IDEAS = [
   'Nami vend le Thousand Sunny aux enchères',
 ]
 
-export default function WritePhase({ remaining, total, mySubmitted, submit, draftKey }) {
+export default function WritePhase({ remaining, total, mySubmitted, submit, submittedLabel, draftKey }) {
   const [text, setText] = useState(() => { try { return (draftKey && localStorage.getItem(draftKey)) || '' } catch { return '' } })
   const [busy, setBusy] = useState(false)
   const submittedRef = useRef(false)
-  const placeholder = useRef(IDEAS[Math.floor(Math.random() * IDEAS.length)])
+  const [ph, setPh] = useState(() => IDEAS[Math.floor(Math.random() * IDEAS.length)])
 
   // Brouillon : persiste le texte (survit refresh/reco), purgé à la soumission.
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function WritePhase({ remaining, total, mySubmitted, submit, draf
   if (mySubmitted || submittedRef.current) {
     return (
       <PhaseFrame eyebrow="Point de départ" prompt="Phrase envoyée !" remaining={remaining} total={total}>
-        <Waiting label="En attente des autres pirates…" />
+        <Waiting label={submittedLabel || 'En attente des autres pirates…'} />
       </PhaseFrame>
     )
   }
@@ -55,14 +55,17 @@ export default function WritePhase({ remaining, total, mySubmitted, submit, draf
         eyebrow="Écris la phrase de départ"
         prompt="Lance une scène absurde — le voisin devra la dessiner."
         remaining={remaining} total={total}
-        footer={<Btn variant="gold" disabled={busy || !text.trim()} onClick={() => doSubmit(false)}>{busy ? 'Envoi…' : 'Valider ma phrase'}</Btn>}
+        footer={<>
+          <Btn variant="ghost" onClick={() => setPh(IDEAS[Math.floor(Math.random() * IDEAS.length)])} style={{ marginRight: 'auto' }}>🎲 Idée</Btn>
+          <Btn variant="gold" disabled={busy || !text.trim()} onClick={() => doSubmit(false)}>{busy ? 'Envoi…' : 'Valider ma phrase'}</Btn>
+        </>}
       >
         <textarea
           autoFocus
           value={text}
           maxLength={140}
           onChange={(e) => setText(e.target.value)}
-          placeholder={`ex. ${placeholder.current}`}
+          placeholder={`ex. ${ph}`}
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) doSubmit(false) }}
           style={{
             width: '100%', minHeight: 120, resize: 'vertical', boxSizing: 'border-box',

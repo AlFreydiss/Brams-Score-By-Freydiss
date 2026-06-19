@@ -39,6 +39,7 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
   const radius = Math.min(150, 90 + connected.length * 6)
   const sortedPlayers = connected
   const everyoneReady = sortedPlayers.length > 0 && sortedPlayers.every((p) => p.is_ready || p.is_host)
+  const readyCount = sortedPlayers.filter((p) => p.is_ready || p.is_host).length
 
   const settings = () => {
     const d = DURATION_PRESETS.find((x) => x.id === preset) || DURATION_PRESETS[1]
@@ -118,6 +119,8 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
               {me.is_ready ? '✓ Prêt — annuler' : 'Je suis prêt'}
             </Btn>
           )}
+
+          <div style={{ ...type.small, color: everyoneReady ? C.ok : C.textMut, textAlign: 'center', marginBottom: -6 }}>{readyCount}/{sortedPlayers.length} prêts {everyoneReady ? '✓' : ''}</div>
 
           {isHost ? (
             <Btn variant="gold" full disabled={players.length < 1} onClick={() => onStart(settings())}>

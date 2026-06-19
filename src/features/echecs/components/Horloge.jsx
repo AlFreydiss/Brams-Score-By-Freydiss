@@ -27,7 +27,9 @@ export default function Horloge({ ms, actif, visible = true }) {
       border: `1px solid ${actif ? 'rgba(255,215,0,0.35)' : THEME.cardBorder}`,
       boxShadow: actif && critique ? `0 0 18px -4px ${THEME.accent}` : 'none',
       transition: 'background .2s, color .2s, border-color .2s',
+      animation: critique && actif && !tombe ? 'echecsPulse 1s ease-in-out infinite' : 'none',
     }}>
+      <style>{`@keyframes echecsPulse{0%,100%{opacity:1}50%{opacity:.55}}`}</style>
       {tombe ? '🏳 0.0' : formatTemps(ms)}
     </div>
   )

@@ -3,6 +3,7 @@
 // façon optimiste puis se resynchronise sur le serveur ; les coups adverses
 // arrivent par Realtime. Coups validés par /api/dames (anti-triche).
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { initBoard, generateMoves, applyMove, opp, countPieces, P, M } from './engine/draughts-engine.js'
 import { ensureRating, matchmake, cancelQueue, getMatch, submitMove, resign, subscribeMatch, leaderboard } from './online/damesRanked.js'
@@ -15,7 +16,10 @@ const ghost = { padding: '9px 18px', borderRadius: 999, cursor: 'pointer', backg
 
 export default function DamesOnline3D() {
   const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
   const [phase, setPhase] = useState('lobby')          // lobby | searching | playing | finished
+  const [confirmResign, setConfirmResign] = useState(false)  // abandon à 2 temps (anti fat-finger)
+  const [waited, setWaited] = useState(0)              // secondes d'attente en matchmaking
   const [rating, setRating] = useState(null)
   const [opponent, setOpponent] = useState(null)
   const [result, setResult] = useState(null)           // { winner, myDelta }
@@ -33,6 +37,11 @@ export default function DamesOnline3D() {
   const loadLb = useCallback(() => { leaderboard(30).then(setLb).catch(() => {}) }, [])
   useEffect(() => { aliveRef.current = true; loadLb(); if (isAuthenticated) ensureRating().then(r => { if (aliveRef.current) setRating(r) }).catch(() => {}); return () => { aliveRef.current = false } }, [isAuthenticated, loadLb])
   useEffect(() => { const h = () => setFs(!!document.fullscreenElement); document.addEventListener('fullscreenchange', h); return () => document.removeEventListener('fullscreenchange', h) }, [])
+  useEffect(() => {
+    if (phase !== 'searching') { setWaited(0); return }
+    const t = setInterval(() => setWaited(w => w + 1), 1000)
+    return () => clearInterval(t)
+  }, [phase])
   const toggleFs = () => { const el = containerRef.current; if (!el) return; if (document.fullscreenElement) document.exitFullscreen?.(); else el.requestFullscreen?.() }
 
   const drawMarkers = useCallback(() => {
@@ -59,6 +68,7 @@ export default function DamesOnline3D() {
     const delta = g.myColor === P ? m.elo_change_pirate : m.elo_change_marine
     setResult({ winner: m.winner, myDelta: typeof delta === 'number' ? delta : null })
     setPhase('finished'); drawMarkers(); loadLb()
+    ensureRating().then(r => { if (aliveRef.current) setRating(r) }).catch(() => {})  // ELO à jour pour le palier/bounty
     rdrRef.current?.[m.winner === g.myColor ? 'sfxWin' : 'sfxLose']?.()
   }, [drawMarkers, loadLb])
 
@@ -83,7 +93,7 @@ export default function DamesOnline3D() {
     await rdrRef.current?.playMove(mv, before, { promoted })
     g.board = nb; g.turn = opp(g.myColor); g.ply += 1; refreshLocal()
     const res = await submitMove(g.matchId, mv)
-    if (res?.error) { setErr(res.error); g.locked = true; await resync() }  // rejeté → on se resync sur le serveur
+    if (res?.error) { setErr(res.error); setTimeout(() => { if (aliveRef.current) setErr(null) }, 2600); g.locked = true; await resync() }  // rejeté → on se resync sur le serveur
     else if (res?.status === 'finished') { /* la MAJ Realtime appellera finish ; filet : */ getMatch(g.matchId).then(m => m && finish(m)) }
   }, [refreshLocal, resync, finish])
 
@@ -181,7 +191,7 @@ export default function DamesOnline3D() {
           ) })() : <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}>Ton ELO : <strong style={{ color: GOLD }}>—</strong></div>}
           {err && <div style={{ color: '#ef8a7c', fontSize: 13, marginBottom: 12 }}>{err}</div>}
           {phase === 'searching'
-            ? <div><div style={{ fontSize: 15, color: PARCH, marginBottom: 14 }}>🧭 Recherche d'un adversaire…</div><button style={ghost} onClick={cancel}>Annuler</button></div>
+            ? <div><div style={{ fontSize: 15, color: PARCH, marginBottom: 14 }}>🧭 Recherche d'un adversaire… ({waited}s)</div><button style={ghost} onClick={cancel}>Annuler</button></div>
             : <button style={primary} onClick={search} disabled={!isAuthenticated}>{isAuthenticated ? '⚔️ Trouver une partie' : 'Connecte-toi pour jouer'}</button>}
         </div>
         <Lb />
@@ -216,16 +226,36 @@ export default function DamesOnline3D() {
                 <span style={{ fontFamily: "'Pirata One',cursive", fontWeight: 700, fontSize: 18, color: PARCH }}>{n}</span>
               </div>
             ))}
-            {G.current.status === 'active' && <button style={{ ...ghost, padding: '6px 14px' }} onClick={doResign}>🏳️ Abandonner</button>}
+            {G.current.status === 'active' && <button style={{ ...ghost, padding: '6px 14px', ...(confirmResign ? { background: 'rgba(192,57,43,.25)', color: '#ffd9cf', borderColor: 'rgba(192,57,43,.5)' } : {}) }} onClick={() => { if (confirmResign) { doResign() } else { setConfirmResign(true); setTimeout(() => setConfirmResign(false), 3000) } }}>{confirmResign ? '🏳️ Confirmer ?' : '🏳️ Abandonner'}</button>}
           </div>
         </div>
+        {err && phase === 'playing' && (
+          <div style={{ position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)', background: 'rgba(120,24,18,.9)', color: '#ffd9cf', padding: '7px 16px', borderRadius: 999, fontSize: 13, fontWeight: 700, zIndex: 5 }}>{err}</div>
+        )}
         {phase === 'finished' && result && (
           <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'radial-gradient(circle at 50% 45%, rgba(10,8,6,.6), rgba(5,4,3,.92))', backdropFilter: 'blur(6px)' }}>
             <div style={{ ...panel, maxWidth: 380 }}>
               <div style={{ fontSize: 44 }}>{result.winner === 'draw' ? '🤝' : won ? '🏆' : '☠️'}</div>
               <h2 style={{ fontFamily: "'Pirata One',cursive", fontWeight: 700, fontSize: 24, color: '#e8cf92', margin: '6px 0 6px' }}>{result.winner === 'draw' ? 'Match nul' : won ? 'Victoire !' : 'Défaite'}</h2>
-              {typeof result.myDelta === 'number' && <p style={{ color: result.myDelta >= 0 ? '#9fe0a0' : '#ef8a7c', fontWeight: 800, marginBottom: 16 }}>{result.myDelta >= 0 ? '+' : ''}{result.myDelta} ELO</p>}
-              <button style={primary} onClick={leave}>↻ Rejouer</button>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 24, margin: '4px 0 14px' }}>
+                {[['Prises', Math.max(0, 40 - pir - mar)], ['Pièces restantes', won ? Math.max(pir, mar) : Math.min(pir, mar)]].map(([l, v]) => (
+                  <div key={l}><div style={{ fontFamily: "'Pirata One',cursive", fontSize: 26, color: GOLD, lineHeight: 1 }}>{v}</div><div style={{ fontSize: 9.5, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginTop: 3 }}>{l}</div></div>
+                ))}
+              </div>
+              {typeof result.myDelta === 'number' && <p style={{ color: result.myDelta >= 0 ? '#9fe0a0' : '#ef8a7c', fontWeight: 800, marginBottom: 6 }}>{result.myDelta >= 0 ? '+' : ''}{result.myDelta} ELO</p>}
+              {rating && typeof result.myDelta === 'number' && (() => {
+                const before = eloToTier(rating.rating - result.myDelta), after = eloToTier(rating.rating)
+                return (
+                  <>
+                    <p style={{ color: GOLD, fontWeight: 800, fontSize: 13, marginBottom: after.tier !== before.tier ? 8 : 14 }}>{after.emoji} {formatPrime(after.prime)}</p>
+                    {after.tier !== before.tier && <div style={{ color: GOLD, fontWeight: 800, fontSize: 12, marginBottom: 14, padding: '6px 12px', borderRadius: 999, background: 'rgba(217,184,112,.12)', border: '1px solid rgba(217,184,112,.3)', boxShadow: '0 0 18px rgba(217,184,112,.18)' }}>Palier {after.label} atteint !</div>}
+                  </>
+                )
+              })()}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button style={primary} onClick={leave}>↻ Rejouer</button>
+                <button style={ghost} onClick={() => navigate('/jeux')}>Quitter</button>
+              </div>
             </div>
           </div>
         )}

@@ -7,7 +7,7 @@ import { Btn, PhaseFrame, Waiting } from './ui.jsx'
 import DrawCanvas from './DrawCanvas.jsx'
 import { uploadDrawing } from '../../lib/garticUpload.js'
 
-export default function DrawPhase({ room, remaining, total, mySubmitted, prevPage, submit, draftKey }) {
+export default function DrawPhase({ room, remaining, total, mySubmitted, prevPage, submit, submittedLabel, draftKey }) {
   const canvasRef = useRef(null)
   const [prompt, setPrompt] = useState(null)
   const [loadingPrompt, setLoadingPrompt] = useState(true)
@@ -59,7 +59,7 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
   if (mySubmitted || submittedRef.current) {
     return (
       <PhaseFrame eyebrow="Phase dessin" prompt="Dessin envoyé !" remaining={remaining} total={total}>
-        <Waiting label="En attente des autres pirates…" />
+        <Waiting label={submittedLabel || 'En attente des autres pirates…'} />
       </PhaseFrame>
     )
   }

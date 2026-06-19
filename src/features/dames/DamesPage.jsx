@@ -16,7 +16,7 @@ export default function DamesPage() {
       <BarreJeu titre="Dames Brams" />
       <div style={{ padding: '0 16px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <h1 style={{ margin: 0, fontFamily: "'Fraunces','Bricolage Grotesque',serif", fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, letterSpacing: '-.01em', color: '#fff' }}>
+          <h1 style={{ margin: 0, fontFamily: "'Pirata One','OnePiece',cursive", fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, letterSpacing: '-.01em', color: '#fff' }}>
             Dames <span style={{ color: GOLD }}>Brams</span> <span style={{ fontSize: '.5em', color: 'rgba(243,234,216,.5)', fontWeight: 600, verticalAlign: 'middle' }}>· 3D</span>
           </h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(243,234,216,.55)' }}>

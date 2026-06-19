@@ -7,6 +7,7 @@ import { type, fonts } from '../../styles/typography.js'
 import { C, GRAD, alpha, panel, KEYFRAMES } from './theme.js'
 import { Btn, Waiting } from './ui.jsx'
 import { buildAlbums } from './logic/rotation.js'
+import { playSound } from './sound.js'
 
 const REACTIONS = ['😂', '🔥', '💀', '😮', '❤️', '🏴‍☠️']
 
@@ -125,6 +126,9 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
 
   const react = (emoji) => { sendReaction?.(emoji); spawn(emoji) }
 
+  // Blip sonore au changement de page du dévoilement (feedback de défilement).
+  useEffect(() => { if (album && pages) playSound('reveal') }, [albumIdx, pageIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Synchro hôte ↔ invités ───────────────────────────────────────────────
   // Invité : suit la position broadcastée. Hôte : diffuse sa position courante.
   useEffect(() => {
@@ -207,8 +211,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
       <div style={{ ...panel, padding: 'clamp(18px,3vw,28px)', minHeight: 320 }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(540px 220px at 50% 0%, ${alpha(C.sea, 0.12)}, transparent 64%)` }} />
         {/* flash doré façon flashback à chaque page */}
-        <div key={`flash-${albumIdx}-${pageIdx}`} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(60% 60% at 50% 45%, ${alpha(C.goldSoft, 0.9)}, transparent 70%)`, mixBlendMode: 'screen', animation: 'bpGoldFlash .5s ease-out forwards' }} />
-        <div key={`${albumIdx}-${pageIdx}`} style={{ position: 'relative' }}>
+        <div key={`flash-${albumIdx}-${pageIdx}`} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: lastPageOfAlbum ? `radial-gradient(70% 70% at 50% 45%, ${alpha(C.goldSoft, 1)}, transparent 72%)` : `radial-gradient(60% 60% at 50% 45%, ${alpha(C.goldSoft, 0.9)}, transparent 70%)`, mixBlendMode: 'screen', animation: lastPageOfAlbum ? 'bpGoldFlash .8s ease-out forwards' : 'bpGoldFlash .5s ease-out forwards' }} />
+        <div key={`${albumIdx}-${pageIdx}`} style={{ position: 'relative', ...(lastPageOfAlbum ? { boxShadow: `0 0 0 1px ${alpha(C.gold, 0.4)}, 0 0 40px ${alpha(C.gold, 0.18)}`, borderRadius: 16 } : {}) }}>
           <PageCard page={page} players={players} kind={kind} />
         </div>
         {/* progression dans l'album */}

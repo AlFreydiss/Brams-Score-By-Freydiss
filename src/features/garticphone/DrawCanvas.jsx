@@ -319,7 +319,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
               border: `1px solid ${size === s ? alpha(C.gold, 0.5) : C.hairSoft}`,
               background: size === s ? alpha(C.gold, 0.16) : 'rgba(255,255,255,0.04)',
             }}>
-              <span style={{ width: Math.min(22, s + 2), height: Math.min(22, s + 2), borderRadius: '50%', background: C.text }} />
+              <span style={{ width: Math.round(8 + (s / 28) * 14), height: Math.round(8 + (s / 28) * 14), borderRadius: '50%', background: C.text }} />
             </button>
           ))}
         </div>

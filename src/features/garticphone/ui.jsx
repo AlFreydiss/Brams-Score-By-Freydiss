@@ -41,7 +41,7 @@ export function Timer({ remaining, total, size = 'md' }) {
   if (remaining == null) return null
   const r = Math.max(0, Math.ceil(remaining))
   const urgent = r <= 10
-  const pct = total ? Math.max(0, Math.min(1, r / total)) : null
+  const pct = total ? Math.max(0, Math.min(1, remaining / total)) : null
   const big = size === 'lg'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -34,7 +34,20 @@ export default function DamesGame3D() {
   const navigate = useNavigate()
   const [quality, setQuality] = useState(() => { try { return localStorage.getItem('dames_quality') || 'high' } catch (e) { return 'high' } })
   const [fs, setFs] = useState(false)
+  const [focused, setFocused] = useState(false)   // focus clavier visible (a11y) — révèle le mode flèches
   const hintTimer = useRef(0)
+  const thinkDotRef = useRef(null)   // pastille pulsante « IA réfléchit » (WAAPI, repo inline-only)
+  // Sur petit écran, la barre de boutons du haut déborde sur plusieurs lignes : l'historique
+  // (top:92) chevaucherait alors les boutons et le plateau. On le masque sous 760px.
+  const [compact, setCompact] = useState(() => typeof window !== 'undefined' && window.innerWidth < 760)
+
+  useEffect(() => { const r = () => setCompact(window.innerWidth < 760); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r) }, [])
+
+  useEffect(() => {
+    if (!hud.thinking || !thinkDotRef.current) return
+    const a = thinkDotRef.current.animate([{ opacity: 0.3 }, { opacity: 1 }, { opacity: 0.3 }], { duration: 900, iterations: Infinity })
+    return () => { try { a.cancel() } catch { /* */ } }
+  }, [hud.thinking])
 
   useEffect(() => { const h = () => setFs(!!document.fullscreenElement); document.addEventListener('fullscreenchange', h); return () => document.removeEventListener('fullscreenchange', h) }, [])
   const toggleFs = () => { const el = containerRef.current; if (!el) return; if (document.fullscreenElement) document.exitFullscreen?.(); else el.requestFullscreen?.() }
@@ -232,7 +245,8 @@ export default function DamesGame3D() {
 
   return (
     <div ref={containerRef} tabIndex={0} onKeyDown={onKeyDown} role="application" aria-label="Plateau de dames 3D — flèches pour déplacer le curseur, Entrée pour sélectionner ou jouer, Échap pour annuler la sélection"
-      style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)', outline: 'none' }}>
+      onFocus={(e) => { try { if (e.target.matches(':focus-visible')) setFocused(true) } catch { setFocused(true) } }} onBlur={() => setFocused(false)}
+      style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)', outline: 'none', boxShadow: focused ? 'inset 0 0 0 2px rgba(217,184,112,.4)' : 'none' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 200px 30px rgba(0,0,0,.6)' }} />
 
@@ -254,7 +268,7 @@ export default function DamesGame3D() {
           {hud.mode === 'ai' && (<div style={segWrap}>{DIFFS.map(([id, lbl]) => <button key={id} style={{ ...seg(hud.diff === id), fontSize: 12, padding: '7px 11px' }} onClick={() => setDiff(id)}>{lbl}</button>)}</div>)}
           <button style={iconBtn(false)} title="Nouvelle partie" onClick={newGame}>↻</button>
           <button style={iconBtn(!hud.canUndo)} title="Annuler" onClick={undo} disabled={!hud.canUndo}>↶</button>
-          <button style={iconBtn(!myTurn || hud.hinting)} title="Indice" onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
+          <button style={iconBtn(!myTurn || hud.hinting)} title={hud.thinking ? "Indice indisponible — l'IA joue" : hud.hinting ? 'Recherche du meilleur coup…' : 'Indice (meilleur coup)'} onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
           <button style={iconBtn(false)} title="Recentrer" onClick={() => rdrRef.current?.resetView()}>⌖</button>
           <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '✨' : quality === 'medium' ? '◐' : '○'}</button>
           <button style={iconBtn(false)} title={fs ? 'Quitter le plein écran' : 'Plein écran'} aria-label="Plein écran" onClick={toggleFs}>{fs ? '🗗' : '⛶'}</button>
@@ -263,12 +277,13 @@ export default function DamesGame3D() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'rgba(14,10,7,.82)', border: '1px solid rgba(217,184,112,.22)', borderRadius: 999, padding: '7px 20px 7px 8px', backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px rgba(0,0,0,.5)' }}>
           <span style={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 17, background: `radial-gradient(circle at 35% 30%, ${hud.turn === P ? '#d9594d' : '#5a97d6'}, ${hud.turn === P ? '#5e1110' : '#0e2444'})`, boxShadow: `0 0 16px ${hud.turn === P ? 'rgba(217,89,77,.55)' : 'rgba(90,151,214,.55)'}` }}>{hud.turn === P ? '☠️' : '⚓'}</span>
+          {hud.thinking && <span ref={thinkDotRef} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: turnColor, flexShrink: 0 }} />}
           <span style={{ fontFamily: PIRATA, fontSize: 19, letterSpacing: '.5px', color: turnColor }}>{turnText}</span>
         </div>
       </div>
 
       {/* Historique notation (desktop) */}
-      {moves.length > 0 && (
+      {moves.length > 0 && !compact && (
         <div style={{ position: 'absolute', top: 92, right: 12, width: 116, maxHeight: 'min(46vh,360px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, padding: 8, background: 'rgba(14,10,7,.7)', border: '1px solid rgba(217,184,112,.14)', borderRadius: 12, backdropFilter: 'blur(8px)', pointerEvents: 'auto' }} className="dames-hist">
           <div style={{ fontSize: 9.5, letterSpacing: 1.4, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginBottom: 3 }}>Coups</div>
           {moves.slice().reverse().map((m, i) => { const n = moves.length - i; return (

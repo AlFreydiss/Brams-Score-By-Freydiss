@@ -147,7 +147,7 @@ export default function BramsPhonePage() {
 function Room({ code, identity, navigate, copied, onCopy }) {
   const hook = useGarticRoom({ code, ...identity })
   const { room, players, me, n, myTask, remaining, isHost, spectator, error, ready,
-    mySubmitted, start, advance, setReady, submit, prevPage, allPages, replay,
+    mySubmitted, submittedSeats, start, advance, setReady, submit, prevPage, allPages, replay,
     revealStep, sendReaction, sendRevealStep, onReaction } = hook
 
   const total = useMemo(() => {
@@ -156,6 +156,8 @@ function Room({ code, identity, navigate, copied, onCopy }) {
   }, [room?.settings, room?.current_phase])
 
   const status = room?.status
+  const connectedCount = players.filter((p) => p.connected !== false).length
+  const submittedLabel = `${submittedSeats?.size ?? 0}/${connectedCount} pirates ont envoyé`
   const [muted, setMutedState] = useState(isMuted())
   const onToggleMute = () => setMutedState(toggleMuted())
 
@@ -184,6 +186,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
     if (remaining == null || !['writing', 'drawing', 'describing'].includes(status)) { lastTickRef.current = -1; return }
     const s = Math.ceil(remaining)
     if (s > 0 && s <= 5 && s !== lastTickRef.current) { lastTickRef.current = s; playSound('tick') }
+    else if (s <= 0 && lastTickRef.current !== 0) { lastTickRef.current = 0; playSound('phase'); vibrate(40) }
   }, [remaining, status])
 
   if (error === 'introuvable') {
@@ -243,14 +246,14 @@ function Room({ code, identity, navigate, copied, onCopy }) {
 
       {!spectator && status === 'writing' && (
         myTask
-          ? <WritePhase remaining={remaining} total={total} mySubmitted={mySubmitted} submit={submit} draftKey={me && room ? `bp_d_${room.code}_w_${room.current_round}_${me.seat}` : null} />
+          ? <WritePhase remaining={remaining} total={total} mySubmitted={mySubmitted} submit={submit} submittedLabel={submittedLabel} draftKey={me && room ? `bp_d_${room.code}_w_${room.current_round}_${me.seat}` : null} />
           : <div style={{ ...panel, maxWidth: 600, margin: '0 auto', padding: 30 }}><Waiting label="Préparation de la partie…" /></div>
       )}
       {!spectator && status === 'drawing' && myTask && (
-        <DrawPhase room={room} remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} draftKey={me && room ? `bp_d_${room.code}_d_${room.current_round}_${me.seat}` : null} />
+        <DrawPhase room={room} remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} submittedLabel={submittedLabel} draftKey={me && room ? `bp_d_${room.code}_d_${room.current_round}_${me.seat}` : null} />
       )}
       {!spectator && status === 'describing' && myTask && (
-        <DescribePhase remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} draftKey={me && room ? `bp_d_${room.code}_s_${room.current_round}_${me.seat}` : null} />
+        <DescribePhase remaining={remaining} total={total} mySubmitted={mySubmitted} prevPage={prevPage} submit={submit} submittedLabel={submittedLabel} draftKey={me && room ? `bp_d_${room.code}_s_${room.current_round}_${me.seat}` : null} />
       )}
       {!spectator && (status === 'drawing' || status === 'describing') && !myTask && (
         <div style={{ ...panel, maxWidth: 600, margin: '0 auto', padding: 30 }}><Waiting label="En attente du round suivant…" /></div>
