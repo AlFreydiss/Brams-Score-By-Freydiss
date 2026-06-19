@@ -1795,6 +1795,7 @@ let mx=W/2,my=H/2,pressing=false;
 let score,combo,maxCombo,hp,n3,n1,n5,nm,errs;
 let vfxList=[],trail=[],kp=[],errsAll=[];
 let bgFlash=0,cfFlash=0,menuT=0,pauseEl=0,shake=0,beatPtr=0,lastBurst=0,wasKiai=false;
+let missFlash=0; // flash rouge bref des bords au miss (purement cosmétique, décroît dans la boucle)
 let sbP=[],sbR=[],sbLastOn=0,sbT=0; // storyboard en jeu : flux de particules ascendantes + ondes d'onset (pools bornes, additifs)
 let playIntroT=0,pauseDim=0,kiaiRingT=0;
 let bass=0,mid=0;
@@ -1846,7 +1847,7 @@ function countHit(q,x,y,c,withCombo=true){
     if(withCombo)addCombo();
     score+=calcSc(q);
     hp=clamp(hp+(q===300?.10:q===100?.055:.025),0,1);
-  }else{breakCombo();hp=clamp(hp-.17,0,1);shake=Math.max(shake,7);}
+  }else{breakCombo();hp=clamp(hp-.17,0,1);shake=Math.max(shake,7);missFlash=1;}
   bgFlash=q>0?.9:.4;cfFlash=1;sfx(q);
   vfxList.push(new HitFX(x,y,q,c));
   if(mods.pf&&q<300&&state==='playing')fail(); // Perfect : tout < GREAT = fini
@@ -2055,6 +2056,15 @@ function drawBG(el,kiai){
     cx.globalAlpha=(.09+bass*.3)*dimF;cx.lineWidth=2;cx.shadowBlur=64+bass*70;
     cx.strokeRect(16,16,W-32,H-32);
     cx.restore();
+  }else if(opt.fx&&state==='playing'&&!REDUCED_MOTION){
+    // HORS kiai : battement de bordure très discret au beat (lecture seule de pulse/bass).
+    const hb=Math.max(pulse,bass);
+    if(hb>.04){
+      cx.save();cx.globalCompositeOperation='lighter';
+      cx.strokeStyle='#9B5CFF';cx.shadowColor='#9B5CFF';
+      cx.globalAlpha=hb*.10*dimF;cx.lineWidth=2+hb*4;cx.shadowBlur=18+hb*30;
+      cx.strokeRect(5,5,W-10,H-10);cx.restore();
+    }
   }
 }
 
@@ -2223,10 +2233,19 @@ function approach(x,y,col,el,t,alpha){
   cx.save();
   // léger glow néon teinté combo qui s'intensifie à l'approche du timing parfait
   const[ar_,ag_,ab_]=h2r(col);
+  const lw=Math.max(1.6,R*SKIN.APPROACH_W);
+  // anneau d'écho fantôme légèrement plus large : donne du « poids » et de la lisibilité
+  // à la fermeture sans rien changer au rayon piloté par le timing (ar/prog intacts).
+  if(!REDUCED_MOTION&&prog>.2){
+    cx.globalAlpha=Math.min(.9,alpha*.9)*.22*prog;
+    cx.beginPath();cx.arc(x,y,ar+lw*1.6,0,PI2);
+    cx.strokeStyle=col;cx.lineWidth=lw*.7;cx.stroke();
+  }
   cx.globalAlpha=Math.min(.9,alpha*.9);
   cx.beginPath();cx.arc(x,y,ar,0,PI2);
-  cx.strokeStyle=col;cx.lineWidth=Math.max(1.6,R*SKIN.APPROACH_W);
-  if(prog>.55){cx.shadowBlur=8+10*prog;cx.shadowColor=`rgba(${Math.min(255,ar_+60)},${Math.min(255,ag_+60)},${Math.min(255,ab_+60)},.9)`;}
+  cx.strokeStyle=col;cx.lineWidth=lw;
+  // épaississement net + glow qui montent à l'approche : la fermeture « claque » mieux
+  if(prog>.55){cx.lineWidth=lw*(1+.5*(prog-.55)/.45);cx.shadowBlur=8+14*prog;cx.shadowColor=`rgba(${Math.min(255,ar_+60)},${Math.min(255,ag_+60)},${Math.min(255,ab_+60)},.95)`;}
   cx.stroke();cx.restore();
 }
 
@@ -2250,6 +2269,14 @@ function drawCircleObj(o,el){
     cx.beginPath();cx.arc(o.x,o.y,R*(1+e*.8),0,PI2);
     cx.strokeStyle='#fff';cx.lineWidth=Math.max(2,R*SKIN.RING_W*(1-e*.45));cx.stroke();
     cx.restore();
+    // onde de choc fine et plus rapide derrière l'anneau : le hit « claque » davantage
+    if(!REDUCED_MOTION&&t<.7){
+      const e2=easeOut(Math.min(1,t/.7));
+      cx.save();cx.globalCompositeOperation='lighter';cx.globalAlpha=(1-e2)*(1-e2)*.5;
+      cx.beginPath();cx.arc(o.x,o.y,R*(1+e2*1.7),0,PI2);
+      cx.strokeStyle=col;cx.lineWidth=Math.max(1.5,R*.07*(1-e2));cx.stroke();
+      cx.restore();
+    }
     return;
   }
   // miss : teinte rouge, chute 8px, fade 100ms
@@ -2455,6 +2482,10 @@ function drawSliderObj(o,el){
     let bSc=1;
     if(o.kj){const bms=analysis&&analysis.bpm?60000/analysis.bpm:600;
       bSc=1+.06*Math.max(0,1-(el%bms)/bms*2.2);}
+    // halo discret SOUS la balle même hors tracking : elle reste lumineuse et lisible
+    if(!fol){const gl=SPRITES.glow&&SPRITES.glow[o.ci%4];
+      if(gl){const gs=gl._S*.85;cx.save();cx.globalAlpha=.28;
+        cx.drawImage(gl,bp.x-gs/2,bp.y-gs/2,gs,gs);cx.restore();}}
     if(bs){const bw=bs._S*bSc;cx.drawImage(bs,bp.x-bw/2,bp.y-bw/2,bw,bw);}
     const ahead=ptAt(p,clamp(pos+(segB%2?-.025:.025),0,1));
     const ba=Math.atan2(ahead.y-bp.y,ahead.x-bp.x);
@@ -2906,7 +2937,11 @@ function drawHUD(el,kiai){
   /* — PRÉCISION + combo compact (sous le score) — */
   hudLabel('précision',W-14,58,'right');
   const acc=getAcc();
+  // micro-pulse de la précision à chaque jugement (lecture seule de cfFlash) : le chiffre « respire »
+  const accPulse=1+.10*cfFlash;
+  cx.save();cx.translate(W-14,64+17*.5);cx.scale(accPulse,accPulse);cx.translate(-(W-14),-(64+17*.5));
   segText(acc.toFixed(2)+'%',W-14,64,17,'#fff','right');
+  cx.restore();
   segText(combo+'x',W-14-segWidth(acc.toFixed(2)+'%',17)-18,64,17,'rgba(255,255,255,.55)','right');
   const ms=modStr();
   if(ms){cx.font='800 12px '+SKIN.FONT;cx.textAlign='right';cx.fillStyle='#FFD12B';cx.fillText(ms,W-14,102);}
@@ -3053,6 +3088,7 @@ function drawMenuBG(){
 }
 /* Vignette rouge progressive façon osu : monte quand la vie passe sous 50 %, pulse */
 let vigGrad=null,vigKey='';
+let missGrad=null,missFlashKey='';
 function drawVignette(){
   if(hp>=.5)return;
   const gk=W+'x'+H;
@@ -3232,7 +3268,7 @@ function buildPlay(){
   computeParams();
   map=genMap();
   score=0;combo=0;maxCombo=0;hp=1;n3=0;n1=0;n5=0;nm=0;lastBurst=0;
-  vfxList=[];trail=[];kp=[];errs=[];errsAll=[];bgFlash=0;cfFlash=0;beatPtr=0;shake=0;
+  vfxList=[];trail=[];kp=[];errs=[];errsAll=[];bgFlash=0;cfFlash=0;beatPtr=0;shake=0;missFlash=0;
   keysOv.forEach(k=>{k.n=0;k.on=false;});clickTimes=[];comboBreakFX=null;_lbCache=null;liveStart=0;cursorSc=1;dispScore=0;
   // leaderboard in-game : top mondial de la map + l'entrée du joueur (réordonnée en live)
   lbLive=[{pseudo:store.get('pseudo','')||'TOI',score:0,me:true}];lbLiveY=null;
@@ -4230,6 +4266,7 @@ function loop(now){
   const el=state==='paused'?pauseEl:elapsed();
   bgFlash=Math.max(0,bgFlash-.05*frameNorm);
   cfFlash=Math.max(0,cfFlash-.05*frameNorm);
+  missFlash=Math.max(0,missFlash-.07*frameNorm);
   shake*=decayF(.86);if(shake<.2)shake=0;
   if(fftData&&analyser){
     analyser.getByteFrequencyData(fftData);
@@ -4290,6 +4327,17 @@ function loop(now){
     cx.save();cx.globalAlpha=(1-kt)*.22;
     cx.beginPath();cx.arc(W/2,H/2,easeOut(kt)*Math.max(W,H)*.75,0,PI2);
     cx.strokeStyle='#ff66aa';cx.lineWidth=10*(1-kt)+2;cx.stroke();cx.restore();
+  }
+  // flash rouge bref des bords au MISS : feedback d'erreur immédiat (cosmétique, décroît)
+  if(missFlash>.01&&state==='playing'){
+    const mk=W+'x'+H;
+    if(missFlashKey!==mk){
+      missGrad=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.42,W/2,H/2,Math.max(W,H)*.7);
+      missGrad.addColorStop(0,'rgba(200,40,40,0)');missGrad.addColorStop(1,'rgba(200,40,40,1)');
+      missFlashKey=mk;
+    }
+    cx.save();cx.globalAlpha=Math.min(.34,missFlash*missFlash*.42);
+    cx.fillStyle=missGrad;cx.fillRect(0,0,W,H);cx.restore();
   }
   if(state==='playing'&&!mods.nf)drawVignette(); // danger : rouge qui monte sur les bords
   drawHP();drawHUD(el,kiai);drawErrBar();drawCursor();
