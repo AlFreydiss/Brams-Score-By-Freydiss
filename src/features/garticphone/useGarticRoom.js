@@ -8,7 +8,7 @@ import {
   joinRoom, roomState, fetchPrevPage,
   submitPage, submittedSeats as apiSubmittedSeats, fetchAllPages,
   setReady as apiSetReady, touchPlayer, startGame, advance as apiAdvance,
-  promoteSelfHost, serverNow, subscribeRoom, joinChannel,
+  promoteSelfHost, serverNow, subscribeRoom, joinChannel, replayGame,
 } from '../../lib/garticRooms.js'
 import { seatTask } from './logic/rotation.js'
 import { shouldAdvance } from './logic/hostLoop.js'
@@ -65,7 +65,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   // ── Mount : join (token) + abonnement realtime + canal presence + heartbeat ─
   useEffect(() => {
     if (!code || !userId) return
-    let stop = false, unsub = null, hb = null, watchdog = null
+    let stop = false, unsub = null, hb = null, watchdog = null, poll = null
 
     const init = async () => {
       // Reconnexion : getToken(code) relit le token depuis sessionStorage si présent ;
@@ -103,6 +103,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       // Heartbeat 10s : maintient connected=true + last_seen frais côté serveur.
       hb = setInterval(() => { if (!stop && !res.spectator) touchPlayer(code) }, 10000)
 
+      // Filet de sécurité : re-fetch périodique de l'état du salon. Le flux est sinon 100%
+      // event-driven (postgres_changes + broadcast phase_change) ; un event manqué (onglet
+      // throttlé, canal realtime stale, réseau) laissait un joueur BLOQUÉ sur « En attente des
+      // autres pirates » alors que le serveur avait avancé. refresh() est ré-entrant (garde).
+      poll = setInterval(() => { if (!stop) refresh() }, 3500)
+
       // Watchdog realtime : resync au focus (canal mort en veille).
       const onFocus = () => { if (!document.hidden) refresh() }
       window.addEventListener('focus', onFocus)
@@ -120,6 +126,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       try { chRef.current?.leave() } catch {}
       chRef.current = null
       if (hb) clearInterval(hb)
+      if (poll) clearInterval(poll)
       watchdog?.()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,6 +194,16 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   }, [code, refresh, room?.current_round])
 
   const setReady = useCallback(async (b) => { await apiSetReady(code, b) }, [code])
+
+  // Rejouer : remet le salon en LOBBY (efface pages + ready, déséquipe les sièges) pour que
+  // tout le monde re-prêt et que de nouveaux puissent rejoindre. Renvoie false si le RPC
+  // gartic_replay n'existe pas encore (migration pas lancée) → l'appelant fait un fallback.
+  const replay = useCallback(async () => {
+    const out = await replayGame(code)
+    const j = Array.isArray(out?.data) ? out.data[0] : out?.data
+    if (j?.ok) { chRef.current?.send('phase_change', { status: 'lobby' }); await refresh(); return true }
+    return false
+  }, [code, refresh])
 
   const submit = useCallback(async (content, round) => {
     const out = await submitPage(code, content, Number.isInteger(round) ? round : room?.current_round)
@@ -264,7 +281,7 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   return {
     room, players: connectedPlayers, me, n, myTask, remaining, isHost, spectator, error, ready,
     mySubmitted, submittedSeats,
-    start, advance, setReady, submit, prevPage, allPages, refresh,
+    start, advance, setReady, submit, prevPage, allPages, refresh, replay,
     serverNowMs,
     revealStep, sendReaction, sendRevealStep, onReaction,
   }

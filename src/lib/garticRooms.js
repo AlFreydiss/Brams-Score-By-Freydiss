@@ -152,6 +152,8 @@ export async function promoteSelfHost(code) {
 // ── RPC (horloge serveur + transitions) ─────────────────────────────────────
 export const startGame = (code, settings) => rpc('gartic_start', { p_code: String(code), p_token: getToken(code), p_settings: settings })
 export const advance = (code, expectedRound) => rpc('gartic_advance', { p_code: String(code), p_token: getToken(code), p_expected_round: expectedRound ?? null })
+// Rejouer : ramène le salon au lobby (efface pages, reset ready/sièges). Hôte uniquement.
+export const replayGame = (code) => rpc('gartic_replay', { p_code: String(code), p_token: getToken(code) })
 export async function serverNow() {
   const { data } = await rpc('gartic_now', {})
   const iso = Array.isArray(data) ? data[0] : data

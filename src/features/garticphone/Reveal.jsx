@@ -10,9 +10,11 @@ import { buildAlbums } from './logic/rotation.js'
 
 const REACTIONS = ['😂', '🔥', '💀', '😮', '❤️', '🏴‍☠️']
 
-function authorName(players, userId) {
-  const p = players.find((x) => String(x.user_id) === String(userId))
-  return p?.display_name || 'Inconnu'
+// L'auteur de chaque page est fourni par le RPC gartic_all_pages sous la forme
+// { author: { name, avatar } } — PAS author_user_id. On lit donc page.author.name,
+// sinon tout l'album affichait « Inconnu ».
+function authorName(page) {
+  return page?.author?.name || 'Inconnu'
 }
 
 // Rendu d'un album entier sur un canvas offscreen → dataURL PNG (partage Discord).
@@ -36,12 +38,12 @@ async function renderAlbumPng(album, players) {
   ctx.fillStyle = '#d7a829'; ctx.font = '800 30px ' + fonts.display
   ctx.fillText('🏴‍☠️ Brams Phone — Album', pad, pad + 30)
   ctx.fillStyle = 'rgba(243,239,226,0.5)'; ctx.font = '500 14px ' + fonts.body
-  ctx.fillText(`Carnet de ${authorName(players, cards[0]?.author_user_id)}`, pad, pad + 52)
+  ctx.fillText(`Carnet de ${authorName(cards[0])}`, pad, pad + 52)
   let y = pad + 70
   cards.forEach((c, i) => {
     const ch = heights[i]
     ctx.fillStyle = 'rgba(231,194,90,0.85)'; ctx.font = '700 12px ' + fonts.body
-    ctx.fillText(authorName(players, c.author_user_id).toUpperCase(), pad, y + 4)
+    ctx.fillText(authorName(c).toUpperCase(), pad, y + 4)
     y += 14
     if (c.type === 'drawing' && imgs[c.content]) {
       const im = imgs[c.content]
@@ -66,7 +68,7 @@ function PageCard({ page, players, kind }) {
   return (
     <div data-bp-anim style={{ animation: 'bp-bookflip .6s cubic-bezier(.22,.8,.22,1)' }}>
       <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 10 }}>
-        {kind} · {authorName(players, page?.author_user_id)}
+        {kind} · {authorName(page)}
       </div>
       {page?.type === 'drawing' ? (
         page.content ? (
@@ -178,8 +180,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   }
 
   const kind = page?.page_index === 0 ? 'Phrase de départ' : page?.type === 'drawing' ? 'Dessin' : 'Description'
-  const startAuthor = authorName(players, album?.pages[0]?.author_user_id)
-  const endAuthor = authorName(players, album?.pages[album.pages.length - 1]?.author_user_id)
+  const startAuthor = authorName(album?.pages[0])
+  const endAuthor = authorName(album?.pages[album.pages.length - 1])
 
   return (
     <div style={{ width: 'min(880px, 100%)', margin: '0 auto', display: 'grid', gap: 18 }}>
