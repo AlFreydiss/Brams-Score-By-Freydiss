@@ -6,8 +6,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { initBoard, generateMoves, applyMove, countPieces, opp, aiMove, isDark, P, M } from './engine/draughts-engine.js'
+import { initBoard, generateMoves, applyMove, countPieces, opp, aiMove, isDark, P, M, gameStatus, nextHalfmoveClock, positionKey } from './engine/draughts-engine.js'
 import { moveToNotation } from './engine/notation.js'
+import DamesEvalBar from './DamesEvalBar.jsx'
 
 const QUALITY = [['high', 'Élevé'], ['medium', 'Moyen'], ['low', 'Basique']]
 
@@ -23,8 +24,10 @@ export default function DamesGame3D() {
   const containerRef = useRef(null)
   const rdrRef = useRef(null)
   const workerRef = useRef(null)
-  const G = useRef({ board: null, turn: P, mode: 'local', diff: 'marin', humanSide: P, aiSide: M, legalMoves: [], movableKeys: new Set(), selected: null, inputLocked: false, gameOver: false, history: [], last: null, seq: 0, pendingMove: null, pendingHint: null })
-  const [hud, setHud] = useState({ turn: P, pir: 20, mar: 20, gameOver: false, winner: null, thinking: false, mode: 'local', diff: 'marin', canUndo: false, ready: false, hinting: false })
+  const G = useRef({ board: null, turn: P, mode: 'local', diff: 'marin', humanSide: P, aiSide: M, legalMoves: [], movableKeys: new Set(), selected: null, inputLocked: false, gameOver: false, history: [], last: null, seq: 0, pendingMove: null, pendingHint: null, halfmoveClock: 0, reps: new Map(), pendingEval: null })
+  const [hud, setHud] = useState({ turn: P, pir: 20, mar: 20, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, mode: 'local', diff: 'marin', canUndo: false, ready: false, hinting: false })
+  const [evalState, setEvalState] = useState(null)
+  const evalTimer = useRef(0)
   const [moves, setMoves] = useState([])
   const [muted, setMuted] = useState(false)
   const [music, setMusic] = useState(() => { try { return localStorage.getItem('dames_music') === '1' } catch (e) { return false } })
@@ -47,11 +50,25 @@ export default function DamesGame3D() {
     rdr.setMarkers({ selected: g.selected, legalMoves: g.legalMoves, movableKeys: g.movableKeys, interactive: !g.inputLocked && !aiTurn && !g.gameOver, gameOver: g.gameOver, last: g.last })
   }, [])
 
-  const endGame = useCallback((winner) => {
-    G.current.gameOver = true; G.current.selected = null
-    drawMarkers(); setHud(h => ({ ...h, gameOver: true, winner }))
+  const endGame = useCallback((winner, drawReason) => {
+    const g = G.current; g.gameOver = true; g.selected = null
+    clearTimeout(evalTimer.current); g.pendingEval = null
+    drawMarkers(); setHud(h => ({ ...h, gameOver: true, winner: drawReason ? null : winner, draw: !!drawReason, drawReason: drawReason || null }))
     rdrRef.current?.sfxWin()
+    if (!drawReason) rdrRef.current?.setWinner?.(winner) // déclenche la cinématique de victoire 3D (orbite + feu d'artifice)
   }, [drawMarkers])
+
+  // Demande une éval au worker (POV blanc), debouncée — barre d'évaluation.
+  const requestEval = useCallback(() => {
+    const g = G.current
+    clearTimeout(evalTimer.current)
+    if (g.gameOver || !workerRef.current) return
+    evalTimer.current = setTimeout(() => {
+      const g2 = G.current; if (g2.gameOver || !workerRef.current) return
+      const id = 'e' + (++g2.seq); g2.pendingEval = id
+      workerRef.current.postMessage({ id, type: 'analyse', board: g2.board, side: g2.turn, depth: 6 })
+    }, 260)
+  }, [])
 
   const askAI = useCallback((type) => {
     const g = G.current
@@ -70,19 +87,23 @@ export default function DamesGame3D() {
     g.legalMoves = generateMoves(g.board, g.turn)
     g.movableKeys = new Set(g.legalMoves.map(m => m.from[0] + '_' + m.from[1]))
     g.selected = null; drawMarkers(); syncHUD()
-    if (g.legalMoves.length === 0) { endGame(opp(g.turn)); return }
+    const st = gameStatus(g.board, g.turn, { halfmoveClock: g.halfmoveClock, repetitions: g.reps })
+    if (st.over) { endGame(st.winner, st.draw ? (st.reason || 'Partie nulle.') : null); return }
+    requestEval()
     if (g.mode === 'ai' && g.turn === g.aiSide) { setHud(h => ({ ...h, thinking: true })); askAI('move') }
-  }, [drawMarkers, syncHUD, endGame, askAI])
+  }, [drawMarkers, syncHUD, endGame, askAI, requestEval])
 
   const doMove = useCallback((mv) => {
     const g = G.current, rdr = rdrRef.current; if (!rdr) return
-    g.history.push({ board: g.board.map(row => row.map(c => c ? { ...c } : null)), turn: g.turn, last: g.last })
+    g.history.push({ board: g.board.map(row => row.map(c => c ? { ...c } : null)), turn: g.turn, last: g.last, halfmoveClock: g.halfmoveClock })
     g.inputLocked = true; g.selected = null
     const notation = moveToNotation(mv); const mover = g.turn
-    const before = g.board; const { board: nb, promoted } = applyMove(g.board, mv)
+    const before = g.board; const newClock = nextHalfmoveClock(g.halfmoveClock, g.board, mv)
+    const { board: nb, promoted } = applyMove(g.board, mv)
     rdr.setHint(null); setHud(h => ({ ...h, hinting: false }))
     rdr.playMove(mv, before, { promoted, ai: g.mode === 'ai' && mover === g.aiSide }).then(() => {
-      g.board = nb; g.turn = opp(g.turn); g.last = mv; g.inputLocked = false
+      g.board = nb; g.turn = opp(g.turn); g.last = mv; g.inputLocked = false; g.halfmoveClock = newClock
+      const k = positionKey(g.board, g.turn); g.reps.set(k, (g.reps.get(k) || 0) + 1)
       setMoves(ms => [...ms, { side: mover, n: notation }])
       refreshTurn()
     })
@@ -103,6 +124,14 @@ export default function DamesGame3D() {
     doMove(mv)
   }, [doMove, endGame])
 
+  // Résultat d'analyse (barre d'éval). On ignore les réponses périmées.
+  const onEvalResult = useCallback((id, ev) => {
+    const g = G.current
+    if (!id || id !== g.pendingEval) return
+    g.pendingEval = null
+    if (ev) setEvalState(ev)
+  }, [])
+
   const handleSquare = useCallback((r, c) => {
     const g = G.current
     if (g.inputLocked || g.gameOver) return
@@ -118,26 +147,30 @@ export default function DamesGame3D() {
   }, [doMove, drawMarkers])
 
   const newGame = useCallback(() => {
-    const g = G.current; g.seq++; g.pendingMove = null; g.pendingHint = null; clearTimeout(hintTimer.current)
+    const g = G.current; g.seq++; g.pendingMove = null; g.pendingHint = null; g.pendingEval = null; clearTimeout(hintTimer.current); clearTimeout(evalTimer.current)
     g.board = initBoard(); g.turn = P; g.gameOver = false; g.history = []; g.selected = null; g.inputLocked = false; g.last = null
-    setMoves([]); setHud(h => ({ ...h, gameOver: false, winner: null, thinking: false, hinting: false }))
+    g.halfmoveClock = 0; g.reps = new Map(); g.reps.set(positionKey(g.board, g.turn), 1); setEvalState(null)
+    setMoves([]); setHud(h => ({ ...h, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, hinting: false }))
     rdrRef.current?.setHint(null); rdrRef.current?.setBoard(g.board); rdrRef.current?.resetView(); refreshTurn()
   }, [refreshTurn])
 
   const undo = useCallback(() => {
     const g = G.current; if (g.inputLocked || !g.history.length) return
-    g.seq++; g.pendingMove = null
+    g.seq++; g.pendingMove = null; g.pendingEval = null
     let snap = null, pop = 0
-    if (g.mode === 'ai') { while (g.history.length) { snap = g.history.pop(); pop++; if (snap.turn === g.humanSide) break } }
-    else { snap = g.history.pop(); pop = 1 }
+    // chaque coup défait retire l'occurrence de la position COURANTE (celle qu'on quitte) du compteur de répétition.
+    const dropRep = () => { const k = positionKey(g.board, g.turn); const n = (g.reps.get(k) || 1) - 1; if (n <= 0) g.reps.delete(k); else g.reps.set(k, n) }
+    if (g.mode === 'ai') { while (g.history.length) { dropRep(); snap = g.history.pop(); pop++; g.board = snap.board.map(row => row.map(c => c ? { ...c } : null)); g.turn = snap.turn; if (snap.turn === g.humanSide) break } }
+    else { dropRep(); snap = g.history.pop(); pop = 1; g.board = snap.board.map(row => row.map(c => c ? { ...c } : null)); g.turn = snap.turn }
     if (!snap) return
-    clearTimeout(hintTimer.current)
+    clearTimeout(hintTimer.current); clearTimeout(evalTimer.current)
     g.board = snap.board.map(row => row.map(c => c ? { ...c } : null)); g.turn = snap.turn; g.gameOver = false; g.selected = null; g.last = snap.last || null
+    g.halfmoveClock = snap.halfmoveClock | 0
     setMoves(ms => ms.slice(0, Math.max(0, ms.length - pop)))
-    setHud(h => ({ ...h, gameOver: false, winner: null, thinking: false, hinting: false }))
+    setHud(h => ({ ...h, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, hinting: false }))
     rdrRef.current?.setHint(null); rdrRef.current?.setBoard(g.board)
     g.legalMoves = generateMoves(g.board, g.turn); g.movableKeys = new Set(g.legalMoves.map(m => m.from[0] + '_' + m.from[1]))
-    drawMarkers(); syncHUD()
+    drawMarkers(); syncHUD(); requestEval()
   }, [drawMarkers, syncHUD])
 
   const hint = useCallback(() => {
@@ -153,7 +186,12 @@ export default function DamesGame3D() {
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     try {
       worker = new Worker(new URL('./engine/dames-ai.worker.js', import.meta.url), { type: 'module' })
-      worker.onmessage = (e) => { if (alive) onAIResult(e.data?.id, e.data?.mv) }
+      worker.onmessage = (e) => {
+        if (!alive) return
+        const d = e.data || {}
+        if (d.eval !== undefined) { onEvalResult(d.id, d.eval); return }
+        onAIResult(d.id, d.mv)
+      }
       worker.onerror = () => { try { worker.terminate() } catch (e2) { /* */ } workerRef.current = null }
       workerRef.current = worker
     } catch (e) { workerRef.current = null }
@@ -197,6 +235,14 @@ export default function DamesGame3D() {
       style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)', outline: 'none' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 200px 30px rgba(0,0,0,.6)' }} />
+
+      {/* Barre d'évaluation (moteur) — bord gauche, centrée verticalement */}
+      {hud.ready && (
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', height: 'min(56vh, 480px)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, pointerEvents: 'none', zIndex: 6 }}>
+          <DamesEvalBar ev={evalState} height="100%" />
+          <span style={{ fontSize: 8.5, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED, fontWeight: 700, writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Éval</span>
+        </div>
+      )}
 
       {/* HUD haut */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, pointerEvents: 'none' }}>
@@ -250,6 +296,26 @@ export default function DamesGame3D() {
       </div>
 
       {!hud.ready && (<div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: GOLD, fontFamily: PIRATA, fontSize: 22, letterSpacing: '.5px' }}>Chargement du plateau 3D…</div>)}
+
+      {hud.gameOver && hud.draw && (
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 20, background: 'radial-gradient(circle at 50% 38%, rgba(40,34,22,.6), rgba(8,7,5,.95))', backdropFilter: 'blur(7px)' }}>
+          <div style={{ width: 'min(460px,92%)', textAlign: 'center', padding: '40px 32px 30px', background: 'linear-gradient(180deg, rgba(27,20,13,.92), rgba(12,9,7,.96))', border: '1px solid rgba(217,184,112,.4)', borderRadius: 24, boxShadow: '0 30px 90px rgba(0,0,0,.75), 0 0 60px rgba(191,164,106,.2)' }}>
+            <div style={{ fontSize: 60, marginBottom: 4, filter: 'drop-shadow(0 0 22px rgba(191,164,106,.6))' }}>⚖️</div>
+            <div style={{ fontFamily: PIRATA, fontSize: 'clamp(30px,5vw,46px)', lineHeight: 1.05, color: '#e8cf92', textShadow: '0 0 24px rgba(191,164,106,.5)' }}>Match nul</div>
+            <p style={{ color: PARCH, fontSize: 13.5, margin: '12px 0 6px', lineHeight: 1.5 }}>{hud.drawReason}</p>
+            <p style={{ color: MUTED, fontSize: 12, margin: '0 0 20px', lineHeight: 1.5 }}>Pirates et Marine se séparent dos à dos — aucun camp n'a pu forcer la décision.</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 26, marginBottom: 24 }}>
+              {[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]].map(([l, v]) => (
+                <div key={l}><div style={{ fontFamily: PIRATA, fontSize: 30, color: GOLD, lineHeight: 1 }}>{v}</div><div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginTop: 3 }}>{l}</div></div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={newGame} style={{ appearance: 'none', border: 0, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, padding: '13px 26px', borderRadius: 999, color: '#231703', background: 'linear-gradient(180deg,#e8cf92,#b8924a)', boxShadow: '0 8px 24px rgba(217,184,112,.32)' }}>↻ Rejouer</button>
+              <button onClick={() => navigate('/jeux')} style={{ appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, padding: '13px 22px', borderRadius: 999, color: PARCH, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(217,184,112,.22)' }}>Quitter</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {hud.gameOver && hud.winner && (
         <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 20, background: hud.winner === P ? 'radial-gradient(circle at 50% 38%, rgba(120,24,18,.55), rgba(8,5,4,.94))' : 'radial-gradient(circle at 50% 38%, rgba(16,52,92,.55), rgba(5,7,12,.94))', backdropFilter: 'blur(7px)' }}>

@@ -116,7 +116,55 @@ export function applyMove(board, mv) {
   b[tr][tc] = piece; return { board: b, promoted }
 }
 export function countPieces(board, side) { let n = 0; for (const row of board) for (const c of row) if (c && c.side === side) n++; return n }
-export function gameStatus(board, side) { return { over: generateMoves(board, side).length === 0, winner: opp(side) } }
+export function countKings(board, side) { let n = 0; for (const row of board) for (const c of row) if (c && c.side === side && c.king) n++; return n }
+
+// ── Détection de nulle (correctness : sans ça une partie peut tourner à l'infini) ──
+// Compteur "demi-coups sans progrès" : règle des 25 coups internationale.
+// On le repart à zéro à chaque PRISE ou déplacement de PION (un pion qui bouge ne
+// peut jamais revenir en arrière → progression irréversible). Seuls les coups de
+// dames sans capture incrémentent le compteur.
+export const DRAW_PLIES = 50   // 25 coups de chaque camp = 50 demi-coups
+
+// Le coup fait-il progresser la partie (reset du compteur) ?
+export function moveIsProgress(board, mv) {
+  if (mv.caps && mv.caps.length) return true
+  const p = board[mv.from[0]]?.[mv.from[1]]
+  return !!(p && !p.king)   // un pion (non-dame) qui avance = progrès
+}
+
+// Met à jour le compteur halfmove-sans-progrès. À appeler AVANT applyMove (besoin du plateau d'origine).
+export function nextHalfmoveClock(prevClock, board, mv) {
+  return moveIsProgress(board, mv) ? 0 : (prevClock | 0) + 1
+}
+
+// Clé canonique d'une position pour la répétition (plateau + camp au trait).
+export function positionKey(board, side) { return hashBoard(board) + side }
+
+// Nulle triviale par matériel : roi-seul contre roi-seul (1 dame vs 1 dame, rien d'autre),
+// ou un seul camp possède une unique dame face à une unique dame → aucune des deux ne
+// peut forcer la prise. (On reste conservateur : que les cas réellement nuls.)
+export function isMaterialDraw(board) {
+  const pP = countPieces(board, P), pM = countPieces(board, M)
+  const kP = countKings(board, P), kM = countKings(board, M)
+  // une seule dame chacun et rien d'autre
+  return pP === 1 && pM === 1 && kP === 1 && kM === 1
+}
+
+// Statut enrichi. `ctx` (optionnel) = { halfmoveClock, repetitions } où `repetitions`
+// est une Map positionKey -> nombre d'occurrences DÉJÀ vues (>=3 = triple répétition).
+// Rétro-compatible : sans ctx, comportement identique à l'ancien gameStatus.
+export function gameStatus(board, side, ctx) {
+  if (generateMoves(board, side).length === 0) return { over: true, winner: opp(side), draw: false }
+  if (isMaterialDraw(board)) return { over: true, winner: null, draw: true, reason: 'Matériel insuffisant — une dame contre une dame.' }
+  if (ctx) {
+    if ((ctx.halfmoveClock | 0) >= DRAW_PLIES)
+      return { over: true, winner: null, draw: true, reason: '25 coups sans prise ni avancée de pion.' }
+    const reps = ctx.repetitions && ctx.repetitions.get(positionKey(board, side))
+    if (reps && reps >= 3)
+      return { over: true, winner: null, draw: true, reason: 'Position répétée trois fois.' }
+  }
+  return { over: false, winner: opp(side), draw: false }
+}
 
 // Deux coups identiques ? (utile pour valider un coup reçu côté serveur)
 export function movesEqual(a, b) {
@@ -239,3 +287,22 @@ export function aiMove(board, side, diff) {
 }
 // Meilleur coup pour l'humain (bouton Indice) — recherche moyenne, rapide.
 export function bestHint(board, side) { return chooseAIMove(board, side, 8, 700) }
+
+// Évaluation de la position pour la barre d'éval : negamax peu profond (défaut prof. 6)
+// borné dans le temps, renvoyé en "centipions" du POINT DE VUE BLANC (P = Pirates = positif).
+// Si la partie est finie : ±MATE selon le vainqueur, 0 si nulle.
+const MATE = 100000
+export function analysePosition(board, side, depth, budgetMs) {
+  const moves = generateMoves(board, side)
+  if (moves.length === 0) {
+    // camp au trait sans coup = perd → score extrême du point de vue blanc
+    return { score: side === P ? -MATE : MATE, mate: true, depth: 0 }
+  }
+  if (isMaterialDraw(board)) return { score: 0, draw: true, depth: 0 }
+  searchDeadline = Date.now() + (budgetMs || 500); _tt = new Map(); _killers = []
+  const d = depth || 6
+  // negamax renvoie le score du point de vue du camp au trait → on reconvertit en POV blanc.
+  const sideScore = negamax(board, side, d, -Infinity, Infinity)
+  const whiteScore = side === P ? sideScore : -sideScore
+  return { score: Math.round(whiteScore), depth: d }
+}

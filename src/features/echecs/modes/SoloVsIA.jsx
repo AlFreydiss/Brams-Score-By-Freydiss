@@ -8,12 +8,27 @@ import PanneauJoueur from '../components/PanneauJoueur.jsx'
 import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
 import FinPartieModal from '../components/FinPartieModal.jsx'
+import BarreEval from '../components/BarreEval.jsx'
 import { NIVEAUX_IA, NIVEAU_IA_DEFAUT, niveauParId } from '../lib/niveauxIA.js'
 import { THEME, CLE_NIVEAU_IA, CLE_COULEUR_IA, taillePlateauAuto } from '../constants.js'
+import { construireEval, construireIndice } from '../lib/analyse.js'
 import { sons } from '../lib/sons.js'
+
+const CLE_ELO_PERSO = 'echecs_elo_perso'   // ELO du curseur (mode personnalisé)
 
 function lireStockage(cle, defaut) {
   try { return localStorage.getItem(cle) || defaut } catch { return defaut }
+}
+
+// Niveau « sur-mesure » construit depuis le curseur ELO (600–2850).
+function niveauDepuisElo(elo) {
+  const e = Math.max(600, Math.min(2850, Math.round(elo)))
+  // movetime croît doucement avec l'ELO ; ≥2850 = pleine force (skill 20).
+  const movetimeMs = Math.round(400 + (e - 600) / (2850 - 600) * 1100)
+  if (e >= 2850) {
+    return { id: 'perso', label: 'Sur-mesure', sousTitre: 'Pleine puissance', limitStrength: false, skillLevel: 20, movetimeMs: 1500, emoji: '🎚️', elo: e }
+  }
+  return { id: 'perso', label: 'Sur-mesure', sousTitre: `${e} ELO`, limitStrength: true, elo: e, movetimeMs, emoji: '🎚️' }
 }
 
 function sonDuCoup(mv, enEchec) {
@@ -27,12 +42,23 @@ function sonDuCoup(mv, enEchec) {
 function ConfigSolo({ onLancer }) {
   const [niveauId, setNiveauId] = useState(lireStockage(CLE_NIVEAU_IA, NIVEAU_IA_DEFAUT))
   const [couleur, setCouleur] = useState(lireStockage(CLE_COULEUR_IA, 'w'))
+  const [elo, setElo] = useState(() => {
+    const v = parseInt(lireStockage(CLE_ELO_PERSO, ''), 10)
+    return Number.isFinite(v) ? Math.max(600, Math.min(2850, v)) : 1500
+  })
+  // Le curseur prend la main quand il est sélectionné (niveauId === 'perso').
+  const persoActif = niveauId === 'perso'
 
   const lancer = () => {
-    try { localStorage.setItem(CLE_NIVEAU_IA, niveauId); localStorage.setItem(CLE_COULEUR_IA, couleur) } catch {}
+    try {
+      localStorage.setItem(CLE_NIVEAU_IA, niveauId)
+      localStorage.setItem(CLE_COULEUR_IA, couleur)
+      localStorage.setItem(CLE_ELO_PERSO, String(elo))
+    } catch {}
     const c = couleur === 'alea' ? (Math.random() < 0.5 ? 'w' : 'b') : couleur
     sons.debloquer()
-    onLancer({ niveau: niveauParId(niveauId), maCouleur: c })
+    const niveau = persoActif ? niveauDepuisElo(elo) : niveauParId(niveauId)
+    onLancer({ niveau, maCouleur: c })
   }
 
   return (
@@ -65,6 +91,42 @@ function ConfigSolo({ onLancer }) {
         })}
       </div>
 
+      {/* ── Curseur ELO sur-mesure (complète les niveaux fixes) ── */}
+      <button
+        onClick={() => setNiveauId('perso')}
+        style={{
+          width: '100%', textAlign: 'left', marginTop: 12, padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+          background: persoActif ? 'rgba(191,164,106,0.10)' : THEME.card,
+          border: `1px solid ${persoActif ? 'rgba(191,164,106,0.55)' : THEME.cardBorder}`,
+          transition: 'border-color .15s, background .15s',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>🎚️</span>
+            <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 15, color: persoActif ? '#BFA46A' : THEME.text }}>
+              Force sur-mesure
+            </span>
+          </span>
+          <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 16, color: persoActif ? '#BFA46A' : THEME.muted }}>
+            {elo >= 2850 ? 'MAX' : `${elo} ELO`}
+          </span>
+        </div>
+        <input
+          type="range" min={600} max={2850} step={50} value={elo}
+          onChange={e => { setElo(parseInt(e.target.value, 10)); setNiveauId('perso') }}
+          onClick={e => e.stopPropagation()}
+          aria-label="Force de l'IA en ELO"
+          style={{
+            width: '100%', marginTop: 12, cursor: 'pointer',
+            accentColor: '#BFA46A', height: 24,
+          }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: THEME.muted, marginTop: 2 }}>
+          <span>600</span><span>1725</span><span>2850</span>
+        </div>
+      </button>
+
       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.muted, margin: '20px 0 10px' }}>Je joue</div>
       <div style={{ display: 'flex', gap: 10 }}>
         {[{ id: 'w', label: '♔ Blancs' }, { id: 'b', label: '♚ Noirs' }, { id: 'alea', label: '🎲 Aléatoire' }].map(c => (
@@ -94,13 +156,45 @@ function ConfigSolo({ onLancer }) {
 // ── Partie en cours ──
 function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQuitter, taillePlateau, troisD }) {
   const partie = usePartie()
-  const { pret, reflechit, chercherCoup, nouvellePartie } = useStockfish(niveau)
+  const { pret, reflechit, chercherCoup, nouvellePartie, analyser } = useStockfish(niveau)
   const [finVisible, setFinVisible] = useState(false)
   const [abandonnee, setAbandonnee] = useState(false)
   const couleurIA = maCouleur === 'w' ? 'b' : 'w'
   const rechercheEnCours = useRef(false)
 
   const { fen, trait, fin, captures, historique, enEchec } = partie
+
+  // ── Eval bar + indice (analyse sur le worker DÉDIÉ, jamais l'adversaire) ──
+  const [evalPos, setEvalPos] = useState(null)     // { ratio, texte, ... }
+  const [indice, setIndice] = useState(null)       // { cases, texte, ... } | null
+  const [chargementIndice, setChargementIndice] = useState(false)
+  const estMonTour = trait === maCouleur
+
+  // Analyse débouncée à chaque changement de position — uniquement quand c'est
+  // MON tour (l'IA ne réfléchit pas), pour ne pas concurrencer le moteur adverse.
+  useEffect(() => {
+    setIndice(null)
+    if (fin.terminee || abandonnee || !pret || !estMonTour) return
+    let annule = false
+    const id = setTimeout(() => {
+      analyser(fen, { movetime: 500 }).then(res => {
+        if (annule || !res) return
+        setEvalPos(construireEval(res, trait))
+      })
+    }, 350)
+    return () => { annule = true; clearTimeout(id) }
+  }, [fen, estMonTour, pret, fin.terminee, abandonnee]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const demanderIndice = useCallback(() => {
+    if (!pret || !estMonTour || fin.terminee || abandonnee || reflechit) return
+    setChargementIndice(true)
+    analyser(fen, { depth: 14 }).then(res => {
+      setChargementIndice(false)
+      if (!res) return
+      setEvalPos(construireEval(res, trait))
+      setIndice(construireIndice(res, trait))
+    })
+  }, [pret, estMonTour, fin.terminee, abandonnee, reflechit, fen, trait, analyser])
 
   useEffect(() => { sons.debut() }, [])
 
@@ -164,15 +258,24 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
 
   return (
     <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
-      <PlateauComp
-        partie={partie}
-        orientation={maCouleur === 'w' ? 'white' : 'black'}
-        peutJouer={c => c === maCouleur && !fin.terminee && !abandonnee && !reflechit}
-        onCoup={onCoup}
-        taille={taillePlateau}
-        interactif={!fin.terminee && !abandonnee}
-        troisD={troisD}
-      />
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <BarreEval
+          ratio={evalPos?.ratio ?? 0.5}
+          texte={evalPos?.texte ?? '–'}
+          enCours={reflechit}
+          orientation={maCouleur === 'w' ? 'white' : 'black'}
+          hauteur={Math.min(taillePlateau, 560)}
+        />
+        <PlateauComp
+          partie={partie}
+          orientation={maCouleur === 'w' ? 'white' : 'black'}
+          peutJouer={c => c === maCouleur && !fin.terminee && !abandonnee && !reflechit}
+          onCoup={onCoup}
+          taille={taillePlateau}
+          interactif={!fin.terminee && !abandonnee}
+          troisD={troisD}
+        />
+      </div>
 
       <div style={{ width: 'min(330px, 92vw)', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <PanneauJoueur
@@ -188,6 +291,43 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
           capturees={mesCaptures} couleurCapturees={couleurIA} avantage={avantageMoi > 0 ? avantageMoi : 0}
         />
         <HistoriqueCoups historique={historique} hauteur={200} />
+
+        {/* ── Indice : meilleur coup conseillé (worker d'analyse dédié) ── */}
+        <button
+          onClick={demanderIndice}
+          disabled={!estMonTour || fin.terminee || abandonnee || reflechit || chargementIndice}
+          style={{
+            padding: '11px 12px', borderRadius: 12,
+            cursor: (!estMonTour || fin.terminee || abandonnee || reflechit) ? 'default' : 'pointer',
+            fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 13.5, letterSpacing: '0.01em',
+            color: (!estMonTour || fin.terminee || abandonnee) ? THEME.muted : '#08090D',
+            background: (!estMonTour || fin.terminee || abandonnee)
+              ? THEME.card
+              : 'linear-gradient(135deg, #BFA46A, #d8c089)',
+            border: `1px solid rgba(191,164,106,0.45)`,
+            opacity: chargementIndice ? 0.7 : 1,
+            minHeight: 24,
+          }}
+        >
+          {chargementIndice ? '⏳ Analyse…' : '💡 Indice'}
+        </button>
+        {indice && (
+          <div
+            data-testid="indice-coup"
+            style={{
+              textAlign: 'center', padding: '8px 10px', borderRadius: 10,
+              background: 'rgba(191,164,106,0.10)', border: '1px solid rgba(191,164,106,0.30)',
+              fontFamily: THEME.fontBody, fontSize: 13, color: THEME.text,
+            }}
+          >
+            Meilleur coup :{' '}
+            <strong style={{ color: '#BFA46A', fontFamily: THEME.fontDisplay, letterSpacing: '0.04em' }}>
+              {indice.cases[0]} → {indice.cases[1]}
+            </strong>
+            {indice.evalTexte ? <span style={{ color: THEME.muted }}>{`  (${indice.evalTexte})`}</span> : null}
+          </div>
+        )}
+
         <BarreActions
           onAnnulerCoup={annulerCoup}
           onAbandonner={abandonner}

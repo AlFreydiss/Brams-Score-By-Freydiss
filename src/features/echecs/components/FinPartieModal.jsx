@@ -1,7 +1,60 @@
 // ── Modale de fin : résultat, variation d'ELO animée, revanche ───────────────
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { THEME } from '../constants.js'
 import { rangPourElo } from '../lib/elo.js'
+
+// Confettis « pièces d'or » (canvas, zéro dépendance) — joués uniquement sur victoire.
+// Respecte prefers-reduced-motion (rendu statique discret) et se nettoie au démontage.
+function ConfettisOr({ actif }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!actif) return
+    const cv = ref.current; if (!cv) return
+    let reduit = false
+    try { reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches } catch {}
+    const ctx = cv.getContext('2d'); if (!ctx) return
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const W = cv.clientWidth, H = cv.clientHeight
+    cv.width = W * dpr; cv.height = H * dpr; ctx.scale(dpr, dpr)
+    const teintes = ['#ffd700', '#ffe98a', '#e8b800', '#c9971f']
+    const N = reduit ? 26 : 90
+    const parts = Array.from({ length: N }, () => ({
+      x: W / 2 + (Math.random() - 0.5) * W * 0.4,
+      y: H * 0.42 + (Math.random() - 0.5) * 30,
+      vx: (Math.random() - 0.5) * 5,
+      vy: -4 - Math.random() * 6,
+      a: Math.random() * Math.PI,
+      va: (Math.random() - 0.5) * 0.3,
+      r: 3 + Math.random() * 4,
+      c: teintes[(Math.random() * teintes.length) | 0],
+    }))
+    let raf, prev = performance.now(), vivant = true
+    const dessine = () => {
+      ctx.clearRect(0, 0, W, H)
+      for (const p of parts) {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a)
+        ctx.fillStyle = p.c
+        ctx.beginPath(); ctx.ellipse(0, 0, p.r, p.r * 0.55, 0, 0, Math.PI * 2); ctx.fill()
+        ctx.restore()
+      }
+    }
+    const tick = (now) => {
+      if (!vivant) return
+      const dt = Math.min(0.05, (now - prev) / 1000); prev = now
+      for (const p of parts) {
+        p.vy += 14 * dt; p.x += p.vx * 60 * dt; p.y += p.vy * 60 * dt; p.a += p.va
+      }
+      dessine()
+      raf = requestAnimationFrame(tick)
+    }
+    if (reduit) { dessine() }            // rendu statique : une seule gerbe, pas d'animation
+    else { raf = requestAnimationFrame(tick) }
+    const stop = setTimeout(() => { vivant = false; cancelAnimationFrame(raf) }, 3500)
+    return () => { vivant = false; cancelAnimationFrame(raf); clearTimeout(stop) }
+  }, [actif])
+  if (!actif) return null
+  return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }} />
+}
 
 const LIBELLES_CAUSE = {
   mat: 'Échec et mat', pat: 'Pat', abandon: 'Abandon', temps: 'Au temps',
@@ -70,7 +123,9 @@ export default function FinPartieModal({
         @keyframes echecsFadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes echecsPop { from { opacity: 0; transform: translateY(18px) scale(.96) } to { opacity: 1; transform: none } }
       `}</style>
+      <ConfettisOr actif={!!gagne} />
       <div style={{
+        position: 'relative', zIndex: 2,
         width: 'min(400px, calc(100vw - 40px))', padding: '30px 28px 24px', textAlign: 'center',
         background: 'linear-gradient(160deg, rgba(36,38,42,0.96), rgba(24,25,28,0.96))',
         border: `1px solid ${THEME.cardBorderHover}`, borderRadius: 22,

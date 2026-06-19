@@ -23,6 +23,50 @@ const worldPos = (r, c) => ({ x: c - 4.5, z: r - 4.5 })
 const easeInOut = (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2)
 const SUN = [-26, 5, -40]   // soleil couchant bas (chaud) — derrière/à gauche du plateau
 
+// ── ambiances (mood) : ciel/océan/lumières échangés à chaud via store.theme ─────
+// Chaque preset reste cohérent avec le pipeline existant (IBL Environment + Sky +
+// fog + 4 lampes). 'sunset' = défaut (rendu d'origine, valeurs inchangées).
+const THEMES = {
+  sunset: {
+    env: 'sunset', envInt: 0.72, sun: SUN,
+    sky: { turbidity: 10, rayleigh: 1.25, mie: 0.05, mieG: 0.97 },
+    fog: 0xc77a44, fogDensity: 0.0072,
+    hemi: [0xffdcae, 0x16202c, 0.5],
+    key: { pos: [7, 16, 9], int: 1.0, col: 0xfff1da },
+    rim: { pos: [-20, 3.5, -28], int: 1.15, col: 0xff9248 },
+    point: { pos: [-7, 7, -5], int: 22, col: 0xffc070, dist: 45 },
+    fill: { pos: [-6, 8, 6], int: 0.25, col: 0x9fb8e0 },
+    ocean: { color: '#22455f', lowColor: 0x2a4258, metalness: 0.9, roughness: 0.16, mirror: 0.82 },
+    spray: 0xffe7c4, exposure: 1.08,
+  },
+  storm: {                      // Tempête : ciel plombé, mer froide agitée, éclairs
+    env: 'night', envInt: 0.42, sun: [-30, 2, -60],
+    sky: { turbidity: 18, rayleigh: 0.5, mie: 0.03, mieG: 0.85 },
+    fog: 0x33424f, fogDensity: 0.018,
+    hemi: [0x9fb0bf, 0x0a1014, 0.4],
+    key: { pos: [6, 15, 8], int: 0.5, col: 0xbcc9d6 },
+    rim: { pos: [-18, 4, -26], int: 0.55, col: 0x6f8aa8 },
+    point: { pos: [-7, 8, -5], int: 10, col: 0x8fb0d0, dist: 40 },
+    fill: { pos: [-6, 8, 6], int: 0.3, col: 0x5d7390 },
+    ocean: { color: '#1b2a35', lowColor: 0x1a2730, metalness: 0.85, roughness: 0.3, mirror: 0.6 },
+    spray: 0xcfe0ef, exposure: 0.92, lightning: true,
+  },
+  night: {                      // Nuit étoilée : ciel sombre, lune froide, reflets argent
+    env: 'night', envInt: 0.5, sun: [16, 8, 30],
+    sky: { turbidity: 2.5, rayleigh: 0.18, mie: 0.005, mieG: 0.7 },
+    fog: 0x0c1422, fogDensity: 0.009,
+    hemi: [0x9fb4d8, 0x05080f, 0.45],
+    key: { pos: [10, 16, 12], int: 0.7, col: 0xcfd8ff },
+    rim: { pos: [18, 5, 28], int: 0.6, col: 0x88a0d8 },
+    point: { pos: [-7, 7, -5], int: 9, col: 0x7fa0d8, dist: 42 },
+    fill: { pos: [-6, 8, 6], int: 0.22, col: 0x4a5e88 },
+    ocean: { color: '#10203a', lowColor: 0x101d33, metalness: 0.92, roughness: 0.12, mirror: 0.9 },
+    spray: 0xdfe7ff, exposure: 1.0, stars: true,
+  },
+}
+const getTheme = (k) => THEMES[k] || THEMES.sunset
+const FACTION_COL = { [P]: { spark: [0xff7a3a, 0xff5024, 0xffb060], glow: 0xff5a2c }, [M]: { spark: [0x6fb4ff, 0x3a7cff, 0xa8d0ff], glow: 0x4a8cff } }
+
 // ── textures procédurales (gravures crâne/ancre + grain de bois) ───────────────
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath() }
 function drawSkull(ctx, cx, cy, S, light, dark) {
@@ -155,9 +199,41 @@ function Pieces({ store, audio }) {
   const hoverKey = useRef(null)      // case survolée (pièce jouable)
   const glowMesh = useRef(null)      // halo émissif sous la pièce sélectionnée
   const hoverMesh = useRef(null)     // ring de survol
+  const beamRef = useRef(null)       // faisceau de lumière vertical (couronnement)
+  const beamState = useRef(null)     // { t0, x, z }
+  const sinkRef = useRef(null)       // InstancedMesh des pièces capturées qui sombrent
+  const sinks = useRef([])           // état JS des pièces qui sombrent
+  const splashRef = useRef(null)     // InstancedMesh des anneaux d'éclaboussure
+  const splashes = useRef([])        // état JS des anneaux
   const reduced = state.reduced
+  const quality = state.quality
   const SPARKS = 200
+  const SINKS = 14                   // pièces capturées simultanément en vol (rafle longue)
+  const SPLASH = 14
   const dummy = useMemo(() => new THREE.Object3D(), [])
+  const sinkGeo = useMemo(() => new THREE.CylinderGeometry(0.40, 0.43, 0.17, 24, 1), [])
+  const splashGeo = useMemo(() => new THREE.TorusGeometry(0.5, 0.06, 8, 28), [])
+  const sinkMatP = useMemo(() => new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.35, roughness: 0.48 }), [])
+
+  // pièce capturée : éjectée du plateau, tournoie, plonge et SOMBRE dans l'océan
+  // (geste sur 'high'/'medium' ; sur 'low' ou reduced → simple disparition d'origine)
+  const fxSink = (r, c, side) => {
+    if (reduced || quality === 'low') return false
+    const slot = sinks.current.find(x => x.life <= 0); if (!slot) return false
+    const w = worldPos(r, c)
+    const dir = Math.atan2(w.z, w.x) + (Math.random() - 0.5) * 0.8   // éjectée vers le large
+    const sp = 3.4 + Math.random() * 2.2
+    slot.x = w.x; slot.y = PIECE_Y; slot.z = w.z
+    slot.vx = Math.cos(dir) * sp; slot.vz = Math.sin(dir) * sp; slot.vy = 4.6 + Math.random() * 1.6
+    slot.rx = (Math.random() - 0.5) * 9; slot.rz = (Math.random() - 0.5) * 9
+    slot.ax = Math.random() * 7; slot.az = Math.random() * 7
+    slot.life = slot.max = 2.6; slot.side = side; slot.splashed = false
+    return true
+  }
+  const fxSplash = (x, z) => {
+    const sl = splashes.current.find(s => s.life <= 0); if (!sl) return
+    sl.x = x; sl.z = z; sl.life = sl.max = 0.7
+  }
 
   // éclats : scale ↑ avec le combo (l'intensité monte à chaque prise d'une rafle)
   const fxBurst = (r, c, hue, scale = 1) => {
@@ -179,7 +255,7 @@ function Pieces({ store, audio }) {
       const caps = move.caps || [], path = move.path || [move.to], isCap = caps.length > 0
       if (ai && store.api.focusMove) store.api.focusMove(move.from, move.to)  // caméra suit le coup IA/adverse
       if (!grp || reduced) {
-        if (isCap) { caps.forEach(([r, c], idx) => { const m = refs.current[r + '_' + c]; if (m) m.visible = false; fxBurst(r, c, 'fire', 1 + idx * 0.3); if (idx >= 1) store.api.combo?.(idx + 1) }); audio.capture(); store.api.shake?.(0.12); store.api.flash?.(0.3) }
+        if (isCap) { caps.forEach(([r, c], idx) => { const m = refs.current[r + '_' + c]; const sd = m?.userData?.side; if (m) m.visible = false; if (sd) fxSink(r, c, sd); fxBurst(r, c, 'fire', 1 + idx * 0.3); if (idx >= 1) store.api.combo?.(idx + 1) }); audio.capture(); store.api.shake?.(0.12); store.api.flash?.(0.3) }
         if (promoted) { fxBurst(move.to[0], move.to[1], 'gold', 2); store.api.flash?.(0.4); audio.king() } else audio.move()
         resolve(); return
       }
@@ -227,11 +303,11 @@ function Pieces({ store, audio }) {
         a.grp.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch))
         if (a.isCap && p > 0.5 && !a.capDone.has(a.i)) {
           a.capDone.add(a.i); const cap = a.caps[a.i]
-          if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; if (cm) cm.visible = false; a.combo++; fxBurst(cap[0], cap[1], 'fire', 1 + a.combo * 0.28); audio.capture(); store.api.shake?.(0.13 + a.combo * 0.05); store.api.flash?.(0.28 + a.combo * 0.07); if (a.combo >= 2) store.api.combo?.(a.combo) }
+          if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; const sd = cm?.userData?.side; if (cm) cm.visible = false; if (sd) fxSink(cap[0], cap[1], sd); a.combo++; fxBurst(cap[0], cap[1], 'fire', 1 + a.combo * 0.28); audio.capture(); store.api.shake?.(0.13 + a.combo * 0.05); store.api.flash?.(0.28 + a.combo * 0.07); if (a.combo >= 2) store.api.combo?.(a.combo) }
         }
         if (p >= 1) {
           a.seg0 = b; a.i++; a.t0 = now
-          if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4) } }
+          if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4); if (!reduced && quality !== 'low') beamState.current = { t0: now, x: wt.x, z: wt.z }; store.api.shake?.(0.18) } }
         }
       } else if (a.phase === 'settle') {                            // petit rebond d'atterrissage (overshoot)
         let p = (now - a.t0) / 150; if (p > 1) p = 1
@@ -244,8 +320,25 @@ function Pieces({ store, audio }) {
         a.grp.rotation.y = p * Math.PI * 3
         const s = 1 + 0.12 * Math.sin(p * Math.PI); a.grp.scale.set(s, s, s)
         if (!a.cerBurst && p > 0.45) { a.cerBurst = true; fxBurst(a.to[0], a.to[1], 'gold', 3); store.api.flash?.(0.55) }
+        if (!a.cerBurst2 && p > 0.72) { a.cerBurst2 = true; fxBurst(a.to[0], a.to[1], 'gold', 2.2) }   // 2e gerbe de paillettes
         if (p >= 1) { a.grp.rotation.y = 0; a.grp.position.set(wt.x, PIECE_Y, wt.z); a.grp.scale.set(1, 1, 1); const r = a.resolve; anim.current = null; r() }
       }
+    }
+    // faisceau de couronnement : colonne de lumière qui jaillit puis s'estompe
+    if (beamRef.current) {
+      const bs = beamState.current
+      if (bs) {
+        const p = (now - bs.t0) / 1400
+        if (p >= 1) { beamState.current = null; beamRef.current.visible = false }
+        else {
+          beamRef.current.visible = true
+          beamRef.current.position.set(bs.x, 4.0, bs.z)
+          beamRef.current.rotation.y = now * 0.002
+          const rise = Math.min(1, p * 3), fade = 1 - Math.max(0, (p - 0.45) / 0.55)
+          beamRef.current.scale.set(0.6 + rise * 0.4, rise, 0.6 + rise * 0.4)
+          beamRef.current.material.opacity = 0.55 * fade
+        }
+      } else beamRef.current.visible = false
     }
     // éclats
     const im = sparkRef.current
@@ -259,10 +352,45 @@ function Pieces({ store, audio }) {
       }
       im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; if (any) im.visible = true
     }
+    // pièces capturées qui sombrent dans l'océan
+    const sm = sinkRef.current
+    if (sm && sinks.current.length) {
+      let any = false
+      for (let k = 0; k < SINKS; k++) {
+        const s = sinks.current[k]; if (!s) continue
+        if (s.life > 0) {
+          any = true; s.life -= 0.016; const t = 1 - s.life / s.max
+          s.x += s.vx * 0.016; s.z += s.vz * 0.016; s.vy -= 9.0 * 0.016; s.y += s.vy * 0.016
+          s.ax += s.rx * 0.016; s.az += s.rz * 0.016
+          if (!s.splashed && s.y <= -0.45 && s.vy < 0) { s.splashed = true; fxSplash(s.x, s.z); store.api.plonk?.() }  // impact eau
+          if (s.y < -0.5) { s.vy *= 0.4; s.vx *= 0.86; s.vz *= 0.86 }   // traînée sous l'eau (descente molle)
+          const sc = s.y < -0.5 ? Math.max(0.001, 1 - (-0.5 - s.y) * 0.55) : 1   // se dissout en profondeur
+          dummy.position.set(s.x, Math.min(s.y, 1.6), s.z); dummy.rotation.set(s.ax, 0, s.az); dummy.scale.setScalar(sc); dummy.updateMatrix(); sm.setMatrixAt(k, dummy.matrix)
+          if (sm.instanceColor) sm.setColorAt(k, s.side === P ? new THREE.Color(0x8a352c) : new THREE.Color(0x2c4d6c))
+        } else { dummy.scale.setScalar(0); dummy.position.set(0, -60, 0); dummy.updateMatrix(); sm.setMatrixAt(k, dummy.matrix) }
+      }
+      sm.instanceMatrix.needsUpdate = true; if (sm.instanceColor) sm.instanceColor.needsUpdate = true; sm.visible = any
+    }
+    // anneaux d'éclaboussure à l'impact
+    const pm = splashRef.current
+    if (pm && splashes.current.length) {
+      let any = false
+      for (let k = 0; k < SPLASH; k++) {
+        const s = splashes.current[k]; if (!s) continue
+        if (s.life > 0) { any = true; s.life -= 0.016; const t = 1 - s.life / s.max; const sc = 0.5 + t * 2.6; dummy.position.set(s.x, -0.46, s.z); dummy.rotation.set(Math.PI / 2, 0, 0); dummy.scale.set(sc, sc, Math.max(0.05, 1 - t)); dummy.updateMatrix(); pm.setMatrixAt(k, dummy.matrix) }
+        else { dummy.scale.setScalar(0); dummy.position.set(0, -60, 0); dummy.updateMatrix(); pm.setMatrixAt(k, dummy.matrix) }
+      }
+      pm.instanceMatrix.needsUpdate = true; pm.visible = any
+      const mat = pm.material; if (mat) mat.opacity = 0.7
+    }
   })
 
-  // init du pool d'éclats
+  // init du pool d'éclats + pièces qui sombrent + éclaboussures
   useEffect(() => { sparks.current = Array.from({ length: SPARKS }, () => ({ life: 0, max: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, col: 0xffffff })) }, [])
+  useEffect(() => {
+    sinks.current = Array.from({ length: SINKS }, () => ({ life: 0, max: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ax: 0, az: 0, rx: 0, rz: 0, side: P, splashed: false }))
+    splashes.current = Array.from({ length: SPLASH }, () => ({ life: 0, max: 1, x: 0, z: 0 }))
+  }, [])
 
   const board = state.board
   const click = store._click
@@ -274,7 +402,7 @@ function Pieces({ store, audio }) {
         const movable = state.interactive && state.movableKeys.has(key)
         return (
           <group key={key} position={[w.x, PIECE_Y, w.z]}
-            ref={(el) => { if (el) refs.current[key] = el; else delete refs.current[key] }}
+            ref={(el) => { if (el) { el.userData.side = cell.side; refs.current[key] = el } else delete refs.current[key] }}
             onClick={(e) => click(e, r, c)}
             onPointerOver={(e) => { if (movable) { e.stopPropagation(); hoverKey.current = key; document.body.style.cursor = 'pointer' } }}
             onPointerOut={() => { if (hoverKey.current === key) { hoverKey.current = null; document.body.style.cursor = '' } }}>
@@ -293,6 +421,101 @@ function Pieces({ store, audio }) {
       <instancedMesh ref={sparkRef} args={[null, null, SPARKS]} frustumCulled={false}>
         <icosahedronGeometry args={[1, 0]} />
         <meshBasicMaterial toneMapped={false} vertexColors={false} />
+      </instancedMesh>
+      <mesh ref={beamRef} visible={false}>
+        <cylinderGeometry args={[0.18, 0.62, 8, 24, 1, true]} />
+        <meshBasicMaterial color={0xfff0b8} transparent opacity={0.5} side={THREE.DoubleSide} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <instancedMesh ref={sinkRef} args={[sinkGeo, sinkMatP, SINKS]} frustumCulled={false} castShadow visible={false} />
+      <instancedMesh ref={splashRef} args={[splashGeo, undefined, SPLASH]} frustumCulled={false} visible={false}>
+        <meshBasicMaterial color={0xdff0ff} transparent opacity={0.7} depthWrite={false} toneMapped={false} />
+      </instancedMesh>
+    </group>
+  )
+}
+
+// ── cinématique de victoire : orbite + feux d'artifice + halo doré ─────────────
+// Détecte la transition winner=null→'P'/'M', lance l'orbite caméra (store.api.orbit)
+// puis tire des salves de feux d'artifice colorés faction au-dessus du couchant.
+function Celebration({ store, quality }) {
+  const s = useSyncExternalStore(store.subscribe, store.getState)
+  const fwRef = useRef(null)          // InstancedMesh des étincelles de feux d'artifice
+  const fw = useRef([])               // état JS
+  const glowRef = useRef(null)        // halo doré au sol
+  const active = useRef(null)         // { side, t0, nextBurst }
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const N = quality === 'high' ? 360 : quality === 'medium' ? 200 : 0
+  const prevWinner = useRef(null)
+
+  useEffect(() => { fw.current = Array.from({ length: N }, () => ({ life: 0, max: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, col: 0xffffff })) }, [N])
+
+  // salve : N étincelles en sphère depuis un point haut au-dessus de l'horizon
+  const burst = (cx, cy, cz, palette, power = 1) => {
+    let spawned = 0
+    for (let k = 0; k < N && spawned < 70 * power; k++) {
+      const p = fw.current[k]; if (!p || p.life > 0) continue
+      const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), sp = (2.6 + Math.random() * 2.2) * power
+      p.x = cx; p.y = cy; p.z = cz
+      p.vx = Math.sin(ph) * Math.cos(th) * sp; p.vy = Math.sin(ph) * Math.sin(th) * sp * 0.7 + 1; p.vz = Math.cos(ph) * sp
+      p.life = p.max = 1.1 + Math.random() * 0.7; p.col = palette[(Math.random() * palette.length) | 0]
+      spawned++
+    }
+  }
+
+  useEffect(() => {
+    const w = s.winner
+    if (w && prevWinner.current !== w && s.gameOver) {
+      active.current = { side: w, t0: performance.now(), nextBurst: 0 }
+      store.api.orbit?.(w)
+    }
+    if (!w) active.current = null
+    prevWinner.current = w
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.winner, s.gameOver])
+
+  useFrame(() => {
+    const now = performance.now()
+    const a = active.current
+    const goldPal = [0xffd56a, 0xffe9a8, 0xffb24d, 0xfff3c8]
+    const facPal = a ? (a.side === P ? [0xff7a3a, 0xffb060, 0xffd56a, 0xff5024] : [0x6fb4ff, 0xa8d0ff, 0xffd56a, 0x3a7cff]) : goldPal
+    // tirs périodiques pendant ~7s
+    if (a && N > 0) {
+      const el = now - a.t0
+      if (el < 7400 && el >= a.nextBurst) {
+        a.nextBurst = el + 520 + Math.random() * 380
+        const cx = (Math.random() - 0.5) * 26, cy = 7 + Math.random() * 6, cz = -8 - Math.random() * 16
+        burst(cx, cy, cz, Math.random() < 0.6 ? facPal : goldPal, 1)
+        if (Math.random() < 0.4) burst((Math.random() - 0.5) * 18, 6 + Math.random() * 5, -4 - Math.random() * 10, facPal, 0.7)
+      }
+      if (el >= 9000) active.current = null
+    }
+    // halo doré pulsé au sol sous le plateau pendant la célébration
+    if (glowRef.current) {
+      if (a) { const k = 0.5 + 0.5 * Math.sin(now * 0.004); glowRef.current.visible = true; glowRef.current.material.opacity = 0.12 + 0.16 * k; const sc = 6.5 + 0.6 * k; glowRef.current.scale.set(sc, sc, 1) }
+      else glowRef.current.visible = false
+    }
+    const im = fwRef.current
+    if (im && fw.current.length) {
+      let any = false
+      for (let k = 0; k < N; k++) {
+        const p = fw.current[k]; if (!p) continue
+        if (p.life > 0) { any = true; p.life -= 0.016; const t = 1 - p.life / p.max; p.x += p.vx * 0.016; p.y += (p.vy - 2.4 * t) * 0.016; p.z += p.vz * 0.016; const sc = Math.max(0.001, (1 - t * t) * 0.12); dummy.position.set(p.x, p.y, p.z); dummy.scale.setScalar(sc); dummy.updateMatrix(); im.setMatrixAt(k, dummy.matrix); im.setColorAt(k, new THREE.Color(p.col)) }
+        else { dummy.scale.setScalar(0); dummy.position.set(0, -80, 0); dummy.updateMatrix(); im.setMatrixAt(k, dummy.matrix) }
+      }
+      im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; im.visible = any
+    }
+  })
+
+  if (N === 0) return null
+  return (
+    <group>
+      <mesh ref={glowRef} visible={false} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.12, 0]}>
+        <circleGeometry args={[1, 48]} />
+        <meshBasicMaterial color={0xffd56a} transparent opacity={0.2} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+      <instancedMesh ref={fwRef} args={[null, null, N]} frustumCulled={false} visible={false}>
+        <icosahedronGeometry args={[1, 0]} />
+        <meshBasicMaterial toneMapped={false} />
       </instancedMesh>
     </group>
   )
@@ -367,26 +590,71 @@ function HintPath({ points }) {
 }
 
 // ── océan + ciel + particules d'ambiance ───────────────────────────────────────
-function Ocean({ quality }) {
+function Ocean({ quality, theme }) {
+  const t = getTheme(theme)
   const normal = useMemo(() => makeWaveNormal(), [])
-  useFrame((st) => { const t = st.clock.elapsedTime; normal.offset.set(t * 0.03, t * 0.017) })
+  // tempête : vagues plus rapides/marquées · nuit : eau plus calme
+  const speed = theme === 'storm' ? 1.9 : theme === 'night' ? 0.7 : 1
+  useFrame((st) => { const e = st.clock.elapsedTime; normal.offset.set(e * 0.03 * speed, e * 0.017 * speed) })
   if (quality === 'low') {
-    return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}><planeGeometry args={[400, 400]} /><meshStandardMaterial color={0x2a4258} roughness={0.25} metalness={0.7} normalMap={normal} /></mesh>
+    return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}><planeGeometry args={[400, 400]} /><meshStandardMaterial color={t.ocean.lowColor} roughness={0.25} metalness={0.7} normalMap={normal} /></mesh>
   }
-  // miroir net + faible roughness → reflète le ciel couchant chaud (glint sur l'eau)
+  // miroir net + faible roughness → reflète le ciel (glint sur l'eau)
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
       <planeGeometry args={[400, 400]} />
-      <MeshReflectorMaterial resolution={quality === 'high' ? 1024 : 512} mixBlur={1.4} mixStrength={3.2} blur={[140, 50]} minDepthThreshold={0.2} maxDepthThreshold={1.4} depthScale={0.9} depthToBlurRatioBias={0.2} mirror={0.82} color="#22455f" metalness={0.9} roughness={0.16} normalMap={normal} normalScale={[0.22, 0.22]} />
+      <MeshReflectorMaterial key={theme} resolution={quality === 'high' ? 1024 : 512} mixBlur={1.4} mixStrength={3.2} blur={[140, 50]} minDepthThreshold={0.2} maxDepthThreshold={1.4} depthScale={0.9} depthToBlurRatioBias={0.2} mirror={t.ocean.mirror} color={t.ocean.color} metalness={t.ocean.metalness} roughness={t.ocean.roughness} normalMap={normal} normalScale={theme === 'storm' ? [0.4, 0.4] : [0.22, 0.22]} />
     </mesh>
   )
 }
-function Spray({ quality }) {
+function Spray({ quality, theme }) {
   const ref = useRef()
+  const t = getTheme(theme)
   const N = quality === 'high' ? 220 : 110
   const geo = useMemo(() => { const g = new THREE.BufferGeometry(); const pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - 0.5) * 60; pos[i * 3 + 1] = Math.random() * 16 + 0.5; pos[i * 3 + 2] = (Math.random() - 0.5) * 60 } g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); return g }, [N])
-  useFrame((st) => { if (ref.current) ref.current.rotation.y = st.clock.elapsedTime * 0.012 })
-  return <points ref={ref} geometry={geo}><pointsMaterial size={0.08} color={0xffe7c4} transparent opacity={0.5} depthWrite={false} toneMapped={false} /></points>
+  useFrame((st) => { if (ref.current) ref.current.rotation.y = st.clock.elapsedTime * (theme === 'storm' ? 0.03 : 0.012) })
+  return <points ref={ref} geometry={geo}><pointsMaterial size={theme === 'night' ? 0.1 : 0.08} color={t.spray} transparent opacity={theme === 'night' ? 0.7 : 0.5} depthWrite={false} toneMapped={false} /></points>
+}
+
+// ── champ d'étoiles (ambiance Nuit) : points scintillants haut dans le ciel ─────
+function Stars({ quality }) {
+  const ref = useRef()
+  const N = quality === 'high' ? 900 : 500
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry(); const pos = new Float32Array(N * 3)
+    for (let i = 0; i < N; i++) { const r = 120 + Math.random() * 80, th = Math.random() * Math.PI * 2, ph = Math.random() * Math.PI * 0.45; pos[i * 3] = Math.cos(th) * Math.sin(ph + 0.15) * r; pos[i * 3 + 1] = Math.cos(ph) * r * 0.9 + 20; pos[i * 3 + 2] = Math.sin(th) * Math.sin(ph + 0.15) * r }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); return g
+  }, [N])
+  useFrame((st) => { if (ref.current) ref.current.material.opacity = 0.75 + 0.2 * Math.sin(st.clock.elapsedTime * 0.7) })
+  return <points ref={ref} geometry={geo}><pointsMaterial size={0.55} color={0xeaf0ff} transparent opacity={0.85} sizeAttenuation depthWrite={false} toneMapped={false} /></points>
+}
+
+// ── lumières + ciel + IBL pilotés par l'ambiance (theme) ───────────────────────
+function WorldEnvironment({ theme }) {
+  const t = getTheme(theme)
+  const flashLight = useRef()    // éclair (tempête) : flash directionnel sporadique
+  const next = useRef(1500)
+  useFrame((st, dt) => {
+    if (!t.lightning || !flashLight.current) { if (flashLight.current) flashLight.current.intensity = 0; return }
+    next.current -= dt * 1000
+    if (next.current <= 0) { next.current = 2600 + Math.random() * 5000; flashLight.current.userData.f = 1 }
+    const f = flashLight.current.userData.f || 0
+    if (f > 0) { flashLight.current.userData.f = Math.max(0, f - dt * 6); flashLight.current.intensity = (Math.random() < 0.6 ? f : f * 0.3) * 5 }
+    else flashLight.current.intensity = 0
+  })
+  return (
+    <group>
+      <fogExp2 attach="fog" args={[t.fog, t.fogDensity]} />
+      <Sky distance={3000} sunPosition={t.sun} turbidity={t.sky.turbidity} rayleigh={t.sky.rayleigh} mieCoefficient={t.sky.mie} mieDirectionalG={t.sky.mieG} />
+      <Environment preset={t.env} environmentIntensity={t.envInt} />
+      <hemisphereLight args={[t.hemi[0], t.hemi[1], t.hemi[2]]} />
+      <directionalLight position={t.key.pos} intensity={t.key.int} color={t.key.col} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={50} />
+      <directionalLight position={t.rim.pos} intensity={t.rim.int} color={t.rim.col} />
+      <pointLight position={t.point.pos} intensity={t.point.int} color={t.point.col} distance={t.point.dist} decay={1.4} />
+      <directionalLight position={t.fill.pos} intensity={t.fill.int} color={t.fill.col} />
+      {t.lightning && <directionalLight ref={flashLight} position={[-12, 22, -30]} intensity={0} color={0xdfeaff} />}
+    </group>
+  )
 }
 
 // ── caméra + contrôles + intro ────────────────────────────────────────────────
@@ -396,13 +664,17 @@ function CameraRig({ store }) {
   const intro = useRef({ t: 0, on: !store.getState().reduced })
   const shakeMag = useRef(0)
   const focus = useRef(null)   // { mid:{x,y,z}, t0, dur }
+  const orbit = useRef(null)   // cinématique de victoire : { t0, dur, side }
   useEffect(() => {
-    store.api.resetView = () => { camera.position.set(0, 11.5, 13.5); if (ctrl.current) { ctrl.current.target.set(0, 0, 0); ctrl.current.update() } }
+    store.api.resetView = () => { orbit.current = null; camera.position.set(0, 11.5, 13.5); if (ctrl.current) { ctrl.current.target.set(0, 0, 0); ctrl.current.update() } }
     store.api.shake = (amt = 0.15) => { shakeMag.current = Math.min(0.55, Math.max(shakeMag.current, amt)) }   // micro-shake (capture)
     store.api.focusMove = (from, to) => { const a = worldPos(from[0], from[1]), b = worldPos(to[0], to[1]); focus.current = { mid: { x: (a.x + b.x) / 2, y: 0.3, z: (a.z + b.z) / 2 }, t0: performance.now(), dur: 1100 } }
+    // orbite de victoire : ~8s autour du plateau (désactivée en reduced-motion)
+    store.api.orbit = (side) => { if (store.getState().reduced) return; orbit.current = { t0: performance.now(), dur: 8200, side: side || P, a0: Math.atan2(camera.position.z, camera.position.x) } }
+    store.api.stopOrbit = () => { orbit.current = null }
     if (intro.current.on) camera.position.set(-9.5, 18.5, 16.5)
     else store.api.resetView()
-    return () => { store.api.resetView = null; store.api.shake = null; store.api.focusMove = null }
+    return () => { store.api.resetView = null; store.api.shake = null; store.api.focusMove = null; store.api.orbit = null; store.api.stopOrbit = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   useFrame((st, dt) => {
@@ -416,6 +688,20 @@ function CameraRig({ store }) {
     }
     if (!ctrl.current) return
     const now = performance.now()
+    // cinématique de victoire : orbite lente montante autour du plateau
+    const ob = orbit.current
+    if (ob) {
+      ctrl.current.enabled = false
+      const p = Math.min(1, (now - ob.t0) / ob.dur)
+      const ang = ob.a0 + p * Math.PI * 1.6
+      const rad = 15.5 - 3.0 * Math.sin(p * Math.PI)            // plonge un peu au milieu puis ressort
+      const ht = 9.5 + 5.5 * Math.sin(p * Math.PI)               // s'élève au sommet de l'orbite
+      camera.position.set(Math.cos(ang) * rad, ht, Math.sin(ang) * rad)
+      ctrl.current.target.set(0, 0.4, 0)
+      camera.lookAt(0, 0.4, 0)
+      if (p >= 1) { orbit.current = null; ctrl.current.enabled = true; ctrl.current.update() }
+      return
+    } else if (!ctrl.current.enabled && !intro.current.on) ctrl.current.enabled = true
     // suivi du coup : la cible glisse vers le milieu du coup puis revient au centre
     let bx = 0, by = 0, bz = 0; const f = focus.current
     if (f) { const p = (now - f.t0) / f.dur; if (p >= 1) focus.current = null; else { const k = p < 0.4 ? p / 0.4 : 1 - (p - 0.4) / 0.6; const e = k * k * (3 - 2 * k); bx = f.mid.x * e; by = f.mid.y * e; bz = f.mid.z * e } }
@@ -428,8 +714,9 @@ function CameraRig({ store }) {
 }
 
 // ── stack post-processing (gated par quality + tunable en dev via leva) ─────────
-function Effects({ quality }) {
+function Effects({ quality, theme }) {
   const { gl } = useThree()
+  const baseExp = getTheme(theme).exposure
   const tune = useControls('Dames · rendu', {
     exposure: { value: 1.08, min: 0.6, max: 1.6, step: 0.01 },
     bloom: { value: 0.7, min: 0, max: 2, step: 0.05 },
@@ -437,7 +724,8 @@ function Effects({ quality }) {
     ao: { value: 1.0, min: 0, max: 3, step: 0.1 },
     dof: { value: 1, min: 0, max: 4, step: 0.1 },
   }, { collapsed: true })
-  useEffect(() => { gl.toneMappingExposure = tune.exposure }, [gl, tune.exposure])
+  // l'ambiance fixe l'exposition de base ; en DEV le leva (≠ défaut) reprend la main
+  useEffect(() => { gl.toneMappingExposure = (DEV && tune.exposure !== 1.08) ? tune.exposure : baseExp }, [gl, tune.exposure, baseExp])
   useEffect(() => {
     if (quality === 'low') return
     const prev = gl.toneMapping; gl.toneMapping = THREE.NoToneMapping  // le composer fait le tonemap
@@ -467,6 +755,7 @@ export default function DamesScene({ store, onSquareClick, audio }) {
   store._click = (e, r, c) => { const d = Math.abs(e.clientX - down.current.x) + Math.abs(e.clientY - down.current.y); if (d < 7) { e.stopPropagation(); onSquareClick(r, c) } }
   const s = useSyncExternalStore(store.subscribe, store.getState)
   const quality = s.quality
+  const theme = s.theme || 'sunset'
   // overlays 2D : flash écran (capture) + compteur de combo (rafle)
   useEffect(() => {
     store.api.flash = (intensity = 0.35) => { const el = flashRef.current; if (el && el.animate) el.animate([{ opacity: Math.min(0.7, intensity) }, { opacity: 0 }], { duration: 230, easing: 'ease-out' }) }
@@ -488,24 +777,19 @@ export default function DamesScene({ store, onSquareClick, audio }) {
         onPointerMissed={() => { if (store.api.onMiss) store.api.onMiss() }}
         style={{ width: '100%', height: '100%', display: 'block' }}
       >
-        <fogExp2 attach="fog" args={[0xc77a44, 0.0072]} />{/* lueur d'horizon couchant chaude — fond l'océan lointain dans le soleil */}
-        <Sky distance={3000} sunPosition={SUN} turbidity={10} rayleigh={1.25} mieCoefficient={0.05} mieDirectionalG={0.97} />
-        <Environment preset="sunset" environmentIntensity={0.72} />
-        <hemisphereLight args={[0xffdcae, 0x16202c, 0.5]} />
-        <directionalLight position={[7, 16, 9]} intensity={1.0} color={0xfff1da} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0004} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={50} />
-        <directionalLight position={[-20, 3.5, -28]} intensity={1.15} color={0xff9248} />{/* soleil couchant : rim chaud + glint sur l'eau */}
-        <pointLight position={[-7, 7, -5]} intensity={22} color={0xffc070} distance={45} decay={1.4} />
-        <directionalLight position={[-6, 8, 6]} intensity={0.25} color={0x9fb8e0} />
+        <WorldEnvironment theme={theme} />
 
         <Board store={store} />
         <Pieces store={store} audio={audio} />
         <Markers store={store} />
+        <Celebration store={store} quality={quality} />
         {quality !== 'low' && <ContactShadows position={[0, 0.1, 0]} scale={16} resolution={1024} blur={2.6} opacity={0.5} far={6} color="#0a0604" />}
-        <Ocean quality={quality} />
-        {quality !== 'low' && <Spray quality={quality} />}
+        <Ocean quality={quality} theme={theme} />
+        {quality !== 'low' && <Spray quality={quality} theme={theme} />}
+        {theme === 'night' && quality !== 'low' && <Stars quality={quality} />}
 
         <CameraRig store={store} />
-        <Effects quality={quality} />
+        <Effects quality={quality} theme={theme} />
       </Canvas>
     </>
   )
