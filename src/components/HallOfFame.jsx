@@ -1,36 +1,38 @@
 import { useInView } from '../hooks/useInView.js'
 
+// Une couleur signature par légende (c = couleur structurelle pour bord/glow/ombre).
+// ??? = arc-en-ciel : flag `rainbow` → les accents visibles passent en dégradé.
 const LEGENDS = [
   {
-    name: 'Brams', pseudo: 'Le Fondateur', icon: '👑', color: '#d8bd7e',
+    name: 'Brams', pseudo: 'Le Fondateur', icon: '👑', c: '#f5c945',
     prime: '5 000 000 000 ฿',
     desc: 'Fondateur de Brams Community. Créateur du serveur, à l\'origine de toute l\'aventure One Piece francophone.',
     fruit: 'Fruit du Roi',
     title: 'ROI DES PIRATES',
   },
   {
-    name: 'Freydiss', pseudo: 'L\'Architecte', icon: '⚙️', color: '#BFA46A',
+    name: 'Freydiss', pseudo: 'L\'Architecte', icon: '⚙️', c: '#a674ff',
     prime: '3 200 000 000 ฿',
     desc: 'Développeur et admin du bot Brams Score. Bâtisseur de l\'empire technologique de la communauté.',
     fruit: 'Fruit du Code',
     title: 'DÉVELOPPEUR EN CHEF',
   },
   {
-    name: 'Benactief', pseudo: 'Le Fantôme', icon: '👻', color: '#BFA46A',
+    name: 'Benactief', pseudo: 'Le Fantôme', icon: '👻', c: '#36d97c',
     prime: '2 100 000 000 ฿',
     desc: 'Maître du serveur dans l\'ombre. Sa présence vocale fait trembler les Yonkous.',
     fruit: 'Fruit de l\'Ombre',
     title: 'MAÎTRE DU SILENCE',
   },
   {
-    name: 'Berat', pseudo: 'Le Stratège', icon: '🗺️', color: '#BFA46A',
+    name: 'Berat', pseudo: 'Le Stratège', icon: '🗺️', c: '#d4374f',
     prime: '1 800 000 000 ฿',
     desc: 'Gestionnaire des événements. Chaque tournoi, chaque combat — c\'est son œuvre.',
     fruit: 'Fruit du Plan',
     title: 'MAÎTRE DES TOURNOIS',
   },
   {
-    name: '???', pseudo: 'Le Prochain Roi ?', icon: '❓', color: '#9a8552',
+    name: '???', pseudo: 'Le Prochain Roi ?', icon: '❓', c: '#c77dff', rainbow: true,
     prime: '??? ฿',
     desc: 'Le prochain Roi des Pirates est peut-être toi. Rejoins le Grand Line et prouve ta valeur.',
     fruit: '???',
@@ -50,36 +52,83 @@ export default function HallOfFame() {
       ref={ref}
       style={{
         background: 'transparent',
-        padding: '110px 0',
+        padding: '120px 0',
         position: 'relative',
         overflow: 'hidden',
-        borderTop: '1px solid rgba(191,164,106,0.14)',
-        borderBottom: '1px solid rgba(191,164,106,0.14)',
       }}
     >
       <style>{`
-        .hof-shell { width: 100%; max-width: 1320px; margin: 0 auto; padding: 0 40px; }
-        .hof-grid {
-          display: grid;
-          grid-template-columns: 1.35fr 1fr;
-          gap: 22px;
-          align-items: stretch;
-        }
-        .hof-sub-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 22px;
-        }
+        .hof-shell { width: 100%; max-width: 1320px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
+
+        .hof-grid { display: grid; grid-template-columns: 1.32fr 1fr; gap: 24px; align-items: stretch; }
+        .hof-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        /* dégradé arc-en-ciel commun (réutilisé pour bar / ring / textes) */
+        .hof-card { --rainbow: linear-gradient(105deg,#ff5d6c,#ff9f45,#ffe24d 38%,#4be08a 55%,#49c6ff 72%,#9b7bff 88%,#ff6fd6); }
+
         .hof-card {
-          background: #10111a;
-          border: 1px solid rgba(191,164,106,0.22);
-          border-radius: 18px;
-          overflow: hidden;
           position: relative;
-          transition: border-color .25s ease, transform .25s ease;
+          border-radius: 20px;
+          overflow: hidden;
+          background:
+            radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--c) 13%, transparent), transparent 60%),
+            linear-gradient(180deg, rgba(18,19,27,.80), rgba(9,10,15,.86));
+          -webkit-backdrop-filter: blur(11px);
+          backdrop-filter: blur(11px);
+          border: 1px solid color-mix(in srgb, var(--c) 34%, transparent);
+          box-shadow: 0 22px 55px -26px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.05);
+          transition: transform .3s cubic-bezier(.22,1,.36,1), border-color .3s, box-shadow .3s;
         }
-        .hof-card:hover { border-color: rgba(191,164,106,0.55); transform: translateY(-3px); }
+        .hof-card:hover {
+          transform: translateY(-6px);
+          border-color: color-mix(in srgb, var(--c) 72%, transparent);
+          box-shadow: 0 30px 65px -24px color-mix(in srgb, var(--c) 42%, transparent),
+                      inset 0 1px 0 rgba(255,255,255,.07);
+        }
         .hof-card.featured { grid-row: span 2; }
+
+        /* halo coloré diffus en fond de carte */
+        .hof-card::after {
+          content: ''; position: absolute; inset: -1px; pointer-events: none; opacity: .5;
+          background: radial-gradient(70% 50% at 80% 8%, color-mix(in srgb, var(--c) 22%, transparent), transparent 70%);
+        }
+        .hof-card.rainbow::after {
+          opacity: .42;
+          background: radial-gradient(80% 55% at 50% 0%, rgba(155,123,255,.22), rgba(73,198,255,.14) 45%, transparent 72%);
+        }
+
+        .hof-accent { height: 3px; background: linear-gradient(90deg, transparent, var(--c), transparent); }
+        .rainbow .hof-accent { background: var(--rainbow); }
+
+        .hof-ring { padding: 2px; border-radius: 50%; background: var(--c); flex-shrink: 0;
+          box-shadow: 0 0 26px -4px var(--c); }
+        .rainbow .hof-ring { background: var(--rainbow); box-shadow: 0 0 26px -4px rgba(155,123,255,.7); }
+        .hof-ring-in { border-radius: 50%; background: #13141d; display: flex; align-items: center; justify-content: center; }
+
+        .hof-pseudo { color: var(--c); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+        .hof-title-pill {
+          align-self: flex-start; font-weight: 900; letter-spacing: .16em;
+          color: var(--c);
+          border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+          background: color-mix(in srgb, var(--c) 9%, transparent);
+          border-radius: 5px;
+        }
+        .hof-prime { color: var(--c); font-family: var(--pirate); font-weight: 800; }
+
+        /* textes arc-en-ciel */
+        .rainbow .hof-pseudo, .rainbow .hof-prime, .rainbow .hof-name {
+          background: var(--rainbow); -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent; color: transparent;
+        }
+        .rainbow .hof-title-pill {
+          background: var(--rainbow); -webkit-background-clip: text; background-clip: text;
+          -webkit-text-fill-color: transparent; color: transparent;
+          border-color: rgba(255,255,255,.16);
+        }
+
+        .hof-name { font-family: var(--pirate); color: #f4f0e6; line-height: 1; }
+        .hof-meta-box { background: rgba(255,255,255,.035); border: 1px solid color-mix(in srgb, var(--c) 26%, transparent); border-radius: 12px; }
+
         @media (max-width: 1024px) {
           .hof-grid { grid-template-columns: 1fr; }
           .hof-card.featured { grid-row: auto; }
@@ -91,7 +140,7 @@ export default function HallOfFame() {
       `}</style>
 
       <div className="hof-shell">
-        <div className={`reveal ${inView ? 'visible' : ''}`} style={{ textAlign: 'center', marginBottom: 54 }}>
+        <div className={`reveal ${inView ? 'visible' : ''}`} style={{ textAlign: 'center', marginBottom: 58 }}>
           <div className="label" style={{ color: '#BFA46A' }}>👑 Légendes</div>
           <h2 className="h2" style={{ textAlign: 'center', fontFamily: "'Clash Display','Syne',system-ui" }}>Hall of Fame</h2>
           <p className="sub" style={{ textAlign: 'center', margin: '0 auto', color: 'rgba(244,240,230,0.6)' }}>
@@ -100,84 +149,60 @@ export default function HallOfFame() {
         </div>
 
         <div className="hof-grid">
-          {/* Carte vedette */}
-          <article className="hof-card featured" style={{ background: '#0d0e13', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ height: 3, background: `linear-gradient(90deg, transparent, ${featured.color}, transparent)` }} />
-            <div style={{ padding: '40px 38px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <span style={{
-                alignSelf: 'flex-start',
-                fontSize: 10, fontWeight: 900, letterSpacing: '.18em',
-                color: featured.color, border: `1px solid ${featured.color}55`,
-                borderRadius: 4, padding: '5px 14px', marginBottom: 30,
-              }}>{featured.title}</span>
+          {/* Carte vedette — Brams */}
+          <article className={`hof-card featured${featured.rainbow ? ' rainbow' : ''}`} style={{ '--c': featured.c, display: 'flex', flexDirection: 'column' }}>
+            <div className="hof-accent" />
+            <div style={{ padding: '42px 40px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <span className="hof-title-pill" style={{ fontSize: 10.5, padding: '6px 15px', marginBottom: 32 }}>{featured.title}</span>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 26 }}>
-                <div style={{
-                  width: 108, height: 108, borderRadius: '50%', flexShrink: 0,
-                  background: '#15161f',
-                  border: `2px solid ${featured.color}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 54,
-                }}>{featured.icon}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 28 }}>
+                <div className="hof-ring"><div className="hof-ring-in" style={{ width: 104, height: 104, fontSize: 52 }}>{featured.icon}</div></div>
                 <div>
-                  <div style={{ fontFamily: 'var(--pirate)', fontSize: 44, color: '#f4f0e6', lineHeight: 1 }}>{featured.name}</div>
-                  <div style={{ fontSize: 12, color: featured.color, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 8 }}>
-                    🏴‍☠️ {featured.pseudo}
-                  </div>
+                  <div className="hof-name" style={{ fontSize: 46 }}>{featured.name}</div>
+                  <div className="hof-pseudo" style={{ fontSize: 12.5, marginTop: 9 }}>🏴‍☠️ {featured.pseudo}</div>
                 </div>
               </div>
 
-              <p style={{ fontSize: 15, color: 'rgba(244,240,230,0.62)', lineHeight: 1.8, marginBottom: 28, flex: 1 }}>{featured.desc}</p>
+              <p style={{ fontSize: 15, color: 'rgba(244,240,230,0.64)', lineHeight: 1.8, marginBottom: 30, flex: 1 }}>{featured.desc}</p>
 
               <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <div style={{ background: '#15161f', border: `1px solid ${featured.color}33`, borderRadius: 10, padding: '10px 18px' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(244,240,230,0.4)', letterSpacing: '.12em', marginBottom: 3 }}>PRIME</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: featured.color, fontFamily: 'var(--pirate)' }}>{featured.prime}</div>
+                <div className="hof-meta-box" style={{ '--c': featured.c, padding: '11px 19px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(244,240,230,0.42)', letterSpacing: '.14em', marginBottom: 4 }}>PRIME</div>
+                  <div className="hof-prime" style={{ fontSize: 17 }}>{featured.prime}</div>
                 </div>
-                <div style={{ background: '#15161f', border: `1px solid ${featured.color}33`, borderRadius: 10, padding: '10px 18px' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(244,240,230,0.4)', letterSpacing: '.12em', marginBottom: 3 }}>🍎 FRUIT DU DÉMON</div>
+                <div className="hof-meta-box" style={{ '--c': featured.c, padding: '11px 19px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(244,240,230,0.42)', letterSpacing: '.14em', marginBottom: 4 }}>🍎 FRUIT DU DÉMON</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#f4f0e6' }}>{featured.fruit}</div>
                 </div>
               </div>
             </div>
           </article>
 
-          {/* Les 4 autres légendes, plein cadre */}
+          {/* Les 4 autres légendes */}
           <div className="hof-sub-grid">
             {rest.map((l, i) => (
-              <article key={i} className="hof-card" style={{ background: '#111319', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ height: 3, background: `linear-gradient(90deg, transparent, ${l.color}, transparent)` }} />
+              <article key={i} className={`hof-card${l.rainbow ? ' rainbow' : ''}`} style={{ '--c': l.c, display: 'flex', flexDirection: 'column' }}>
+                <div className="hof-accent" />
                 <div style={{ padding: '24px 22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                    <div style={{
-                      width: 56, height: 56, borderRadius: '50%', flexShrink: 0,
-                      background: '#191b24',
-                      border: `2px solid ${l.color}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28,
-                    }}>{l.icon}</div>
+                    <div className="hof-ring"><div className="hof-ring-in" style={{ width: 54, height: 54, fontSize: 27 }}>{l.icon}</div></div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontFamily: 'var(--pirate)', fontSize: 24, color: '#f4f0e6', lineHeight: 1 }}>{l.name}</div>
-                      <div style={{ fontSize: 10, color: l.color, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', marginTop: 5 }}>
-                        {l.pseudo}
-                      </div>
+                      <div className="hof-name" style={{ fontSize: 25 }}>{l.name}</div>
+                      <div className="hof-pseudo" style={{ fontSize: 10, marginTop: 5 }}>{l.pseudo}</div>
                     </div>
                   </div>
 
-                  <div style={{
-                    alignSelf: 'flex-start',
-                    fontSize: 8.5, fontWeight: 900, letterSpacing: '.15em',
-                    color: l.color, border: `1px solid ${l.color}45`,
-                    borderRadius: 4, padding: '3px 9px', marginBottom: 14,
-                  }}>{l.title}</div>
+                  <span className="hof-title-pill" style={{ fontSize: 8.5, padding: '4px 10px', marginBottom: 15 }}>{l.title}</span>
 
-                  <p style={{ fontSize: 12.5, color: 'rgba(244,240,230,0.55)', lineHeight: 1.65, marginBottom: 18, flex: 1 }}>{l.desc}</p>
+                  <p style={{ fontSize: 12.5, color: 'rgba(244,240,230,0.56)', lineHeight: 1.65, marginBottom: 18, flex: 1 }}>{l.desc}</p>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 10, paddingTop: 14, borderTop: '1px solid rgba(191,164,106,0.12)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 10, paddingTop: 14, borderTop: '1px solid color-mix(in srgb, var(--c) 18%, transparent)' }}>
                     <div>
-                      <div style={{ fontSize: 8, color: 'rgba(244,240,230,0.38)', letterSpacing: '.12em', marginBottom: 2 }}>PRIME</div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: l.color, fontFamily: 'var(--pirate)' }}>{l.prime}</div>
+                      <div style={{ fontSize: 8, color: 'rgba(244,240,230,0.4)', letterSpacing: '.12em', marginBottom: 3 }}>PRIME</div>
+                      <div className="hof-prime" style={{ fontSize: 13.5 }}>{l.prime}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 8, color: 'rgba(244,240,230,0.38)', letterSpacing: '.1em', marginBottom: 2 }}>🍎 FRUIT</div>
+                      <div style={{ fontSize: 8, color: 'rgba(244,240,230,0.4)', letterSpacing: '.1em', marginBottom: 3 }}>🍎 FRUIT</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#f4f0e6' }}>{l.fruit}</div>
                     </div>
                   </div>
