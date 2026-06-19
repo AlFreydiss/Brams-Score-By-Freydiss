@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { initBoard, generateMoves, applyMove, countPieces, opp, aiMove, isDark, P, M, gameStatus, nextHalfmoveClock, positionKey } from './engine/draughts-engine.js'
 import { moveToNotation } from './engine/notation.js'
 import DamesEvalBar from './DamesEvalBar.jsx'
+import DamesFxOverlay from './DamesFxOverlay.jsx'
 
 const QUALITY = [['high', 'Élevé'], ['medium', 'Moyen'], ['low', 'Basique']]
 
@@ -36,6 +37,7 @@ export default function DamesGame3D() {
   const [fs, setFs] = useState(false)
   const [focused, setFocused] = useState(false)   // focus clavier visible (a11y) — révèle le mode flèches
   const hintTimer = useRef(0)
+  const fxRef = useRef(null)          // couche d'effets premium 2D (combo / promotion / victoire)
   const thinkDotRef = useRef(null)   // pastille pulsante « IA réfléchit » (WAAPI, repo inline-only)
   // Sur petit écran, la barre de boutons du haut déborde sur plusieurs lignes : l'historique
   // (top:92) chevaucherait alors les boutons et le plateau. On le masque sous 760px.
@@ -212,6 +214,8 @@ export default function DamesGame3D() {
       if (!alive || !canvasRef.current) return
       renderer = new DamesRenderer(); rdrRef.current = renderer
       renderer.onSquareClick = (r, c) => handleSquare(r, c)
+      renderer.onCombo = (n) => fxRef.current?.combo(n)        // bandeau « RAFLE ×N » 2D
+      renderer.onPromote = (side) => fxRef.current?.promote(side)  // couronnement Dame 2D
       renderer.mount(canvasRef.current, { reducedMotion: reduced })
       G.current.board = initBoard(); renderer.setBoard(G.current.board)
       setHud(h => ({ ...h, ready: true })); refreshTurn()
@@ -249,6 +253,7 @@ export default function DamesGame3D() {
       style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)', outline: 'none', boxShadow: focused ? 'inset 0 0 0 2px rgba(217,184,112,.4)' : 'none' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 200px 30px rgba(0,0,0,.6)' }} />
+      <DamesFxOverlay ref={fxRef} winner={hud.gameOver && !hud.draw ? hud.winner : null} />
 
       {/* Barre d'évaluation (moteur) — bord gauche, centrée verticalement */}
       {hud.ready && (

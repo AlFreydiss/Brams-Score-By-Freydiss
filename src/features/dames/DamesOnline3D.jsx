@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import { initBoard, generateMoves, applyMove, opp, countPieces, P, M } from './engine/draughts-engine.js'
 import { ensureRating, matchmake, cancelQueue, getMatch, submitMove, resign, subscribeMatch, leaderboard } from './online/damesRanked.js'
 import { eloToTier, formatPrime } from '../../lib/dames/damesRank.js'
+import DamesFxOverlay from './DamesFxOverlay.jsx'
 
 const GOLD = '#d9b870', PARCH = '#efe6d4', MUTED = '#9a8f7d'
 const panel = { width: '100%', maxWidth: 560, background: 'rgba(18,13,8,.72)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 16, padding: 20, textAlign: 'center' }
@@ -31,6 +32,7 @@ export default function DamesOnline3D() {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const rdrRef = useRef(null)
+  const fxRef = useRef(null)          // couche d'effets premium 2D (combo / promotion / victoire)
   const G = useRef({ matchId: null, myColor: P, board: null, turn: P, ply: 0, legalMoves: [], movableKeys: new Set(), selected: null, locked: false, status: 'active' })
   const unsubRef = useRef(null), pollRef = useRef(0), aliveRef = useRef(true)
 
@@ -70,6 +72,7 @@ export default function DamesOnline3D() {
     setPhase('finished'); drawMarkers(); loadLb()
     ensureRating().then(r => { if (aliveRef.current) setRating(r) }).catch(() => {})  // ELO à jour pour le palier/bounty
     rdrRef.current?.[m.winner === g.myColor ? 'sfxWin' : 'sfxLose']?.()
+    if (m.winner === P || m.winner === M) rdrRef.current?.setWinner?.(m.winner)   // cinématique 3D (orbite + feux d'artifice) pour le camp gagnant
   }, [drawMarkers, loadLb])
 
   // Coup adverse reçu via Realtime → on l'anime.
@@ -123,6 +126,8 @@ export default function DamesOnline3D() {
       if (!alive || !canvasRef.current) return
       renderer = new DamesRenderer(); rdrRef.current = renderer
       renderer.onSquareClick = (r, c) => handleSquare(r, c)
+      renderer.onCombo = (n) => fxRef.current?.combo(n)        // bandeau « RAFLE ×N » 2D
+      renderer.onPromote = (side) => fxRef.current?.promote(side)  // couronnement Dame 2D
       renderer.mount(canvasRef.current, { reducedMotion: reduced })
       const m = await getMatch(G.current.matchId)
       if (!alive || !m) return
@@ -211,6 +216,7 @@ export default function DamesOnline3D() {
       </div>
       <div ref={containerRef} style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(70vh, 680px)', minHeight: 440, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)' }}>
         <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        <DamesFxOverlay ref={fxRef} winner={result && (result.winner === P || result.winner === M) ? result.winner : null} />
         <button onClick={toggleFs} title="Plein écran" aria-label="Plein écran" style={{ position: 'absolute', top: 12, right: 12, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(217,184,112,.2)', background: 'rgba(14,10,7,.7)', color: MUTED, cursor: 'pointer', fontSize: 15 }}>{fs ? '🗗' : '⛶'}</button>
         <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(14,10,7,.8)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 14, color: myTurn ? '#9fe0a0' : MUTED }}>

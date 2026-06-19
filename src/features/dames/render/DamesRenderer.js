@@ -31,6 +31,10 @@ function createStore() {
 export default class DamesRenderer {
   constructor() {
     this.store = createStore(); this.onSquareClick = null
+    // hooks d'événements de jeu (DOM HUD premium) — additifs, optionnels, branchés par le consommateur.
+    // onCombo(n)        : rafle en cours, n = nombre de prises atteint (≥2)
+    // onPromote(side)   : un pion vient d'être couronné Dame (side = 'P' | 'M')
+    this.onCombo = null; this.onPromote = null
     this.muted = false; this._disposed = false; this.ac = null; this.master = null
     this._amb = null; this._mus = null
     this.musicOn = false; try { this.musicOn = localStorage.getItem('dames_music') === '1' } catch (e) { /* */ }
@@ -57,6 +61,9 @@ export default class DamesRenderer {
       store: this.store,
       onSquareClick: (r, c) => { this._resumeAudio(); this.onSquareClick && this.onSquareClick(r, c) },
       audio: { move: () => this._sfxMove(), capture: () => this._sfxCapture(), king: () => this._sfxKing(), select: () => this._sfxSelect() },
+      // ponts d'événements de jeu vers le consommateur (DOM HUD) — toujours via this.* pour rester
+      // réassignables après coup ; on lit la valeur courante à l'instant de l'événement.
+      events: { combo: (n) => { try { this.onCombo && this.onCombo(n) } catch (e) { /* */ } }, promote: (side) => { try { this.onPromote && this.onPromote(side) } catch (e) { /* */ } } },
     }))
   }
 

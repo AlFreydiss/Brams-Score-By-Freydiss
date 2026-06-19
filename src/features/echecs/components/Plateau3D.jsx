@@ -100,6 +100,92 @@ function TrajectoireCoup({ dernierCoup, orientation }) {
   return <Line ref={ref} points={points} color="#ff3b3b" lineWidth={4} transparent opacity={1} />
 }
 
+// Tapis lumineux du dernier coup : 2 plaques d'or émissives (départ + arrivée) posées
+// à ras des cases, avec une respiration douce. 100 % visuel — aucun lien avec la logique.
+function TapisDernierCoup({ dernierCoup, orientation }) {
+  const grp = useRef()
+  const cases = useMemo(() => {
+    if (!dernierCoup?.from || !dernierCoup?.to) return null
+    return [squareVers3D(dernierCoup.from, orientation), squareVers3D(dernierCoup.to, orientation)]
+  }, [dernierCoup?.from, dernierCoup?.to, orientation])
+  useFrame(({ clock }) => {
+    const g = grp.current; if (!g) return
+    const v = 0.55 + 0.45 * Math.sin(clock.elapsedTime * 2.4)
+    g.children.forEach((m, i) => {
+      if (m.material) m.material.opacity = (i === 1 ? 0.5 : 0.34) * (0.6 + 0.4 * v) // arrivée plus marquée
+    })
+  })
+  if (!cases) return null
+  return (
+    <group ref={grp}>
+      {cases.map(([x, , z], i) => (
+        <mesh key={i} position={[x, 0.012, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.92, 0.92]} />
+          <meshBasicMaterial color={C3D.or} transparent opacity={0.4} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+// Onde de choc de capture : anneau au sol qui s'élargit et s'estompe sur la case de prise.
+// Lecture instantanée du « coup qui frappe », même en plein zoom. Démonté par EclatCapture.
+function OndeChoc({ position }) {
+  const ref = useRef()
+  const tRef = useRef(0)
+  const DUREE = 0.6
+  useFrame((_, dt) => {
+    const o = ref.current; if (!o?.material) return
+    tRef.current += dt
+    const t = Math.min(1, tRef.current / DUREE)
+    const s = 0.4 + t * 1.7
+    o.scale.set(s, s, s)
+    o.material.opacity = (1 - t) * 0.85
+  })
+  return (
+    <mesh ref={ref} position={[position[0], 0.03, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.55, 0.72, 40]} />
+      <meshBasicMaterial color={C3D.echec} transparent opacity={0.85} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+    </mesh>
+  )
+}
+
+// Halo de mat : colonne rouge montante au-dessus du roi maté + anneau de sol pulsant.
+// Purement décoratif ; n'interfère pas avec l'animation roiTombe de la pièce.
+function HaloMat({ position, reduit }) {
+  const col = useRef()
+  const halo = useRef()
+  const tRef = useRef(0)
+  useFrame(({ clock }, dt) => {
+    tRef.current += dt
+    const apparition = Math.min(1, tRef.current / 0.9)
+    const puls = 0.6 + 0.4 * Math.sin(clock.elapsedTime * 3)
+    if (col.current?.material) {
+      col.current.material.opacity = apparition * (reduit ? 0.18 : 0.28) * puls
+      const h = 1.4 + apparition * (reduit ? 1.6 : 2.6)
+      col.current.scale.set(1, h, 1)
+      col.current.position.y = h / 2
+    }
+    if (halo.current?.material) {
+      halo.current.material.opacity = apparition * 0.7 * puls
+      const s = 0.7 + apparition * 0.5
+      halo.current.scale.set(s, s, s)
+    }
+  })
+  return (
+    <group position={[position[0], 0, position[2]]}>
+      <mesh ref={col} position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.4, 0.5, 1, 18, 1, true]} />
+        <meshBasicMaterial color={C3D.echec} transparent opacity={0} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <mesh ref={halo} position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.5, 0.74, 40]} />
+        <meshBasicMaterial color={C3D.echec} transparent opacity={0} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      </mesh>
+    </group>
+  )
+}
+
 // Éclat de capture : courte gerbe de particules (InstancedMesh) qui jaillit de la case,
 // + un flash doré (sprite additif) qui s'estompe. Auto-démonté via onTermine après ~1s.
 function EclatCapture({ position, reduit, onTermine }) {
@@ -157,6 +243,7 @@ function EclatCapture({ position, reduit, onTermine }) {
         <sphereGeometry args={[1, 12, 12]} />
         <meshBasicMaterial color={C3D.or} transparent opacity={0.9} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
+      <OndeChoc position={position} />
     </group>
   )
 }
@@ -313,7 +400,8 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
 
   const surbrillances = useMemo(() => {
     const s = {}
-    if (partie.dernierCoup) { s[partie.dernierCoup.from] = { color: C3D.dernier }; s[partie.dernierCoup.to] = { color: C3D.dernier } }
+    // Le dernier coup est désormais rendu par TapisDernierCoup (tapis lumineux or) — on ne
+    // recolore plus la case ici pour ne pas troubler la teinte sous la plaque émissive.
     if (inter.selection) s[inter.selection] = { color: C3D.selection }
     for (const m of inter.coupsLegauxSel) s[m.to] = { ...(s[m.to] || {}), legal: true, capture: !!(m.captured || m.flags?.includes('e')) }
     return s
@@ -337,6 +425,8 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit }) {
           onTermine={() => setEclats((cur) => cur.filter((x) => x.id !== e.id))} />
       ))}
       {matInfo && <PluieOr reduit={reduit} />}
+      {matVers && <HaloMat position={matVers} reduit={reduit} />}
+      <TapisDernierCoup dernierCoup={partie.dernierCoup} orientation={orientation} />
       <TrajectoireCoup dernierCoup={partie.dernierCoup} orientation={orientation} />
     </>
   )

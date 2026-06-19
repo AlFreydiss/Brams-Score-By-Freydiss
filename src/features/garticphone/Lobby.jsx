@@ -11,13 +11,23 @@ const DURATION_PRESETS = [
   { id: 'rush', label: 'Rush', writing: 30, drawing: 50, describing: 25 },
 ]
 
-function PlayerSeat({ player, isMe, angle, radius }) {
+function PlayerSeat({ player, isMe, angle, radius, index }) {
   const x = Math.cos(angle) * radius
   const y = Math.sin(angle) * radius
   const name = player.display_name || 'Invité'
   const avatar = player.avatar_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(name)}`
   return (
-    <div style={{ position: 'absolute', left: '50%', top: '50%', transform: `translate(-50%,-50%) translate(${x}px, ${y}px)`, textAlign: 'center', width: 96 }}>
+    <div
+      className="bp-seat" data-bp-anim
+      style={{
+        position: 'absolute', left: '50%', top: '50%', textAlign: 'center', width: 96,
+        // Le siège pousse depuis le centre de la table vers sa place (apparition décalée).
+        '--bp-sx': `${x}px`, '--bp-sy': `${y}px`,
+        transform: `translate(-50%,-50%) translate(${x}px, ${y}px)`,
+        animation: `bp-seat-in .5s cubic-bezier(.18,1.1,.3,1) both`,
+        animationDelay: `${Math.min(index, 12) * 70}ms`,
+      }}
+    >
       <div style={{ position: 'relative', display: 'inline-block' }}>
         <img src={avatar} alt="" style={{
           width: 54, height: 54, borderRadius: '50%', objectFit: 'cover',
@@ -25,8 +35,16 @@ function PlayerSeat({ player, isMe, angle, radius }) {
           boxShadow: player.is_ready ? `0 0 0 4px ${alpha(C.ok, 0.16)}` : isMe ? `0 0 0 4px ${alpha(C.gold, 0.16)}` : 'none',
           background: C.surfaceFlat, transition: 'border-color .2s, box-shadow .2s',
         }} />
-        {player.is_host && <span style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', fontSize: 17 }} data-bp-anim>👑</span>}
-        {player.is_ready && <span style={{ position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: C.ok, color: '#06210f', fontSize: 11, display: 'grid', placeItems: 'center', fontWeight: 900 }}>✓</span>}
+        {player.is_host && (
+          <span style={{ position: 'absolute', top: -13, left: '50%', fontSize: 17, transformOrigin: '50% 90%', animation: 'bp-crown 2.4s ease-in-out infinite' }} data-bp-anim>👑</span>
+        )}
+        {player.is_ready && (
+          <span data-bp-anim style={{
+            position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: '50%',
+            background: C.ok, color: '#06210f', fontSize: 11, display: 'grid', placeItems: 'center', fontWeight: 900,
+            animation: 'bp-ready-pop .42s cubic-bezier(.2,1.4,.3,1) both',
+          }}>✓</span>
+        )}
       </div>
       <div style={{ ...type.small, color: C.text, fontWeight: 700, marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</div>
     </div>
@@ -82,7 +100,7 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
               </div>
             </div>
             {sortedPlayers.map((p, i) => (
-              <PlayerSeat key={p.user_id} player={p} isMe={String(p.user_id) === String(me?.user_id)} angle={(i / Math.max(1, sortedPlayers.length)) * Math.PI * 2 - Math.PI / 2} radius={radius} />
+              <PlayerSeat key={p.user_id} index={i} player={p} isMe={String(p.user_id) === String(me?.user_id)} angle={(i / Math.max(1, sortedPlayers.length)) * Math.PI * 2 - Math.PI / 2} radius={radius} />
             ))}
           </div>
         </div>

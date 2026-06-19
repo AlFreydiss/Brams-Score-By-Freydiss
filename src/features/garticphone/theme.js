@@ -85,5 +85,13 @@ export const KEYFRAMES = `
 @keyframes bp-flagwave{0%,100%{transform:rotate(-1.4deg)}50%{transform:rotate(1.4deg)}}
 @keyframes bp-bookflip{0%{opacity:0;transform:perspective(900px) rotateY(-22deg) translateX(28px)}100%{opacity:1;transform:perspective(900px) rotateY(0) translateX(0)}}
 @keyframes bp-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes bp-reveal-in{0%{opacity:0;filter:blur(14px);transform:scale(.92) translateY(18px)}55%{filter:blur(2px)}100%{opacity:1;filter:blur(0);transform:scale(1) translateY(0)}}
+@keyframes bp-buildup{0%{opacity:0;transform:scale(.7)}40%{opacity:1}70%{transform:scale(1.06)}100%{opacity:0;transform:scale(1.18)}}
+@keyframes bp-confetti{0%{opacity:0;transform:translate(-50%,0) scale(.3) rotate(0)}10%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--bp-dx)),var(--bp-dy)) scale(1) rotate(var(--bp-rot))}}
+@keyframes bp-splash{0%{opacity:0;transform:translateY(34px) scale(.86)}18%{opacity:1;transform:translateY(0) scale(1)}82%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-26px) scale(1.04)}}
+@keyframes bp-crown{0%,100%{transform:translateX(-50%) translateY(0) rotate(-7deg)}50%{transform:translateX(-50%) translateY(-3px) rotate(7deg)}}
+@keyframes bp-seat-in{from{opacity:0;transform:translate(-50%,-50%) translate(var(--bp-sx,0),var(--bp-sy,0)) scale(.55)}to{opacity:1;transform:translate(-50%,-50%) translate(var(--bp-sx,0),var(--bp-sy,0)) scale(1)}}
+@keyframes bp-ready-pop{0%{transform:scale(0) rotate(-40deg)}60%{transform:scale(1.35) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
 @media (prefers-reduced-motion: reduce){*[data-bp-anim]{animation:none!important}}
+@media (prefers-reduced-motion: reduce){.bp-splash,.bp-reveal-scene,.bp-confetti-pc,.bp-seat,.bp-buildup{animation:none!important}}
 `

@@ -189,7 +189,7 @@ function Piece({ side, king, mats }) {
 }
 
 // ── couche pièces + juice (hover, squash/stretch, capture FX, cérémonie) ───────
-function Pieces({ store, audio }) {
+function Pieces({ store, audio, events }) {
   const state = useSyncExternalStore(store.subscribe, store.getState)
   const mats = useMaterials()
   const refs = useRef({})            // `${r}_${c}` -> THREE.Group
@@ -253,14 +253,16 @@ function Pieces({ store, audio }) {
       const fromKey = move.from[0] + '_' + move.from[1]
       const grp = refs.current[fromKey]
       const caps = move.caps || [], path = move.path || [move.to], isCap = caps.length > 0
+      // côté du joueur qui joue ce coup (lu sur le plateau AVANT) → routage des HUD promotion.
+      const moverSide = (before && before[move.from[0]] && before[move.from[0]][move.from[1]] && before[move.from[0]][move.from[1]].side) || grp?.userData?.side || P
       if (ai && store.api.focusMove) store.api.focusMove(move.from, move.to)  // caméra suit le coup IA/adverse
       if (!grp || reduced) {
-        if (isCap) { caps.forEach(([r, c], idx) => { const m = refs.current[r + '_' + c]; const sd = m?.userData?.side; if (m) m.visible = false; if (sd) fxSink(r, c, sd); fxBurst(r, c, 'fire', 1 + idx * 0.3); if (idx >= 1) store.api.combo?.(idx + 1) }); audio.capture(); store.api.shake?.(0.12); store.api.flash?.(0.3) }
-        if (promoted) { fxBurst(move.to[0], move.to[1], 'gold', 2); store.api.flash?.(0.4); audio.king() } else audio.move()
+        if (isCap) { caps.forEach(([r, c], idx) => { const m = refs.current[r + '_' + c]; const sd = m?.userData?.side; if (m) m.visible = false; if (sd) fxSink(r, c, sd); fxBurst(r, c, 'fire', 1 + idx * 0.3); if (idx >= 1) { store.api.combo?.(idx + 1); events?.combo?.(idx + 1) } }); audio.capture(); store.api.shake?.(0.12); store.api.flash?.(0.3) }
+        if (promoted) { fxBurst(move.to[0], move.to[1], 'gold', 2); store.api.flash?.(0.4); audio.king(); events?.promote?.(moverSide) } else audio.move()
         resolve(); return
       }
       audio.move()
-      anim.current = { grp, path, caps, isCap, i: 0, seg0: { ...worldPos(move.from[0], move.from[1]) }, t0: performance.now(), promoted, to: move.to, resolve, capDone: new Set(), combo: 0, phase: 'hop' }
+      anim.current = { grp, path, caps, isCap, i: 0, seg0: { ...worldPos(move.from[0], move.from[1]) }, t0: performance.now(), promoted, to: move.to, resolve, capDone: new Set(), combo: 0, phase: 'hop', moverSide }
     })
     return () => { store.api.playMove = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -303,11 +305,11 @@ function Pieces({ store, audio }) {
         a.grp.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch))
         if (a.isCap && p > 0.5 && !a.capDone.has(a.i)) {
           a.capDone.add(a.i); const cap = a.caps[a.i]
-          if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; const sd = cm?.userData?.side; if (cm) cm.visible = false; if (sd) fxSink(cap[0], cap[1], sd); a.combo++; fxBurst(cap[0], cap[1], 'fire', 1 + a.combo * 0.28); audio.capture(); store.api.shake?.(0.13 + a.combo * 0.05); store.api.flash?.(0.28 + a.combo * 0.07); if (a.combo >= 2) store.api.combo?.(a.combo) }
+          if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; const sd = cm?.userData?.side; if (cm) cm.visible = false; if (sd) fxSink(cap[0], cap[1], sd); a.combo++; fxBurst(cap[0], cap[1], 'fire', 1 + a.combo * 0.28); audio.capture(); store.api.shake?.(0.13 + a.combo * 0.05); store.api.flash?.(0.28 + a.combo * 0.07); if (a.combo >= 2) { store.api.combo?.(a.combo); events?.combo?.(a.combo) } }
         }
         if (p >= 1) {
           a.seg0 = b; a.i++; a.t0 = now
-          if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4); if (!reduced && quality !== 'low') beamState.current = { t0: now, x: wt.x, z: wt.z }; store.api.shake?.(0.18) } }
+          if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4); if (!reduced && quality !== 'low') beamState.current = { t0: now, x: wt.x, z: wt.z }; store.api.shake?.(0.18); events?.promote?.(a.moverSide) } }
         }
       } else if (a.phase === 'settle') {                            // petit rebond d'atterrissage (overshoot)
         let p = (now - a.t0) / 150; if (p > 1) p = 1
@@ -747,7 +749,7 @@ function Effects({ quality, theme }) {
 }
 
 // ── scène complète ──────────────────────────────────────────────────────────────
-export default function DamesScene({ store, onSquareClick, audio }) {
+export default function DamesScene({ store, onSquareClick, audio, events }) {
   const down = useRef({ x: 0, y: 0 })
   const flashRef = useRef(null)
   const comboRef = useRef(null)
@@ -780,7 +782,7 @@ export default function DamesScene({ store, onSquareClick, audio }) {
         <WorldEnvironment theme={theme} />
 
         <Board store={store} />
-        <Pieces store={store} audio={audio} />
+        <Pieces store={store} audio={audio} events={events} />
         <Markers store={store} />
         <Celebration store={store} quality={quality} />
         {quality !== 'low' && <ContactShadows position={[0, 0.1, 0]} scale={16} resolution={1024} blur={2.6} opacity={0.5} far={6} color="#0a0604" />}

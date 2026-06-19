@@ -65,9 +65,13 @@ async function renderAlbumPng(album, players) {
   return cv.toDataURL('image/png')
 }
 
-function PageCard({ page, players, kind }) {
+function PageCard({ page, players, kind, climax }) {
+  // climax = dernière page d'un carnet (la punchline) → entrée plus dramatique.
+  const anim = climax
+    ? 'bp-reveal-in .8s cubic-bezier(.16,1,.3,1)'
+    : 'bp-bookflip .6s cubic-bezier(.22,.8,.22,1)'
   return (
-    <div data-bp-anim style={{ animation: 'bp-bookflip .6s cubic-bezier(.22,.8,.22,1)' }}>
+    <div data-bp-anim style={{ animation: anim }}>
       <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 10 }}>
         {kind} · {authorName(page)}
       </div>
@@ -95,6 +99,9 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   const [sharing, setSharing] = useState(false)
   const guided = !isHost // l'invité suit le dévoilement piloté par l'hôte
   const fxRef = useRef(null)
+  const burstRef = useRef(null)
+  const [reactCounts, setReactCounts] = useState({}) // réactions cumulées par album (book → n)
+  const lastBurstRef = useRef(-1)
 
   const loadPages = useCallback(() => { allPages().then((p) => setPages(p || [])).catch(() => {}) }, [allPages])
   useEffect(() => { let alive = true; allPages().then((p) => { if (alive) setPages(p || []) }).catch(() => {}); return () => { alive = false } }, [allPages])
@@ -103,6 +110,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
   const album = albums[albumIdx] || null
   const page = album?.pages[pageIdx] || null
   const lastPageOfAlbum = album && pageIdx >= album.pages.length - 1
+  // climax = on atteint la dernière page d'un carnet qui en compte plusieurs → la "punchline".
+  const climax = lastPageOfAlbum && (album?.pages.length || 0) > 1
   const lastAlbum = albumIdx >= albums.length - 1
   const finished = lastAlbum && lastPageOfAlbum
 
@@ -119,15 +128,53 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
     setTimeout(kill, 3600) // filet si animationend ne se déclenche pas (onglet en veille)
   }, [])
 
+  // Explosion de particules dorées (fin d'album = "punchline" du carnet). DOM +
+  // CSS GPU, auto-retrait, pas de raf permanent. Réutilise l'idée du layer emojis.
+  const burst = useCallback(() => {
+    const layer = burstRef.current; if (!layer) return
+    const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce) return
+    const N = 26
+    for (let i = 0; i < N; i++) {
+      const el = document.createElement('div')
+      const ang = (Math.PI * 2 * i) / N + Math.random() * 0.5
+      const dist = 120 + Math.random() * 180
+      const dx = Math.cos(ang) * dist
+      const dy = Math.sin(ang) * dist - 60 // léger biais vers le haut (gravité inversée façon feu d'artifice)
+      const sz = 6 + Math.random() * 8
+      const gold = Math.random() > 0.5 ? C.gold : C.goldSoft
+      el.className = 'bp-confetti-pc'
+      el.style.cssText = `position:absolute;left:50%;top:46%;width:${sz}px;height:${sz}px;border-radius:${Math.random() > 0.5 ? '50%' : '2px'};background:${gold};box-shadow:0 0 8px ${alpha(gold, 0.7)};pointer-events:none;will-change:transform,opacity;--bp-dx:${dx}px;--bp-dy:${dy}px;--bp-rot:${(Math.random() * 720 - 360).toFixed(0)}deg;animation:bp-confetti ${1.1 + Math.random() * 0.7}s cubic-bezier(.15,.6,.3,1) forwards`
+      layer.appendChild(el)
+      const kill = () => el.remove()
+      el.addEventListener('animationend', kill)
+      setTimeout(kill, 2200)
+    }
+  }, [])
+
   useEffect(() => {
     if (!onReaction) return
-    return onReaction((p) => spawn(p?.emoji))
-  }, [onReaction, spawn])
+    return onReaction((p) => {
+      spawn(p?.emoji)
+      if (p?.emoji) setReactCounts((m) => ({ ...m, [albumIdx]: (m[albumIdx] || 0) + 1 }))
+    })
+  }, [onReaction, spawn, albumIdx])
 
-  const react = (emoji) => { sendReaction?.(emoji); spawn(emoji) }
+  const react = (emoji) => {
+    sendReaction?.(emoji); spawn(emoji)
+    setReactCounts((m) => ({ ...m, [albumIdx]: (m[albumIdx] || 0) + 1 }))
+  }
 
   // Blip sonore au changement de page du dévoilement (feedback de défilement).
   useEffect(() => { if (album && pages) playSound('reveal') }, [albumIdx, pageIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Explosion dorée quand un carnet atteint sa page finale (une seule fois/album).
+  useEffect(() => {
+    if (!album || !pages || !climax) return
+    if (lastBurstRef.current === albumIdx) return
+    lastBurstRef.current = albumIdx
+    burst()
+  }, [album, pages, climax, albumIdx, burst])
 
   // ── Synchro hôte ↔ invités ───────────────────────────────────────────────
   // Invité : suit la position broadcastée. Hôte : diffuse sa position courante.
@@ -202,6 +249,16 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
           <div style={{ ...type.h2, color: C.parchment }}>Carnet de {startAuthor}</div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {(reactCounts[albumIdx] || 0) > 0 && (
+            <span data-bp-anim title="Réactions sur ce carnet" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
+              ...type.small, color: C.parchment, fontWeight: 800,
+              background: alpha(C.gold, 0.12), border: `1px solid ${alpha(C.gold, 0.32)}`,
+              animation: 'bp-ready-pop .3s cubic-bezier(.2,1.3,.3,1)',
+            }}>
+              💛 {reactCounts[albumIdx]}
+            </span>
+          )}
           <span style={{ ...type.small, color: C.textMut }}>Album {albumIdx + 1}/{albums.length} · page {pageIdx + 1}/{album?.pages.length}</span>
           {!guided && <Btn variant="ghost" onClick={() => setAutoplay((a) => !a)} style={{ minHeight: 40, padding: '0 14px' }}>{autoplay ? '⏸ Auto' : '▶ Auto'}</Btn>}
         </div>
@@ -212,8 +269,19 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(540px 220px at 50% 0%, ${alpha(C.sea, 0.12)}, transparent 64%)` }} />
         {/* flash doré façon flashback à chaque page */}
         <div key={`flash-${albumIdx}-${pageIdx}`} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: lastPageOfAlbum ? `radial-gradient(70% 70% at 50% 45%, ${alpha(C.goldSoft, 1)}, transparent 72%)` : `radial-gradient(60% 60% at 50% 45%, ${alpha(C.goldSoft, 0.9)}, transparent 70%)`, mixBlendMode: 'screen', animation: lastPageOfAlbum ? 'bpGoldFlash .8s ease-out forwards' : 'bpGoldFlash .5s ease-out forwards' }} />
+        {/* Build-up "PUNCHLINE" : court mot doré qui surgit juste avant la page finale du carnet */}
+        {climax && (
+          <div key={`buildup-${albumIdx}`} data-bp-anim aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 4, display: 'grid', placeItems: 'center', pointerEvents: 'none' }}>
+            <div className="bp-buildup" style={{
+              animation: 'bp-buildup .9s cubic-bezier(.2,.9,.2,1) forwards',
+              fontFamily: fonts.display, fontWeight: 900, letterSpacing: '0.08em',
+              fontSize: 'clamp(1.6rem,5vw,3rem)', color: C.goldSoft,
+              textShadow: `0 0 40px ${alpha(C.gold, 0.7)}, 0 6px 30px ${alpha(C.bgDeep, 0.9)}`,
+            }}>PUNCHLINE</div>
+          </div>
+        )}
         <div key={`${albumIdx}-${pageIdx}`} style={{ position: 'relative', ...(lastPageOfAlbum ? { boxShadow: `0 0 0 1px ${alpha(C.gold, 0.4)}, 0 0 40px ${alpha(C.gold, 0.18)}`, borderRadius: 16 } : {}) }}>
-          <PageCard page={page} players={players} kind={kind} />
+          <PageCard page={page} players={players} kind={kind} climax={climax} />
         </div>
         {/* progression dans l'album */}
         <div style={{ display: 'flex', gap: 5, marginTop: 18, position: 'relative' }}>
@@ -223,6 +291,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay,
         </div>
         {/* réactions flottantes (overlay) */}
         <div ref={fxRef} aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 3 }} />
+        {/* explosion de particules dorées (fin de carnet) */}
+        <div ref={burstRef} aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none', zIndex: 5 }} />
       </div>
 
       {/* Barre de réactions (tout le monde) */}

@@ -56,6 +56,49 @@ function OfflineBanner() {
 
 function normalize(c) { return (c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) }
 
+// ── Splash d'intro de phase ───────────────────────────────────────────────────
+// Overlay bref (~1.2s, auto-disparait) qui annonce la consigne au changement de
+// phase. pointer-events:none → ne bloque jamais l'interaction. prefers-reduced-
+// motion respecté via la classe .bp-splash (neutralisée dans KEYFRAMES).
+const SPLASH_COPY = {
+  writing:    { icon: '✍️', label: 'À toi d’écrire !', c: C.gold },
+  drawing:    { icon: '🎨', label: 'Dessine !',        c: C.sea },
+  describing: { icon: '🔍', label: 'Devine le dessin !', c: C.goldSoft },
+}
+function PhaseSplash({ phaseKey }) {
+  // phaseKey = "writing:2" → on isole la phase mais garde la clé pour retrigger par round.
+  const [shown, setShown] = useState(null)
+  const seen = useRef(null)
+  useEffect(() => {
+    if (!phaseKey || phaseKey === seen.current) return
+    seen.current = phaseKey
+    const phase = String(phaseKey).split(':')[0]
+    const copy = SPLASH_COPY[phase]
+    if (!copy) { setShown(null); return }
+    setShown({ key: phaseKey, ...copy })
+    const t = setTimeout(() => setShown(null), 1250)
+    return () => clearTimeout(t)
+  }, [phaseKey])
+  if (!shown) return null
+  return (
+    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 60, pointerEvents: 'none', display: 'grid', placeItems: 'center' }}>
+      <div className="bp-splash" key={shown.key} style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        animation: 'bp-splash 1.25s cubic-bezier(.18,1,.3,1) forwards',
+        textShadow: `0 8px 40px ${alpha(C.bgDeep, 0.9)}`,
+      }}>
+        <div style={{ fontSize: 'clamp(56px,12vw,108px)', lineHeight: 1, filter: `drop-shadow(0 0 28px ${alpha(shown.c, 0.55)})` }}>{shown.icon}</div>
+        <div style={{
+          fontFamily: fonts.display, fontWeight: 900, letterSpacing: '0.01em',
+          fontSize: 'clamp(2rem,6vw,4rem)', color: C.text,
+          background: `linear-gradient(100deg, ${C.parchment}, ${shown.c})`,
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>{shown.label}</div>
+      </div>
+    </div>
+  )
+}
+
 // ── Landing : créer ou rejoindre ──────────────────────────────────────────────
 function Landing({ identity, onCreated }) {
   const navigate = useNavigate()
@@ -160,6 +203,8 @@ function Room({ code, identity, navigate, copied, onCopy }) {
   const submittedLabel = `${submittedSeats?.size ?? 0}/${connectedCount} pirates ont envoyé`
   const [muted, setMutedState] = useState(isMuted())
   const onToggleMute = () => setMutedState(toggleMuted())
+  // Phase annoncée par le splash (null = montage initial → pas de splash au 1er rendu).
+  const [splashPhase, setSplashPhase] = useState(null)
 
   // Feedback sensoriel : sons + vibrations aux moments clés (hooks AVANT tout return).
   const prevStatusRef = useRef(null)
@@ -170,7 +215,9 @@ function Room({ code, identity, navigate, copied, onCopy }) {
     if (prev === null || prev === status) return // pas de son au montage initial
     if (status === 'reveal' || status === 'finished') { playSound('reveal'); vibrate([20, 40, 30]) }
     else { playSound('phase'); if (myTask) vibrate(30) }
-  }, [status, myTask])
+    // Splash de phase uniquement pour les 3 phases jouables (pas lobby/reveal).
+    if (['writing', 'drawing', 'describing'].includes(status)) setSplashPhase(status + ':' + (room?.current_round ?? 0))
+  }, [status, myTask, room?.current_round])
 
   useEffect(() => { if (mySubmitted) { playSound('submit'); vibrate(20) } }, [mySubmitted])
 
@@ -211,6 +258,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
   return (
     <Shell>
       <OfflineBanner />
+      <PhaseSplash phaseKey={splashPhase} />
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
         <Btn variant="ghost" onClick={() => navigate('/brams-phone')} style={{ minHeight: 40, padding: '0 14px', fontSize: 13 }}>← Quitter</Btn>
