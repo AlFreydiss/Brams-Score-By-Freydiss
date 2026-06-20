@@ -212,7 +212,7 @@ export default function WantedPoster({
               background: `${roleColor}14`,
               boxShadow: 'inset 0 2px 6px rgba(31,20,10,0.2)',
             }}>
-              <img
+              <img decoding="async"
                 src={avatarSrc}
                 alt={`Portrait de ${name}`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}

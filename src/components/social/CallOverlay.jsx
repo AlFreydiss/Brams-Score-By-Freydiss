@@ -100,7 +100,7 @@ export default function CallOverlay() {
 
   const AvatarBlock = ({ size }) => (
     <span style={{ ...avatar(size), fontSize: size * 0.38 }}>
-      {peer?.avatar ? <img src={peer.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}
+      {peer?.avatar ? <img loading="lazy" decoding="async" src={peer.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}
     </span>
   )
 

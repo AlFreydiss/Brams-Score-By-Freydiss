@@ -82,7 +82,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   return (
     <aside style={{ position:'sticky', top:0, alignSelf:'start', display:'flex', flexDirection:'column', borderRadius:22, overflow:'hidden', background:'linear-gradient(180deg,rgba(26,14,22,.96),rgba(16,8,14,.99))', border:'1px solid rgba(255,111,156,.18)', boxShadow:'0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter:'blur(20px)' }}>
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
-        <img src={COVER} alt="The Quintessential Quintuplets" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 20%',opacity:.72,filter:'saturate(1.15) brightness(.88)' }} />
+        <img loading="lazy" decoding="async" src={COVER} alt="The Quintessential Quintuplets" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 20%',opacity:.72,filter:'saturate(1.15) brightness(.88)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(26,14,22,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
           <div style={{ fontSize:9.5,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:6 }}>💍 ROMANCE · COMÉDIE · QUINTUPLÉES</div>

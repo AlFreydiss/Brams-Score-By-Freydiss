@@ -151,7 +151,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       backdropFilter: 'blur(20px)',
     }}>
       <div className="dbs-hero" style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
-        <img
+        <img loading="lazy" decoding="async"
           src={coverErr ? COVER_FALLBACK : COVER}
           onError={() => setCoverErr(true)}
           alt="Dragon Ball Super"

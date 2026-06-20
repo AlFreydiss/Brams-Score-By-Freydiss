@@ -148,7 +148,7 @@ export default function FlashbackPage() {
         ) : (
           <div style={{ animation: 'fbFade 1.6s .8s both', maxWidth: 440 }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 130, height: 130, borderRadius: '50%', overflow: 'hidden', margin: '0 auto 18px', border: `4px solid ${GOLD}`, display: 'grid', placeItems: 'center', background: '#101a2e', fontSize: 40, fontWeight: 800, color: GOLD }}>
-              {d.avatar_url ? <img src={d.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (d.username || '?').slice(0, 2).toUpperCase()}
+              {d.avatar_url ? <img loading="lazy" decoding="async" src={d.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (d.username || '?').slice(0, 2).toUpperCase()}
             </div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontStyle: 'italic', fontSize: 'clamp(30px, 8vw, 46px)', color: '#fff' }}>{d.username}</div>
             {d.rank && <div style={{ fontSize: 15, fontWeight: 800, color: GOLD, marginTop: 6 }}>⚓ {d.rank}</div>}

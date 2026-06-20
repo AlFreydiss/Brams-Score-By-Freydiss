@@ -51,7 +51,7 @@ function Leaderboard({ entries }) {
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
             </span>
             {e.avatar
-              ? <img src={e.avatar} alt="" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
+              ? <img loading="lazy" decoding="async" src={e.avatar} alt="" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} />
               : <span style={{ width: 28, textAlign: 'center', fontSize: 16 }}>{rang.emoji}</span>}
             <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: THEME.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.pseudo || 'Pirate'}</span>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: rang.couleur }}>{rang.label}</span>
@@ -70,7 +70,7 @@ function MonProfil({ profil, pseudo, avatar }) {
     <div style={{ background: THEME.card, border: `1px solid ${THEME.cardBorder}`, borderRadius: 20, padding: '18px 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {avatar
-          ? <img src={avatar} alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover' }} />
+          ? <img loading="lazy" decoding="async" src={avatar} alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover' }} />
           : <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26 }}>{rang.emoji}</div>}
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 16, color: THEME.text }}>{pseudo}</div>

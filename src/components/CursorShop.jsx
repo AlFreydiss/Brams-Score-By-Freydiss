@@ -139,12 +139,12 @@ function CursorPreview({ cur, size = 56 }) {
     }}>
       {/* Priorité : SVG vectoriel custom (designs maison) → PNG R2 → emoji */}
       {cursorSvgURI(cur.id) ? (
-        <img src={cursorSvgURI(cur.id)} alt=""
+        <img loading="lazy" decoding="async" src={cursorSvgURI(cur.id)} alt=""
           style={{ width: Math.round(size * 0.8), height: Math.round(size * 0.8), animation: cur.animated ? 'crc-float 1.6s ease-in-out infinite' : 'none', filter: `drop-shadow(0 2px 6px ${r.glow})` }} />
       ) : r2Failed ? (
         <span style={{ fontSize: Math.round(size * 0.56), lineHeight: 1, animation: cur.animated ? 'crc-float 1.6s ease-in-out infinite' : 'none', filter: `drop-shadow(0 2px 6px ${r.glow})` }}>{cur.emoji}</span>
       ) : (
-        <img src={r2Url} alt="" onError={() => setR2Failed(true)}
+        <img loading="lazy" decoding="async" src={r2Url} alt="" onError={() => setR2Failed(true)}
           style={{ width: Math.round(size * 0.62), height: Math.round(size * 0.62), imageRendering: 'auto' }} />
       )}
     </div>
@@ -186,7 +186,7 @@ function CustomCursorOverlay({ id, emoji, glow }) {
       {/* Le pulse vit sur l'enfant : il ne se bat plus avec le transform de position. */}
       <span style={{ display: 'block', animation: 'crc-pulse 1.1s ease-in-out infinite' }}>
         {cursorSvgURI(id)
-          ? <img src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
+          ? <img loading="lazy" decoding="async" src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
           : emoji}
       </span>
     </div>

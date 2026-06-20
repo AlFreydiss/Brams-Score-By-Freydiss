@@ -56,7 +56,7 @@ function Avatar({ name, avatarUrl, size = 38 }) {
   const seed = (name || 'P').charCodeAt(0) % 6
   const colors = ['#7b3f45','#b08a3a','#7060a0','#4d7080','#4d7060','#6b7280']
   if (avatarUrl && !err) {
-    return <img src={avatarUrl} alt={name} onError={() => setErr(true)} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    return <img loading="lazy" decoding="async" src={avatarUrl} alt={name} onError={() => setErr(true)} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
   return (
     <div style={{
@@ -143,7 +143,7 @@ function TheoryPost({ theory, index, onClick, onVote, myVote }) {
         {/* Cover image */}
         {theory.cover_image && (
           <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 10, maxHeight: 180 }}>
-            <img src={theory.cover_image} alt="" style={{ width: '100%', objectFit: 'cover', display: 'block', maxHeight: 180 }} />
+            <img loading="lazy" decoding="async" src={theory.cover_image} alt="" style={{ width: '100%', objectFit: 'cover', display: 'block', maxHeight: 180 }} />
           </div>
         )}
 

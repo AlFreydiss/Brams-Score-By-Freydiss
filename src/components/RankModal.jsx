@@ -134,7 +134,7 @@ export default function RankModal({ rank, onClose }) {
                     overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16,
                   }}>
                     {m.avatar_url
-                      ? <img src={m.avatar_url} alt="" width={36} height={36} style={{ objectFit:'cover', borderRadius:'50%' }} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}} />
+                      ? <img loading="lazy" decoding="async" src={m.avatar_url} alt="" width={36} height={36} style={{ objectFit:'cover', borderRadius:'50%' }} onError={e=>{e.currentTarget.style.display='none';e.currentTarget.nextSibling.style.display='flex'}} />
                       : null}
                     <span style={{ display:m.avatar_url?'none':'flex' }}>{rank.emoji}</span>
                   </div>

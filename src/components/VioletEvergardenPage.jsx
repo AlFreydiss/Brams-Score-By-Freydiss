@@ -107,7 +107,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   return (
     <aside style={{ position: 'sticky', top: 0, alignSelf: 'start', display: 'flex', flexDirection: 'column', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(180deg,rgba(16,12,30,.96),rgba(10,8,20,.99))', border: '1px solid rgba(139,124,255,.18)', boxShadow: '0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter: 'blur(20px)' }}>
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
-        <img src={COVER} alt="Violet Evergarden" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',opacity:.72,filter:'saturate(1.15) brightness(.88)' }} />
+        <img loading="lazy" decoding="async" src={COVER} alt="Violet Evergarden" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',opacity:.72,filter:'saturate(1.15) brightness(.88)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(16,12,30,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
           <div style={{ fontSize:9.5,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:6 }}>✉ LETTRES · SOUVENIRS · ÉMOTION</div>
@@ -209,7 +209,7 @@ function EpisodeDetailInline({ idx, onPlay, onClose }) {
       {/* Visuel */}
       <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#0a0814', aspectRatio: '16/9' }}>
         {video?.thumbnail
-          ? <img src={video.thumbnail} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img loading="lazy" decoding="async" src={video.thumbnail} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,rgba(139,124,255,.18),rgba(0,0,0,.9))' }} />}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55))' }} />
         <div style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 9, fontWeight: 800, background: 'rgba(139,124,255,.22)', color: COLOR2, border: `1px solid rgba(139,124,255,.3)`, borderRadius: 100, padding: '2px 8px' }}>{video?.badge || 'VOSTFR'}</div>

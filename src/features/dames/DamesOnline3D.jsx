@@ -173,7 +173,7 @@ export default function DamesOnline3D() {
         : lb.map((r, i) => (
           <div key={r.discord_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px', borderRadius: 9, background: i < 3 ? 'rgba(217,184,112,.06)' : 'transparent' }}>
             <span style={{ width: 20, textAlign: 'center', fontWeight: 900, color: i === 0 ? GOLD : MUTED }}>{i + 1}</span>
-            <span style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', background: 'rgba(255,255,255,.08)', display: 'grid', placeItems: 'center', fontSize: 11, color: '#fff' }}>{r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (r.username || '?').slice(0, 2).toUpperCase()}</span>
+            <span style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', background: 'rgba(255,255,255,.08)', display: 'grid', placeItems: 'center', fontSize: 11, color: '#fff' }}>{r.avatar ? <img loading="lazy" decoding="async" src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (r.username || '?').slice(0, 2).toUpperCase()}</span>
             <span style={{ flex: 1, color: PARCH, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.username}</span>
             {(() => { const t = eloToTier(r.rating); return (
               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>

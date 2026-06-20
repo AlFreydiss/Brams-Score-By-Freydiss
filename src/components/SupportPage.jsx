@@ -31,7 +31,7 @@ function DonorAvatar({ d, size = 38 }) {
   const [broken, setBroken] = useState(false)
   const base = { flexShrink: 0, width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', fontWeight: 900, color: '#fff', fontSize: Math.round(size * 0.4), overflow: 'hidden', background: `linear-gradient(135deg,${hueFor(d.name)},${hueFor(d.name)}aa)` }
   if (d.avatar_url && !broken) {
-    return <span style={base}><img src={d.avatar_url} alt="" onError={() => setBroken(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></span>
+    return <span style={base}><img loading="lazy" decoding="async" src={d.avatar_url} alt="" onError={() => setBroken(true)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></span>
   }
   return <span style={base}>{initial(d.name)}</span>
 }

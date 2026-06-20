@@ -171,7 +171,7 @@ function PlayerList({ players, answers, round }) {
           border:'1px solid rgba(255,255,255,.09)',
           background:'rgba(255,255,255,.045)',
         }}>
-          <img
+          <img loading="lazy" decoding="async"
             src={player.avatar_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(player.display_name || player.user_id)}`}
             alt=""
             style={{ width:30, height:30, borderRadius:'50%', objectFit:'cover' }}

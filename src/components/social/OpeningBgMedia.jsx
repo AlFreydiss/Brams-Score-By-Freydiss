@@ -65,7 +65,7 @@ export default function OpeningBgMedia({ bg, className, style, stillOnly = false
       style={mediaStyle}
     />
   ) : (
-    <img
+    <img loading="lazy" decoding="async"
       className={className}
       src={imgSrc}
       alt=""

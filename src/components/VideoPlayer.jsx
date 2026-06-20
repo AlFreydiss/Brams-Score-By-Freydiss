@@ -275,7 +275,7 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
             <video ref={pvRef} src={scrubSrc} muted playsInline preload="metadata" onSeeked={onPvSeeked}
               style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', background: '#000' }} />
           ) : (
-            <img src={previewSrc} alt="" style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', filter: 'brightness(1.06) saturate(1.1)' }} />
+            <img loading="lazy" decoding="async" src={previewSrc} alt="" style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', filter: 'brightness(1.06) saturate(1.1)' }} />
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '6px 9px', fontSize: 11 }}>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>{previewTitle || 'Aperçu'}</span>
@@ -298,7 +298,7 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
 function EpisodeMiniThumb({ video, color }) {
   const [ready, setReady] = useState(false)
   if (video.thumbnail) {
-    return <img src={video.thumbnail} alt={`Ep.${video.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
+    return <img loading="lazy" decoding="async" src={video.thumbnail} alt={`Ep.${video.episode}`} style={{ width: 96, height: 54, objectFit: 'cover', display: 'block' }} />
   }
   if (!video.src) {
     return <div style={{ width: 96, height: 54, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>▶</div>
@@ -1236,7 +1236,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {!started && (
               <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, overflow: 'hidden', background: '#06070b' }}>
                 {video?.thumbnail && (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={video.thumbnail}
                     alt=""
                     style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(3px) brightness(0.46) saturate(1.12)', transform: 'scale(1.06)', animation: 'vpKenBurns 18s ease-in-out infinite alternate' }}

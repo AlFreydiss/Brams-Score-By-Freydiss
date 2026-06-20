@@ -223,7 +223,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
         onClick={e => e.stopPropagation()}
       >
         <button onClick={goProfile} style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}>
-          <span style={avatar(34)}>{author.avatar ? <img src={author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (author.username || '?').slice(0, 2).toUpperCase()}</span>
+          <span style={avatar(34)}>{author.avatar ? <img loading="lazy" decoding="async" src={author.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (author.username || '?').slice(0, 2).toUpperCase()}</span>
         </button>
         <button onClick={goProfile} style={{ background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{author.username || `Pirate #${String(author.author_id || '').slice(-5)}`}</div>
@@ -245,7 +245,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
       <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#000' }} onClick={e => e.stopPropagation()}>
         {/* Backdrop : le média lui-même, flouté et assombri, remplit les bandes vides */}
         {!isVideo(mediaUrl) && (
-          <img src={mediaUrl} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(42px) brightness(0.5)', transform: 'scale(1.18)', zIndex: 0 }} />
+          <img loading="lazy" decoding="async" src={mediaUrl} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(42px) brightness(0.5)', transform: 'scale(1.18)', zIndex: 0 }} />
         )}
         {/* Vignette sombre pour que le texte (header, progress, music bar) reste lisible même sur médias très clairs / surexposés */}
         <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at center, rgba(0,0,0,0.12) 40%, rgba(0,0,0,0.5) 78%)', zIndex:1, pointerEvents:'none' }} />
@@ -286,7 +286,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
             onError={next}
           />
         ) : (
-          <img
+          <img loading="lazy" decoding="async"
             src={mediaUrl}
             alt=""
             className="story-media"
@@ -357,7 +357,7 @@ export default function StoryViewer({ authors, startIndex = 0, onClose, onDelete
             ) : (
               viewers.map(v => (
                 <div key={v.uid} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px' }}>
-                  <span style={avatar(32)}>{v.avatar ? <img src={v.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (v.username || '?').slice(0, 2).toUpperCase()}</span>
+                  <span style={avatar(32)}>{v.avatar ? <img loading="lazy" decoding="async" src={v.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (v.username || '?').slice(0, 2).toUpperCase()}</span>
                   <span style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{v.username || `Pirate #${String(v.uid).slice(-5)}`}</span>
                 </div>
               ))

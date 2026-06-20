@@ -116,7 +116,7 @@ export default function FollowListModal({ targetId, initialTab = 'followers', on
               <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '8px 8px', borderRadius: 12 }}>
                 <button onClick={() => goProfile(id)} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', flexShrink: 0 }}>
                   <span style={avatar(42)}>
-                    {u.avatar_url ? <img src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (u.username || '?').slice(0, 2).toUpperCase()}
+                    {u.avatar_url ? <img loading="lazy" decoding="async" src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (u.username || '?').slice(0, 2).toUpperCase()}
                   </span>
                 </button>
                 <button onClick={() => goProfile(id)} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', flex: 1, minWidth: 0, textAlign: 'left' }}>

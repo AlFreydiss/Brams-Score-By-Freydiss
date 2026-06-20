@@ -97,7 +97,7 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
       >
         <div style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.hairTop}`, background: '#fff', marginBottom: 14, minHeight: 200, display: 'grid', placeItems: 'center' }}>
           {img ? (
-            <img src={img} alt="Dessin à décrire" data-bp-anim style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 460, objectFit: 'contain', animation: 'bp-rise .35s ease-out' }} />
+            <img loading="lazy" decoding="async" src={img} alt="Dessin à décrire" data-bp-anim style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 460, objectFit: 'contain', animation: 'bp-rise .35s ease-out' }} />
           ) : loadingImg ? (
             <div style={{ ...type.body, color: '#888', padding: 40, textAlign: 'center' }}>
               Chargement du dessin… <span style={{ display: 'block', marginTop: 6, ...type.small, color: C.textFaint }}>tu peux déjà commencer à décrire ce que tu imagines.</span>

@@ -65,7 +65,7 @@ function AnnouncementCard({ ann }) {
       {/* Avatar */}
       <div style={{ flexShrink: 0 }}>
         {ann.author_avatar ? (
-          <img src={ann.author_avatar} alt={ann.author_name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }} />
+          <img loading="lazy" decoding="async" src={ann.author_avatar} alt={ann.author_name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', display: 'block' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }} />
         ) : null}
         <div style={{ width: 40, height: 40, borderRadius: '50%', background: `${color}28`, border: `1px solid ${color}44`, display: ann.author_avatar ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color }}>
           {initials}

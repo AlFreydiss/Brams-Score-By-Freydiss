@@ -41,7 +41,7 @@ function Avatar({ url, name, size = 40, online }) {
   return (
     <span style={{ position: 'relative', flexShrink: 0, display: 'inline-flex' }}>
       <span style={avatar(size)}>
-        {url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+        {url ? <img loading="lazy" decoding="async" src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
       </span>
       {online != null && (
         <span style={{
@@ -115,7 +115,7 @@ function GroupAvatar({ members = [], size = 44 }) {
   return (
     <div style={{ width: size, height: size, position: 'relative', flexShrink: 0 }}>
       {pics.map((m, i) => (
-        <img key={i} src={m.avatar_url} alt="" style={{ width: s, height: s, borderRadius: '50%', objectFit: 'cover', position: 'absolute', border: `2px solid ${T.bg || '#0b0c0e'}`,
+        <img loading="lazy" decoding="async" key={i} src={m.avatar_url} alt="" style={{ width: s, height: s, borderRadius: '50%', objectFit: 'cover', position: 'absolute', border: `2px solid ${T.bg || '#0b0c0e'}`,
           top: i === 0 ? 0 : 'auto', left: i === 0 ? 0 : 'auto', bottom: i === 1 ? 0 : 'auto', right: i === 1 ? 0 : 'auto' }} />
       ))}
     </div>
@@ -379,8 +379,8 @@ function MessageBubble({ msg, mine, grouped, isGroup, onReact, onReply, onEdit, 
           }}>
             {msg.reply_to_id && !deleted && <div style={{ fontSize: 11, color: T.textFaint, marginBottom: 4, borderLeft: `2px solid ${T.violet}`, paddingLeft: 6 }}>↩ réponse</div>}
             {deleted ? 'Message supprimé'
-              : msg.type === 'gif' ? <img src={msg.gif_url} alt="gif" style={{ maxWidth: 240, borderRadius: 12, display: 'block' }} />
-              : msg.type === 'image' ? <img src={msg.media_url} alt="image" style={{ maxWidth: 280, maxHeight: 320, borderRadius: 12, display: 'block' }} />
+              : msg.type === 'gif' ? <img loading="lazy" decoding="async" src={msg.gif_url} alt="gif" style={{ maxWidth: 240, borderRadius: 12, display: 'block' }} />
+              : msg.type === 'image' ? <img loading="lazy" decoding="async" src={msg.media_url} alt="image" style={{ maxWidth: 280, maxHeight: 320, borderRadius: 12, display: 'block' }} />
               : msg.type === 'voice' ? <audio src={msg.media_url} controls style={{ height: 36, maxWidth: 240 }} />
               : msg.type === 'call' ? <span>{formatCallContent(msg)}</span>
               : <RichText text={msg.content} />}
@@ -989,7 +989,7 @@ function ChatView({ conversationId, meta, onBack, isMobile, refreshList }) {
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img src={attach.preview} alt="" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: `1px solid ${T.border}` }} />
+              <img loading="lazy" decoding="async" src={attach.preview} alt="" style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', border: `1px solid ${T.border}` }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{attach.file.name}</div>
                 <div style={{ fontSize: 11, color: T.textFaint }}>{humanSize(attach.file.size)}{uploadPct > 0 && ` · envoi ${uploadPct}%`}</div>

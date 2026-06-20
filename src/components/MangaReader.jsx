@@ -331,7 +331,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
               </div>
             )}
             {pages[page] && (
-              <img
+              <img loading="lazy" decoding="async"
                 key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page + 1}`}
                 onLoad={() => setImgLoaded(true)}
                 onError={() => { setImgLoaded(true); setImgError(true) }}

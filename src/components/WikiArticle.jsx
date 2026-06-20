@@ -149,7 +149,7 @@ export default function WikiArticle() {
             {/* Cover image */}
             {page.cover_image && (
               <div style={{ borderRadius:16, overflow:'hidden', marginBottom:28, border:`1px solid ${c}28`, boxShadow:`0 8px 40px ${c}14`, animation:'waFadeUp .45s ease both' }}>
-                <img src={page.cover_image} alt={page.title} style={{ width:'100%', maxHeight:340, objectFit:'cover', display:'block' }} />
+                <img loading="lazy" decoding="async" src={page.cover_image} alt={page.title} style={{ width:'100%', maxHeight:340, objectFit:'cover', display:'block' }} />
               </div>
             )}
 

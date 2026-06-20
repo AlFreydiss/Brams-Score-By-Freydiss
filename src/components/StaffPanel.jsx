@@ -152,7 +152,7 @@ function TopBar({ active, displayName, avatarUrl, isCreatorUser }) {
     <header style={{ height: HEADER_H, flexShrink: 0, borderBottom: `1px solid ${C.border}`, padding: '0 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <div style={{ fontSize: 11.5, color: C.muted, letterSpacing: '.05em' }}><span style={{ textTransform: 'uppercase' }}>Modération</span><span style={{ color: C.dim }}> / </span><span style={{ color: C.text }}>{crumb}</span></div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden', background: C.goldSoft, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: C.gold, border: `1px solid ${C.border}` }}>{avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}</div>
+        <div style={{ width: 30, height: 30, borderRadius: '50%', overflow: 'hidden', background: C.goldSoft, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: C.gold, border: `1px solid ${C.border}` }}>{avatarUrl ? <img loading="lazy" decoding="async" src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}</div>
         <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{displayName}</span>
         {isCreatorUser && <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.06em', color: C.gold, background: C.goldSoft, border: `1px solid ${C.borderHi}`, borderRadius: 999, padding: '2px 9px' }}>CRÉATEUR</span>}
       </div>

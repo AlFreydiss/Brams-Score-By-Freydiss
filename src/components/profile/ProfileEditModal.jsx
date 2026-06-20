@@ -159,7 +159,7 @@ export default function ProfileEditModal({ data, settings, onClose, onSaved }) {
           <div className="pfx-edit-preview">
             <span className="pfx-edit-preview-lbl">Aperçu</span>
             <div className="pfx-preview-card">
-              {banner && <img className="pfx-preview-banner" src={banner} alt="" />}
+              {banner && <img loading="lazy" decoding="async" className="pfx-preview-banner" src={banner} alt="" />}
               <div className="pfx-preview-body">
                 <strong>{data?.member?.username || 'Pirate'}</strong>
                 {quote && <p className="pfx-preview-quote">« {quote} »</p>}

@@ -50,7 +50,7 @@ export default function GiftModal({ item, onClose }) {
   }
 
   const Avatar = ({ m, size = 30 }) => m.avatar
-    ? <img src={m.avatar} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    ? <img loading="lazy" decoding="async" src={m.avatar} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
     : <span style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: 'rgba(245,181,10,0.18)', display: 'grid', placeItems: 'center', fontSize: size * 0.5 }}>🏴‍☠️</span>
 
   return (

@@ -111,7 +111,7 @@ export default function WinnerCard({ winner, onReset, resetLabel = 'Rejouer le t
       >
         {showThumb ? (
           <>
-            <img src={thumb} onLoad={handleLoad} onError={() => setImgFailed(true)} alt=""
+            <img loading="lazy" decoding="async" src={thumb} onLoad={handleLoad} onError={() => setImgFailed(true)} alt=""
               style={{ position: 'absolute', inset: '-5%', width: '110%', height: '110%', maxWidth: 'none', objectFit: 'cover', filter: 'blur(18px) brightness(0.28) saturate(1.4)' }} />
             <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 35%, ${accent}3a 0%, rgba(7,9,14,0.92) 66%)` }} />
           </>

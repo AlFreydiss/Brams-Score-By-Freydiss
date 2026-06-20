@@ -75,7 +75,7 @@ function Burst({ count = 22, color = GOLD }) {
 function Avatar({ url, name, size = 84, border = GOLD }) {
   return (
     <span style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, display: 'grid', placeItems: 'center', background: '#10182a', border: `3px solid ${border}`, fontSize: size / 3, fontWeight: 800, color: GOLD }}>
-      {url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}
+      {url ? <img loading="lazy" decoding="async" src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}
     </span>
   )
 }

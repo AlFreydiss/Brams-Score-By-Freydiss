@@ -121,7 +121,7 @@ function ParticipantCard({
       {/* Thumbnail */}
       <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: `${accent}22`, flexShrink: 0 }}>
         {thumb ? (
-          <img
+          <img loading="lazy" decoding="async"
             src={thumb}
             onError={() => setImgFailed(true)}
             alt={participant.title}

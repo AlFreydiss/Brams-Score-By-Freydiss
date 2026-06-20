@@ -105,7 +105,7 @@ export default function ProfileStories({ discordId, isOwnProfile, member }) {
           <span className={`pfx-story-ring${hasStories ? ' active' : ' add'}`}>
             <span className="pfx-story-cover">
               {member?.avatar_url
-                ? <img src={member.avatar_url} alt="" />
+                ? <img loading="lazy" decoding="async" src={member.avatar_url} alt="" />
                 : <em>{(member?.username || '?').slice(0, 2).toUpperCase()}</em>}
             </span>
             {!hasStories && <span className="pfx-story-plus">+</span>}
@@ -119,7 +119,7 @@ export default function ProfileStories({ discordId, isOwnProfile, member }) {
         <button type="button" className="pfx-story" onClick={() => setOpen(true)}>
           <span className="pfx-story-ring active">
             <span className="pfx-story-cover">
-              {member?.avatar_url ? <img src={member.avatar_url} alt="" /> : <em>{(member?.username || '?').slice(0, 2).toUpperCase()}</em>}
+              {member?.avatar_url ? <img loading="lazy" decoding="async" src={member.avatar_url} alt="" /> : <em>{(member?.username || '?').slice(0, 2).toUpperCase()}</em>}
             </span>
           </span>
           <span className="pfx-story-label">Story</span>

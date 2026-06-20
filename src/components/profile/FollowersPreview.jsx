@@ -24,7 +24,7 @@ export default function FollowersPreview({ targetId, count, onOpen }) {
       <div className="pfx-ig-fstack">
         {shown.map(u => (
           <span key={u.user_id} className="pfx-ig-favatar">
-            {u.avatar_url ? <img src={u.avatar_url} alt="" /> : (u.username || '?').slice(0, 2).toUpperCase()}
+            {u.avatar_url ? <img loading="lazy" decoding="async" src={u.avatar_url} alt="" /> : (u.username || '?').slice(0, 2).toUpperCase()}
           </span>
         ))}
       </div>

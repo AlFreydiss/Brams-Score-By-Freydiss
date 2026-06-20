@@ -201,7 +201,7 @@ export default function TheoryDetail() {
         </div>
 
         {theory.cover_image && (
-          <img src={theory.cover_image} alt={theory.title} style={{ width: '100%', maxHeight: 340, objectFit: 'cover', borderRadius: 14, marginBottom: 28 }} />
+          <img loading="lazy" decoding="async" src={theory.cover_image} alt={theory.title} style={{ width: '100%', maxHeight: 340, objectFit: 'cover', borderRadius: 14, marginBottom: 28 }} />
         )}
 
         {/* Header avec votes */}

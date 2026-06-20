@@ -191,7 +191,7 @@ export default function StoriesBar() {
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', cursor: 'pointer', flexShrink: 0, width: 64 }}
         >
           <div style={{ position: 'relative' }}>
-            <span style={{ ...avatar(58), opacity: uploading ? 0.5 : 1 }}>{avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (displayName || '?').slice(0, 2).toUpperCase()}</span>
+            <span style={{ ...avatar(58), opacity: uploading ? 0.5 : 1 }}>{avatarUrl ? <img loading="lazy" decoding="async" src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (displayName || '?').slice(0, 2).toUpperCase()}</span>
             <span style={{ position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, borderRadius: '50%', background: T.gold, color: '#0b0c0e', fontSize: 15, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${T.bg}` }}>+</span>
           </div>
           <span style={{ fontSize: 11, color: T.textDim, fontWeight: 600 }}>{uploading ? '…' : 'Ta story'}</span>
@@ -201,7 +201,7 @@ export default function StoriesBar() {
       {authors.map((a, i) => (
         <button key={a.author_id} onClick={() => setViewer({ authors, idx: i })}
           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, border: 'none', background: 'transparent', cursor: 'pointer', flexShrink: 0, width: 64 }}>
-          <Ring seen={a.all_seen}><span style={avatar(54)}>{a.avatar ? <img src={a.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (a.username || '?').slice(0, 2).toUpperCase()}</span></Ring>
+          <Ring seen={a.all_seen}><span style={avatar(54)}>{a.avatar ? <img loading="lazy" decoding="async" src={a.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (a.username || '?').slice(0, 2).toUpperCase()}</span></Ring>
           <span style={{ fontSize: 11, color: T.text, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 64 }}>{a.username || `#${String(a.author_id).slice(-4)}`}</span>
         </button>
       ))}
@@ -253,7 +253,7 @@ export default function StoriesBar() {
                     visualIsVideo ? (
                       <video src={visualPreview} controls style={{ maxWidth:'100%', maxHeight:320, borderRadius:8 }} />
                     ) : (
-                      <img src={visualPreview} alt="" style={{ maxWidth:'100%', maxHeight:320, objectFit:'contain', borderRadius:8 }} />
+                      <img loading="lazy" decoding="async" src={visualPreview} alt="" style={{ maxWidth:'100%', maxHeight:320, objectFit:'contain', borderRadius:8 }} />
                     )
                   ) : (
                     <div style={{ textAlign:'center', color:'rgba(255,255,255,.5)' }}>
@@ -326,7 +326,7 @@ export default function StoriesBar() {
                           {/\.(mp4|webm)/i.test(m.url) ? (
                             <video src={m.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                           ) : (
-                            <img src={m.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" />
+                            <img loading="lazy" decoding="async" src={m.url} style={{ width:'100%', height:'100%', objectFit:'cover' }} alt="" />
                           )}
                         </button>
                       ))}

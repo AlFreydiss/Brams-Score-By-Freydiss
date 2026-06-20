@@ -159,7 +159,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
               </div>
             </div>
           )}
-          <img
+          <img loading="lazy" decoding="async"
             key={`${chapter.num}-${page}`}
             src={chapter.pages[page]}
             alt={`Ch.${chapter.num} p.${page+1}`}

@@ -83,7 +83,7 @@ export function PlayerChip({ player, host, submitted, me, compact }) {
       maxWidth: 220,
     }}>
       <span style={{ position: 'relative', flex: '0 0 auto' }}>
-        <img src={avatar} alt="" style={{ width: compact ? 24 : 28, height: compact ? 24 : 28, borderRadius: '50%', objectFit: 'cover', border: submitted ? `2px solid ${C.ok}` : '2px solid transparent' }} />
+        <img loading="lazy" decoding="async" src={avatar} alt="" style={{ width: compact ? 24 : 28, height: compact ? 24 : 28, borderRadius: '50%', objectFit: 'cover', border: submitted ? `2px solid ${C.ok}` : '2px solid transparent' }} />
         {host && <span style={{ position: 'absolute', top: -7, right: -5, fontSize: 13 }} title="Capitaine">👑</span>}
       </span>
       <span style={{ ...type.small, color: C.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>

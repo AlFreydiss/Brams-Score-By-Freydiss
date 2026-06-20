@@ -130,7 +130,7 @@ function PageCard({ page, index, onClick }) {
     >
       {page.cover_image ? (
         <div style={{ overflow:'hidden', height:120 }}>
-          <img src={page.cover_image} alt={page.title} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', transition:'transform .35s', transform: hov ? 'scale(1.05)' : 'scale(1)' }} />
+          <img loading="lazy" decoding="async" src={page.cover_image} alt={page.title} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block', transition:'transform .35s', transform: hov ? 'scale(1.05)' : 'scale(1)' }} />
         </div>
       ) : (
         <div style={{ height:72, background:`linear-gradient(135deg,${c}1a,transparent)`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28 }}>

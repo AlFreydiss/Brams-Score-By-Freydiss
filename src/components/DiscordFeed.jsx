@@ -15,7 +15,7 @@ function DiscordAvatar({ author }) {
   const [err, setErr] = useState(false)
   if (!err && author.avatar) {
     return (
-      <img
+      <img loading="lazy" decoding="async"
         src={author.avatar}
         alt={author.globalName}
         onError={() => setErr(true)}
@@ -79,12 +79,12 @@ function MessageCard({ msg }) {
         }}>
           {e.title && <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: '0 0 3px' }}>{e.title}</p>}
           {e.description && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{e.description.slice(0, 200)}{e.description.length > 200 ? '…' : ''}</p>}
-          {e.image && <img src={e.image} alt="" style={{ marginTop: 6, maxWidth: '100%', borderRadius: 6, display: 'block' }} />}
+          {e.image && <img loading="lazy" decoding="async" src={e.image} alt="" style={{ marginTop: 6, maxWidth: '100%', borderRadius: 6, display: 'block' }} />}
         </div>
       ))}
 
       {hasImages && msg.attachments.filter(a => a.content_type?.startsWith('image/')).map((a, i) => (
-        <img key={i} src={a.url} alt={a.filename} style={{ marginTop: 6, maxWidth: '100%', borderRadius: 6, display: 'block' }} />
+        <img loading="lazy" decoding="async" key={i} src={a.url} alt={a.filename} style={{ marginTop: 6, maxWidth: '100%', borderRadius: 6, display: 'block' }} />
       ))}
     </div>
   )

@@ -104,8 +104,7 @@ export default function AnimeCard({
         <img
           src={anime.coverImage}
           alt=""
-          loading="lazy"
-          decoding="async"
+          loading="lazy" decoding="async"
           onLoad={() => setLoaded(true)}
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',

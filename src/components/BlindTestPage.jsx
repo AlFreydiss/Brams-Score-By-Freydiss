@@ -471,7 +471,7 @@ function PlayerChip({ player }) {
       background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
     }}>
       {player.avatarUrl
-        ? <img src={player.avatarUrl} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
+        ? <img loading="lazy" decoding="async" src={player.avatarUrl} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
         : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(212,160,23,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>👤</div>
       }
       <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.72)' }}>{player.displayName}</span>
@@ -1227,7 +1227,7 @@ export default function BlindTestPage() {
                       border: `1px solid ${t.color}22`,
                     }}>
                       {t.thumbnail ? (
-                        <img
+                        <img loading="lazy" decoding="async"
                           src={t.thumbnail}
                           alt={t.anime}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}

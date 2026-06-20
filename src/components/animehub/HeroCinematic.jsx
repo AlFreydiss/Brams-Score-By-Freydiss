@@ -17,8 +17,8 @@ export function TitleArt({ anime, maxWidth = 560, maxHeight = 210, fallback }) {
   const url = anime.logoUrl || `${LOGOS_R2}/${anime.id}.png`
   if (broken) return fallback
   return (
-    <img
-      src={url} alt={anime.title} decoding="async"
+    <img loading="lazy" decoding="async"
+      src={url} alt={anime.title}
       onError={() => setBroken(true)}
       style={{ maxWidth, maxHeight, width: 'auto', height: 'auto', display: 'block', filter: 'drop-shadow(0 4px 18px rgba(0,0,0,.55))' }}
     />
@@ -96,15 +96,14 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         maskImage: 'linear-gradient(180deg, #000 45%, rgba(0,0,0,.85) 62%, rgba(0,0,0,.35) 80%, transparent 94%)',
       }}>
         {lowRes && (
-          <img
-            src={keyart} alt="" aria-hidden decoding="async"
+          <img loading="lazy" decoding="async"
+            src={keyart} alt="" aria-hidden
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) saturate(1.05)', transform: 'scale(1.1)' }}
           />
         )}
-        <img
+        <img loading="lazy" decoding="async"
           src={keyart}
           alt=""
-          decoding="async"
           onLoad={onKeyartLoad}
           style={lowRes ? {
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',

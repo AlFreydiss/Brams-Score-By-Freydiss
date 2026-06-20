@@ -77,7 +77,7 @@ function PageCard({ page, players, kind, climax }) {
       </div>
       {page?.type === 'drawing' ? (
         page.content ? (
-          <img src={page.content} alt="" style={{ display: 'block', width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: `1px solid ${C.hairTop}`, background: '#fff' }} />
+          <img loading="lazy" decoding="async" src={page.content} alt="" style={{ display: 'block', width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: `1px solid ${C.hairTop}`, background: '#fff' }} />
         ) : (
           <div style={{ borderRadius: 14, background: '#fff', color: '#999', minHeight: 200, display: 'grid', placeItems: 'center' }}>Dessin manquant</div>
         )

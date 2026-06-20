@@ -36,7 +36,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
     if (fallbackThumb && e.currentTarget.src !== fallbackThumb) e.currentTarget.src = fallbackThumb
   }
   const imageLayer = (style) => thumb ? (
-    <img src={thumb} alt="" onError={onThumbError} style={{ ...media, ...style }} />
+    <img loading="lazy" decoding="async" src={thumb} alt="" onError={onThumbError} style={{ ...media, ...style }} />
   ) : null
 
   return (

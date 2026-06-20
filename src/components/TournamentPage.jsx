@@ -364,7 +364,7 @@ function WinnerSection({ winner, onReset }) {
       >
         {showThumb && (
           <>
-            <img
+            <img loading="lazy" decoding="async"
               src={thumb}
               onLoad={handleLoad}
               onError={() => setImgFailed(true)}

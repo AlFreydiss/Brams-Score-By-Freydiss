@@ -33,7 +33,7 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
       {/* Bannière custom : bandeau image optionnel en haut */}
       {bannerUrl && (
         <div className="pfx-ig-banner" aria-hidden>
-          <img src={bannerUrl} alt="" />
+          <img loading="lazy" decoding="async" src={bannerUrl} alt="" />
         </div>
       )}
 
@@ -43,7 +43,7 @@ export default function ProfileHero({ data, copied, onShare, onEdit, onAvatar, o
           <span className="pfx-ig-avatar-ring">
             <span className="pfx-ig-avatar-inner">
               {member?.avatar_url
-                ? <img src={member.avatar_url} alt={displayName} />
+                ? <img loading="lazy" decoding="async" src={member.avatar_url} alt={displayName} />
                 : <em>{rank.emoji}</em>}
             </span>
           </span>

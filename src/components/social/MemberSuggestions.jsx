@@ -13,7 +13,7 @@ function Avatar({ url, name, size }) {
   const initials = (name || '?').slice(0, 2).toUpperCase()
   return (
     <span style={avatar(size)}>
-      {url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
+      {url ? <img loading="lazy" decoding="async" src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initials}
     </span>
   )
 }

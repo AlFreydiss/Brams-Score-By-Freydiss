@@ -114,7 +114,7 @@ export default function BlindTestLeaderboard() {
                   <div style={{ width:32, textAlign:'center', fontSize: medal ? 20 : 14, fontWeight:800, color:topGold || 'rgba(255,255,255,0.35)', flexShrink:0 }}>
                     {medal || `#${i + 1}`}
                   </div>
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={row.avatar_url || fallbackAvatar(row.display_name || row.user_id)}
                     alt=""
                     onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackAvatar(row.display_name || row.user_id) }}

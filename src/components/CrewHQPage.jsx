@@ -96,7 +96,7 @@ function MemberCard({ member, viewerRole, onLockedAction }) {
         <Badge tone={member.status === 'active' ? 'green' : 'red'}>{member.status}</Badge>
       </div>
       <div className="crew-member-main">
-        <img src={member.avatar_url || `https://cdn.discordapp.com/embed/avatars/${Number(member.user_id) % 5}.png`} alt="" />
+        <img loading="lazy" decoding="async" src={member.avatar_url || `https://cdn.discordapp.com/embed/avatars/${Number(member.user_id) % 5}.png`} alt="" />
         <div>
           <strong>{member.name}</strong>
           <span>{member.custom_title || CREW_ROLES[member.role] || member.role}</span>
@@ -271,7 +271,7 @@ function Hierarchy({ members }) {
               <div>
                 {group.members.map(m => (
                   <article key={`${group.role}-${m.id}`}>
-                    <img src={m.avatar_url || `https://cdn.discordapp.com/embed/avatars/${Number(m.user_id) % 5}.png`} alt="" />
+                    <img loading="lazy" decoding="async" src={m.avatar_url || `https://cdn.discordapp.com/embed/avatars/${Number(m.user_id) % 5}.png`} alt="" />
                     <strong>{m.name}</strong>
                     <span>{formatBounty(m.contribution)}</span>
                   </article>

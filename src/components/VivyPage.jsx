@@ -124,7 +124,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
       backdropFilter: 'blur(20px)',
     }}>
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
-        <img
+        <img loading="lazy" decoding="async"
           src={COVER} alt="Vivy Fluorite Eye's Song"
           style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }}
         />

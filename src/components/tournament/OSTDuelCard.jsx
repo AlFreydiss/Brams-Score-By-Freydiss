@@ -112,7 +112,7 @@ export default function OSTDuelCard({
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         {/* Img hidden pour state tracking */}
         {thumbUrl && (
-          <img
+          <img loading="lazy" decoding="async"
             src={thumbUrl}
             alt=""
             onLoad={e => { if (e.target.naturalWidth > 120) setImgState('ok') }}
@@ -181,7 +181,7 @@ export default function OSTDuelCard({
 
         {/* Thumbnail YouTube quand pas de audioUrl (toujours visible en mode vivid) */}
         {!showInlineYoutube && !participant?.audioUrl && showThumb && (
-          <img
+          <img loading="lazy" decoding="async"
             src={`https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg`}
             alt=""
             onError={e => { e.currentTarget.src = thumbUrl }}

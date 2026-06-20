@@ -226,7 +226,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
       }}
     >
       <span style={avatar(44)}>
-        {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (displayName || '?').slice(0, 2).toUpperCase()}
+        {avatarUrl ? <img loading="lazy" decoding="async" src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (displayName || '?').slice(0, 2).toUpperCase()}
       </span>
 
       <div className="feed-composer-body">
@@ -254,7 +254,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
                   onMouseEnter={() => setActiveIdx(i)}
                   className={`feed-mention-option ${i === activeIdx ? 'is-active' : ''}`}
                 >
-                  <span style={avatar(28)}>{u.avatar_url ? <img src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (u.username || '?').slice(0, 2).toUpperCase()}</span>
+                  <span style={avatar(28)}>{u.avatar_url ? <img loading="lazy" decoding="async" src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (u.username || '?').slice(0, 2).toUpperCase()}</span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{u.username}</span>
                 </button>
               ))}
@@ -265,7 +265,7 @@ export default function PostComposer({ replyTo = null, quote = null, onPosted, p
         {quote && (
           <div className="feed-card" style={{ marginTop: 8, marginBottom: 0, padding: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-              <span style={avatar(20)}>{quote.author_avatar ? <img src={quote.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (quote.author_username || '?').slice(0, 2).toUpperCase()}</span>
+              <span style={avatar(20)}>{quote.author_avatar ? <img loading="lazy" decoding="async" src={quote.author_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (quote.author_username || '?').slice(0, 2).toUpperCase()}</span>
               <span style={{ fontSize: 13, fontWeight: 800, color: T.text }}>{quote.author_username || `Pirate #${String(quote.author_id || '').slice(-5)}`}</span>
             </div>
             <div style={{ fontSize: 13, color: T.textDim, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{quote.content || (quote.media_url ? 'Image' : '')}</div>

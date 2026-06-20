@@ -233,7 +233,7 @@ function EventCard({ event }) {
 function DiscordAvatar({ author }) {
   const [err, setErr] = useState(false)
   if (!err && author.avatar) {
-    return <img src={author.avatar} alt={author.globalName} onError={() => setErr(true)}
+    return <img loading="lazy" decoding="async" src={author.avatar} alt={author.globalName} onError={() => setErr(true)}
       style={{ width:28, height:28, borderRadius:'50%', flexShrink:0, objectFit:'cover' }} />
   }
   const initials = (author.globalName || author.username || '?').slice(0, 2).toUpperCase()
@@ -295,7 +295,7 @@ function LiveAvatar({ src, name, size = 34, ring = '#2ECC71' }) {
       boxShadow:`0 0 0 2px ${ring}`, background:'#1a1d27', overflow:'hidden',
       display:'flex', alignItems:'center', justifyContent:'center' }}>
       {!err && src
-        ? <img src={src} alt={name} onError={() => setErr(true)} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+        ? <img loading="lazy" decoding="async" src={src} alt={name} onError={() => setErr(true)} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
         : <span style={{ fontSize:size*0.34, fontWeight:800, color:'#fff' }}>{initials}</span>}
     </div>
   )

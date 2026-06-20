@@ -39,7 +39,7 @@ export const ProgressRing = memo(function ProgressRing({
     >
       {/* Stylish anime poster as the minia background (round crop) */}
       {posterSrc && (
-        <img 
+        <img loading="lazy" decoding="async" 
           src={posterSrc} 
           alt="anime" 
           style={{

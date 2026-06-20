@@ -372,7 +372,7 @@ export default function UndercoverPage() {
     const p = players.find(x => String(x.user_id) === String(uid))
     const n = (p?.display_name || '?')[0].toUpperCase()
     return p?.avatar_url
-      ? <img src={p.avatar_url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+      ? <img loading="lazy" decoding="async" src={p.avatar_url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
       : <span style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: size * 0.42, fontWeight: 800, background: hexA(C.emerald, .18), border: `1px solid ${hexA(C.emerald, .42)}`, color: '#dff5e6' }}>{n}</span>
   }
   const backBtn = <button onClick={() => navigate('/tournoi')} onMouseEnter={e => e.currentTarget.style.color = C.txt} onMouseLeave={e => e.currentTarget.style.color = C.muted} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 14px', marginBottom: 26, borderRadius: 11, border: `1px solid ${C.hair}`, background: hexA(C.emerald, .04), color: C.muted, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'color .18s' }}>← Retour</button>

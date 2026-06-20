@@ -35,7 +35,7 @@ export default function CallModal({ open, type, peer, onClose }) {
         <div style={{ position: 'relative', width: 110, height: 110, margin: '0 auto 20px' }}>
           {phase === 'ringing' && <span style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: `2px solid ${T.violet}`, opacity: 0.5, animation: 'callPing 1.4s ease-out infinite' }} />}
           <span style={{ ...avatar(110), fontSize: 42 }}>
-            {peer?.avatar ? <img src={peer.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}
+            {peer?.avatar ? <img loading="lazy" decoding="async" src={peer.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (name || '?').slice(0, 2).toUpperCase()}
           </span>
         </div>
         <div style={{ fontSize: 20, fontWeight: 800, color: T.text, marginBottom: 4 }}>{name}</div>

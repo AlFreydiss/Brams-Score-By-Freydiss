@@ -134,3 +134,40 @@ html, body, #root {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ============================================================
+   Appareils peu performants  (html.low-end, posé au boot)
+   Dégrade les effets les plus coûteux en GPU/CPU sans casser
+   la lisibilité : le blur du glassmorphism (285 usages) est le
+   poste le plus lourd sur un mobile d'entrée de gamme.
+   `!important` bat les styles inline (non-important) → couvre
+   aussi les backdropFilter posés en JSX.
+   ============================================================ */
+html.low-end *,
+html.low-end *::before,
+html.low-end *::after {
+  /* Le flou en temps réel repeint toute la zone sous le panneau à chaque
+     frame → on le coupe. Les fonds rgba restent (lisibilité préservée). */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.low-end * {
+  /* Animations/transitions quasi instantanées : pas de boucles GPU en fond. */
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  /* will-change permanent = couches GPU mémoire qui saturent un petit appareil. */
+  will-change: auto !important;
+}
+
+/* Respect strict de la préférence système, tous appareils confondus. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

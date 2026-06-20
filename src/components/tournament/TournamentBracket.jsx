@@ -43,7 +43,7 @@ function MatchCard({ match, isActive, isMobile }) {
         minWidth: 0,
       }}>
         {thumb ? (
-          <img
+          <img loading="lazy" decoding="async"
             src={thumb}
             onError={() => setImgFailed(true)}
             style={{ width: 24, height: 18, objectFit: 'cover', borderRadius: 3, flexShrink: 0 }}

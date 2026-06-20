@@ -18,7 +18,7 @@ export default function ScrollBack({ character }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         pointerEvents: 'none', overflow: 'hidden',
       }}>
-        <img
+        <img loading="lazy" decoding="async"
           src={character.image}
           alt=""
           aria-hidden="true"

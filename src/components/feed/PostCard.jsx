@@ -469,7 +469,7 @@ export default function PostCard({ post, embedded = false, disableNav = false, s
       {mediaModal && createPortal((
         <div className="feed-modal-backdrop" onClick={() => setMediaModal(null)} role="dialog" aria-modal="true" aria-label="Aperçu du média">
           <button type="button" onClick={() => setMediaModal(null)} className="feed-icon-button" aria-label="Fermer" style={{ position: 'fixed', top: 18, right: 18, background: 'rgba(0,0,0,.45)' }}><X size={20} /></button>
-          <img src={mediaModal} alt="" className="feed-modal-image" onClick={e => e.stopPropagation()} />
+          <img loading="lazy" decoding="async" src={mediaModal} alt="" className="feed-modal-image" onClick={e => e.stopPropagation()} />
         </div>
       ), document.body)}
 

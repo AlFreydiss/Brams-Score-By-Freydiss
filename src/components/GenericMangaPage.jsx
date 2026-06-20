@@ -138,7 +138,7 @@ function VideoThumbnail({ src, episode, color }) {
     v.load()
   }, [src])
 
-  if (thumb) return <img src={thumb} alt={`Ép.${episode}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+  if (thumb) return <img loading="lazy" decoding="async" src={thumb} alt={`Ép.${episode}`} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
   return (
     <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${color}28 0%, rgba(0,0,0,0.88) 100%)`, overflow: 'hidden' }}>
       {src && (
@@ -356,7 +356,7 @@ function SeriesInfoPanel({ color, title, headerEmoji, videos, watchedCount, vide
     }}>
       <div style={{ position: 'relative', height: 210, overflow: 'hidden', background: '#0b0d10' }}>
         {latest?.thumbnail && (
-          <img src={latest.thumbnail} alt={title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.72, filter: 'brightness(0.9) saturate(1.12)' }} />
+          <img loading="lazy" decoding="async" src={latest.thumbnail} alt={title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.72, filter: 'brightness(0.9) saturate(1.12)' }} />
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.08), rgba(12,13,16,0.96))' }} />
         <div style={{ position: 'absolute', left: 18, right: 18, bottom: 18 }}>
@@ -495,7 +495,7 @@ function VideoCard({ video, onPlay, color, premium = false }) {
       }}>
       <div style={{ position: 'relative', paddingTop: premium ? '58%' : '56.25%', background: '#0a0b0d', overflow: 'hidden' }}>
         {thumb
-          ? <img src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? (premium ? 0.9 : 0.85) : premium ? 0.82 : 0.65, transition: premium ? 'opacity 0.2s, transform .3s ease' : 'opacity 0.2s', transform: premium && hovered ? 'scale(1.035)' : 'scale(1)' }} />
+          ? <img loading="lazy" decoding="async" src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? (premium ? 0.9 : 0.85) : premium ? 0.82 : 0.65, transition: premium ? 'opacity 0.2s, transform .3s ease' : 'opacity 0.2s', transform: premium && hovered ? 'scale(1.035)' : 'scale(1)' }} />
           : <VideoThumbnail src={video.src} episode={video.episode} color={color} />
         }
         {premium && <div style={{ position: 'absolute', inset: '45% 0 0', background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.48))', pointerEvents: 'none' }} />}

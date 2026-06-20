@@ -4,8 +4,7 @@ function EpisodePreview({ video, accent, episode }) {
       <img
         src={video.thumbnail}
         alt={video.title}
-        loading="lazy"
-        decoding="async"
+        loading="lazy" decoding="async"
         className="episode-card__media"
       />
     )

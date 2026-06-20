@@ -29,7 +29,7 @@ function PlayerSeat({ player, isMe, angle, radius, index }) {
       }}
     >
       <div style={{ position: 'relative', display: 'inline-block' }}>
-        <img src={avatar} alt="" style={{
+        <img loading="lazy" decoding="async" src={avatar} alt="" style={{
           width: 54, height: 54, borderRadius: '50%', objectFit: 'cover',
           border: `2px solid ${isMe ? C.gold : player.is_ready ? C.ok : C.hairTop}`,
           boxShadow: player.is_ready ? `0 0 0 4px ${alpha(C.ok, 0.16)}` : isMe ? `0 0 0 4px ${alpha(C.gold, 0.16)}` : 'none',

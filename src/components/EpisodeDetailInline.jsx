@@ -57,7 +57,7 @@ export default function EpisodeDetailInline({
       {/* Visuel */}
       <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: '#0a0814', aspectRatio: '16/9' }}>
         {video?.thumbnail
-          ? <img src={video.thumbnail} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ? <img loading="lazy" decoding="async" src={video.thumbnail} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg,${color}2e,rgba(0,0,0,.9))` }} />}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55))' }} />
         <div style={{ position: 'absolute', bottom: 8, left: 10, fontSize: 9, fontWeight: 800, background: `${color}38`, color: color2, border: `1px solid ${color}4d`, borderRadius: 100, padding: '2px 8px' }}>{video?.badge || 'VOSTFR'}</div>

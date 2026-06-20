@@ -52,7 +52,7 @@ export default function ScrollFront({ character }) {
       {/* Portrait */}
       <div style={{ margin: '0 18px', position: 'relative', flexShrink: 0 }}>
         <div className={s.portrait} style={{ height: 210 }}>
-          <img
+          <img loading="lazy" decoding="async"
             src={character.image}
             alt={character.name}
             className={s.portraitImg}

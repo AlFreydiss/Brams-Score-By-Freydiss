@@ -142,7 +142,7 @@ function InfoPanel({ watchedCount, total, seasonKey, onResume, resumeEp }) {
       backdropFilter: 'blur(20px)',
     }}>
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
-        <img
+        <img loading="lazy" decoding="async"
           src={COVER} alt="My Hero Academia"
           style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',opacity:.7,filter:'saturate(1.2) brightness(.82)' }}
         />

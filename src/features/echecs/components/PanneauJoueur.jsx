@@ -24,7 +24,7 @@ export default function PanneauJoueur({
     }}>
       <div style={{ position: 'relative', flexShrink: 0 }}>
         {avatar
-          ? <img src={avatar} alt="" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
+          ? <img loading="lazy" decoding="async" src={avatar} alt="" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
           : <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{rang?.emoji || '♟'}</div>}
         {enLigne != null && (
           <span style={{

@@ -896,7 +896,7 @@ function AnimeMarqueeCard({ anime, onClick, onOpenMonUnivers, isFav = false, tog
       }}
     >
       {anime.coverImage && (
-        <img
+        <img loading="lazy" decoding="async"
           src={anime.coverImage} alt={anime.title}
           onError={e => { e.currentTarget.style.display='none' }}
           style={{
@@ -1072,7 +1072,7 @@ function AnimeCard({ anime, index, onClick, onOpenMonUnivers, isFav = false, tog
       {/* Cover image */}
       <div style={{ height:250, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${c}cc 0%, ${anime.colorDark} 100%)` }}>
         {anime.coverImage && (
-          <img
+          <img loading="lazy" decoding="async"
             src={anime.coverImage}
             alt={anime.title}
             onError={e => { if (e.currentTarget.src !== fallbackCover) e.currentTarget.src = fallbackCover }}
@@ -1260,7 +1260,7 @@ function BramsqHubCard({ anime, rank = null, onClick, onOpenMonUnivers, isFav = 
     >
       {/* Poster */}
       {anime.coverImage && (
-        <img
+        <img loading="lazy" decoding="async"
           src={anime.coverImage}
           alt={anime.title}
           onError={e => { e.currentTarget.style.display = 'none' }}
@@ -1507,7 +1507,7 @@ function HubAiChat({ animes, onOpen }) {
         style={{ position: 'fixed', left: 24, bottom: 24, zIndex: 880, width: 58, height: 58, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden', border: '2px solid rgba(167,139,250,0.45)', background: 'linear-gradient(135deg,#b3322f,#7a1f1c)', boxShadow: '0 8px 30px rgba(0,0,0,.55)', display: 'grid', placeItems: 'center', fontSize: 24 }}
         onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'none' }}>
         👒
-        <img src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+        <img loading="lazy" decoding="async" src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         <span style={{ position: 'absolute', bottom: -3, right: -3, width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#BFA46A,#a78bfa)', border: '2px solid #0b0a0f', display: 'grid', placeItems: 'center', fontSize: 11 }}>✨</span>
       </button>
     )
@@ -1518,7 +1518,7 @@ function HubAiChat({ animes, onOpen }) {
       <div style={{ flexShrink: 0, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 9, background: 'linear-gradient(135deg, rgba(191,164,106,0.14), rgba(167,139,250,0.12))' }}>
         <div style={{ position: 'relative', width: 28, height: 28, borderRadius: 9, overflow: 'hidden', background: 'linear-gradient(135deg,#b3322f,#7a1f1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
           👒
-          <img src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img loading="lazy" decoding="async" src="https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/avatars/shanks.png" alt="" onError={e => { e.currentTarget.style.display = 'none' }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div style={{ lineHeight: 1.1, flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 900, color: '#f4f0e6' }}>Brams Score l'IA</div>
@@ -1929,7 +1929,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
             return (
               <div style={{ maxWidth:1680, margin:'0 auto 18px', padding:'0 32px' }}>
                 <div key={feat.id} style={{ position:'relative', borderRadius:24, overflow:'hidden', minHeight:'clamp(380px, 52vh, 540px)', display:'flex', alignItems:'stretch', border:'1px solid rgba(255,255,255,0.08)', boxShadow:'0 24px 70px rgba(0,0,0,0.5)', animation:'ahHeroFade .6s cubic-bezier(.23,1,.32,1)' }}>
-                  {feat.coverImage && <img src={feat.coverImage} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 20%', filter:'brightness(0.46) saturate(1.08)', transform:'scale(1.08)' }} />}
+                  {feat.coverImage && <img loading="lazy" decoding="async" src={feat.coverImage} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 20%', filter:'brightness(0.46) saturate(1.08)', transform:'scale(1.08)' }} />}
                   <div style={{ position:'absolute', inset:0, background:`linear-gradient(90deg, rgba(8,9,14,0.97) 26%, rgba(8,9,14,0.55) 58%, rgba(8,9,14,0.82) 100%)` }} />
                   <div style={{ position:'absolute', inset:0, background:`radial-gradient(700px 300px at 12% 50%, ${fc}1f, transparent 70%)` }} />
                   <div style={{ position:'relative', zIndex:2, padding:'clamp(32px,5vw,60px) clamp(28px,5vw,64px)', maxWidth:720, display:'flex', flexDirection:'column', justifyContent:'center' }}>

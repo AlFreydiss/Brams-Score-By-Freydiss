@@ -95,7 +95,7 @@ function WantedCard({ data, name, avatarUrl, berrys }) {
     <div style={{ ...CARD_BASE, textAlign: 'center' }}>
       <CardTitle>☠️ Wanted — Dead or Alive</CardTitle>
       {avatarUrl && (
-        <img src={avatarUrl} alt="" style={{ width: 74, height: 74, borderRadius: 12, margin: '12px auto 0', display: 'block', border: `2px solid ${GOLD_DIM}`, filter: 'sepia(.45) contrast(1.05)' }} />
+        <img loading="lazy" decoding="async" src={avatarUrl} alt="" style={{ width: 74, height: 74, borderRadius: 12, margin: '12px auto 0', display: 'block', border: `2px solid ${GOLD_DIM}`, filter: 'sepia(.45) contrast(1.05)' }} />
       )}
       <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: '.06em', marginTop: 10, textTransform: 'uppercase' }}>{name}</div>
       <div style={{ fontSize: 12.5, fontStyle: 'italic', color: 'rgba(255,255,255,.65)' }}>dit « {data.epithete} »</div>

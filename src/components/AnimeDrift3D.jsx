@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 
 // Posters d'animés qui vagabondent en fond (pseudo-3D via perspective + dérive CSS).
-// Volontairement en <img> et PAS en WebGL : les covers sont sur des CDN externes
+// Volontairement en <img loading="lazy" decoding="async"> et PAS en WebGL : les covers sont sur des CDN externes
 // sans header CORS → impossible de les charger comme textures three.js (Context Lost).
-// Un <img> affiche une image cross-origin sans souci. Sobre : faible opacité, teinte bleue.
+// Un <img loading="lazy" decoding="async"> affiche une image cross-origin sans souci. Sobre : faible opacité, teinte bleue.
 export default function AnimeDrift3D({ images = [] }) {
   const picks = useMemo(
     () => Array.from(new Set(images.filter(Boolean))).slice(0, 6),
@@ -28,8 +28,7 @@ export default function AnimeDrift3D({ images = [] }) {
             className="ah-drift"
             src={url}
             alt=""
-            loading="lazy"
-            decoding="async"
+            loading="lazy" decoding="async"
             onError={(e) => { e.currentTarget.style.display = 'none' }}
             style={{
               position: 'absolute',

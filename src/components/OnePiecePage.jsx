@@ -143,7 +143,7 @@ function InfoPanel({ watchedCount, availableCount, resumeIdx, onResume }) {
       backdropFilter:'blur(20px)',
     }}>
       <div className="op-info-hero" style={{ position:'relative',height:268,overflow:'hidden',flexShrink:0 }}>
-        <img src={COVER} alt="One Piece" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }} />
+        <img loading="lazy" decoding="async" src={COVER} alt="One Piece" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.88)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(20,8,6,.98) 100%)' }} />
         <div style={{ position:'absolute',bottom:0,left:0,right:0,padding:'0 18px 20px' }}>
           <div style={{ fontSize:9,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:6 }}>🏴‍☠️ AVENTURE · PIRATES · GRAND LINE</div>

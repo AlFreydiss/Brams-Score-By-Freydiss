@@ -198,7 +198,7 @@ export default function WelcomeAnimation() {
               overflow: 'hidden',
               animation: 'bounceIn 0.5s 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
             }}>
-              <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img loading="lazy" decoding="async" src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           )}
 

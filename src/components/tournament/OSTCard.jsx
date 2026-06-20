@@ -70,7 +70,7 @@ export default function OSTCard({
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         {thumb ? (
           <>
-            <img
+            <img loading="lazy" decoding="async"
               src={thumb}
               onError={() => setImgFailed(true)}
               alt=""

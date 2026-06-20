@@ -198,7 +198,7 @@ function UserMenu({ displayName, avatarUrl, discordId, berryCount, staff, onSign
     <div ref={ref} className="nav-user-menu">
       <button onClick={() => setOpen((value) => !value)} className={open ? 'nav-user-button open' : 'nav-user-button'}>
         <span className="nav-user-avatar">
-          {avatarUrl ? <img src={avatarUrl} alt={displayName} /> : initials}
+          {avatarUrl ? <img loading="lazy" decoding="async" src={avatarUrl} alt={displayName} /> : initials}
         </span>
         <span className="nav-user-copy">
           <span className="nav-user-name">{displayName}</span>

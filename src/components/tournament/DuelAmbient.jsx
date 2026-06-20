@@ -11,7 +11,7 @@ export default function DuelAmbient({ left, right }) {
   const leftColor = left?.color || PINK
   const rightColor = right?.color || PINK
   const tile = (p, pos) => p?.ytId ? (
-    <img src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
+    <img loading="lazy" decoding="async" src={`https://img.youtube.com/vi/${p.ytId}/hqdefault.jpg`} alt="" style={{
       position: 'absolute', left: 0, width: '100%', height: '52%', objectFit: 'cover',
       maxWidth: 'none', maxHeight: 'none',
       transform: 'scale(1.16)',

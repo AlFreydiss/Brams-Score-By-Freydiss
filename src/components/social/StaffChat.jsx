@@ -89,7 +89,7 @@ export default function StaffChat() {
                 const m = item.msg, mine = m.sender_id === discordId
                 return (
                   <div key={item.id} style={{ display: 'flex', gap: 10, marginBottom: 12, flexDirection: mine ? 'row-reverse' : 'row' }}>
-                    <span style={avatar(34)}>{m.sender_avatar ? <img src={m.sender_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (m.sender_name || '?').slice(0, 2).toUpperCase()}</span>
+                    <span style={avatar(34)}>{m.sender_avatar ? <img loading="lazy" decoding="async" src={m.sender_avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (m.sender_name || '?').slice(0, 2).toUpperCase()}</span>
                     <div style={{ maxWidth: '72%', textAlign: mine ? 'right' : 'left' }}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2, flexDirection: mine ? 'row-reverse' : 'row' }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: isCreator(m.sender_id) ? T.gold : T.text }}>{m.sender_name || `#${String(m.sender_id).slice(-5)}`}</span>

@@ -190,7 +190,7 @@ export const CURSOR_SVGS = {
     <circle cx="17.5" cy="16.5" r="1.4" fill="#ffb0a8" opacity=".75"/>`),
 }
 
-// Data-URI prêt pour `cursor: url(...)` ou <img src>.
+// Data-URI prêt pour `cursor: url(...)` ou <img loading="lazy" decoding="async" src>.
 // `size` redimensionne le rendu (vectoriel → net à toutes tailles) : 32px pour le
 // curseur natif (taille standard OS, pas de clipping), 40+ pour les aperçus.
 export function cursorSvgURI(id, size) {

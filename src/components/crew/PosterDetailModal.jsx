@@ -134,7 +134,7 @@ function ModalContent({ member, onClose }) {
           boxShadow:   `0 4px 16px rgba(31,20,10,0.25), 0 0 0 1px rgba(92,66,38,0.3)`,
           marginBottom: 12,
         }}>
-          <img src={avatarSrc} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <img loading="lazy" decoding="async" src={avatarSrc} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         </div>
 
         <div style={{ fontFamily: "'Cinzel', serif", fontSize: 22, fontWeight: 900, color: C.ink, textAlign: 'center', lineHeight: 1.2 }}>
