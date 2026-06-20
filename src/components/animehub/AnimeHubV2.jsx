@@ -12,6 +12,8 @@ import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 import { logAnimeOpen, fetchTopWatched } from '../../lib/watchStats.js'
+import { getContinueWatching } from '../../lib/watchProgress.js'
+import { friendsWatching } from '../../lib/social.js'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
 const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergarden', 'aot', 'jjk', 'reze'] // 8 à la une
@@ -239,6 +241,65 @@ export default function AnimeHubV2(props) {
   const news = ANIMES.filter(a => displayBadge(a) === 'NOUVEAU')
   const rowGenres = ['Action', 'Romance', 'Drame', 'Science-fiction']
 
+  // Index catalogue : ns/slug → entrée ANIMES. Le catalogue est keyé par `id`
+  // (ex. 'onepiece'). Les RPC renvoient un `ns` que l'on mappe ici.
+  const byNs = useMemo(() => {
+    const m = new Map()
+    for (const a of ANIMES) m.set(a.id, a)
+    return m
+  }, [])
+
+  // ── « ▶ Reprendre » : reprise de lecture serveur (getContinueWatching).
+  // Chargé seulement si connecté ; tolérant aux erreurs (RPC absente → vide →
+  // pas de row). Chaque entrée : { ns, episode, position, duration, ... }.
+  const [continueWatch, setContinueWatch] = useState([])
+  useEffect(() => {
+    if (!discordId) { setContinueWatch([]); return }
+    let on = true
+    ;(async () => {
+      try {
+        const rows = await getContinueWatching(20)
+        if (!on) return
+        const mapped = (Array.isArray(rows) ? rows : [])
+          .map(r => {
+            const a = byNs.get(r?.ns)
+            if (!a || r?.completed) return null
+            const dur = Number(r.duration) || 0
+            const pos = Number(r.position) || 0
+            const pct = dur > 0 ? Math.min(100, Math.max(0, Math.round((pos / dur) * 100))) : 0
+            return { anime: a, episode: r.episode, pct }
+          })
+          .filter(Boolean)
+        setContinueWatch(mapped)
+      } catch { if (on) setContinueWatch([]) }
+    })()
+    return () => { on = false }
+  }, [discordId, byNs])
+
+  // ── « 👥 Tes amis regardent » : RPC friends_watching (48 h). Connecté + ≥1
+  // élément requis, sinon row masquée. Tolérant (migration absente → vide).
+  const [friendsRows, setFriendsRows] = useState([])
+  useEffect(() => {
+    if (!discordId) { setFriendsRows([]); return }
+    let on = true
+    ;(async () => {
+      try {
+        const rows = await friendsWatching(48)
+        if (!on) return
+        const mapped = (Array.isArray(rows) ? rows : [])
+          .map(r => {
+            const a = byNs.get(r?.ns)
+            const friends = Array.isArray(r?.friends) ? r.friends : []
+            if (!a || !friends.length) return null
+            return { anime: a, friends }
+          })
+          .filter(Boolean)
+        setFriendsRows(mapped)
+      } catch { if (on) setFriendsRows([]) }
+    })()
+    return () => { on = false }
+  }, [discordId, byNs])
+
   const card = (a, w = 180) => (
     <AnimeCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={w}
       progressPct={progress[a.id]?.pct || 0}
@@ -462,6 +523,62 @@ export default function AnimeHubV2(props) {
           </>
         ) : (
           <>
+            {/* ── ▶ Reprendre (reprise serveur, connecté · masquée si vide) ── */}
+            {discordId && continueWatch.length > 0 && (
+              <AnimeRow title="▶ Reprendre" count={continueWatch.length}>
+                {continueWatch.map(({ anime: a, episode, pct }) => (
+                  <div key={`cw-${a.id}`} style={{ width: 280, flexShrink: 0 }}>
+                    <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
+                      <img src={a.coverImage} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: a.coverPosition || 'center' }} />
+                      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
+                      {episode != null && (
+                        <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 8px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)' }}>Ép {episode}</span>
+                      )}
+                      <div style={{ position: 'absolute', left: 10, bottom: 12, right: 10 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600 }}>{a.title}</div>
+                      </div>
+                      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: C.brass }} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </AnimeRow>
+            )}
+
+            {/* ── 👥 Tes amis regardent (connecté · masquée si vide) ── */}
+            {discordId && friendsRows.length > 0 && (
+              <AnimeRow title="👥 Tes amis regardent" count={friendsRows.length}>
+                {friendsRows.map(({ anime: a, friends }) => (
+                  <div key={`fw-${a.id}`} style={{ width: 280, flexShrink: 0 }}>
+                    <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
+                      <img src={a.coverImage} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: a.coverPosition || 'center' }} />
+                      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 45%, rgba(11,14,20,0.92))' }} />
+                      <div style={{ position: 'absolute', left: 10, bottom: 10, right: 10, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.title}</div>
+                          <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{friends.length} ami{friends.length > 1 ? 's' : ''}</div>
+                        </div>
+                        {/* Pile d'avatars (max 4 + compteur) */}
+                        <div style={{ display: 'flex', flexDirection: 'row-reverse', flexShrink: 0 }}>
+                          {friends.length > 4 && (
+                            <span title={`+${friends.length - 4}`} style={{ width: 26, height: 26, borderRadius: '50%', marginLeft: -8, border: '2px solid #0b0e14', background: 'rgba(255,255,255,0.12)', color: C.text, fontSize: 10.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+{friends.length - 4}</span>
+                          )}
+                          {friends.slice(0, 4).reverse().map((f, i) => (
+                            <span key={f.user_id || i} title={f.username || ''} style={{ width: 26, height: 26, borderRadius: '50%', marginLeft: -8, border: '2px solid #0b0e14', overflow: 'hidden', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                              {f.avatar_url
+                                ? <img src={f.avatar_url} alt="" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                : <span style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: C.text }}>{(f.username || '?').slice(0, 1).toUpperCase()}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </AnimeRow>
+            )}
+
             {resume.length > 0 && (
               <AnimeRow title="Reprendre la lecture" count={resume.length}>
                 {resume.map(a => (

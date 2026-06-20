@@ -50,6 +50,15 @@ export async function listFriends() {
   return Array.isArray(r) ? r : []
 }
 
+// Activité de visionnage des amis (hub Animés) : RPC friends_watching renvoie,
+// par animé (ns), la dernière activité + les amis qui l'ont regardé récemment.
+// Tolérant : RPC absente / migration non appliquée → [] (la row disparaît côté UI,
+// zéro crash).
+export async function friendsWatching(hours = 48) {
+  const r = await rpc('friends_watching', { p_hours: hours })
+  return Array.isArray(r) ? r : []
+}
+
 // Reco de membres (RPC recommend_members) : amis en commun > actifs vocal 7j >
 // actifs messages. Exclut amis/follows/blocages côté SQL.
 export async function recommendMembers(limit = 5) {

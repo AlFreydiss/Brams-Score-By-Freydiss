@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import { isStaff } from '../lib/roles.js'
 import { useSocial } from '../contexts/SocialContext.jsx'
 import NotificationBell from './social/NotificationBell.jsx'
+import DailyWheel from './DailyWheel.jsx'
 import { track } from '../lib/analytics.js'
 
 const NAV_LINKS = [
@@ -361,6 +362,7 @@ export default function Navbar({ forceScrolled = false }) {
 
           <div className="nav-zone-status hide-mobile">
             <BoutiqueButton />
+            {isAuthenticated && <DailyWheel discordId={discordId} />}
             <SoutenirButton />
             {isAuthenticated && <NotificationBell />}
             {isAuthenticated && <MessagesButton />}
@@ -409,6 +411,11 @@ export default function Navbar({ forceScrolled = false }) {
             </div>
             {/* Boutique + Soutenir : accessibles sur mobile MÊME sans être connecté
                 (la nav-zone-status desktop est cachée en mobile). */}
+            {isAuthenticated && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '12px 16px 0' }}>
+                <DailyWheel discordId={discordId} />
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, padding: '12px 16px 0' }}>
               <button onClick={() => { setMenuOpen(false); navigate('/boutique') }}
                 style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '12px 8px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, color: '#7fe6a8', background: 'linear-gradient(135deg, rgba(52,211,153,0.16), rgba(52,211,153,0.05))', border: '1px solid rgba(52,211,153,0.32)' }}>

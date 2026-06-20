@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom'
 import VideoPlayer from './VideoPlayer.jsx'
 import { getCachedSynopsis, fetchEpisodeSynopsis } from '../lib/episodeSynopsis.js'
 import { getAnimeMeta } from '../data/anime-meta.js'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { reviewEpisode, getEpisodeReviews } from '../lib/episodeReviews.js'
 
 // ns (id animé) -> slug du manga ; le bouton "Lire le scan" n'apparaît que si le
 // fichier de scans existe réellement (glob), donc auto au fur et à mesure des uploads.
@@ -35,6 +37,7 @@ export default function EpisodeWatch({
   onSelect, onClose,
 }) {
   const navigate = useNavigate()
+  const { discordId, displayName, avatarUrl } = useAuth()
   const mangaSlug = NS_TO_MANGA[ns]
   const hasScan = mangaSlug && MANGA_FILES[`../data/manga/${mangaSlug}.json`]
   const video = videos[startIdx]
@@ -60,6 +63,43 @@ export default function EpisodeWatch({
     fetchEpisodeSynopsis(ns, animeTitle, ep).then(txt => { if (alive) { setSynopsis(txt || video?.synopsis || ''); setLoading(false) } })
     return () => { alive = false }
   }, [ns, animeTitle, ep, video?.synopsis])
+
+  // ── Avis / notes d'épisodes par membre ──────────────────────────────────────
+  const epKey = String(video?.progressKey || video?.id || video?.episode)
+  const [reviews, setReviews] = useState({ avg: 0, count: 0, mine: null, reviews: [] })
+  const [myRating, setMyRating] = useState(0)
+  const [myComment, setMyComment] = useState('')
+  const [hoverStar, setHoverStar] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+
+  const loadReviews = useMemo(() => async (alive) => {
+    const data = await getEpisodeReviews(ns, epKey)
+    if (alive && alive.ok) {
+      setReviews(data)
+      setMyRating(data.mine?.rating || 0)
+      setMyComment(data.mine?.comment || '')
+    }
+  }, [ns, epKey])
+
+  useEffect(() => {
+    const flag = { ok: true }
+    loadReviews(flag)
+    return () => { flag.ok = false }
+  }, [loadReviews])
+
+  const submitReview = async () => {
+    if (!discordId || !myRating || submitting) return
+    setSubmitting(true)
+    try {
+      await reviewEpisode({ ns, epKey, rating: myRating, comment: myComment.slice(0, 600), username: displayName, avatar: avatarUrl })
+      const data = await getEpisodeReviews(ns, epKey)
+      setReviews(data)
+      setMyRating(data.mine?.rating || myRating)
+      setMyComment(data.mine?.comment ?? myComment)
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   // Navigation séquentielle préc./suiv. — indispensable sur mobile où dérouler
   // la grille pour changer d'épisode est pénible. Les films (kind:'film')
@@ -154,6 +194,108 @@ export default function EpisodeWatch({
           <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.62, color: 'rgba(255,255,255,.82)' }}>
             {synopsis || (loading ? 'Génération du synopsis…' : 'Synopsis indisponible pour le moment.')}
           </p>
+
+          {/* ── Avis des pirates (notes + commentaires des membres) ───────────── */}
+          <div className="ew-reviews" style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+              <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '1.2px', textTransform: 'uppercase', color: color2 }}>Avis des pirates</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ color: '#fbbf24', fontSize: 17, fontWeight: 900 }}>★</span>
+                <span style={{ fontSize: 19, fontWeight: 900, color: '#fff' }}>{reviews.count ? reviews.avg.toFixed(1) : '—'}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.4)' }}>/10</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', marginLeft: 4 }}>
+                  {reviews.count > 0 ? `· ${reviews.count} avis` : '· sois le premier'}
+                </span>
+              </div>
+            </div>
+
+            {discordId ? (
+              <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, padding: '12px 13px' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,.55)', marginBottom: 8 }}>
+                  {reviews.mine ? 'Modifier ma note' : 'Donne ta note'}
+                </div>
+                {/* 10 étoiles cliquables = note /10 */}
+                <div role="radiogroup" aria-label="Noter l'épisode sur 10" style={{ display: 'flex', gap: 3, marginBottom: 10 }} onMouseLeave={() => setHoverStar(0)}>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
+                    const active = (hoverStar || myRating) >= n
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        role="radio"
+                        aria-checked={myRating === n}
+                        aria-label={`${n} sur 10`}
+                        onMouseEnter={() => setHoverStar(n)}
+                        onClick={() => setMyRating(n)}
+                        style={{
+                          background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1,
+                          fontSize: 17, color: active ? '#fbbf24' : 'rgba(255,255,255,.18)',
+                          transition: 'color .12s, transform .1s', transform: active ? 'scale(1.05)' : 'none',
+                        }}
+                      >★</button>
+                    )
+                  })}
+                  <span style={{ marginLeft: 8, alignSelf: 'center', fontSize: 12.5, fontWeight: 800, color: myRating ? '#fff' : 'rgba(255,255,255,.35)' }}>
+                    {(hoverStar || myRating) || '–'}/10
+                  </span>
+                </div>
+                <textarea
+                  value={myComment}
+                  onChange={e => setMyComment(e.target.value.slice(0, 600))}
+                  placeholder="Ton avis sur l'épisode (optionnel)…"
+                  rows={2}
+                  maxLength={600}
+                  style={{
+                    width: '100%', boxSizing: 'border-box', resize: 'vertical', minHeight: 40,
+                    background: 'rgba(0,0,0,.25)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 9,
+                    color: '#fff', fontSize: 12.5, fontFamily: 'var(--body)', lineHeight: 1.5, padding: '8px 10px',
+                  }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 9 }}>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,.3)' }}>{myComment.length}/600</span>
+                  <button
+                    type="button"
+                    className="ew-touchbtn"
+                    disabled={!myRating || submitting}
+                    onClick={submitReview}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                      minHeight: 38, padding: '8px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 800,
+                      cursor: (!myRating || submitting) ? 'default' : 'pointer',
+                      background: (!myRating || submitting) ? 'rgba(255,255,255,.06)' : `linear-gradient(135deg, ${color}, ${color2})`,
+                      border: `1px solid ${(!myRating || submitting) ? 'rgba(255,255,255,.1)' : color}`,
+                      color: (!myRating || submitting) ? 'rgba(255,255,255,.4)' : '#fff',
+                      boxShadow: (!myRating || submitting) ? 'none' : `0 8px 22px ${color}44`,
+                    }}
+                  >{submitting ? 'Envoi…' : (reviews.mine ? 'Mettre à jour' : 'Publier mon avis')}</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', fontWeight: 600, padding: '10px 12px', background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12 }}>
+                Connecte-toi pour noter cet épisode et laisser un avis.
+              </div>
+            )}
+
+            {/* Liste des avis avec commentaire (max ~10, scroll) */}
+            {reviews.reviews.filter(r => (r.comment || '').trim()).length > 0 && (
+              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 9, maxHeight: 300, overflowY: 'auto', paddingRight: 4 }}>
+                {reviews.reviews.filter(r => (r.comment || '').trim()).slice(0, 10).map((r, i) => (
+                  <div key={(r.username || 'u') + i} style={{ display: 'flex', gap: 10, padding: '10px 11px', borderRadius: 11, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
+                    {r.avatar_url
+                      ? <img src={r.avatar_url} alt="" loading="lazy" style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }} />
+                      : <div style={{ width: 30, height: 30, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${color}, ${color2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff' }}>{(r.username || '?').charAt(0).toUpperCase()}</div>}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.username || 'Pirate'}</span>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', flexShrink: 0 }}>★ {r.rating}/10</span>
+                      </div>
+                      <div style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(255,255,255,.72)', wordBreak: 'break-word' }}>{r.comment}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {tags.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 14 }}>

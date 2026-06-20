@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
 import { getAnimeMeta } from '../data/anime-meta.js'
 import { setBoost, corsUrl } from '../lib/audioBoost.js'
+import { saveWatchProgress, getWatchProgress } from '../lib/watchProgress.js'
 
 // Écran tactile (téléphone/tablette) : active la couche de contrôles au doigt.
 const IS_COARSE = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
@@ -420,7 +421,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     }
     saveVideoProgress(storageKey, next)
     onProgressUpdate?.(next)
-  }, [idx, onProgressUpdate, storageKey, video])
+    // Mirroir serveur (cross-device) — local reste le cache instantané.
+    if (userId) {
+      saveWatchProgress({
+        ns: storageKey,
+        epKey: progressKeyFor(video, idx),
+        position: patch.time,
+        duration: patch.duration,
+        completed: patch.completed,
+        episode: video?.episode,
+      })
+    }
+  }, [idx, onProgressUpdate, storageKey, video, userId])
 
   // ── Masquage auto des contrôles ──────────────────────────────────────────
   const showControls = useCallback(() => {
@@ -697,23 +709,53 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
   useEffect(() => {
     if (!storageKey || !videoRef.current || !video) return
-    const saved = loadVideoProgress(storageKey)
-    const savedEpisode = saved?.episodes?.[progressKeyFor(video, idx)]
-    if (!savedEpisode?.time || savedEpisode.completed) return
     const v = videoRef.current
-    const resume = () => {
-      if (Number.isFinite(savedEpisode.time) && savedEpisode.time > 3) {
-        v.currentTime = Math.max(0, savedEpisode.time - 2)
-        if (savedEpisode.time > 60) {                       // toast "Reprise à MM:SS"
-          setResumeToast(fmt(savedEpisode.time - 2))
+    const epKey = progressKeyFor(video, idx)
+    let cancelled = false
+    let metaHandler = null
+
+    // Reprend la lecture à `time` (en secondes), avec toast si assez avancé.
+    const resumeAt = (time) => {
+      if (cancelled || !videoRef.current) return
+      if (Number.isFinite(time) && time > 3) {
+        videoRef.current.currentTime = Math.max(0, time - 2)
+        if (time > 60) {                                    // toast "Reprise à MM:SS"
+          setResumeToast(fmt(time - 2))
           setTimeout(() => setResumeToast(null), 4500)
         }
       }
     }
-    if (v.readyState >= 1) resume()
-    else v.addEventListener('loadedmetadata', resume, { once: true })
-    return () => v.removeEventListener('loadedmetadata', resume)
-  }, [idx, storageKey, video])
+
+    // Démarre la reprise dès que la <video> a ses métadonnées (sans bloquer la lecture).
+    const arm = (time) => {
+      if (cancelled) return
+      if (v.readyState >= 1) resumeAt(time)
+      else { metaHandler = () => resumeAt(time); v.addEventListener('loadedmetadata', metaHandler, { once: true }) }
+    }
+
+    // Progression locale (cache instantané) en repli.
+    const local = loadVideoProgress(storageKey)?.episodes?.[epKey]
+    const localTime = (local && !local.completed && Number.isFinite(local.time)) ? local.time : null
+
+    // Serveur d'abord (cross-device) ; si une position non-complétée plus récente
+    // existe, on la prend, sinon repli sur le local.
+    if (userId) {
+      getWatchProgress(storageKey).then((server) => {
+        if (cancelled) return
+        const s = server?.[epKey]
+        const serverTime = (s && !s.completed && Number.isFinite(Number(s.position))) ? Number(s.position) : null
+        const chosen = serverTime != null && serverTime > (localTime || 0) ? serverTime : localTime
+        if (chosen != null && chosen > 3) arm(chosen)
+      })
+    } else if (localTime != null && localTime > 3) {
+      arm(localTime)
+    }
+
+    return () => {
+      cancelled = true
+      if (metaHandler) v.removeEventListener('loadedmetadata', metaHandler)
+    }
+  }, [idx, storageKey, video, userId])
 
   // ── Trio lecteur : avance épisode + compte à rebours autoplay ────────────
   const goNext = useCallback(() => {
