@@ -4,6 +4,55 @@ import { SB_URL, SB_KEY, getAccessToken } from './supabaseRest.js'
 // ── Local tracks (always available, no DB needed) ──────────────────────────
 // type: 'OP' (opening) ou 'ED' (ending) — sert à séparer Blind Test / Tournois.
 export const LOCAL_TRACKS = [
+  // ═══ OPENINGS ajoutés (lot bangers) — alimentent Blind Test ET Tournoi ═══
+  {
+    id: 'frieren-op1', anime: 'Frieren', title: 'Brave', artist: 'YOASOBI', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/frieren-op1.mp4',
+    difficulty: 'moyen', color: '#5fae9c', emoji: '🧝',
+    aliases: ['frieren', 'frieren beyond journey\'s end', 'la fin du voyage', 'brave', 'yoasobi'],
+  },
+  {
+    id: 'solo-leveling-op1', anime: 'Solo Leveling', title: 'LEveL', artist: 'SawanoHiroyuki[nZk]:ASCA', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/solo-leveling-op1.mp4',
+    difficulty: 'facile', color: '#3b82f6', emoji: '⚔️',
+    aliases: ['solo leveling', 'level', 'sung jinwoo', 'jinwoo', 'sawano'],
+  },
+  {
+    id: 'oshi-no-ko-op1', anime: 'Oshi no Ko', title: 'Idol', artist: 'YOASOBI', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/oshi-no-ko-op1.mp4',
+    difficulty: 'facile', color: '#e11d48', emoji: '⭐',
+    aliases: ['oshi no ko', 'oshi', 'idol', 'yoasobi', 'my star'],
+  },
+  {
+    id: 'ds-op1', anime: 'Demon Slayer', title: 'Gurenge', artist: 'LiSA', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/ds-op1.mp4',
+    difficulty: 'facile', color: '#1e9e7a', emoji: '🗡️',
+    aliases: ['demon slayer', 'kimetsu no yaiba', 'gurenge', 'lisa', 'tanjiro'],
+  },
+  {
+    id: 'mob-op1', anime: 'Mob Psycho 100', title: '99', artist: 'Mob Choir', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/mob-op1.mp4',
+    difficulty: 'moyen', color: '#14b8a6', emoji: '🌀',
+    aliases: ['mob psycho', 'mob psycho 100', '99', 'mob choir', 'shigeo'],
+  },
+  {
+    id: 'spy-op1', anime: 'Spy x Family', title: 'Mixed Nuts', artist: 'Official HIGE DANDism', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/spy-op1.mp4',
+    difficulty: 'facile', color: '#c026d3', emoji: '🕴️',
+    aliases: ['spy x family', 'spy family', 'mixed nuts', 'official hige dandism', 'anya', 'forger'],
+  },
+  {
+    id: 'bluelock-op1', anime: 'Blue Lock', title: 'Chaos ga Kiwamaru', artist: 'UNISON SQUARE GARDEN', type: 'OP', episode: 'Opening 1',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/bluelock-op1.mp4',
+    difficulty: 'moyen', color: '#2563eb', emoji: '⚽',
+    aliases: ['blue lock', 'bluelock', 'chaos ga kiwamaru', 'isagi', 'unison square garden'],
+  },
+  {
+    id: 'jjk-op2', anime: 'Jujutsu Kaisen', title: 'SPECIALZ', artist: 'King Gnu', type: 'OP', episode: 'Opening (Shibuya)',
+    url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/jjk-op2.mp4',
+    difficulty: 'facile', color: '#7c3aed', emoji: '👁️',
+    aliases: ['jujutsu kaisen', 'jjk', 'specialz', 'king gnu', 'gojo', 'shibuya'],
+  },
   {
     id: 'pokemon-fr-op1', anime: 'Pokémon', title: 'Générique français (Saison 1)', artist: 'Pokémon', type: 'OP', episode: 'Opening FR',
     url: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/pokemon-fr-op1.mp4',
