@@ -128,7 +128,9 @@ export default function EpisodeWatch({
     <div className="ew-root" style={{ position: 'relative', marginBottom: 10, animation: 'ewFade .3s ease-out both' }}>
       <style>{`
         @keyframes ewFade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-        .ew-grid { display:grid; grid-template-columns:minmax(0,2.4fr) minmax(0,1fr); gap:22px; align-items:stretch; }
+        /* align-items:start (et pas stretch) : sinon un panneau de détail plus haut que le
+           lecteur étire la ligne, et aspect-ratio:16/9 élargit le lecteur → débordement. */
+        .ew-grid { display:grid; grid-template-columns:minmax(0,2.4fr) minmax(0,1fr); gap:22px; align-items:start; }
         .ew-player { aspect-ratio:16/9; border-radius:16px; overflow:hidden; border:1px solid ${color}3a; box-shadow:0 24px 70px rgba(0,0,0,.55); background:#000; min-width:0; }
         .ew-eps { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
         .ew-eps-card { text-align:left; cursor:pointer; padding:0; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; transition:transform .15s ease, border-color .15s ease; }
