@@ -27,6 +27,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
   const [imgLoaded, setImgLoaded] = useState(false)
   const [imgError, setImgError] = useState(false)
   const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
   const total = chapter.pages.length
 
   const prev = useCallback(() => {
@@ -53,23 +54,50 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
     return () => window.removeEventListener('keydown', onKey)
   }, [next, prev, onClose])
 
-  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX }
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
   const onTouchEnd = (e) => {
     if (touchStartX.current === null) return
     const dx = e.changedTouches[0].clientX - touchStartX.current
-    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev() }
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    const sx = touchStartX.current
     touchStartX.current = null
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      // swipe horizontal : gauche = page suivante, droite = précédente
+      dx < 0 ? next() : prev()
+      return
+    }
+    // tap simple : zone gauche = précédente, zone droite = suivante
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+      const w = window.innerWidth || 1
+      if (sx < w * 0.30)      prev()
+      else if (sx > w * 0.70) next()
+    }
   }
 
   return (
-    <div style={{
+    <div className="sc-reader" style={{
       position: 'fixed', inset: 0, zIndex: 9999,
       background: 'rgba(0,0,0,0.97)',
       display: 'flex', flexDirection: 'column',
       animation: 'fadeIn 0.2s ease-out',
     }}>
+      <style>{`
+        .sc-reader { padding-top: env(safe-area-inset-top); }
+        @media (max-width: 768px) {
+          .sc-topbar { padding: 8px 12px !important; gap: 8px !important; flex-wrap: wrap; }
+          .sc-chapnav { gap: 6px !important; }
+          .sc-chapnav button { padding: 9px 12px !important; min-height: 40px; }
+          .sc-bottombar { padding: 8px 12px env(safe-area-inset-bottom) !important; }
+          .sc-navbtn { padding: 12px 16px !important; min-height: 44px; }
+          .sc-progress-hit { padding: 14px 0 !important; }
+        }
+        .sc-progress-hit { display: flex; align-items: center; }
+      `}</style>
       {/* Barre top */}
-      <div style={{
+      <div className="sc-topbar" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)',
         background: 'rgba(14,14,16,0.9)', flexShrink: 0,
@@ -90,7 +118,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="sc-chapnav" style={{ display: 'flex', gap: 8 }}>
           <button onClick={onPrevChapter} disabled={chapterIndex === 0} style={{
             padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
             background: chapterIndex === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)',
@@ -106,7 +134,7 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
 
       {/* Zone image */}
       <div
-        style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '0' }}
+        style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '0', touchAction: 'pan-y', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -148,20 +176,20 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
       </div>
 
       {/* Barre bas navigation */}
-      <div style={{
+      <div className="sc-bottombar" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px 16px', background: 'rgba(14,14,16,0.9)',
         borderTop: '1px solid rgba(255,255,255,0.08)', flexShrink: 0,
         backdropFilter: 'blur(12px)', gap: 12,
       }}>
-        <button onClick={prev} disabled={page === 0 && chapterIndex === 0} style={{
-          padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14,
+        <button className="sc-navbtn" onClick={prev} disabled={page === 0 && chapterIndex === 0} style={{
+          padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, flexShrink: 0,
           background: (page === 0 && chapterIndex === 0) ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)',
           color: (page === 0 && chapterIndex === 0) ? 'rgba(255,255,255,0.2)' : '#fff',
         }}>← Préc.</button>
 
-        {/* Barre de progression */}
-        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden', cursor: 'pointer' }}
+        {/* Barre de progression (grande zone de tap, visuel fin) */}
+        <div className="sc-progress-hit" style={{ flex: 1, cursor: 'pointer' }}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect()
             const ratio = (e.clientX - rect.left) / rect.width
@@ -170,11 +198,13 @@ function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, 
             setImgLoaded(false); setImgError(false)
           }}
         >
-          <div style={{ height: '100%', background: 'var(--accent)', borderRadius: 2, width: `${((page + 1) / total) * 100}%`, transition: 'width 0.2s' }} />
+          <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: 'var(--accent)', borderRadius: 3, width: `${((page + 1) / total) * 100}%`, transition: 'width 0.2s' }} />
+          </div>
         </div>
 
-        <button onClick={next} disabled={page === total - 1 && chapterIndex === totalChapters - 1} style={{
-          padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14,
+        <button className="sc-navbtn" onClick={next} disabled={page === total - 1 && chapterIndex === totalChapters - 1} style={{
+          padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, flexShrink: 0,
           background: (page === total - 1 && chapterIndex === totalChapters - 1) ? 'rgba(255,255,255,0.06)' : 'var(--accent)',
           color: '#fff',
         }}>Suiv. →</button>

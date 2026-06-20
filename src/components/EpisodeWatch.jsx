@@ -14,6 +14,20 @@ import { getAnimeMeta } from '../data/anime-meta.js'
 const MANGA_FILES = import.meta.glob('../data/manga/*.json')
 const NS_TO_MANGA = { aot:'aot', sl:'solo-leveling', jjk:'jjk', kny:'kny', bluelock:'blue-lock', bc:'black-clover', fireforce:'fire-force', bleach:'bleach', drstone:'dr-stone', kingdom:'kingdom', mha:'mha', nnt:'nnt', dbs:'dbs', tpn:'tpn' }
 
+// Style commun des boutons préc./suiv. (désactivé = grisé, non cliquable).
+function navBtnStyle(disabled, color, color2) {
+  return {
+    flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10,
+    minHeight: 52, padding: '10px 16px', borderRadius: 14,
+    background: disabled ? 'rgba(255,255,255,.03)' : `linear-gradient(135deg, ${color}22, rgba(255,255,255,.04))`,
+    border: `1px solid ${disabled ? 'rgba(255,255,255,.06)' : color + '40'}`,
+    color: disabled ? 'rgba(255,255,255,.3)' : '#fff',
+    cursor: disabled ? 'default' : 'pointer',
+    fontFamily: 'var(--body)', textAlign: 'left',
+    transition: 'border-color .15s, background .15s, transform .1s',
+  }
+}
+
 export default function EpisodeWatch({
   videos, startIdx, ns, storageKey,
   color = '#8b7cff', color2 = '#b8a8ff',
@@ -47,6 +61,13 @@ export default function EpisodeWatch({
     return () => { alive = false }
   }, [ns, animeTitle, ep, video?.synopsis])
 
+  // Navigation séquentielle préc./suiv. — indispensable sur mobile où dérouler
+  // la grille pour changer d'épisode est pénible. Les films (kind:'film')
+  // existent dans la même liste : on passe simplement à l'index voisin.
+  const prevIdx = startIdx > 0 ? startIdx - 1 : null
+  const nextIdx = startIdx < videos.length - 1 ? startIdx + 1 : null
+  const epLabel = (v) => v ? (v.kind === 'film' ? (v.episodeLabel || 'Film') : `Ép. ${v.episode}`) : ''
+
   // Épisodes suivants (puis les autres) — l'épisode courant exclu.
   const upNext = useMemo(() => {
     const after = videos.map((v, i) => ({ v, i })).filter(x => x.i > startIdx)
@@ -71,6 +92,10 @@ export default function EpisodeWatch({
         .ew-player { aspect-ratio:16/9; border-radius:16px; overflow:hidden; border:1px solid ${color}3a; box-shadow:0 24px 70px rgba(0,0,0,.55); background:#000; min-width:0; }
         .ew-eps { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
         .ew-eps-card { text-align:left; cursor:pointer; padding:0; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); border-radius:12px; overflow:hidden; transition:transform .15s ease, border-color .15s ease; }
+        .ew-navbar { display:flex; gap:12px; margin-top:18px; }
+        .ew-nav-btn--next { justify-content:flex-end; text-align:right; }
+        .ew-nav-btn:not(:disabled):hover { transform:translateY(-1px); }
+        .ew-nav-btn:not(:disabled):active { transform:scale(.98); }
 
         /* ===== Tablette (≤1024px) : lecteur plus grand, détail empilé dessous ===== */
         @media (max-width:1024px){
@@ -88,7 +113,9 @@ export default function EpisodeWatch({
             border-left:0; border-right:0; border-top:0; box-shadow:0 10px 30px rgba(0,0,0,.7);
           }
           /* tout le reste du contenu reprend une marge confortable */
-          .ew-detail, .ew-about, .ew-epswrap{ margin-left:14px; margin-right:14px; }
+          .ew-detail, .ew-about, .ew-epswrap, .ew-navbar{ margin-left:14px; margin-right:14px; }
+          .ew-navbar{ margin-top:14px; }
+          .ew-nav-btn{ min-height:56px; }
           .ew-detail{ margin-top:14px; border-radius:14px; padding:16px 16px; }
           .ew-detail h2{ font-size:23px !important; }
           .ew-grid-stats{ grid-template-columns:1fr 1fr; }
@@ -154,6 +181,36 @@ export default function EpisodeWatch({
             <button className="ew-touchbtn" onClick={() => navigate(`/manga/${mangaSlug}`)} aria-label="Lire le scan du manga" style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', minHeight: 44, padding: '11px 0', borderRadius: 12, cursor: 'pointer', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.14)', color: 'rgba(255,255,255,.85)', fontSize: 13, fontWeight: 800 }}>📖 Lire le scan (manga)</button>
           )}
         </div>
+      </div>
+
+      {/* Navigation séquentielle préc./suiv. — grosses cibles tactiles. */}
+      <div className="ew-navbar">
+        <button
+          className="ew-nav-btn"
+          disabled={prevIdx === null}
+          onClick={() => prevIdx !== null && onSelect(prevIdx)}
+          aria-label="Épisode précédent"
+          style={navBtnStyle(prevIdx === null, color, color2)}
+        >
+          <span style={{ fontSize: 17, lineHeight: 1 }}>‹</span>
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .6 }}>Précédent</span>
+            <span style={{ fontSize: 12.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{prevIdx !== null ? epLabel(videos[prevIdx]) : '—'}</span>
+          </span>
+        </button>
+        <button
+          className="ew-nav-btn ew-nav-btn--next"
+          disabled={nextIdx === null}
+          onClick={() => nextIdx !== null && onSelect(nextIdx)}
+          aria-label="Épisode suivant"
+          style={navBtnStyle(nextIdx === null, color, color2)}
+        >
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 0 }}>
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .6 }}>Suivant</span>
+            <span style={{ fontSize: 12.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{nextIdx !== null ? epLabel(videos[nextIdx]) : '—'}</span>
+          </span>
+          <span style={{ fontSize: 17, lineHeight: 1 }}>›</span>
+        </button>
       </div>
 
       {/* À propos de l'anime — remplit la zone */}

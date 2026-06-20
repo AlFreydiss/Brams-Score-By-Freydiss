@@ -980,20 +980,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
       : { position: 'fixed', inset: 0, zIndex: 1200, background: '#000', display: 'flex', flexDirection: 'column' }}>
 
       {/* ── Barre haute (masquée en mode embarqué : la page fournit la navigation) ── */}
-      {!embedded && <div style={{ flexShrink: 0, height: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${color}22`, zIndex: 10 }}>
-        <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: '6px 13px', fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background .15s' }}
+      {!embedded && <div className="vp-topbar" style={{ flexShrink: 0, minHeight: 48, display: 'flex', alignItems: 'center', gap: 10, padding: '0 14px', background: 'rgba(8,9,11,0.84)', backdropFilter: 'blur(18px)', borderBottom: `1px solid ${color}22`, zIndex: 10 }}>
+        <button onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 9, color: '#fff', cursor: 'pointer', padding: IS_COARSE ? '10px 14px' : '6px 13px', minHeight: IS_COARSE ? 44 : undefined, fontSize: 13, fontWeight: 700, flexShrink: 0, transition: 'background .15s' }}
           onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
           onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
         >✕ Fermer</button>
 
-        <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden' }}>
+        <div className="vp-title" style={{ flex: 1, textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{episodeLabel}</span>
-          {video?.title && !/^episode\s/i.test(String(video.title)) && <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, marginLeft: 8 }}>— {video.title}</span>}
+          {video?.title && !/^episode\s/i.test(String(video.title)) && <span className="vp-title-sub" style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13, marginLeft: 8 }}>— {video.title}</span>}
         </div>
 
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          <button onClick={() => setIdx(i => i - 1)} disabled={idx === 0} style={{ padding: '5px 13px', borderRadius: 9, border: `1px solid ${idx === 0 ? 'rgba(255,255,255,0.1)' : color + '44'}`, background: idx === 0 ? 'transparent' : `${color}18`, color: idx === 0 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background .15s' }}>← Préc.</button>
-          <button onClick={() => setIdx(i => i + 1)} disabled={idx === videos.length - 1} style={{ padding: '5px 13px', borderRadius: 9, border: `1px solid ${idx === videos.length - 1 ? 'rgba(255,255,255,0.1)' : color + '44'}`, background: idx === videos.length - 1 ? 'transparent' : `${color}18`, color: idx === videos.length - 1 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === videos.length - 1 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background .15s' }}>Suiv. →</button>
+          <button onClick={() => setIdx(i => i - 1)} disabled={idx === 0} style={{ padding: IS_COARSE ? '9px 13px' : '5px 13px', minHeight: IS_COARSE ? 44 : undefined, borderRadius: 9, border: `1px solid ${idx === 0 ? 'rgba(255,255,255,0.1)' : color + '44'}`, background: idx === 0 ? 'transparent' : `${color}18`, color: idx === 0 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === 0 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background .15s' }}>← Préc.</button>
+          <button onClick={() => setIdx(i => i + 1)} disabled={idx === videos.length - 1} style={{ padding: IS_COARSE ? '9px 13px' : '5px 13px', minHeight: IS_COARSE ? 44 : undefined, borderRadius: 9, border: `1px solid ${idx === videos.length - 1 ? 'rgba(255,255,255,0.1)' : color + '44'}`, background: idx === videos.length - 1 ? 'transparent' : `${color}18`, color: idx === videos.length - 1 ? 'rgba(255,255,255,0.2)' : color, cursor: idx === videos.length - 1 ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, transition: 'background .15s' }}>Suiv. →</button>
         </div>
       </div>}
 
@@ -1074,6 +1074,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   const zone = x < 0.33 ? 'L' : x > 0.67 ? 'R' : 'C'
                   const now = Date.now()
                   const last = touchTapRef.current
+                  // Double-tap tiers gauche/droit = ±10s (geste mobile attendu)
                   if (last && now - last.t < 300 && last.zone === zone && zone !== 'C') {
                     clearTimeout(touchTapRef.current?.timer)
                     touchTapRef.current = null
@@ -1084,7 +1085,18 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     showControls()
                     return
                   }
+                  // Contrôles masqués pendant la lecture : 1er tap = les révéler
+                  // (comportement YouTube/Netflix mobile), sans couper la lecture.
+                  // On garde quand même une fenêtre pour détecter un double-tap ±10s.
+                  if (!showCtrl && playing) {
+                    showControls()
+                    const timer = setTimeout(() => { touchTapRef.current = null }, 300)
+                    touchTapRef.current = { t: now, zone, timer }
+                    return
+                  }
                   clearTimeout(last?.timer)
+                  // Tap simple (centre, ou contrôles déjà visibles) = play/pause, différé
+                  // 280ms pour laisser une chance au 2e tap (double-tap ±10s).
                   const timer = setTimeout(() => { togglePlay(); touchTapRef.current = null }, 280)
                   touchTapRef.current = { t: now, zone, timer }
                 }}
@@ -1137,7 +1149,46 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
             <style>{`@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
               @keyframes vpKenBurns { from { transform: scale(1.04) } to { transform: scale(1.12) } }
-              @keyframes vpPlayPulse { 0%,100% { box-shadow: 0 0 0 0 ${color}55, 0 10px 40px rgba(0,0,0,.5) } 50% { box-shadow: 0 0 0 16px ${color}00, 0 10px 40px rgba(0,0,0,.5) } }`}</style>
+              @keyframes vpPlayPulse { 0%,100% { box-shadow: 0 0 0 0 ${color}55, 0 10px 40px rgba(0,0,0,.5) } 50% { box-shadow: 0 0 0 16px ${color}00, 0 10px 40px rgba(0,0,0,.5) } }
+
+              /* ── Adaptations mobile / tablette (≤768px ou pointeur grossier) ──
+                 Additif : ne change rien sur desktop souris. iOS safe-area pour que
+                 la barre de contrôles ne passe pas sous le notch / l'indicateur home
+                 en plein écran paysage, et que rien ne soit rogné. */
+              .vp-controls {
+                padding-left: calc(16px + env(safe-area-inset-left, 0px)) !important;
+                padding-right: calc(16px + env(safe-area-inset-right, 0px)) !important;
+                padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+              }
+              /* Barre haute : respecte le notch iOS (0px ailleurs) */
+              .vp-topbar {
+                padding-top: env(safe-area-inset-top, 0px);
+                padding-left: calc(14px + env(safe-area-inset-left, 0px));
+                padding-right: calc(14px + env(safe-area-inset-right, 0px));
+              }
+              @media (max-width: 768px), (pointer: coarse) {
+                /* Barre de contrôles : laisse respirer + colle aux bords sûrs */
+                .vp-controls { padding-top: 56px !important; }
+                /* Titre central rétractable : ne doit jamais évincer les boutons préc/suiv */
+                .vp-topbar .vp-title { min-width: 0; }
+                .vp-topbar .vp-title-sub { display: none; }
+                /* La rangée de boutons peut passer à la ligne sans rogner aucune cible */
+                .vp-control-row { flex-wrap: wrap !important; row-gap: 8px !important; }
+                /* Menus déroulants (CC / audio / vitesse) : jamais hors écran à droite,
+                   largeur contrainte à la fenêtre, scroll interne si trop long */
+                .vp-menu {
+                  right: 0 !important;
+                  max-width: min(86vw, 320px) !important;
+                  max-height: 52vh !important;
+                  overflow-y: auto !important;
+                  -webkit-overflow-scrolling: touch;
+                }
+              }
+              /* Très petit téléphone en portrait : on évite tout débordement horizontal */
+              @media (max-width: 420px) {
+                .vp-control-row { gap: 8px !important; }
+                .vp-time { margin-left: 2px !important; }
+              }`}</style>
 
             {/* ── Fond cinématique en pré-lecture (au lieu d'un grand vide noir) ── */}
             {!started && (
@@ -1170,7 +1221,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               const skip = { label: "Passer l'intro", to: opMark[1] }
               return (
                 <button onClick={(e) => { e.stopPropagation(); skipTo(skip.to) }}
-                  style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize:13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
+                  style={{ position:'absolute', right:'calc(24px + env(safe-area-inset-right, 0px))', bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding: IS_COARSE ? '13px 20px' : '10px 18px', minHeight: IS_COARSE ? 44 : undefined, borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize: IS_COARSE ? 14 : 13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
                   onMouseEnter={e => { e.currentTarget.style.background = `${color}cc`; e.currentTarget.style.transform = 'scale(1.04)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,8,16,0.82)'; e.currentTarget.style.transform = 'none' }}>
                   {skip.label} <span style={{ fontSize:15 }}>⏭</span>
@@ -1180,7 +1231,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
             {/* ── Fin d'épisode : autoplay (compte à rebours) ou carte manuelle ── */}
             {endOverlay && videos[idx + 1] && (
-              <div style={{ position:'absolute', right:24, bottom: showCtrl ? 118 : 40, zIndex:25, width:308, padding:18, borderRadius:16, background:'rgba(10,8,16,0.93)', backdropFilter:'blur(16px)', border:`1px solid ${color}55`, boxShadow:'0 18px 50px rgba(0,0,0,0.6)', animation:'fadeIn .3s ease' }}>
+              <div style={{ position:'absolute', right:'calc(24px + env(safe-area-inset-right, 0px))', bottom: showCtrl ? 118 : 40, zIndex:25, width:308, maxWidth:'calc(100vw - 48px - env(safe-area-inset-right, 0px) - env(safe-area-inset-left, 0px))', padding:18, borderRadius:16, background:'rgba(10,8,16,0.93)', backdropFilter:'blur(16px)', border:`1px solid ${color}55`, boxShadow:'0 18px 50px rgba(0,0,0,0.6)', animation:'fadeIn .3s ease' }}>
                 <div style={{ fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color, marginBottom:6 }}>
                   {countdown != null ? `Épisode suivant dans ${countdown}s` : 'Épisode suivant'}
                 </div>
@@ -1194,11 +1245,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 )}
                 <div style={{ display:'flex', gap:8 }}>
                   <button onClick={(e) => { e.stopPropagation(); goNext() }}
-                    style={{ flex:1, padding:'9px 0', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
+                    style={{ flex:1, padding: IS_COARSE ? '12px 0' : '9px 0', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
                     ▶ Lire {countdown != null ? 'maintenant' : ''}
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); setEndOverlay(false); setCountdown(null) }}
-                    style={{ padding:'9px 14px', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
+                    style={{ padding: IS_COARSE ? '12px 16px' : '9px 14px', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
                     {endReason === 'ed' ? 'Laisser le générique' : 'Annuler'}
                   </button>
                 </div>
@@ -1221,8 +1272,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {/* Indicateur de qualité — suit les contrôles (plus de superposition permanente) */}
             <div style={{
               position: 'absolute',
-              top: 12,
-              right: 12,
+              top: 'calc(12px + env(safe-area-inset-top, 0px))',
+              right: 'calc(12px + env(safe-area-inset-right, 0px))',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 8,
@@ -1275,7 +1326,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             )}
 
             {/* ── Contrôles ── */}
-            <div style={{
+            <div className="vp-controls" style={{
               position: 'absolute', bottom: 0, left: 0, right: 0,
               background: 'linear-gradient(transparent 0%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.92) 100%)',
               padding: '40px 16px 14px',
@@ -1300,7 +1351,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
               {/* Ligne de contrôles — espacement plus large au doigt (tactile) ; wrap
                   autorisé sur tactile pour qu'aucun bouton agrandi ne soit rogné. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, marginTop: IS_COARSE ? 8 : 4, flexWrap: IS_COARSE ? 'wrap' : 'nowrap', rowGap: IS_COARSE ? 6 : 0 }}>
+              <div className="vp-control-row" style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, marginTop: IS_COARSE ? 8 : 4, flexWrap: IS_COARSE ? 'wrap' : 'nowrap', rowGap: IS_COARSE ? 6 : 0 }}>
 
                 {/* Préc / Suiv (tactile uniquement : sur mobile la barre haute est souvent
                     masquée en plein écran → on remet la navigation d'épisode à portée de pouce) */}
@@ -1354,7 +1405,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 )}
 
                 {/* Temps */}
-                <span style={{ fontSize: IS_COARSE ? 13 : 12, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', marginLeft: 4 }}>
+                <span className="vp-time" style={{ fontSize: IS_COARSE ? 13 : 12, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', marginLeft: 4 }}>
                   {fmt(currentTime)} / {fmt(duration)}
                 </span>
 
@@ -1378,7 +1429,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     }}
                   >CC {subLabel}</button>
                   {showSubMenu && hasSubs && (
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 160, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                    <div className="vp-menu" style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 160, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                       onClick={e => e.stopPropagation()}
                     >
                       {[{ label: '🚫 Désactivés', action: () => chooseSubtitle(subIdx, true) },
@@ -1454,7 +1505,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     }}
                   >AU {audioLabel}</button>
                   {showAudioMenu && hasAudioChoices && (
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 168, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                    <div className="vp-menu" style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 168, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                       onClick={e => e.stopPropagation()}
                     >
                       {audioTrackState === 'unsupported' && !selectedAudio?.mediaSrc && (
@@ -1482,7 +1533,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 7, color: 'rgba(255,255,255,0.85)', fontSize: IS_COARSE ? 14 : 11, fontWeight: 800, padding: IS_COARSE ? '11px 15px' : '4px 9px', minHeight: IS_COARSE ? 44 : undefined, cursor: 'pointer', letterSpacing: '0.05em' }}
                   >{speed}×</button>
                   {showSpdMenu && (
-                    <div style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 100, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
+                    <div className="vp-menu" style={{ position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, background: 'rgba(14,15,17,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minWidth: 100, padding: '5px 0', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', backdropFilter: 'blur(16px)', zIndex: 20 }}
                       onClick={e => e.stopPropagation()}
                     >
                       {SPEEDS.map(s => (

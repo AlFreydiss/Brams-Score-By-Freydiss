@@ -529,10 +529,20 @@ export default function AIChatWidget({ hidden = false }) {
         @keyframes aiFadeUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
         @media (prefers-reduced-motion: reduce) { .chat-ring, .ai-swell { animation: none !important } }
         .ai-tools::-webkit-scrollbar { display: none }
+        /* ── Mobile (≤768px) : le panneau occupe presque tout l'écran. Pour ne
+           pas piéger la navigation, le bouton fermer doit être une vraie cible
+           tactile (≥44px) et le panneau s'ancre proprement sans déborder. */
+        @media (max-width: 768px) {
+          .ai-panel {
+            right: 12px !important; left: 12px !important;
+            bottom: 84px !important; width: auto !important; max-width: none !important;
+          }
+          .ai-close { width: 44px !important; height: 44px !important; font-size: 18px !important; }
+        }
       `}</style>
 
       {/* Panel */}
-      <div className="cinema-hide" style={{
+      <div className="cinema-hide ai-panel" style={{
         position: 'fixed', bottom: 90, right: 24, zIndex: 900,
         width: 392, maxWidth: 'calc(100vw - 40px)',
         background: '#0a0b10',
@@ -568,7 +578,7 @@ export default function AIChatWidget({ hidden = false }) {
               Effacer
             </button>
           )}
-          <button onClick={() => setOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.04)', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button className="ai-close" aria-label="Fermer le chat" onClick={() => setOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,.08)', background: 'rgba(255,255,255,.04)', color: 'rgba(255,255,255,.6)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
         </div>
 
         {/* Messages — le fond : profondeurs de Grand Line */}

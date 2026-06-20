@@ -91,3 +91,46 @@ html, body, #root {
   :where(section) { padding-top: 48px; padding-bottom: 48px; }
   :where(.container) { padding-left: 14px; padding-right: 14px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   7. FLUX DE VISIONNAGE ANIMÉ — confort tactile mobile (≤768px)
+   ────────────────────────────────────────────────────────────────────────
+   Les 23 pages d'animés partagent une structure à classes préfixées
+   (<id>-scroll, <id>-layout, <id>-ep-card) mais une seule media query
+   chacune (collapse layout à 900px). Sur téléphone : padding latéral trop
+   gros qui serre les cartes, grille d'épisodes en 1 seule colonne (minmax
+   190–240px > moitié d'un écran 360px = gâché), en-têtes inline non adaptés.
+   Ces règles ciblent les SUFFIXES de classe communs (sélecteur d'attribut),
+   en :where() → spécificité 0, donc OnePiecePage (déjà fait main) et toute
+   page surchargent librement. Additif : aucune page existante ne casse.
+   ════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Conteneur défilant des pages animé : marges latérales serrées pour
+     laisser respirer la grille d'épisodes (les pages mettent 24–28px). */
+  :where([class$="-scroll"]) {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 14px !important;
+  }
+  /* Grille d'épisodes : les cartes sont des <div>/<button> à thumbnail 16:9
+     posées dans un grid inline minmax(190–240px). À cette largeur d'écran on
+     force un pas plus petit → 2 colonnes lisibles au lieu d'1 colonne géante.
+     On vise le conteneur grid via son style inline (repeat/auto-fill). */
+  [class$="-scroll"] [style*="auto-fill"] {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
+  }
+  /* Carte d'épisode : coin tactile net + retour visuel au doigt. */
+  :where([class$="-ep-card"]) {
+    border-radius: 12px;
+  }
+  [class$="-ep-card"]:active {
+    transform: scale(0.97);
+  }
+}
+@media (max-width: 380px) {
+  /* Très petits écrans : 1 colonne propre plutôt que 2 cartes minuscules. */
+  [class$="-scroll"] [style*="auto-fill"] {
+    grid-template-columns: 1fr !important;
+  }
+}

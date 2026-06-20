@@ -290,6 +290,10 @@ export default function AnimeHubV2(props) {
         .ah2-enter-2 { animation: ah2-enter .65s .28s cubic-bezier(.22,1,.36,1) both }
         .ah2-seeall:hover { color: ${C.text} !important }
         .ah2-card:focus-visible { outline: 2px solid ${C.brass}; outline-offset: 3px; border-radius: 12px }
+        /* Dans la GRILLE (pas les rows), les cartes remplissent leur cellule 1fr
+           au lieu de rester à leur largeur fixe — sinon elles débordent les
+           cellules plus étroites du mobile et créent un scroll horizontal. */
+        .ah2-grid .ah2-card { width: 100% !important; }
         @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } .ah2-root { transition: none !important; transform: none !important; opacity: 1 !important } .ah2-enter-1, .ah2-enter-2 { animation: none !important } }
         /* Scrollbar sombre (la scrollbar Windows par défaut faisait une barre blanche) */
         .ah2-root { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }
@@ -297,6 +301,28 @@ export default function AnimeHubV2(props) {
         .ah2-root::-webkit-scrollbar-track { background: transparent }
         .ah2-root::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 5px; border: 2px solid transparent; background-clip: content-box }
         .ah2-root::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); background-clip: content-box }
+        /* ── Mobile (≤768px) : navigation confortable au doigt ──
+           Toolbar : segmented control déroulant en ligne (scroll horizontal au
+           lieu de wrap qui empile sur 3 lignes), stats masquées (place), cibles
+           tactiles agrandies. Grille de cartes : pas plus serré → 3 par ligne. */
+        @media (max-width: 768px) {
+          .ah2-toolbar-inner { padding: 8px 14px !important; gap: 8px !important; }
+          .ah2-search { flex: 1 1 100% !important; max-width: none !important; }
+          .ah2-seg {
+            overflow-x: auto; flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch; scrollbar-width: none;
+            max-width: 100%;
+          }
+          .ah2-seg::-webkit-scrollbar { display: none }
+          .ah2-seg button { white-space: nowrap; min-height: 40px; }
+          .ah2-toolbar-inner > button,
+          .ah2-toolbar-inner select { min-height: 40px; }
+          .ah2-stats { display: none !important; }
+          .ah2-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)) !important; gap: 12px !important; }
+        }
+        @media (max-width: 380px) {
+          .ah2-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)) !important; }
+        }
       `}</style>
 
       {/* ── HERO rotatif (masqué pendant une recherche) ── */}
@@ -337,9 +363,9 @@ export default function AnimeHubV2(props) {
         borderRadius: '12px 12px 0 0',
         transition: 'background 200ms ease, border-color 200ms ease',
       }}>
-        <div style={{ maxWidth: 1320, margin: '0 auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div className="ah2-toolbar-inner" style={{ maxWidth: 1320, margin: '0 auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* Recherche */}
-          <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
+          <div className="ah2-search" style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
             <span aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint, fontSize: 13 }}>⌕</span>
             <input
               value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un animé…"
@@ -354,7 +380,7 @@ export default function AnimeHubV2(props) {
             />
           </div>
           {/* Segmented */}
-          <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
+          <div className="ah2-seg" style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
             {segBtn('tous', 'Tous')}{segBtn('encours', 'En cours')}{segBtn('avoir', 'À voir')}{segBtn('termine', 'Terminé')}{segBtn('favoris', 'Favoris')}
           </div>
           {/* Genres multi-select */}
@@ -408,7 +434,7 @@ export default function AnimeHubV2(props) {
           )}
           <span style={{ flex: 1 }} />
           {/* Stats inline */}
-          <span style={{ fontSize: 12.5, color: 'rgba(238,240,246,.78)', whiteSpace: 'nowrap', textShadow: '0 1px 8px rgba(0,0,0,.6)' }}>
+          <span className="ah2-stats" style={{ fontSize: 12.5, color: 'rgba(238,240,246,.78)', whiteSpace: 'nowrap', textShadow: '0 1px 8px rgba(0,0,0,.6)' }}>
             {stats.total} séries · {stats.encours} en cours · {stats.nouveautes} nouveautés · {stats.favoris} favoris
           </span>
         </div>
@@ -429,7 +455,7 @@ export default function AnimeHubV2(props) {
             {filtered.length === 0 ? (
               <p style={{ color: C.faint, fontSize: 14 }}>Aucun résultat. Essaie de retirer des filtres ou de modifier la recherche.</p>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+              <div className="ah2-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
                 {filtered.map(a => card(a, undefined))}
               </div>
             )}
@@ -489,7 +515,7 @@ export default function AnimeHubV2(props) {
                 <span style={{ fontSize: 12.5, color: C.faint, fontWeight: 400 }}>{filtered.length}</span>
                 <span aria-hidden style={{ flex: 1, alignSelf: 'center', height: 1, marginLeft: 6, borderRadius: 1, background: `linear-gradient(90deg, ${C.brass}59, ${C.brass}14 45%, transparent)` }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+              <div className="ah2-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
                 {filtered.slice(0, shown).map(a => card(a, undefined))}
               </div>
               {filtered.length > shown && (

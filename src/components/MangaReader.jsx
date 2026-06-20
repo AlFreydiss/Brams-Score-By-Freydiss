@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useMobile } from '../hooks/useMediaQuery.js'
 
 const DIRS = [
   { key: 'rtl', icon: '←', label: 'Original' },
@@ -21,9 +22,12 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   const [dir,         setDir]         = useState(loadDir)
   const [webtoonPct,  setWebtoonPct]  = useState(0)
   const touchX    = useRef(null)
+  const touchY    = useRef(null)
+  const pinchRef  = useRef(null)   // { startDist, startZoom } pendant un pincement
   const hideTimer = useRef(null)
   const scrollRef = useRef(null)
   const zoomRef   = useRef(1)
+  const isMobile  = useMobile()
   const total     = pages.length
   const atStart   = page === 0 && chapterIndex === 0
   const atEnd     = page === total - 1 && chapterIndex === totalChapters - 1
@@ -155,27 +159,81 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
     return () => window.removeEventListener('keydown', fn)
   }, [next, prev, onClose, showBars, isRtl, isWebtoon])
 
-  const onTouchStart = e => { touchX.current = e.touches[0].clientX; showBars() }
-  const onTouchEnd   = e => {
+  const touchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+
+  const onTouchStart = e => {
+    if (e.touches.length === 2 && !isWebtoon) {
+      // début d'un pincement pour zoomer
+      pinchRef.current = { startDist: touchDist(e.touches), startZoom: zoomRef.current }
+      touchX.current = null
+      return
+    }
+    touchX.current = e.touches[0].clientX
+    touchY.current = e.touches[0].clientY
+    showBars()
+  }
+
+  const onTouchMove = e => {
+    if (pinchRef.current && e.touches.length === 2) {
+      e.preventDefault()
+      const ratio = touchDist(e.touches) / pinchRef.current.startDist
+      setZoom(clampZoom(pinchRef.current.startZoom * ratio))
+    }
+  }
+
+  const onTouchEnd = e => {
+    if (pinchRef.current) { pinchRef.current = null; return }
     if (touchX.current === null) return
     const dx = e.changedTouches[0].clientX - touchX.current
-    if (Math.abs(dx) > 40 && !isWebtoon) {
-      // RTL: swipe left (dx<0) = next page, swipe right = prev
-      // LTR: swipe right (dx>0) = next page, swipe left = prev
-      isRtl ? (dx < 0 ? next() : prev()) : (dx > 0 ? next() : prev())
-    }
+    const dy = e.changedTouches[0].clientY - touchY.current
+    const sx = touchX.current
     touchX.current = null
+    if (isWebtoon || zoom !== 1) return  // en webtoon ou image zoomée : laisser le scroll/pan natif
+
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      // swipe horizontal — RTL: gauche=suiv / LTR: droite=suiv
+      isRtl ? (dx < 0 ? next() : prev()) : (dx > 0 ? next() : prev())
+      return
+    }
+    // tap simple (pas de glissé) : zones tactiles gauche/droite, centre = barres
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
+      const w = window.innerWidth || 1
+      if (sx < w * 0.30)      { isRtl ? next() : prev(); showBars() }
+      else if (sx > w * 0.70) { isRtl ? prev() : next(); showBars() }
+      else                    { setBarsVisible(v => !v) }
+    }
   }
 
   const barStyle = { transition: 'opacity 0.35s ease', opacity: barsVisible ? 1 : 0, pointerEvents: barsVisible ? 'auto' : 'none' }
 
   return (
     <div
+      className="mr-root"
       style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#0a0a0a', display: 'flex', flexDirection: 'column' }}
       onMouseMove={showBars}
     >
+      <style>{`
+        .mr-root { padding-top: env(safe-area-inset-top); }
+        .mr-scroll { overscroll-behavior: contain; }
+        @media (max-width: 768px) {
+          .mr-topbar { padding: 7px 10px !important; gap: 6px !important; row-gap: 6px !important; }
+          .mr-title { font-size: 13px !important; }
+          /* sélecteur de direction : icône seule pour gagner de la place */
+          .mr-dir-label { display: none !important; }
+          .mr-dir-btn { padding: 8px 12px !important; }
+          .mr-chapbtns { gap: 6px !important; }
+          .mr-chapbtns button { padding: 8px 11px !important; min-height: 40px; }
+          /* boutons de bas de barre : cibles tactiles >=44px */
+          .mr-navbtn { padding: 12px 18px !important; min-height: 44px; }
+          /* barre de progression : zone de tap plus large */
+          .mr-progress-hit { padding: 14px 0 !important; }
+          .mr-bottombar { padding: 8px 12px env(safe-area-inset-bottom) !important; }
+        }
+        /* la barre de progression a une grande zone de tap mais reste visuellement fine */
+        .mr-progress-hit { display: flex; align-items: center; }
+      `}</style>
       {/* ── Top bar ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(12,12,14,0.97)', flexShrink: 0, backdropFilter: 'blur(14px)', gap: 8, flexWrap: 'wrap', ...barStyle }}>
+      <div className="mr-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(12,12,14,0.97)', flexShrink: 0, backdropFilter: 'blur(14px)', gap: 8, flexWrap: 'wrap', ...barStyle }}>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.11)', borderRadius: 8, color: '#fff', cursor: 'pointer', padding: '6px 10px', fontSize: 18, lineHeight: 1, transition: 'background .15s' }}
@@ -183,7 +241,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
           >✕</button>
           <div>
-            <div style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{chapter.emoji} Ch.{chapter.num}</div>
+            <div className="mr-title" style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{chapter.emoji} Ch.{chapter.num}</div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)' }}>
               {isWebtoon
                 ? `Webtoon · ${Math.round(webtoonPct * 100)}%`
@@ -196,6 +254,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
         <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
           {DIRS.map(d => (
             <button
+              className="mr-dir-btn"
               key={d.key} onClick={() => setDir(d.key)} title={d.label}
               style={{
                 padding: '6px 14px', border: 'none', cursor: 'pointer',
@@ -206,12 +265,12 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
               }}
             >
               <span style={{ fontSize: 14 }}>{d.icon}</span>
-              {d.label.toUpperCase()}
+              <span className="mr-dir-label">{d.label.toUpperCase()}</span>
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+        <div className="mr-chapbtns" style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <button
             onClick={handleMarkRead} disabled={markedRead}
             style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: markedRead ? 'default' : 'pointer', border: `1px solid ${markedRead ? 'rgba(52,211,153,0.4)' : 'rgba(52,211,153,0.22)'}`, background: markedRead ? 'rgba(52,211,153,0.18)' : 'rgba(52,211,153,0.07)', color: markedRead ? '#34d399' : 'rgba(52,211,153,0.65)', transition: 'all 0.15s' }}
@@ -223,7 +282,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
 
       {/* ── Contenu ── */}
       {isWebtoon ? (
-        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: '#111' }}
+        <div ref={scrollRef} className="mr-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: '#111', WebkitOverflowScrolling: 'touch' }}
           onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         >
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -251,8 +310,8 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
           </div>
         </div>
       ) : (
-        <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}
-          onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+        <div ref={scrollRef} className="mr-scroll" style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', touchAction: zoom !== 1 ? 'pan-x pan-y' : 'pan-y', WebkitOverflowScrolling: 'touch' }}
+          onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         >
           <div style={{ position: 'relative', width: '100%', maxWidth: Math.round(850 * zoom), minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'max-width 0.15s ease' }}>
             {!imgLoaded && !imgError && (
@@ -285,7 +344,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
 
       {/* ── Bottom bar ── */}
       {isWebtoon ? (
-        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', background: 'rgba(12,12,14,0.97)', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, backdropFilter: 'blur(14px)', gap: 12, ...barStyle }}>
+        <div className="mr-bottombar" style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', background: 'rgba(12,12,14,0.97)', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, backdropFilter: 'blur(14px)', gap: 12, ...barStyle }}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', flexShrink: 0 }}>Scroll</span>
           <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ height: '100%', background: themeColor, borderRadius: 2, width: `${webtoonPct * 100}%`, transition: 'width 0.3s' }} />
@@ -293,14 +352,16 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', flexShrink: 0, minWidth: 36, textAlign: 'right' }}>{Math.round(webtoonPct * 100)}%</span>
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', background: 'rgba(12,12,14,0.97)', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, backdropFilter: 'blur(14px)', gap: 12, ...barStyle }}>
+        <div className="mr-bottombar" style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', background: 'rgba(12,12,14,0.97)', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, backdropFilter: 'blur(14px)', gap: 12, ...barStyle }}>
           <button
+            className="mr-navbtn"
             onClick={isRtl ? next : prev} disabled={isRtl ? atEnd : atStart}
             style={{ padding: '10px 20px', borderRadius: 10, border: 'none', cursor: (isRtl ? atEnd : atStart) ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, background: (isRtl ? atEnd : atStart) ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.09)', color: (isRtl ? atEnd : atStart) ? 'rgba(255,255,255,0.18)' : '#fff', flexShrink: 0 }}
           >{isRtl ? '← Suiv.' : '← Préc.'}</button>
 
           <div
-            style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden', cursor: 'pointer', direction: isRtl ? 'rtl' : 'ltr' }}
+            className="mr-progress-hit"
+            style={{ flex: 1, cursor: 'pointer' }}
             onClick={e => {
               if (!total) return
               const r = e.currentTarget.getBoundingClientRect()
@@ -309,18 +370,21 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
               changePage(Math.floor(frac * total))
             }}
           >
-            <div style={{ height: '100%', background: themeColor, borderRadius: 2, width: total ? `${((page + 1) / total) * 100}%` : '0%', transition: 'width 0.2s' }} />
+            <div style={{ flex: 1, height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', direction: isRtl ? 'rtl' : 'ltr', width: '100%' }}>
+              <div style={{ height: '100%', background: themeColor, borderRadius: 3, width: total ? `${((page + 1) / total) * 100}%` : '0%', transition: 'width 0.2s' }} />
+            </div>
           </div>
 
           <button
+            className="mr-navbtn"
             onClick={isRtl ? prev : next} disabled={isRtl ? atStart : atEnd}
             style={{ padding: '10px 20px', borderRadius: 10, border: 'none', cursor: (isRtl ? atStart : atEnd) ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, background: (isRtl ? atStart : atEnd) ? 'rgba(255,255,255,0.05)' : themeColor, color: '#fff', flexShrink: 0 }}
           >{isRtl ? 'Préc. →' : 'Suiv. →'}</button>
         </div>
       )}
 
-      {/* Hint clavier (visible 3s au lancement) */}
-      {!isWebtoon && barsVisible && (
+      {/* Hint clavier (visible 3s au lancement) — masqué sur mobile (pas de clavier) */}
+      {!isWebtoon && barsVisible && !isMobile && (
         <div style={{ position: 'absolute', bottom: 70, right: 16, display: 'flex', gap: 8, opacity: 0.45, pointerEvents: 'none' }}>
           {(isRtl
             ? [['←', 'Page suiv.'], ['→', 'Page préc.']]
