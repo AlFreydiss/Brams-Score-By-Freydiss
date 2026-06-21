@@ -89,7 +89,13 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
             if (stop) return
             if (event === 'reaction') { reactionCbsRef.current.forEach((cb) => { try { cb(payload) } catch {} }); return }
             if (event === 'reveal_step') { setRevealStep(payload || null); return }
-            refresh() // player_submitted / phase_change / host_migrated
+            // Soumission d'un AUTRE joueur : on incrémente le compteur affiché (X/N ont envoyé).
+            // Sans ça, submittedSeats ne contenait QUE mon siège → le compteur restait bloqué à 1.
+            if (event === 'player_submitted') {
+              if (payload && payload.seat != null) setSubmittedSeats((s) => { const n = new Set(s); n.add(payload.seat); return n })
+              return
+            }
+            refresh() // phase_change / host_migrated
           },
         })
         if (stop) { try { sub() } catch {}; try { channel.leave() } catch {}; return }
@@ -208,6 +214,21 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, me?.seat, room?.status, room?.current_round, spectator])
 
+  // Compteur « X/N ont envoyé » fiable côté NON-hôtes : sync léger (2,5s) sur la vérité
+  // serveur. Les broadcasts player_submitted peuvent manquer (onglet throttlé, réseau) →
+  // sans ça le compteur restait figé. L'hôte l'a déjà via sa boucle.
+  useEffect(() => {
+    if (isHost || spectator || !me) return
+    if (!['writing', 'drawing', 'describing'].includes(room?.status)) return
+    let stop = false
+    const id = setInterval(async () => {
+      const { round, seats } = await apiSubmittedSeats(code)
+      if (!stop && round === room?.current_round) setSubmittedSeats(new Set(seats))
+    }, 2500)
+    return () => { stop = true; clearInterval(id) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, spectator, me?.seat, room?.status, room?.current_round, code])
+
   // ── Actions exposées (token implicite via le code) ────────────────────────
   const start = useCallback(async (settings) => {
     setError('')
@@ -265,6 +286,8 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
       if (!['writing', 'drawing', 'describing'].includes(room.status)) return
       const { round, seats } = await apiSubmittedSeats(code)
       if (round !== room.current_round) return
+      // Vérité serveur → affichage (rattrape un broadcast player_submitted manqué).
+      setSubmittedSeats(new Set(seats))
       const decision = shouldAdvance(
         { status: room.status, phaseEndsAtMs, current_round: round },
         connectedPlayersRef.current, seats, serverNowMs(),
