@@ -57,7 +57,7 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
   const connected = useMemo(() => players.filter((p) => p.connected !== false), [players])
   const radius = Math.min(150, 90 + connected.length * 6)
   const sortedPlayers = connected
-  const everyoneReady = sortedPlayers.length > 0 && sortedPlayers.every((p) => p.is_ready || p.is_host)
+  const everyoneReady = sortedPlayers.length > 1 && sortedPlayers.every((p) => p.is_ready || p.is_host)
   const readyCount = sortedPlayers.filter((p) => p.is_ready || p.is_host).length
 
   const settings = () => {

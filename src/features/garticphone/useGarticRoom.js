@@ -239,7 +239,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   }, [code, refresh])
 
   const submit = useCallback(async (content, round) => {
-    const out = await submitPage(code, content, Number.isInteger(round) ? round : room?.current_round)
+    const rnd = Number.isInteger(round) ? round : room?.current_round
+    let out = await submitPage(code, content, rnd)
+    // Erreur réseau transitoire (timeout/fail) → 1 retry. gartic_submit est idempotent
+    // par (carnet, page, manche) : re-soumettre le même contenu ne crée jamais de doublon.
+    // Sinon un glitch réseau perdait la soumission en silence (surtout l'auto-submit à 0s).
+    if (out.error === 'fail' || out.error === 'timeout') out = await submitPage(code, content, rnd)
     if (!out.error) {
       setMySubmitted(true)
       if (me?.seat != null) setSubmittedSeats((s) => new Set(s).add(me.seat))

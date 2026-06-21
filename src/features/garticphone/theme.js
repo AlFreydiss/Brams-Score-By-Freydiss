@@ -93,6 +93,7 @@ export const KEYFRAMES = `
 @keyframes bp-seat-in{from{opacity:0;transform:translate(-50%,-50%) translate(var(--bp-sx,0),var(--bp-sy,0)) scale(.55)}to{opacity:1;transform:translate(-50%,-50%) translate(var(--bp-sx,0),var(--bp-sy,0)) scale(1)}}
 @keyframes bp-ready-pop{0%{transform:scale(0) rotate(-40deg)}60%{transform:scale(1.35) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
 @keyframes bp-halo{0%,100%{opacity:.4}50%{opacity:.85}}
+@keyframes bp-focus{0%{filter:blur(12px);opacity:.55;transform:scale(1.02)}100%{filter:blur(0);opacity:1;transform:scale(1)}}
 @keyframes bp-glowpulse{0%,100%{box-shadow:0 14px 34px rgba(168,122,22,0.26)}50%{box-shadow:0 14px 44px rgba(215,168,41,0.55),0 0 0 1px rgba(231,194,90,0.4)}}
 @media (prefers-reduced-motion: reduce){*[data-bp-anim]{animation:none!important}}
 @media (prefers-reduced-motion: reduce){.bp-splash,.bp-reveal-scene,.bp-confetti-pc,.bp-seat,.bp-buildup{animation:none!important}}

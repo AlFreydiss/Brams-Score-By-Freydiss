@@ -77,7 +77,7 @@ function PageCard({ page, players, kind, climax }) {
       </div>
       {page?.type === 'drawing' ? (
         page.content ? (
-          <img loading="lazy" decoding="async" src={page.content} alt="" style={{ display: 'block', width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: `1px solid ${C.hairTop}`, background: '#fff' }} />
+          <img key={page.content} loading="lazy" decoding="async" src={page.content} alt="" data-bp-anim style={{ display: 'block', width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: `1px solid ${C.hairTop}`, background: '#fff', animation: 'bp-focus .7s ease-out both' }} />
         ) : (
           <div style={{ borderRadius: 14, background: '#fff', color: '#999', minHeight: 200, display: 'grid', placeItems: 'center' }}>Dessin manquant</div>
         )
@@ -103,6 +103,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
   const [reactCounts, setReactCounts] = useState({}) // réactions cumulées par album (book → n)
   const lastBurstRef = useRef(-1)
   const finaleRef = useRef(false)
+  const prevLeaderRef = useRef(null)
   // Vote « coup de cœur » : un bulletin par votant (clé = from), réécrasable s'il
   // change d'avis. On stocke le book (siège auteur, stable) plutôt que l'index
   // positionnel pour rester robuste si la liste filtrée diffère entre pairs.
@@ -262,6 +263,19 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
     burst(); setTimeout(burst, 240)
     playSound('win')
   }, [finished, burst])
+
+  // Détrônement : si le carnet en tête du vote change en direct, salve + fanfare.
+  // (le 1er leader détecté ne déclenche rien — c'est l'installation, pas un renversement.)
+  useEffect(() => {
+    if (!finished) return
+    const leader = voteTally[0]
+    if (!leader || leader.count === 0) return
+    if (prevLeaderRef.current === null) { prevLeaderRef.current = leader.book; return }
+    if (leader.book !== prevLeaderRef.current) {
+      prevLeaderRef.current = leader.book
+      burst(); playSound('win')
+    }
+  }, [finished, voteTally, burst])
 
   const share = async () => {
     if (!album) return

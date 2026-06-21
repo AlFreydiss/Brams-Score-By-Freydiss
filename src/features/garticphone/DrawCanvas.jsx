@@ -165,7 +165,9 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   // Barre d'espace maintenue = mode déplacement (panoramique) quand on est zoomé.
   useEffect(() => {
     const isField = () => { const t = document.activeElement?.tagName; return t === 'INPUT' || t === 'TEXTAREA' }
-    const kd = (e) => { if (e.code === 'Space' && !isField()) { e.preventDefault(); spaceRef.current = true; if (wrapRef.current && viewRef.current.zoom > 1 && !panRef.current) wrapRef.current.style.cursor = 'grab' } }
+    // N'intercepte l'espace QUE si on est zoomé (pan possible) : sinon on laisse le
+    // comportement natif (scroll page / activation du bouton focalisé) intact.
+    const kd = (e) => { if (e.code === 'Space' && !isField() && viewRef.current.zoom > 1) { e.preventDefault(); spaceRef.current = true; if (wrapRef.current && !panRef.current) wrapRef.current.style.cursor = 'grab' } }
     const ku = (e) => { if (e.code === 'Space') { spaceRef.current = false; if (wrapRef.current && !panRef.current) wrapRef.current.style.cursor = '' } }
     window.addEventListener('keydown', kd); window.addEventListener('keyup', ku)
     return () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku) }
@@ -249,6 +251,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
       try { localRef.current.setPointerCapture?.(e.pointerId) } catch {}
       return
     }
+    // Souris : bouton gauche uniquement (le droit/milieu ne doit pas peindre de point).
+    if (e.pointerType === 'mouse' && e.button !== 0) return
     e.preventDefault()
     const p = pos(e)
     if (tool === 'fill') { floodFill(p.x, p.y, color); snapshot(); saveDraft(); return }
@@ -292,7 +296,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     lastMidRef.current = mid
   }
 
-  const onUp = () => {
+  const onUp = (e) => {
+    try { if (e && e.pointerId != null) localRef.current?.releasePointerCapture?.(e.pointerId) } catch {}
     if (panRef.current) {
       panRef.current = null
       if (wrapRef.current) wrapRef.current.style.cursor = spaceRef.current && viewRef.current.zoom > 1 ? 'grab' : ''
