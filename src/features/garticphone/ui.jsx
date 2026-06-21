@@ -1,4 +1,4 @@
-// Brams Phone — primitives UI partagées (inline styles). Timer, PlayerChip,
+// Freydiss Phone — primitives UI partagées (inline styles). Timer, PlayerChip,
 // PhaseFrame (cadre de phase avec consigne + minuteur + bouton), Btn.
 import { type, fonts } from '../../styles/typography.js'
 import { C, GRAD, alpha, panel } from './theme.js'

@@ -1,4 +1,4 @@
-// Brams Phone — salle d'attente (pont du navire). Code partageable, joueurs autour
+// Freydiss Phone — salle d'attente (pont du navire). Code partageable, joueurs autour
 // d'une table de capitaine, réglages hôte, bouton Démarrer. Join tardif = spectateur.
 import { useMemo, useState } from 'react'
 import { type, fonts } from '../../styles/typography.js'
@@ -96,7 +96,7 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
             <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: radius * 1.1, height: radius * 1.1, borderRadius: '50%', border: `1px dashed ${C.hair}`, background: `radial-gradient(circle, ${alpha(C.sea, 0.12)}, transparent 70%)`, display: 'grid', placeItems: 'center' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 30 }} data-bp-anim>🏴‍☠️</div>
-                <div style={{ ...type.eyebrow, color: C.gold, marginTop: 4 }}>Brams Phone</div>
+                <div style={{ ...type.eyebrow, color: C.gold, marginTop: 4 }}>Freydiss Phone</div>
               </div>
             </div>
             {sortedPlayers.map((p, i) => (

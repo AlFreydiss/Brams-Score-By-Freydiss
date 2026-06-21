@@ -1,4 +1,4 @@
-// Brams Phone — phase DESCRIPTION. Montre le dessin du round précédent (URL R2),
+// Freydiss Phone — phase DESCRIPTION. Montre le dessin du round précédent (URL R2),
 // textarea légende, minuteur, Submit. Auto-submit à 0s.
 import { useEffect, useRef, useState } from 'react'
 import { type, fonts } from '../../styles/typography.js'

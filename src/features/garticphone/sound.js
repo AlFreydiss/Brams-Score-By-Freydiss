@@ -1,4 +1,4 @@
-// Brams Phone — sons synthétisés (Web Audio, zéro asset) + haptique, avec mute
+// Freydiss Phone — sons synthétisés (Web Audio, zéro asset) + haptique, avec mute
 // persistant. Un seul AudioContext partagé, repris à chaque jeu (le navigateur le
 // suspend tant qu'il n'y a pas eu de geste utilisateur — nos blips partent dès le
 // premier clic Créer/Rejoindre/Prêt). Le même toggle coupe sons ET vibrations.

@@ -1,4 +1,4 @@
-// Brams Phone — phase ÉCRITURE (round 0). Textarea pour la phrase de départ,
+// Freydiss Phone — phase ÉCRITURE (round 0). Textarea pour la phrase de départ,
 // minuteur, Submit. Auto-submit à 0s (même vide → l'hôte comblera).
 import { useEffect, useRef, useState } from 'react'
 import { type, fonts } from '../../styles/typography.js'

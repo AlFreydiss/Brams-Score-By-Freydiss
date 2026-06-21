@@ -1,4 +1,4 @@
-// ── Brams Phone : salons multijoueur temps réel ─────────────────────────────
+// ── Freydiss Phone : salons multijoueur temps réel ─────────────────────────────
 // Calque sur src/lib/undercoverRooms.js : REST DIRECT (anti-hang) + postgres_changes.
 // Tables gartic_rooms / gartic_players / gartic_pages. Host-authoritative par
 // convention ; transitions de phase via RPC (horloge serveur). Identité = user_id

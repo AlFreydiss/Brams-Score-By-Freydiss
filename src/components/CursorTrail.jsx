@@ -108,7 +108,7 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       // En boutique, quand on survole une traînée pour l'essayer, on masque la
       // traînée GLOBALE équipée → on voit uniquement l'aperçu de celle qu'on regarde.
       if (isGlobal && document.body.dataset.trailPreview === '1') return
-      // Phase dessin Brams Phone : pas de traînée par-dessus le canvas.
+      // Phase dessin Freydiss Phone : pas de traînée par-dessus le canvas.
       if (isGlobal && document.body.dataset.drawOpen === 'true') return
       const x = event.clientX * dpr
       const y = event.clientY * dpr

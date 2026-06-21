@@ -1,4 +1,4 @@
-// Brams Phone — tokens de style partagés (One Piece sombre maritime + or "avis de
+// Freydiss Phone — tokens de style partagés (One Piece sombre maritime + or "avis de
 // recherche"). Inline-styles only ; on réutilise type/fonts de styles/typography.
 // Aucune dépendance Tailwind / CSS modules.
 

@@ -657,7 +657,7 @@ export default function App() {
         <Route path="/tournoi/salon" element={<PageLayout><TournamentRoomPage /></PageLayout>} />
         <Route path="/undercover"    element={<PageLayout><UndercoverPage /></PageLayout>} />
 
-        {/* Brams Phone (Gartic Phone) — écran de jeu immersif (hors PageLayout) */}
+        {/* Freydiss Phone (Gartic Phone) — écran de jeu immersif (hors PageLayout) */}
         <Route path="/brams-phone"        element={<GarticErrorBoundary><GameLayout><BramsPhonePage /></GameLayout></GarticErrorBoundary>} />
         <Route path="/brams-phone/:code"  element={<GarticErrorBoundary><GameLayout><BramsPhonePage /></GameLayout></GarticErrorBoundary>} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />

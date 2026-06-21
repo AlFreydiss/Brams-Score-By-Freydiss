@@ -1,4 +1,4 @@
-// Brams Phone — REVEAL. Albums reconstruits, lecture cinématique page par page
+// Freydiss Phone — REVEAL. Albums reconstruits, lecture cinématique page par page
 // (flip + flash doré), auteur + n° de page. L'HÔTE pilote (broadcast reveal_step) →
 // tout le monde voit la même page ; autoplay réglable. Réactions emojis flottantes
 // broadcastées à tous (canal room). Carte récap finale partageable (canvas → PNG).
@@ -37,7 +37,7 @@ async function renderAlbumPng(album, players) {
   const ctx = cv.getContext('2d')
   ctx.fillStyle = '#0a1018'; ctx.fillRect(0, 0, cw, h)
   ctx.fillStyle = '#d7a829'; ctx.font = '800 30px ' + fonts.display
-  ctx.fillText('🏴‍☠️ Brams Phone — Album', pad, pad + 30)
+  ctx.fillText('🏴‍☠️ Freydiss Phone — Album', pad, pad + 30)
   ctx.fillStyle = 'rgba(243,239,226,0.5)'; ctx.font = '500 14px ' + fonts.body
   ctx.fillText(`Carnet de ${authorName(cards[0])}`, pad, pad + 52)
   let y = pad + 70
@@ -260,7 +260,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       if (navigator.share && navigator.canShare) {
         const blob = await (await fetch(url)).blob()
         const file = new File([blob], a.download, { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Brams Phone' }).catch(() => {})
+        if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Freydiss Phone' }).catch(() => {})
       }
     } catch {}
     setSharing(false)

@@ -1,4 +1,4 @@
-// Brams Phone — décisions de la boucle hôte (logique PURE, testable).
+// Freydiss Phone — décisions de la boucle hôte (logique PURE, testable).
 // L'hôte fait avancer la partie quand le temps est écoulé OU quand tous les
 // joueurs connectés ont soumis leur page du round courant.
 

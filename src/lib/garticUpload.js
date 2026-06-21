@@ -1,4 +1,4 @@
-// Brams Phone : upload du dessin (canvas → PNG → R2). Réutilise le flux presign
+// Freydiss Phone : upload du dessin (canvas → PNG → R2). Réutilise le flux presign
 // de TierListPage (/api/r2-presign). ⚠️ Exige un compte connecté (token) — les
 // invités peuvent jouer les phases texte mais pas uploader un dessin.
 import { getAccessToken } from './supabaseRest.js'

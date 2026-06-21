@@ -1,4 +1,4 @@
-// Brams Phone — phase DESSIN. Affiche la consigne (texte du round précédent),
+// Freydiss Phone — phase DESSIN. Affiche la consigne (texte du round précédent),
 // le canvas, le minuteur. Submit = upload R2 puis submit(url). Auto-submit à 0s.
 import { useEffect, useRef, useState } from 'react'
 import { type } from '../../styles/typography.js'

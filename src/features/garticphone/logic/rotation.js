@@ -1,4 +1,4 @@
-// Brams Phone — rotation des carnets (logique PURE, testée unitairement).
+// Freydiss Phone — rotation des carnets (logique PURE, testée unitairement).
 // Sièges 0..n-1. Le carnet b (auteur = siège b) est au siège (b+r)%n au round r.
 // Donc le siège s travaille le carnet (s-r+n)%n au round r.
 

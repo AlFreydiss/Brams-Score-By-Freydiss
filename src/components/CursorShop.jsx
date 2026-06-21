@@ -199,7 +199,7 @@ function CustomCursorOverlay({ id, emoji, glow }) {
 // ─────────────────────────────────────────────────────────────────────────────
 export function GlobalCursorLayer() {
   const [equipped, setEquipped] = useState(null)
-  // Phase dessin Brams Phone : on rend le curseur natif au canvas (pas de curseur custom/none).
+  // Phase dessin Freydiss Phone : on rend le curseur natif au canvas (pas de curseur custom/none).
   const [drawOpen, setDrawOpen] = useState(() => typeof document !== 'undefined' && document.body.dataset.drawOpen === 'true')
   useEffect(() => {
     const upd = () => setDrawOpen(document.body.dataset.drawOpen === 'true')

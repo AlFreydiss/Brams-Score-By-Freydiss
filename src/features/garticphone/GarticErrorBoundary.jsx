@@ -1,6 +1,6 @@
 import { Component } from 'react'
 
-// Boundary LOCAL au jeu Brams Phone : un throw au render dans un composant gartic
+// Boundary LOCAL au jeu Freydiss Phone : un throw au render dans un composant gartic
 // affiche une carte récupérable au lieu de remonter jusqu'au boundary racine
 // (qui peut déclencher le reload-loop chunk). Volontairement AUCUNE logique
 // chunk-reload ici — on montre la carte, on ne recharge pas tout seul.

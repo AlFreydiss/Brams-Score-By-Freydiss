@@ -1,4 +1,4 @@
-// Brams Phone — moteur de dessin canvas. Pointer events (souris + tactile fluide),
+// Freydiss Phone — moteur de dessin canvas. Pointer events (souris + tactile fluide),
 // 4 tailles de pinceau, palette 16 couleurs + sélecteur, gomme, pot de peinture
 // (flood fill), pipette, annuler/refaire/effacer (pile de snapshots). Fond blanc
 // (PNG non transparent). Le canvas est exposé au parent via canvasRef.

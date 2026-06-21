@@ -1,4 +1,4 @@
-// Brams Phone — point d'entrée de route. Lit :code de l'URL (sinon landing
+// Freydiss Phone — point d'entrée de route. Lit :code de l'URL (sinon landing
 // créer/rejoindre). Identité via useAuth + guestId. Pilote useGarticRoom et route
 // selon room.status vers la phase. Gère loading / erreur / spectateur.
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -19,7 +19,7 @@ import BarreJeu from '../../components/BarreJeu.jsx'
 
 const Shell = ({ children }) => (
   <div className="bp-page" style={{ minHeight: '100vh', background: C.bg, color: C.text, paddingTop: 0, paddingBottom: 56, position: 'relative', overflowX: 'hidden', fontFamily: fonts.body }}>
-    <BarreJeu titre="Brams Phone" />
+    <BarreJeu titre="Freydiss Phone" />
     <style>{KEYFRAMES}</style>
     <style>{`
       .bp-page :focus-visible{ outline:2px solid ${C.gold}; outline-offset:2px; border-radius:10px }
@@ -149,7 +149,7 @@ function Landing({ identity, onCreated }) {
             Multijoueur · temps réel
           </div>
           <h1 style={{ ...type.hero, color: C.text, margin: '0 0 16px' }}>
-            Brams <span style={{ background: GRAD.goldText, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Phone</span>
+            Freydiss <span style={{ background: GRAD.goldText, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Phone</span>
           </h1>
           <p style={{ ...type.lead, color: C.textMut, margin: '0 0 28px', maxWidth: 520 }}>
             Écris une phrase, fais-la dessiner, devine le dessin… et regarde la chaîne dériver façon Gartic Phone. Entre potes, en direct.

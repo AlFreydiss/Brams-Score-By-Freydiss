@@ -1,4 +1,4 @@
-// Brams Phone — hook d'orchestration du salon (glue de la machine à états).
+// Freydiss Phone — hook d'orchestration du salon (glue de la machine à états).
 // Responsabilités : identité + join (token secret), abonnement realtime (gartic_rooms),
 // canal presence/broadcast (liveness + signaux basse latence), dérivation de ma tâche,
 // horloge serveur calibrée, heartbeat, boucle hôte (avance au timeout / quand tout
