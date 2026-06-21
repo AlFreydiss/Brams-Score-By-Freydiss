@@ -112,15 +112,14 @@ export async function fetchPlayers(code) { return (await roomState(code))?.playe
 // manquant ». gartic_submit tolère round == current_round ou current_round-1.
 export async function submitPage(code, content, round) {
   const tok = getToken(code); if (!tok) return { error: 'no_token' }
-  const base = { p_code: String(code), p_token: tok, p_content: content ?? '' }
-  if (Number.isInteger(round)) {
-    // chemin migré : passe la manche figée. Si la fonction DB n'a pas encore le param p_round
-    // (migration pas encore appliquée → 404 PostgREST, data null), on retombe sur l'ancienne
-    // signature pour ne JAMAIS bloquer les soumissions pendant la fenêtre de déploiement.
-    const r = await rpc('gartic_submit', { ...base, p_round: round })
-    if (r.data != null) { const out = Array.isArray(r.data) ? r.data[0] : r.data; return out?.ok ? { error: null } : { error: out?.error || 'fail' } }
-  }
-  const { data } = await rpc('gartic_submit', base)
+  // TOUJOURS envoyer p_round (entier figé OU null). `gartic_submit` est surchargée en DB
+  // (3-arg ancienne + 4-arg avec p_round). SANS p_round, PostgREST ne sait pas choisir →
+  // erreur 300 PGRST203 → la soumission échoue en silence (contenu perdu, placeholder "—").
+  // En passant la clé p_round (même null), la signature 4-arg est choisie sans ambiguïté ;
+  // côté SQL p_round null = manche courante.
+  const p_round = Number.isInteger(round) ? round : null
+  const { data, error } = await rpc('gartic_submit', { p_code: String(code), p_token: tok, p_content: content ?? '', p_round })
+  if (error) return { error }
   const out = Array.isArray(data) ? data[0] : data
   return out?.ok ? { error: null } : { error: out?.error || 'fail' }
 }

@@ -14,6 +14,7 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const submittedRef = useRef(false)
+  const lastTryRef = useRef(0) // throttle des retries auto
   // Round figé au montage de CETTE phase dessin. L'upload R2 est lent : si l'hôte avance
   // pendant l'envoi, le serveur écrirait la page sur la mauvaise manche → « Dessin manquant ».
   // (DrawPhase remonte à chaque phase via key={status}, donc ce ref = la bonne manche.)
@@ -33,16 +34,17 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
   const doSubmit = async (auto) => {
     if (submittedRef.current || busy) return
     if (!canvasRef.current) return
+    if (auto) { const now = Date.now(); if (now - lastTryRef.current < 1200) return; lastTryRef.current = now }
     setBusy(true); setErr('')
     try {
-      const url = await uploadDrawing(canvasRef.current, room.code)
+      const url = await uploadDrawing(canvasRef.current, room.code) // ne throw plus (fallback inline)
+      const out = await submit(url, drawRoundRef.current)
+      // On NE marque "envoyé" QUE si la soumission a réussi (sinon le dessin serait perdu en silence).
+      if (out && out.error) { setErr('Envoi raté — on réessaie…'); return }
       submittedRef.current = true
-      await submit(url, drawRoundRef.current)
       try { if (draftKey) localStorage.removeItem(draftKey) } catch {}
     } catch (e) {
-      if (e?.code === 'login_required') setErr('Connecte-toi pour dessiner et envoyer.')
-      else setErr('Envoi du dessin impossible. Réessaie.')
-      if (auto) submittedRef.current = false // laisse l'hôte gérer le placeholder
+      setErr('Envoi du dessin impossible. Réessaie.')
     } finally {
       setBusy(false)
     }

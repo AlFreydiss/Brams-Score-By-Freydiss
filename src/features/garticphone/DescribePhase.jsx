@@ -11,7 +11,9 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
   const [loadingImg, setLoadingImg] = useState(true)
   const [text, setText] = useState(() => { try { return (draftKey && localStorage.getItem(draftKey)) || '' } catch { return '' } })
   const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
   const submittedRef = useRef(false)
+  const lastTryRef = useRef(0)
   // remaining live, lu dans le poll sans relancer l'effet à chaque tick.
   const remainingRef = useRef(remaining)
   remainingRef.current = remaining
@@ -65,9 +67,11 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
     if (submittedRef.current || busy) return
     const val = text.trim()
     if (!val && !auto) return
-    setBusy(true)
+    if (auto) { const now = Date.now(); if (now - lastTryRef.current < 1000) return; lastTryRef.current = now }
+    setBusy(true); setErr('')
+    const out = await submit(val || '—')
+    if (out && out.error) { setBusy(false); setErr('Envoi raté — on réessaie…'); return }
     submittedRef.current = true
-    await submit(val || '—')
     try { if (draftKey) localStorage.removeItem(draftKey) } catch {}
     setBusy(false)
   }
@@ -93,7 +97,7 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
         eyebrow="Que représente ce dessin ?"
         prompt="Devine la scène — le voisin la redessinera."
         remaining={remaining} total={total}
-        footer={<Btn variant="gold" disabled={busy || !text.trim()} onClick={() => doSubmit(false)}>{busy ? 'Envoi…' : 'Valider ma description'}</Btn>}
+        footer={<>{err && <span style={{ ...type.small, color: C.danger, marginRight: 'auto', alignSelf: 'center' }}>{err}</span>}<Btn variant="gold" disabled={busy || !text.trim()} onClick={() => doSubmit(false)}>{busy ? 'Envoi…' : 'Valider ma description'}</Btn></>}
       >
         <div style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.hairTop}`, background: '#fff', marginBottom: 14, minHeight: 200, display: 'grid', placeItems: 'center' }}>
           {img ? (

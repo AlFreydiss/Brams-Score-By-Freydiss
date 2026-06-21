@@ -15,7 +15,9 @@ const IDEAS = [
 export default function WritePhase({ remaining, total, mySubmitted, submit, submittedLabel, draftKey }) {
   const [text, setText] = useState(() => { try { return (draftKey && localStorage.getItem(draftKey)) || '' } catch { return '' } })
   const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
   const submittedRef = useRef(false)
+  const lastTryRef = useRef(0) // throttle des retries auto
   const [ph, setPh] = useState(() => IDEAS[Math.floor(Math.random() * IDEAS.length)])
 
   // Brouillon : persiste le texte (survit refresh/reco), purgé à la soumission.
@@ -28,9 +30,12 @@ export default function WritePhase({ remaining, total, mySubmitted, submit, subm
     if (submittedRef.current || busy) return
     const val = text.trim()
     if (!val && !auto) return
-    setBusy(true)
+    if (auto) { const now = Date.now(); if (now - lastTryRef.current < 1000) return; lastTryRef.current = now }
+    setBusy(true); setErr('')
+    const out = await submit(val || '—')
+    // Échec réseau : on NE marque PAS comme envoyé (brouillon conservé, retry possible / l'auto relance).
+    if (out && out.error) { setBusy(false); setErr('Envoi raté — on réessaie…'); return }
     submittedRef.current = true
-    await submit(val || '—')
     try { if (draftKey) localStorage.removeItem(draftKey) } catch {}
     setBusy(false)
   }
@@ -57,6 +62,7 @@ export default function WritePhase({ remaining, total, mySubmitted, submit, subm
         remaining={remaining} total={total}
         footer={<>
           <Btn variant="ghost" onClick={() => setPh(IDEAS[Math.floor(Math.random() * IDEAS.length)])} style={{ marginRight: 'auto' }}>🎲 Idée</Btn>
+          {err && <span style={{ ...type.small, color: C.danger, alignSelf: 'center' }}>{err}</span>}
           <Btn variant="gold" disabled={busy || !text.trim()} onClick={() => doSubmit(false)}>{busy ? 'Envoi…' : 'Valider ma phrase'}</Btn>
         </>}
       >

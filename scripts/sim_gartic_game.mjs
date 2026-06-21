@@ -81,7 +81,7 @@ for (let r = 0; r < N_PLAYERS; r++) {
   // 3b. Soumissions : content = P{seat}R{r}. AFK : on saute P4 au round 1.
   for (let seat = 0; seat < N_PLAYERS; seat++) {
     if (r === AFK_ROUND && seat === afkSeat) continue; // P4 AFK ce round
-    const sub = unwrap(await rpc('gartic_submit', { p_code: code, p_token: tokenBySeat[seat], p_content: `P${seat}R${r}` }));
+    const sub = unwrap(await rpc('gartic_submit', { p_code: code, p_token: tokenBySeat[seat], p_content: `P${seat}R${r}`, p_round: r }));
     ok(sub?.ok === true, `round ${r}: submit ok pour le siège ${seat} (P${seat}R${r})`);
   }
 
