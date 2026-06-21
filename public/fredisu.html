@@ -4510,7 +4510,7 @@ requestAnimationFrame(loop);
     const back=$('duoBack'); if(back) back.onclick=()=>{ leaveRoom(); if(typeof show==='function') show('sMenu') }
     $('duoCreate')&&($('duoCreate').onclick=createRoom)
     $('duoJoin')&&($('duoJoin').onclick=joinRoom)
-    $('duoLeave')&&($('duoLeave').onclick=leaveRoom)
+    $('duoLeave')&&($('duoLeave').onclick=()=>leaveRoom())
     $('duoReady')&&($('duoReady').onclick=()=>{ const meP=D.peers[D.me]||{}; trackSelf({ready:!meP.ready}); setTimeout(renderPeers,60) })
     $('duoCopy')&&($('duoCopy').onclick=()=>{ try{ navigator.clipboard.writeText(location.origin+'/fredisu.html#duo='+(D.room&&D.room.code)) }catch(e){} })
     document.querySelectorAll('#duoSeg button').forEach(btn=>btn.onclick=()=>{ if(!D.host)return; document.querySelectorAll('#duoSeg button').forEach(x=>x.classList.remove('on')); btn.classList.add('on'); D.segMs=+btn.dataset.s; try{ D.sb.from('osu_rooms').update({segment_ms:D.segMs}).eq('code',D.room.code) }catch(e){} })
