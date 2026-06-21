@@ -97,7 +97,9 @@ function PageCard({ page, players, kind, climax }) {
       </div>
       {page?.type === 'drawing' ? (
         page.content ? (
-          <img key={page.content} loading="lazy" decoding="async" src={page.content} alt="" data-bp-anim style={{ display: 'block', width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: `1px solid ${C.hairTop}`, background: '#fff', animation: 'bp-focus .7s ease-out both' }} />
+          <img key={page.content} loading="lazy" decoding="async" src={page.content} alt="" data-bp-anim
+            onError={(e) => { const el = e.currentTarget, s = el.src; if (!el.dataset.retried && /^https?:/.test(s)) { el.dataset.retried = '1'; setTimeout(() => { el.src = s + (s.includes('?') ? '&' : '?') + 'r=' + Date.now() }, 800) } }}
+            style={{ display: 'block', width: '100%', maxHeight: 460, objectFit: 'contain', borderRadius: 14, border: `1px solid ${C.hairTop}`, background: '#fff', animation: 'bp-focus .7s ease-out both' }} />
         ) : (
           <div style={{ borderRadius: 14, background: '#fff', color: '#999', minHeight: 200, display: 'grid', placeItems: 'center' }}>Dessin manquant</div>
         )
