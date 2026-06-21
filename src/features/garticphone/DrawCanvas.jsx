@@ -47,6 +47,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   // Modes "de fou" : symétrie miroir (axe vertical) + pinceau arc-en-ciel (teinte qui défile).
   const [symmetry, setSymmetry] = useState(false)
   const [rainbow, setRainbow] = useState(false)
+  const [grid, setGrid] = useState(false) // grille-repère (overlay visuel, jamais dessinée dans le PNG)
   const symRef = useRef(symmetry); symRef.current = symmetry
   const rainbowRef = useRef(rainbow); rainbowRef.current = rainbow
   const hueRef = useRef(0)
@@ -456,6 +457,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           border: '2px solid #1b1b1b', boxShadow: '0 0 0 1px rgba(255,255,255,0.85)',
           pointerEvents: 'none', opacity: 0, willChange: 'transform', zIndex: 2,
         }} />
+        {/* Grille-repère (aide à la composition — n'est jamais dessinée dans le PNG) */}
+        {grid && <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, backgroundImage: `linear-gradient(${alpha(C.ink, 0.13)} 1px, transparent 1px), linear-gradient(90deg, ${alpha(C.ink, 0.13)} 1px, transparent 1px)`, backgroundSize: '10% 10%' }} />}
         {/* Axe de symétrie (repère visuel quand le mode miroir est actif) */}
         {symmetry && <div aria-hidden style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 0, borderLeft: `1px dashed ${alpha(C.gold, 0.55)}`, pointerEvents: 'none', zIndex: 1 }} />}
       </div>
@@ -521,6 +524,10 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
             border: `1px solid ${rainbow ? alpha(C.gold, 0.6) : C.hairSoft}`,
             background: rainbow ? 'linear-gradient(90deg,#e0524a,#e7b416,#3fb964,#3a6fd4,#7a52d4)' : 'rgba(255,255,255,0.04)',
           }}>🌈</button>
+          <button onClick={() => setGrid((g) => !g)} title="Grille-repère (n'apparaît pas dans le dessin)" className="bpc-btn" style={{
+            width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 18, display: 'grid', placeItems: 'center', color: C.text,
+            border: `1px solid ${grid ? alpha(C.gold, 0.6) : C.hairSoft}`, background: grid ? alpha(C.gold, 0.22) : 'rgba(255,255,255,0.04)',
+          }}>📐</button>
         </div>
 
         {/* Zoom (molette aussi) */}

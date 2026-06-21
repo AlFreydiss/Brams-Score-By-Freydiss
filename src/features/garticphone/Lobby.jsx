@@ -1,9 +1,10 @@
 // Freydiss Phone — salle d'attente (pont du navire). Code partageable, joueurs autour
 // d'une table de capitaine, réglages hôte, bouton Démarrer. Join tardif = spectateur.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { type, fonts } from '../../styles/typography.js'
 import { C, GRAD, alpha, panel, KEYFRAMES } from './theme.js'
 import { Btn } from './ui.jsx'
+import { playSound } from './sound.js'
 
 const DURATION_PRESETS = [
   { id: 'chill', label: 'Tranquille', writing: 80, drawing: 150, describing: 60 },
@@ -59,6 +60,13 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
   const sortedPlayers = connected
   const everyoneReady = sortedPlayers.length > 1 && sortedPlayers.every((p) => p.is_ready || p.is_host)
   const readyCount = sortedPlayers.filter((p) => p.is_ready || p.is_host).length
+
+  // Moment "tout le monde est prêt" : un cue sonore une seule fois à la bascule.
+  const wasReadyRef = useRef(false)
+  useEffect(() => {
+    if (everyoneReady && !wasReadyRef.current) playSound('reveal')
+    wasReadyRef.current = everyoneReady
+  }, [everyoneReady])
 
   const settings = () => {
     const d = DURATION_PRESETS.find((x) => x.id === preset) || DURATION_PRESETS[1]
@@ -144,6 +152,11 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
             </Btn>
           )}
 
+          {everyoneReady && (
+            <div data-bp-anim style={{ ...type.small, fontWeight: 800, color: C.ok, textAlign: 'center', padding: '8px 12px', borderRadius: 10, background: alpha(C.ok, 0.12), border: `1px solid ${alpha(C.ok, 0.3)}`, animation: 'bp-ready-pop .4s cubic-bezier(.2,1.2,.3,1)' }}>
+              🏴‍☠️ Équipage au complet — larguez les amarres !
+            </div>
+          )}
           <div style={{ ...type.small, color: everyoneReady ? C.ok : C.textMut, textAlign: 'center', marginBottom: -6 }}>{readyCount}/{sortedPlayers.length} prêts {everyoneReady ? '✓' : ''}</div>
 
           {isHost ? (

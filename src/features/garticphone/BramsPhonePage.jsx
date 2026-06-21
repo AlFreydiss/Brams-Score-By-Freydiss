@@ -284,6 +284,10 @@ function Room({ code, identity, navigate, copied, onCopy }) {
       <OfflineBanner />
       <CopiedToast show={copied} />
       <PhaseSplash phaseKey={splashPhase} />
+      {/* Urgence : vignette rouge pulsée sur les 5 dernières secondes (tant que je n'ai pas envoyé). */}
+      {!spectator && ['writing', 'drawing', 'describing'].includes(status) && !mySubmitted && remaining != null && remaining > 0 && remaining <= 5 && (
+        <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 55, pointerEvents: 'none', boxShadow: `inset 0 0 140px 24px ${alpha(C.danger, 0.55)}`, animation: 'bp-pulse .85s ease-in-out infinite' }} />
+      )}
       {/* Topbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
         <Btn variant="ghost" onClick={() => navigate('/brams-phone')} style={{ minHeight: 40, padding: '0 14px', fontSize: 13 }}>← Quitter</Btn>
