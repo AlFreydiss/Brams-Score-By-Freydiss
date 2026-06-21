@@ -477,7 +477,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           <span style={{ fontSize: 13, mixBlendMode: 'difference', color: '#fff' }}>🎨</span>
         </label>
 
-        {/* Tailles */}
+        {/* Tailles : presets rapides + slider pour un réglage fin (1–64 px) */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {SIZES.map((s) => (
             <button key={s} onClick={() => setSize(s)} title={`${s}px`} className="bpc-btn" style={{
@@ -488,6 +488,13 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
               <span style={{ width: Math.min(22, Math.round(8 + (s / 28) * 14)), height: Math.min(22, Math.round(8 + (s / 28) * 14)), borderRadius: '50%', background: C.text }} />
             </button>
           ))}
+          <input
+            type="range" min={1} max={64} value={size} aria-label="Taille du pinceau"
+            onChange={(e) => setSize(+e.target.value)}
+            className="bpc-size"
+            style={{ width: 120, accentColor: C.gold, cursor: 'pointer' }}
+          />
+          <span style={{ ...type.small, color: C.textMut, minWidth: 36, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{size}px</span>
         </div>
 
         {/* Outils */}
@@ -556,6 +563,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           .bpc-palette { grid-template-columns: repeat(8, 34px) !important; gap: 8px !important; }
           .bpc-swatch { width: 34px !important; height: 34px !important; border-radius: 9px !important; }
           .bpc-btn { min-width: 48px; min-height: 48px; }
+          .bpc-size { width: 150px !important; height: 30px; }
           .bpc-hist { margin-left: 0 !important; }
         }
       `}</style>
