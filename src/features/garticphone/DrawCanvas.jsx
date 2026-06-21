@@ -347,8 +347,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
         .bpc-wrap { overscroll-behavior: contain; }
         @media (hover: none) and (pointer: coarse) {
           .bpc-bar { gap: 10px; justify-content: center; }
-          .bpc-palette { grid-template-columns: repeat(8, 30px) !important; gap: 7px !important; }
-          .bpc-swatch { width: 30px !important; height: 30px !important; border-radius: 8px !important; }
+          .bpc-palette { grid-template-columns: repeat(8, 34px) !important; gap: 8px !important; }
+          .bpc-swatch { width: 34px !important; height: 34px !important; border-radius: 9px !important; }
           .bpc-btn { min-width: 48px; min-height: 48px; }
           .bpc-hist { margin-left: 0 !important; }
         }

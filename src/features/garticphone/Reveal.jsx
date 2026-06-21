@@ -102,6 +102,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
   const burstRef = useRef(null)
   const [reactCounts, setReactCounts] = useState({}) // réactions cumulées par album (book → n)
   const lastBurstRef = useRef(-1)
+  const finaleRef = useRef(false)
   // Vote « coup de cœur » : un bulletin par votant (clé = from), réécrasable s'il
   // change d'avis. On stocke le book (siège auteur, stable) plutôt que l'index
   // positionnel pour rester robuste si la liste filtrée diffère entre pairs.
@@ -165,8 +166,13 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       const dy = Math.sin(ang) * dist - 60 // léger biais vers le haut (gravité inversée façon feu d'artifice)
       const sz = 6 + Math.random() * 8
       const gold = Math.random() > 0.5 ? C.gold : C.goldSoft
+      // Mélange de formes : rond, carré, et étoile (feu d'artifice plus riche).
+      const shape = Math.random()
+      const isStar = shape > 0.72
+      const radius = isStar ? '0' : shape > 0.4 ? '50%' : '2px'
+      const star = isStar ? 'clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);' : ''
       el.className = 'bp-confetti-pc'
-      el.style.cssText = `position:absolute;left:50%;top:46%;width:${sz}px;height:${sz}px;border-radius:${Math.random() > 0.5 ? '50%' : '2px'};background:${gold};box-shadow:0 0 8px ${alpha(gold, 0.7)};pointer-events:none;will-change:transform,opacity;--bp-dx:${dx}px;--bp-dy:${dy}px;--bp-rot:${(Math.random() * 720 - 360).toFixed(0)}deg;animation:bp-confetti ${1.1 + Math.random() * 0.7}s cubic-bezier(.15,.6,.3,1) forwards`
+      el.style.cssText = `position:absolute;left:50%;top:46%;width:${sz}px;height:${sz}px;border-radius:${radius};${star}background:${gold};box-shadow:0 0 8px ${alpha(gold, 0.7)};pointer-events:none;will-change:transform,opacity;--bp-dx:${dx}px;--bp-dy:${dy}px;--bp-rot:${(Math.random() * 720 - 360).toFixed(0)}deg;animation:bp-confetti ${1.1 + Math.random() * 0.7}s cubic-bezier(.15,.6,.3,1) forwards`
       layer.appendChild(el)
       const kill = () => el.remove()
       el.addEventListener('animationend', kill)
@@ -249,6 +255,14 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
     return () => clearTimeout(t)
   }, [guided, autoplay, finished, album, next])
 
+  // Grand final : fanfare + double salve de confettis, une seule fois.
+  useEffect(() => {
+    if (!finished || finaleRef.current) return
+    finaleRef.current = true
+    burst(); setTimeout(burst, 240)
+    playSound('win')
+  }, [finished, burst])
+
   const share = async () => {
     if (!album) return
     setSharing(true)
@@ -264,6 +278,25 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       }
     } catch {}
     setSharing(false)
+  }
+
+  // Export complet de la partie (toutes les pages + votes) en JSON — archivage / memes.
+  const exportJson = () => {
+    try {
+      const data = {
+        game: 'Freydiss Phone', code: room?.code,
+        players: (players || []).map((p) => ({ name: p.display_name, seat: p.seat })),
+        albums: albums.map((a) => ({
+          book: a.book, author: authorName(a.pages[0]),
+          pages: a.pages.map((pg) => ({ type: pg.type, content: pg.content, author: authorName(pg) })),
+        })),
+        votes: voteTally.filter((r) => r.count > 0).map((r) => ({ author: r.author, hearts: r.count })),
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob); a.download = `freydiss-phone-${room?.code || 'partie'}.json`; a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+    } catch {}
   }
 
   if (!pages) {
@@ -363,7 +396,10 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
 
       {/* Contrôles */}
       <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-        <Btn variant="ghost" onClick={share} disabled={sharing}>{sharing ? 'Génération…' : '📥 Partager cet album'}</Btn>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Btn variant="ghost" onClick={share} disabled={sharing}>{sharing ? 'Génération…' : '📥 Partager cet album'}</Btn>
+          {finished && <Btn variant="ghost" onClick={exportJson}>📦 Exporter la partie</Btn>}
+        </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {guided ? (
             !finished && <span style={{ ...type.small, color: C.textMut, alignSelf: 'center' }}>🎙️ Le capitaine pilote le dévoilement.</span>
@@ -434,7 +470,16 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
                       background: `linear-gradient(90deg, ${alpha(C.gold, leader ? 0.18 : 0.08)}, transparent)`,
                       transformOrigin: 'left', animation: 'bp-podium-grow .6s cubic-bezier(.2,.9,.3,1) both',
                     }} />
-                    <span style={{ fontSize: 22, position: 'relative' }}>{medal}</span>
+                    {/* halo doré pulsé derrière le carnet vainqueur */}
+                    {leader && <div aria-hidden data-bp-anim style={{
+                      position: 'absolute', inset: 0, pointerEvents: 'none',
+                      background: `radial-gradient(120% 130% at 0% 50%, ${alpha(C.gold, 0.22)}, transparent 68%)`,
+                      animation: 'bp-halo 1.9s ease-in-out infinite',
+                    }} />}
+                    <span style={{ fontSize: 22, position: 'relative' }}>
+                      {leader && <span aria-hidden data-bp-anim style={{ position: 'absolute', top: -15, left: '50%', fontSize: 15, transformOrigin: '50% 90%', animation: 'bp-crown 2.4s ease-in-out infinite' }}>👑</span>}
+                      {medal}
+                    </span>
                     <span style={{ ...type.body, color: leader ? C.parchment : C.text, fontWeight: leader ? 900 : 700, position: 'relative', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       Carnet de {r.author}
                     </span>

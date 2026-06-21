@@ -69,7 +69,7 @@ export default function WritePhase({ remaining, total, mySubmitted, submit, subm
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) doSubmit(false) }}
           style={{
             width: '100%', minHeight: 120, resize: 'vertical', boxSizing: 'border-box',
-            padding: '16px 18px', borderRadius: 14, fontFamily: fonts.body, fontSize: 17, lineHeight: 1.5,
+            padding: '16px 18px', borderRadius: 14, fontFamily: fonts.body, fontSize: 16, lineHeight: 1.5,
             color: C.text, background: alpha(C.gold, 0.05), border: `1px solid ${C.hair}`, outline: 'none',
           }}
         />

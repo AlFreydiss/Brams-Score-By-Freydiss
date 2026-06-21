@@ -41,6 +41,8 @@ const SOUNDS = {
   phase:  () => blip({ freq: 392, slideTo: 588, dur: 0.18, type: 'triangle', gain: 0.09 }),
   tick:   () => blip({ freq: 880, dur: 0.06, type: 'square', gain: 0.045 }),
   reveal: () => { blip({ freq: 523, dur: 0.16, type: 'triangle', gain: 0.09 }); setTimeout(() => blip({ freq: 784, dur: 0.24, type: 'triangle', gain: 0.09 }), 130) },
+  // Fanfare montante (do-mi-sol-do) au grand final / podium.
+  win: () => { [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => setTimeout(() => blip({ freq, dur: i === 3 ? 0.42 : 0.18, type: 'triangle', gain: 0.1 }), i * 110)) },
 }
 
 export function playSound(name) { try { SOUNDS[name]?.() } catch {} }

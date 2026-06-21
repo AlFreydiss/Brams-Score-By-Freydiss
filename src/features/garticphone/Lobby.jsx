@@ -29,11 +29,12 @@ function PlayerSeat({ player, isMe, angle, radius, index }) {
       }}
     >
       <div style={{ position: 'relative', display: 'inline-block' }}>
-        <img loading="lazy" decoding="async" src={avatar} alt="" style={{
+        <img loading="lazy" decoding="async" src={avatar} alt="" data-bp-anim style={{
           width: 54, height: 54, borderRadius: '50%', objectFit: 'cover',
           border: `2px solid ${isMe ? C.gold : player.is_ready ? C.ok : C.hairTop}`,
           boxShadow: player.is_ready ? `0 0 0 4px ${alpha(C.ok, 0.16)}` : isMe ? `0 0 0 4px ${alpha(C.gold, 0.16)}` : 'none',
           background: C.surfaceFlat, transition: 'border-color .2s, box-shadow .2s',
+          animation: !player.is_ready && !player.is_host && !isMe ? 'bp-seatwait 2s ease-in-out infinite' : 'none',
         }} />
         {player.is_host && (
           <span style={{ position: 'absolute', top: -13, left: '50%', fontSize: 17, transformOrigin: '50% 90%', animation: 'bp-crown 2.4s ease-in-out infinite' }} data-bp-anim>👑</span>
@@ -68,6 +69,11 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
   return (
     <div style={{ width: 'min(1040px, 100%)', margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 18 }}>
       <style>{KEYFRAMES}</style>
+      <style>{`
+        .bp-lobby-grid{ grid-template-columns:minmax(0,1.3fr) minmax(260px,0.7fr); }
+        @media (max-width:640px){ .bp-lobby-grid{ grid-template-columns:1fr !important; } }
+        @keyframes bp-seatwait{0%,100%{box-shadow:0 0 0 4px rgba(224,165,31,0.08)}50%{box-shadow:0 0 0 5px rgba(224,165,31,0.22)}}
+      `}</style>
 
       {/* Header code + partage */}
       <div style={{ ...panel, padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -87,11 +93,11 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.3fr) minmax(280px,0.7fr)', gap: 18, alignItems: 'start' }}>
+      <div className="bp-lobby-grid" style={{ display: 'grid', gap: 18, alignItems: 'start' }}>
         {/* Table du capitaine */}
         <div style={{ ...panel, padding: 24, minHeight: 360, position: 'relative' }}>
           <div style={{ ...type.eyebrow, color: C.textMut, marginBottom: 12 }}>Équipage · {sortedPlayers.length}</div>
-          <div style={{ position: 'relative', height: Math.max(320, radius * 2 + 90), margin: '0 auto' }}>
+          <div style={{ position: 'relative', height: Math.max(320, Math.min(460, radius * 2 + 90)), margin: '0 auto' }}>
             {/* Table centrale (pont) */}
             <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: radius * 1.1, height: radius * 1.1, borderRadius: '50%', border: `1px dashed ${C.hair}`, background: `radial-gradient(circle, ${alpha(C.sea, 0.12)}, transparent 70%)`, display: 'grid', placeItems: 'center' }}>
               <div style={{ textAlign: 'center' }}>
@@ -141,7 +147,8 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
           <div style={{ ...type.small, color: everyoneReady ? C.ok : C.textMut, textAlign: 'center', marginBottom: -6 }}>{readyCount}/{sortedPlayers.length} prêts {everyoneReady ? '✓' : ''}</div>
 
           {isHost ? (
-            <Btn variant="gold" full disabled={players.length < 1} onClick={() => onStart(settings())}>
+            <Btn variant="gold" full disabled={players.length < 1} onClick={() => onStart(settings())}
+              style={everyoneReady && players.length > 1 ? { animation: 'bp-glowpulse 1.6s ease-in-out infinite' } : undefined}>
               Larguer les amarres 🏴‍☠️
             </Btn>
           ) : (
