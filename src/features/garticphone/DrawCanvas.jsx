@@ -48,6 +48,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   const [symmetry, setSymmetry] = useState(false)
   const [rainbow, setRainbow] = useState(false)
   const [grid, setGrid] = useState(false) // grille-repère (overlay visuel, jamais dessinée dans le PNG)
+  const [refImg, setRefImg] = useState(null) // image à décalquer (calque, jamais dessinée dans le PNG)
   const symRef = useRef(symmetry); symRef.current = symmetry
   const rainbowRef = useRef(rainbow); rainbowRef.current = rainbow
   const hueRef = useRef(0)
@@ -414,6 +415,24 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [undo, redo])
 
+  // Raccourcis outils (lettres simples, ignorés si on tape dans un champ ou avec un modificateur).
+  useEffect(() => {
+    const isField = () => { const t = document.activeElement?.tagName; return t === 'INPUT' || t === 'TEXTAREA' }
+    const map = { b: 'brush', l: 'line', r: 'rect', o: 'ellipse', a: 'spray', t: 'stamp', e: 'eraser', f: 'fill', p: 'eyedropper' }
+    const onKey = (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || isField()) return
+      const k = e.key.toLowerCase()
+      if (map[k]) { setTool(map[k]); return }
+      if (k === 'm') setSymmetry((s) => !s)
+      else if (k === 'x') setRainbow((r) => !r)
+      else if (k === 'g') setGrid((g) => !g)
+      else if (k === ']') setSize((s) => Math.min(64, s + 2))
+      else if (k === '[') setSize((s) => Math.max(1, s - 2))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // Cache le curseur custom quand on bascule sur un outil sans curseur (sans bouger).
   useEffect(() => {
     if (!usesCursor && cursorRef.current) cursorRef.current.style.opacity = '0'
@@ -457,6 +476,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           border: '2px solid #1b1b1b', boxShadow: '0 0 0 1px rgba(255,255,255,0.85)',
           pointerEvents: 'none', opacity: 0, willChange: 'transform', zIndex: 2,
         }} />
+        {/* Image à décalquer (calque) : suit la transform zoom/pan, jamais dessinée dans le PNG. */}
+        {refImg && <img src={refImg} aria-hidden alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: 0.38, pointerEvents: 'none', zIndex: 1, transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.zoom})`, transformOrigin: '0 0' }} />}
         {/* Grille-repère (aide à la composition — n'est jamais dessinée dans le PNG) */}
         {grid && <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, backgroundImage: `linear-gradient(${alpha(C.ink, 0.13)} 1px, transparent 1px), linear-gradient(90deg, ${alpha(C.ink, 0.13)} 1px, transparent 1px)`, backgroundSize: '10% 10%' }} />}
         {/* Axe de symétrie (repère visuel quand le mode miroir est actif) */}
@@ -528,6 +549,14 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
             width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 18, display: 'grid', placeItems: 'center', color: C.text,
             border: `1px solid ${grid ? alpha(C.gold, 0.6) : C.hairSoft}`, background: grid ? alpha(C.gold, 0.22) : 'rgba(255,255,255,0.04)',
           }}>📐</button>
+          <label title="Image à décalquer (calque — n'apparaît pas dans le dessin)" className="bpc-btn" style={{
+            width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 18, display: 'grid', placeItems: 'center', color: C.text,
+            border: `1px solid ${refImg ? alpha(C.gold, 0.6) : C.hairSoft}`, background: refImg ? alpha(C.gold, 0.22) : 'rgba(255,255,255,0.04)', position: 'relative',
+          }}>
+            <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = () => setRefImg(r.result); r.readAsDataURL(f) } e.target.value = '' }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+            🖼️
+          </label>
+          {refImg && <button onClick={() => setRefImg(null)} title="Retirer le calque" className="bpc-btn" style={{ width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 16, display: 'grid', placeItems: 'center', color: C.danger, border: `1px solid ${C.hairSoft}`, background: 'rgba(255,255,255,0.04)' }}>✕</button>}
         </div>
 
         {/* Zoom (molette aussi) */}
