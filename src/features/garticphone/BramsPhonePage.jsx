@@ -214,8 +214,15 @@ export default function BramsPhonePage() {
 function Room({ code, identity, navigate, copied, onCopy }) {
   const hook = useGarticRoom({ code, ...identity })
   const { room, players, me, n, myTask, remaining, isHost, spectator, error, ready,
-    mySubmitted, submittedSeats, start, advance, setReady, submit, prevPage, allPages, replay,
+    mySubmitted, submittedSeats, kicked, start, advance, setReady, submit, prevPage, allPages, replay, kick,
     revealStep, sendReaction, sendRevealStep, onReaction } = hook
+
+  // Exclu par l'hôte → on quitte le salon (retour au lobby Freydiss Phone) après un court message.
+  useEffect(() => {
+    if (!kicked) return
+    const t = setTimeout(() => navigate('/brams-phone'), 2600)
+    return () => clearTimeout(t)
+  }, [kicked, navigate])
 
   const total = useMemo(() => {
     if (!room?.settings?.phaseDurations || !room.current_phase) return null
@@ -259,6 +266,19 @@ function Room({ code, identity, navigate, copied, onCopy }) {
     if (s > 0 && s <= 5 && s !== lastTickRef.current) { lastTickRef.current = s; playSound('tick') }
     else if (s <= 0 && lastTickRef.current !== 0) { lastTickRef.current = 0; playSound('phase'); vibrate(40) }
   }, [remaining, status])
+
+  if (kicked) {
+    return (
+      <Shell>
+        <div style={{ ...panel, maxWidth: 440, margin: '60px auto 0', textAlign: 'center', padding: 30 }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🚪</div>
+          <h2 style={{ ...type.h2, color: C.text, margin: '0 0 8px' }}>Tu as été exclu</h2>
+          <p style={{ ...type.body, color: C.textMut, margin: '0 0 22px' }}>Le capitaine t'a retiré du salon.</p>
+          <Btn variant="gold" onClick={() => navigate('/brams-phone')}>Retour</Btn>
+        </div>
+      </Shell>
+    )
+  }
 
   if (error === 'introuvable') {
     return (
@@ -310,7 +330,7 @@ function Room({ code, identity, navigate, copied, onCopy }) {
       <div key={status} style={{ animation: 'bp-rise .42s cubic-bezier(.16,1,.3,1)' }}>
       {status === 'lobby' && (
         <Lobby room={room} players={players} me={me} isHost={isHost} spectator={spectator}
-          onStart={start} onSetReady={setReady} onCopy={onCopy} copied={copied} />
+          onStart={start} onSetReady={setReady} onCopy={onCopy} copied={copied} onKick={kick} />
       )}
 
       {spectator && status !== 'lobby' && status !== 'reveal' && status !== 'finished' && (

@@ -173,6 +173,19 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
     return s
   }, [teamMode, voteTally, players, room])
 
+  // MVP de chaque équipe = l'auteur du carnet le plus aimé de l'équipe (voteTally trié desc).
+  const teamMvp = useMemo(() => {
+    if (!teamMode) return null
+    const map = room?.settings?.teams || {}
+    const mvp = [null, null]
+    for (const r of voteTally) {
+      const pl = players.find((p) => p.seat === r.book)
+      const t = pl ? map[String(pl.user_id)] : null
+      if ((t === 0 || t === 1) && !mvp[t] && r.count > 0) mvp[t] = r.author
+    }
+    return mvp
+  }, [teamMode, voteTally, players, room])
+
   // ── Réactions flottantes (spawn DOM + animation CSS GPU, auto-retrait) ───────
   const spawn = useCallback((emoji) => {
     const layer = fxRef.current; if (!layer || !emoji) return
@@ -482,7 +495,10 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
                   <div key={ti} style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 14, background: alpha(TEAM[ti].color, win ? 0.16 : 0.08), border: `1px solid ${alpha(TEAM[ti].color, win ? 0.5 : 0.28)}` }}>
                     <div aria-hidden style={{ position: 'absolute', inset: 0, width: `${(val / max) * 100}%`, background: `linear-gradient(90deg, ${alpha(TEAM[ti].color, 0.22)}, transparent)`, transformOrigin: 'left', animation: 'bp-podium-grow .6s cubic-bezier(.2,.9,.3,1) both' }} />
                     <span style={{ fontSize: 22, position: 'relative' }}>{win && lead >= 0 ? '👑' : TEAM[ti].emoji}</span>
-                    <span style={{ ...type.body, color: TEAM[ti].color, fontWeight: 900, position: 'relative', flex: 1 }}>Équipe {TEAM[ti].label}</span>
+                    <span style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                      <span style={{ ...type.body, color: TEAM[ti].color, fontWeight: 900, display: 'block' }}>Équipe {TEAM[ti].label}</span>
+                      {teamMvp?.[ti] && <span style={{ ...type.small, color: C.textMut, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>⭐ MVP : {teamMvp[ti]}</span>}
+                    </span>
                     <span style={{ ...type.h3, color: TEAM[ti].color, fontWeight: 900, position: 'relative' }}>{val} 💛</span>
                   </div>
                 )

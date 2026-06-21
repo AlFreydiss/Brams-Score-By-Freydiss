@@ -17,11 +17,14 @@ export const TEAM = [
   { label: 'Bleu', emoji: '🔵', color: '#3a6fd4' },
 ]
 
-function PlayerSeat({ player, isMe, angle, radius, index }) {
+function PlayerSeat({ player, isMe, angle, radius, index, team, canKick, onKick }) {
   const x = Math.cos(angle) * radius
   const y = Math.sin(angle) * radius
   const name = player.display_name || 'Invité'
   const avatar = player.avatar_url || `https://api.dicebear.com/8.x/thumbs/svg?seed=${encodeURIComponent(name)}`
+  const teamColor = team != null ? TEAM[team].color : null
+  // Priorité bordure : équipe > moi > prêt > neutre.
+  const border = teamColor || (isMe ? C.gold : player.is_ready ? C.ok : C.hairTop)
   return (
     <div
       className="bp-seat" data-bp-anim
@@ -37,11 +40,18 @@ function PlayerSeat({ player, isMe, angle, radius, index }) {
       <div style={{ position: 'relative', display: 'inline-block' }}>
         <img loading="lazy" decoding="async" src={avatar} alt="" data-bp-anim style={{
           width: 54, height: 54, borderRadius: '50%', objectFit: 'cover',
-          border: `2px solid ${isMe ? C.gold : player.is_ready ? C.ok : C.hairTop}`,
-          boxShadow: player.is_ready ? `0 0 0 4px ${alpha(C.ok, 0.16)}` : isMe ? `0 0 0 4px ${alpha(C.gold, 0.16)}` : 'none',
+          border: `2px solid ${border}`,
+          boxShadow: teamColor ? `0 0 0 4px ${alpha(teamColor, 0.18)}` : player.is_ready ? `0 0 0 4px ${alpha(C.ok, 0.16)}` : isMe ? `0 0 0 4px ${alpha(C.gold, 0.16)}` : 'none',
           background: C.surfaceFlat, transition: 'border-color .2s, box-shadow .2s',
           animation: !player.is_ready && !player.is_host && !isMe ? 'bp-seatwait 2s ease-in-out infinite' : 'none',
         }} />
+        {canKick && (
+          <button onClick={() => onKick?.(player.user_id)} title={`Exclure ${name}`} aria-label={`Exclure ${name}`} style={{
+            position: 'absolute', top: -8, right: -8, width: 22, height: 22, borderRadius: '50%', cursor: 'pointer',
+            background: alpha(C.danger, 0.92), color: '#fff', border: '2px solid #1a1010', fontSize: 11, fontWeight: 900,
+            display: 'grid', placeItems: 'center', lineHeight: 1, zIndex: 3,
+          }}>✕</button>
+        )}
         {player.is_host && (
           <span style={{ position: 'absolute', top: -13, left: '50%', fontSize: 17, transformOrigin: '50% 90%', animation: 'bp-crown 2.4s ease-in-out infinite' }} data-bp-anim>👑</span>
         )}
@@ -58,7 +68,7 @@ function PlayerSeat({ player, isMe, angle, radius, index }) {
   )
 }
 
-export default function Lobby({ room, players, me, isHost, spectator, onStart, onSetReady, onCopy, copied }) {
+export default function Lobby({ room, players, me, isHost, spectator, onStart, onSetReady, onCopy, copied, onKick }) {
   const [preset, setPreset] = useState('normal')
   const connected = useMemo(() => players.filter((p) => p.connected !== false), [players])
   const radius = Math.min(150, 90 + connected.length * 6)
@@ -87,6 +97,9 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
     })
   }, [teamMode, sortedPlayers])
   const flipTeam = (id) => { if (isHost) setTeams((t) => ({ ...t, [id]: t[id] ? 0 : 1 })) }
+  const balanceTeams = () => { const next = {}; sortedPlayers.forEach((p, i) => { next[String(p.user_id)] = i % 2 }); setTeams(next) }
+  // Démarrage interdit si une équipe est vide (sinon score 2v2 absurde).
+  const teamsValid = !teamMode || (sortedPlayers.some((p) => (teams[String(p.user_id)] ?? 0) === 0) && sortedPlayers.some((p) => (teams[String(p.user_id)] ?? 0) === 1))
 
   const settings = () => {
     const d = DURATION_PRESETS.find((x) => x.id === preset) || DURATION_PRESETS[1]
@@ -137,7 +150,10 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
               </div>
             </div>
             {sortedPlayers.map((p, i) => (
-              <PlayerSeat key={p.user_id} index={i} player={p} isMe={String(p.user_id) === String(me?.user_id)} angle={(i / Math.max(1, sortedPlayers.length)) * Math.PI * 2 - Math.PI / 2} radius={radius} />
+              <PlayerSeat key={p.user_id} index={i} player={p} isMe={String(p.user_id) === String(me?.user_id)} angle={(i / Math.max(1, sortedPlayers.length)) * Math.PI * 2 - Math.PI / 2} radius={radius}
+                team={teamMode ? (teams[String(p.user_id)] ?? 0) : null}
+                canKick={isHost && !p.is_host && String(p.user_id) !== String(me?.user_id)}
+                onKick={onKick} />
             ))}
           </div>
         </div>
@@ -179,6 +195,12 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
               <span style={{ fontWeight: 800, fontSize: 14 }}>⚔️ Mode équipes</span>
               <span style={{ ...type.small, color: teamMode ? C.ok : C.textMut, fontWeight: 800 }}>{teamMode ? 'ON' : 'OFF'}</span>
             </button>
+            {teamMode && isHost && (
+              <button onClick={balanceTeams} style={{
+                width: '100%', marginTop: 8, padding: '8px 12px', borderRadius: 10, cursor: 'pointer',
+                border: `1px solid ${C.hairSoft}`, background: 'rgba(255,255,255,0.04)', color: C.text, fontFamily: fonts.body, ...type.small, fontWeight: 800,
+              }}>⚖️ Équilibrer les équipes</button>
+            )}
             {teamMode && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                 {[0, 1].map((ti) => (
@@ -214,10 +236,15 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
           <div style={{ ...type.small, color: everyoneReady ? C.ok : C.textMut, textAlign: 'center', marginBottom: -6 }}>{readyCount}/{sortedPlayers.length} prêts {everyoneReady ? '✓' : ''}</div>
 
           {isHost ? (
-            <Btn variant="gold" full disabled={players.length < 1} onClick={() => onStart(settings())}
-              style={everyoneReady && players.length > 1 ? { animation: 'bp-glowpulse 1.6s ease-in-out infinite' } : undefined}>
-              Larguer les amarres 🏴‍☠️
-            </Btn>
+            <>
+              <Btn variant="gold" full disabled={players.length < 1 || !teamsValid} onClick={() => onStart(settings())}
+                style={everyoneReady && players.length > 1 && teamsValid ? { animation: 'bp-glowpulse 1.6s ease-in-out infinite' } : undefined}>
+                Larguer les amarres 🏴‍☠️
+              </Btn>
+              {teamMode && !teamsValid && (
+                <div style={{ ...type.small, color: C.warn, textAlign: 'center' }}>Chaque équipe doit avoir au moins 1 joueur.</div>
+              )}
+            </>
           ) : (
             <div style={{ ...type.small, color: C.textMut, textAlign: 'center', padding: '8px 0' }}>
               En attente du capitaine…

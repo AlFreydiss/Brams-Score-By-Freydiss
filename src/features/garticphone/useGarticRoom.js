@@ -25,6 +25,8 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   const [ready, setReadyState] = useState(false) // état de chargement initial
   const [tick, setTick] = useState(0)            // re-render 4x/s pour le minuteur
   const [revealStep, setRevealStep] = useState(null) // {a,p} page synchronisée par l'hôte au reveal
+  const [kicked, setKicked] = useState(false)        // l'hôte m'a exclu de la partie
+  const [kickedIds, setKickedIds] = useState(() => new Set()) // joueurs exclus → masqués localement
 
   const offsetRef = useRef(0)        // serverNow - Date.now()
   const refreshing = useRef(false)
@@ -95,6 +97,12 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
               if (payload && payload.seat != null) setSubmittedSeats((s) => { const n = new Set(s); n.add(payload.seat); return n })
               return
             }
+            // Exclusion par l'hôte : si c'est moi → je quitte ; sinon je rafraîchis le roster.
+            if (event === 'kick') {
+              if (String(payload?.userId) === String(userId)) setKicked(true)
+              else if (payload?.userId != null) { setKickedIds((s) => new Set(s).add(String(payload.userId))); refresh() }
+              return
+            }
             refresh() // phase_change / host_migrated
           },
         })
@@ -158,9 +166,10 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   // Joueurs « connectés » = vus par le canal presence (fallback : flag DB connected).
   // NOTE Phase 1 : connected reste true côté serveur (pas de setConnected(false)) ; un joueur parti compte "actif" jusqu'à la staleness last_seen — le timeout de phase relance de toute façon. Affinage = phases ultérieures.
   const connectedPlayers = useMemo(() => {
-    if (presence.size === 0) return players
-    return players.map((p) => ({ ...p, connected: presence.has(String(p.user_id)) || p.connected }))
-  }, [players, presence])
+    const base = players.filter((p) => !kickedIds.has(String(p.user_id)))
+    if (presence.size === 0) return base
+    return base.map((p) => ({ ...p, connected: presence.has(String(p.user_id)) || p.connected }))
+  }, [players, presence, kickedIds])
 
   // connectedPlayers obtient une nouvelle référence à chaque sync presence (poll 3,5s, broadcast,
   // postgres_changes) → le garder dans un ref évite de relancer la boucle hôte (et son setInterval)
@@ -248,6 +257,16 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
   }, [code, refresh, room?.current_round])
 
   const setReady = useCallback(async (b) => { await apiSetReady(code, b) }, [code])
+
+  // Exclure un joueur (hôte) : broadcast → la cible quitte d'elle-même. Sans migration SQL ;
+  // sa ligne devient un fantôme nettoyé par la staleness (filtre connected). On force aussi
+  // un refresh local pour que le roster de l'hôte se mette à jour vite.
+  const kick = useCallback((uid) => {
+    if (uid == null) return
+    chRef.current?.send('kick', { userId: String(uid) })
+    setKickedIds((s) => new Set(s).add(String(uid))) // broadcast self:false → l'hôte masque en local
+    setTimeout(refresh, 400)
+  }, [refresh])
 
   // Rejouer : remet le salon en LOBBY (efface pages + ready, déséquipe les sièges) pour que
   // tout le monde re-prêt et que de nouveaux puissent rejoindre. Renvoie false si le RPC
@@ -345,8 +364,8 @@ export function useGarticRoom({ code, userId, displayName, avatarUrl }) {
 
   return {
     room, players: connectedPlayers, me, n, myTask, remaining, isHost, spectator, error, ready,
-    mySubmitted, submittedSeats,
-    start, advance, setReady, submit, prevPage, allPages, refresh, replay,
+    mySubmitted, submittedSeats, kicked,
+    start, advance, setReady, submit, prevPage, allPages, refresh, replay, kick,
     serverNowMs,
     revealStep, sendReaction, sendRevealStep, onReaction,
   }
