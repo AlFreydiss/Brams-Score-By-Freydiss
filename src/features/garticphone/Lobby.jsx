@@ -11,6 +11,11 @@ const DURATION_PRESETS = [
   { id: 'normal', label: 'Normal', writing: 50, drawing: 90, describing: 40 },
   { id: 'rush', label: 'Rush', writing: 30, drawing: 50, describing: 25 },
 ]
+// Équipes (2v2 / NvN) : stockées dans room.settings.teams { userId: 0|1 } — zéro migration SQL.
+export const TEAM = [
+  { label: 'Rouge', emoji: '🔴', color: '#e0524a' },
+  { label: 'Bleu', emoji: '🔵', color: '#3a6fd4' },
+]
 
 function PlayerSeat({ player, isMe, angle, radius, index }) {
   const x = Math.cos(angle) * radius
@@ -68,10 +73,28 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
     wasReadyRef.current = everyoneReady
   }, [everyoneReady])
 
+  // ── Mode équipes ──────────────────────────────────────────────────────────
+  const [teamMode, setTeamMode] = useState(false)
+  const [teams, setTeams] = useState({}) // { userId: 0|1 }
+  // Auto-répartition à l'activation / à l'arrivée d'un joueur ; préserve les bascules manuelles
+  // et purge ceux qui sont partis.
+  useEffect(() => {
+    if (!teamMode) return
+    setTeams((prev) => {
+      const next = {}
+      sortedPlayers.forEach((p, i) => { const id = String(p.user_id); next[id] = prev[id] != null ? prev[id] : i % 2 })
+      return next
+    })
+  }, [teamMode, sortedPlayers])
+  const flipTeam = (id) => { if (isHost) setTeams((t) => ({ ...t, [id]: t[id] ? 0 : 1 })) }
+
   const settings = () => {
     const d = DURATION_PRESETS.find((x) => x.id === preset) || DURATION_PRESETS[1]
     // n = nombre de sièges, figé au start (base stable de la rotation des carnets côté client/serveur).
-    return { mode: 'classique', n: players.length, rounds: players.length, phaseDurations: { writing: d.writing, drawing: d.drawing, describing: d.describing } }
+    const base = { mode: teamMode ? 'teams' : 'classique', n: players.length, rounds: players.length, phaseDurations: { writing: d.writing, drawing: d.drawing, describing: d.describing } }
+    // Les équipes voyagent dans settings (JSONB) → persistées au start, relues par tous au reveal.
+    if (teamMode) { base.teamMode = true; base.teams = teams }
+    return base
   }
 
   return (
@@ -124,7 +147,7 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
           <div>
             <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 10 }}>Réglages</div>
             <div style={{ ...type.small, color: C.textMut, marginBottom: 12 }}>
-              {players.length} carnets · {players.length} manches · mode classique
+              {players.length} carnets · {players.length} manches · mode {teamMode ? 'équipes ⚔️' : 'classique'}
             </div>
             <div style={{ ...type.statLabel, color: C.textFaint, marginBottom: 8 }}>Rythme des phases</div>
             <div style={{ display: 'grid', gap: 8 }}>
@@ -144,6 +167,37 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
                 )
               })}
             </div>
+          </div>
+
+          {/* Mode équipes (2v2 / NvN) */}
+          <div>
+            <button onClick={() => setTeamMode((m) => !m)} disabled={!isHost} style={{
+              width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: 12, cursor: isHost ? 'pointer' : 'default',
+              border: `1px solid ${teamMode ? alpha(C.gold, 0.4) : C.hairSoft}`, background: teamMode ? alpha(C.gold, 0.1) : 'rgba(255,255,255,0.03)',
+              color: C.text, fontFamily: fonts.body, display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: isHost || teamMode ? 1 : 0.7,
+            }}>
+              <span style={{ fontWeight: 800, fontSize: 14 }}>⚔️ Mode équipes</span>
+              <span style={{ ...type.small, color: teamMode ? C.ok : C.textMut, fontWeight: 800 }}>{teamMode ? 'ON' : 'OFF'}</span>
+            </button>
+            {teamMode && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
+                {[0, 1].map((ti) => (
+                  <div key={ti} style={{ borderRadius: 12, padding: '8px 10px', background: alpha(TEAM[ti].color, 0.1), border: `1px solid ${alpha(TEAM[ti].color, 0.35)}` }}>
+                    <div style={{ ...type.small, fontWeight: 800, color: TEAM[ti].color, marginBottom: 6 }}>
+                      {TEAM[ti].emoji} {TEAM[ti].label} · {sortedPlayers.filter((p) => (teams[String(p.user_id)] ?? 0) === ti).length}
+                    </div>
+                    {sortedPlayers.filter((p) => (teams[String(p.user_id)] ?? 0) === ti).map((p) => (
+                      <button key={p.user_id} disabled={!isHost} onClick={() => flipTeam(String(p.user_id))} title={isHost ? 'Changer d\'équipe' : ''} style={{
+                        display: 'block', width: '100%', textAlign: 'left', ...type.small, color: C.text,
+                        background: 'transparent', border: 'none', cursor: isHost ? 'pointer' : 'default', padding: '3px 0',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>{p.display_name || 'Invité'}{isHost ? ' ⇄' : ''}</button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            {teamMode && <div style={{ ...type.small, color: C.textFaint, marginTop: 8 }}>Score par équipe au dévoilement (cœurs cumulés).</div>}
           </div>
 
           {!isHost && me && (

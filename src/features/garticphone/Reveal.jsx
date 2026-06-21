@@ -8,6 +8,7 @@ import { C, GRAD, alpha, panel, KEYFRAMES } from './theme.js'
 import { Btn, Waiting } from './ui.jsx'
 import { buildAlbums } from './logic/rotation.js'
 import { playSound } from './sound.js'
+import { TEAM } from './Lobby.jsx'
 
 const REACTIONS = ['😂', '🔥', '💀', '😮', '❤️', '🏴‍☠️']
 
@@ -157,6 +158,20 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
   }, [votes, albums])
   const totalVotes = useMemo(() => Object.keys(votes).length, [votes])
   const topCount = voteTally[0]?.count || 0
+
+  // ── Mode équipes : score = cœurs cumulés des carnets de chaque équipe ────────
+  const teamMode = !!room?.settings?.teamMode
+  const teamScores = useMemo(() => {
+    if (!teamMode) return null
+    const map = room?.settings?.teams || {}
+    const s = [0, 0]
+    for (const r of voteTally) {
+      const pl = players.find((p) => p.seat === r.book)
+      const t = pl ? map[String(pl.user_id)] : null
+      if (t === 0 || t === 1) s[t] += r.count
+    }
+    return s
+  }, [teamMode, voteTally, players, room])
 
   // ── Réactions flottantes (spawn DOM + animation CSS GPU, auto-retrait) ───────
   const spawn = useCallback((emoji) => {
@@ -445,6 +460,37 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
           )}
         </div>
       </div>
+
+      {/* ── Score des équipes (mode 2v2 / NvN) ─────────────────────────────── */}
+      {finished && teamMode && teamScores && (() => {
+        const [r, b] = teamScores
+        const lead = r === b ? -1 : r > b ? 0 : 1
+        const max = Math.max(1, r, b)
+        return (
+          <div data-bp-anim style={{ ...panel, padding: 'clamp(16px,3vw,24px)', animation: 'bp-ready-pop .4s cubic-bezier(.2,1,.3,1)' }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 6 }}>Mode équipes</div>
+              <div style={{ ...type.h2, color: C.parchment }}>
+                {lead < 0 ? '⚔️ Égalité parfaite !' : `${TEAM[lead].emoji} Équipe ${TEAM[lead].label} l'emporte !`}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 10, maxWidth: 520, margin: '0 auto' }}>
+              {[0, 1].map((ti) => {
+                const val = teamScores[ti]
+                const win = lead === ti
+                return (
+                  <div key={ti} style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 14, background: alpha(TEAM[ti].color, win ? 0.16 : 0.08), border: `1px solid ${alpha(TEAM[ti].color, win ? 0.5 : 0.28)}` }}>
+                    <div aria-hidden style={{ position: 'absolute', inset: 0, width: `${(val / max) * 100}%`, background: `linear-gradient(90deg, ${alpha(TEAM[ti].color, 0.22)}, transparent)`, transformOrigin: 'left', animation: 'bp-podium-grow .6s cubic-bezier(.2,.9,.3,1) both' }} />
+                    <span style={{ fontSize: 22, position: 'relative' }}>{win && lead >= 0 ? '👑' : TEAM[ti].emoji}</span>
+                    <span style={{ ...type.body, color: TEAM[ti].color, fontWeight: 900, position: 'relative', flex: 1 }}>Équipe {TEAM[ti].label}</span>
+                    <span style={{ ...type.h3, color: TEAM[ti].color, fontWeight: 900, position: 'relative' }}>{val} 💛</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Coup de cœur : vote pour le meilleur carnet (fin du dévoilement) ─── */}
       {finished && (
