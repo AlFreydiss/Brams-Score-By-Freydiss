@@ -18,7 +18,8 @@ const PALETTE = [
   '#2f9e8c', '#2f7d8c', '#3a6fd4', '#7a52d4',
   '#c84fb0', '#8b5a2b', '#f2b8c6', '#0a2540',
 ]
-const SIZES = [3, 7, 14, 28]
+const SIZES = [3, 7, 14, 28, 48]
+const SHAPE_TOOLS = ['line', 'rect', 'ellipse']
 
 function hexToRgba(hex) {
   const n = parseInt(hex.replace('#', ''), 16)
@@ -38,10 +39,19 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
 
   const [color, setColor] = useState('#1b1b1b')
   const [size, setSize] = useState(7)
-  const [tool, setTool] = useState('brush') // brush | eraser | fill | eyedropper
+  const [tool, setTool] = useState('brush') // brush | line | rect | ellipse | spray | eraser | fill | eyedropper
   const toolRef = useRef(tool); toolRef.current = tool
   const colorRef = useRef(color); colorRef.current = color
   const sizeRef = useRef(size); sizeRef.current = size
+  // Modes "de fou" : symétrie miroir (axe vertical) + pinceau arc-en-ciel (teinte qui défile).
+  const [symmetry, setSymmetry] = useState(false)
+  const [rainbow, setRainbow] = useState(false)
+  const symRef = useRef(symmetry); symRef.current = symmetry
+  const rainbowRef = useRef(rainbow); rainbowRef.current = rainbow
+  const hueRef = useRef(0)
+  const shiftRef = useRef(false)        // Maj = contraindre (carré/cercle/ligne 45°)
+  const shapeBaseRef = useRef(null)     // snapshot AVANT une forme (preview live restaurée à chaque move)
+  const startRef = useRef(null)         // point de départ d'une forme
   const undoRef = useRef([])
   const redoRef = useRef([])
   const [canUndo, setCanUndo] = useState(false)
@@ -54,7 +64,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   const spaceRef = useRef(false)
   const panRef = useRef(null)
 
-  const usesCursor = tool === 'brush' || tool === 'eraser' // les autres gardent un curseur natif
+  const usesCursor = tool === 'brush' || tool === 'eraser' || tool === 'spray' // les autres gardent un curseur natif
 
   // Init : fond blanc + premier snapshot.
   useEffect(() => {
@@ -222,6 +232,58 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     setColor(hex); setTool('brush')
   }
 
+  // ── Outils "de fou" : couleur active, miroir, segment lissé, formes, aérographe ──
+  const mirror = (p) => ({ x: W - p.x, y: p.y }) // axe de symétrie = vertical (W/2)
+  // Couleur du trait : blanc pour la gomme, teinte qui défile en arc-en-ciel, sinon la couleur choisie.
+  const strokeColor = () => {
+    if (toolRef.current === 'eraser') return '#ffffff'
+    if (rainbowRef.current) return `hsl(${(hueRef.current % 360 + 360) % 360}, 90%, 55%)`
+    return colorRef.current
+  }
+  // Un segment quadratique lissé (de a vers c, contrôle b).
+  const strokeSeg = (ctx, a, b, c) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(b.x, b.y, c.x, c.y); ctx.stroke() }
+  // Dessine une forme (ligne/rect/ellipse) de s à e. Maj = carré/cercle/ligne à 45°.
+  const drawShapeAt = (s, e) => {
+    const ctx = ctxRef.current
+    ctx.strokeStyle = strokeColor(); ctx.lineWidth = sizeRef.current
+    const t = toolRef.current
+    if (t === 'line') {
+      let ex = e.x, ey = e.y
+      if (shiftRef.current) { const dx = ex - s.x, dy = ey - s.y, ang = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4), len = Math.hypot(dx, dy); ex = s.x + Math.cos(ang) * len; ey = s.y + Math.sin(ang) * len }
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.stroke()
+    } else if (t === 'rect') {
+      let w = e.x - s.x, h = e.y - s.y
+      if (shiftRef.current) { const m = Math.max(Math.abs(w), Math.abs(h)); w = Math.sign(w || 1) * m; h = Math.sign(h || 1) * m }
+      ctx.strokeRect(s.x, s.y, w, h)
+    } else if (t === 'ellipse') {
+      let cx = (s.x + e.x) / 2, cy = (s.y + e.y) / 2, rx = Math.abs(e.x - s.x) / 2, ry = Math.abs(e.y - s.y) / 2
+      if (shiftRef.current) { const m = Math.max(rx, ry); rx = m; ry = m; cx = s.x + Math.sign(e.x - s.x || 1) * m; cy = s.y + Math.sign(e.y - s.y || 1) * m }
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke()
+    }
+  }
+  const shape = (s, e) => { drawShapeAt(s, e); if (symRef.current) drawShapeAt(mirror(s), mirror(e)) }
+  // Aérographe : nuage de points aléatoires dans le rayon du pinceau.
+  const sprayAt = (p) => {
+    const ctx = ctxRef.current
+    if (rainbowRef.current) hueRef.current += 6
+    ctx.fillStyle = strokeColor()
+    const r = sizeRef.current * 1.7, n = Math.max(6, Math.round(sizeRef.current * 1.4))
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, rad = Math.random() * r
+      const x = p.x + Math.cos(a) * rad, y = p.y + Math.sin(a) * rad
+      ctx.fillRect(x, y, 1.6, 1.6)
+      if (symRef.current) ctx.fillRect(W - x, y, 1.6, 1.6)
+    }
+  }
+
+  // Maj maintenue = contrainte des formes (carré/cercle/ligne à 45°).
+  useEffect(() => {
+    const d = (e) => { if (e.key === 'Shift') shiftRef.current = true }
+    const u = (e) => { if (e.key === 'Shift') shiftRef.current = false }
+    window.addEventListener('keydown', d); window.addEventListener('keyup', u)
+    return () => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u) }
+  }, [])
+
   // ── Curseur custom : cercle de la taille du pinceau qui suit le pointeur ──────
   // Piloté en impératif (pas de state) pour ne pas re-render à chaque pixel.
   const moveCursor = (e) => {
@@ -259,14 +321,17 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     if (tool === 'eyedropper') { pickColor(p.x, p.y); return }
     const ctx = ctxRef.current
     drawingRef.current = true
+    try { localRef.current.setPointerCapture?.(e.pointerId) } catch {}
+    // Forme (ligne/rect/ellipse) : on fige l'image AVANT pour rejouer le preview à chaque move.
+    if (SHAPE_TOOLS.includes(tool)) { shapeBaseRef.current = ctx.getImageData(0, 0, W, H); startRef.current = p; return }
     lastRef.current = p
     lastMidRef.current = p
-    try { localRef.current.setPointerCapture?.(e.pointerId) } catch {}
+    if (tool === 'spray') { sprayAt(p); return }
     // point isolé (clic sans déplacement)
-    ctx.beginPath()
-    ctx.fillStyle = tool === 'eraser' ? '#ffffff' : color
-    ctx.arc(p.x, p.y, widthFor(e) / 2, 0, Math.PI * 2)
-    ctx.fill()
+    const w = widthFor(e) / 2
+    ctx.fillStyle = strokeColor()
+    ctx.beginPath(); ctx.arc(p.x, p.y, w, 0, Math.PI * 2); ctx.fill()
+    if (symRef.current) { const m = mirror(p); ctx.beginPath(); ctx.arc(m.x, m.y, w, 0, Math.PI * 2); ctx.fill() }
   }
 
   const onMove = (e) => {
@@ -281,17 +346,19 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     e.preventDefault()
     const ctx = ctxRef.current
     const p = pos(e)
+    const t = toolRef.current
+    // Forme : on restaure l'image figée puis on redessine la forme en cours (preview live).
+    if (SHAPE_TOOLS.includes(t)) { ctx.putImageData(shapeBaseRef.current, 0, 0); shape(startRef.current, p); return }
+    if (t === 'spray') { sprayAt(p); return }
     const last = lastRef.current
     const lastMid = lastMidRef.current
     const mid = { x: (last.x + p.x) / 2, y: (last.y + p.y) / 2 }
-    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color
+    if (rainbowRef.current && t !== 'eraser') hueRef.current += 4
+    ctx.strokeStyle = strokeColor()
     ctx.lineWidth = widthFor(e)
     // Courbe quadratique : du dernier midpoint au nouveau, contrôle = dernier point.
-    // Donne un tracé lisse continu (pas d'angles durs entre échantillons).
-    ctx.beginPath()
-    ctx.moveTo(lastMid.x, lastMid.y)
-    ctx.quadraticCurveTo(last.x, last.y, mid.x, mid.y)
-    ctx.stroke()
+    strokeSeg(ctx, lastMid, last, mid)
+    if (symRef.current) strokeSeg(ctx, mirror(lastMid), mirror(last), mirror(mid))
     lastRef.current = p
     lastMidRef.current = mid
   }
@@ -307,6 +374,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     drawingRef.current = false
     lastRef.current = null
     lastMidRef.current = null
+    shapeBaseRef.current = null
+    startRef.current = null
     snapshot(); saveDraft()
   }
 
@@ -372,6 +441,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           border: '2px solid #1b1b1b', boxShadow: '0 0 0 1px rgba(255,255,255,0.85)',
           pointerEvents: 'none', opacity: 0, willChange: 'transform', zIndex: 2,
         }} />
+        {/* Axe de symétrie (repère visuel quand le mode miroir est actif) */}
+        {symmetry && <div aria-hidden style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 0, borderLeft: `1px dashed ${alpha(C.gold, 0.55)}`, pointerEvents: 'none', zIndex: 1 }} />}
       </div>
 
       {/* Barre d'outils */}
@@ -399,17 +470,34 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
               border: `1px solid ${size === s ? alpha(C.gold, 0.5) : C.hairSoft}`,
               background: size === s ? alpha(C.gold, 0.16) : 'rgba(255,255,255,0.04)',
             }}>
-              <span style={{ width: Math.round(8 + (s / 28) * 14), height: Math.round(8 + (s / 28) * 14), borderRadius: '50%', background: C.text }} />
+              <span style={{ width: Math.min(22, Math.round(8 + (s / 28) * 14)), height: Math.min(22, Math.round(8 + (s / 28) * 14)), borderRadius: '50%', background: C.text }} />
             </button>
           ))}
         </div>
 
         {/* Outils */}
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {toolBtn('brush', '🖌', 'Pinceau')}
+          {toolBtn('line', '📏', 'Ligne droite (Maj = 45°)')}
+          {toolBtn('rect', '▭', 'Rectangle (Maj = carré)')}
+          {toolBtn('ellipse', '⬭', 'Ellipse (Maj = cercle)')}
+          {toolBtn('spray', '💨', 'Aérographe')}
           {toolBtn('eraser', '🩹', 'Gomme')}
           {toolBtn('fill', '🪣', 'Pot de peinture')}
           {toolBtn('eyedropper', '💧', 'Pipette')}
+        </div>
+
+        {/* Modes spéciaux : symétrie miroir + arc-en-ciel */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button onClick={() => setSymmetry((s) => !s)} title="Symétrie miroir (axe vertical)" className="bpc-btn" style={{
+            width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 18, display: 'grid', placeItems: 'center', color: C.text,
+            border: `1px solid ${symmetry ? alpha(C.gold, 0.6) : C.hairSoft}`, background: symmetry ? alpha(C.gold, 0.22) : 'rgba(255,255,255,0.04)',
+          }}>🪞</button>
+          <button onClick={() => setRainbow((r) => !r)} title="Pinceau arc-en-ciel" className="bpc-btn" style={{
+            width: 42, height: 42, borderRadius: 11, cursor: 'pointer', fontSize: 18, display: 'grid', placeItems: 'center', color: C.text,
+            border: `1px solid ${rainbow ? alpha(C.gold, 0.6) : C.hairSoft}`,
+            background: rainbow ? 'linear-gradient(90deg,#e0524a,#e7b416,#3fb964,#3a6fd4,#7a52d4)' : 'rgba(255,255,255,0.04)',
+          }}>🌈</button>
         </div>
 
         {/* Zoom (molette aussi) */}
