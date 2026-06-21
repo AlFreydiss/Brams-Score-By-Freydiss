@@ -47,6 +47,13 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
 
+  // Zoom / déplacement de la toile (vue CSS — n'altère JAMAIS les pixels du PNG).
+  // pos() lit getBoundingClientRect (déjà transformé) → le mapping dessin reste exact.
+  const [view, setView] = useState({ zoom: 1, tx: 0, ty: 0 })
+  const viewRef = useRef(view); viewRef.current = view
+  const spaceRef = useRef(false)
+  const panRef = useRef(null)
+
   const usesCursor = tool === 'brush' || tool === 'eraser' // les autres gardent un curseur natif
 
   // Init : fond blanc + premier snapshot.
@@ -118,6 +125,52 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     snapshot(); saveDraft()
   }, [snapshot, saveDraft])
 
+  // Borne la vue : zoom ≥ 1 (jamais plus petit que la toile), translation telle que
+  // la toile couvre toujours le cadre (pas de bande vide sur les bords).
+  const clampView = (v, rect) => {
+    if (v.zoom <= 1) return { zoom: 1, tx: 0, ty: 0 }
+    const cw = rect.width, ch = rect.height
+    return {
+      zoom: v.zoom,
+      tx: Math.min(0, Math.max(cw - cw * v.zoom, v.tx)),
+      ty: Math.min(0, Math.max(ch - ch * v.zoom, v.ty)),
+    }
+  }
+  // Zoom centré sur un point (mx,my) en px-cadre : garde ce point fixe sous le curseur.
+  const zoomAt = (factor, mx, my) => {
+    const wrap = wrapRef.current; if (!wrap) return
+    const rect = wrap.getBoundingClientRect()
+    const v = viewRef.current
+    const z = Math.min(6, Math.max(1, v.zoom * factor))
+    const wx = (mx - v.tx) / v.zoom, wy = (my - v.ty) / v.zoom
+    setView(clampView({ zoom: z, tx: mx - wx * z, ty: my - wy * z }, rect))
+  }
+  const zoomBy = (factor) => { const r = wrapRef.current?.getBoundingClientRect(); if (r) zoomAt(factor, r.width / 2, r.height / 2) }
+  const resetZoom = () => setView({ zoom: 1, tx: 0, ty: 0 })
+
+  // Molette = zoom vers le curseur. Listener natif non-passif (preventDefault fiable).
+  useEffect(() => {
+    const wrap = wrapRef.current; if (!wrap) return
+    const onWheel = (e) => {
+      if (disabled) return
+      e.preventDefault()
+      const rect = wrap.getBoundingClientRect()
+      zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - rect.left, e.clientY - rect.top)
+    }
+    wrap.addEventListener('wheel', onWheel, { passive: false })
+    return () => wrap.removeEventListener('wheel', onWheel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled])
+
+  // Barre d'espace maintenue = mode déplacement (panoramique) quand on est zoomé.
+  useEffect(() => {
+    const isField = () => { const t = document.activeElement?.tagName; return t === 'INPUT' || t === 'TEXTAREA' }
+    const kd = (e) => { if (e.code === 'Space' && !isField()) { e.preventDefault(); spaceRef.current = true; if (wrapRef.current && viewRef.current.zoom > 1 && !panRef.current) wrapRef.current.style.cursor = 'grab' } }
+    const ku = (e) => { if (e.code === 'Space') { spaceRef.current = false; if (wrapRef.current && !panRef.current) wrapRef.current.style.cursor = '' } }
+    window.addEventListener('keydown', kd); window.addEventListener('keyup', ku)
+    return () => { window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku) }
+  }, [])
+
   // Coordonnées canvas depuis un pointer event.
   const pos = (e) => {
     const cv = localRef.current
@@ -187,6 +240,15 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
 
   const onDown = (e) => {
     if (disabled) return
+    // Déplacement de la toile : espace maintenu OU clic molette, seulement si zoomé.
+    if ((spaceRef.current || e.button === 1) && viewRef.current.zoom > 1) {
+      e.preventDefault()
+      panRef.current = { sx: e.clientX, sy: e.clientY, tx0: viewRef.current.tx, ty0: viewRef.current.ty }
+      if (wrapRef.current) wrapRef.current.style.cursor = 'grabbing'
+      if (cursorRef.current) cursorRef.current.style.opacity = '0'
+      try { localRef.current.setPointerCapture?.(e.pointerId) } catch {}
+      return
+    }
     e.preventDefault()
     const p = pos(e)
     if (tool === 'fill') { floodFill(p.x, p.y, color); snapshot(); saveDraft(); return }
@@ -204,6 +266,12 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   }
 
   const onMove = (e) => {
+    if (panRef.current) {
+      const rect = wrapRef.current.getBoundingClientRect()
+      const dx = e.clientX - panRef.current.sx, dy = e.clientY - panRef.current.sy
+      setView(clampView({ zoom: viewRef.current.zoom, tx: panRef.current.tx0 + dx, ty: panRef.current.ty0 + dy }, rect))
+      return
+    }
     moveCursor(e)
     if (!drawingRef.current || disabled) return
     e.preventDefault()
@@ -225,6 +293,11 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   }
 
   const onUp = () => {
+    if (panRef.current) {
+      panRef.current = null
+      if (wrapRef.current) wrapRef.current.style.cursor = spaceRef.current && viewRef.current.zoom > 1 ? 'grab' : ''
+      return
+    }
     if (!drawingRef.current) return
     drawingRef.current = false
     lastRef.current = null
@@ -284,6 +357,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
             display: 'block', width: '100%', height: 'auto', aspectRatio: `${W} / ${H}`,
             touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none',
             cursor: usesCursor ? 'none' : tool === 'fill' ? 'cell' : 'crosshair',
+            transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.zoom})`,
+            transformOrigin: '0 0', willChange: 'transform',
           }}
         />
         {/* Curseur custom (cercle taille pinceau). pointerEvents:none = transparent aux events. */}
@@ -330,6 +405,14 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           {toolBtn('eraser', '🩹', 'Gomme')}
           {toolBtn('fill', '🪣', 'Pot de peinture')}
           {toolBtn('eyedropper', '💧', 'Pipette')}
+        </div>
+
+        {/* Zoom (molette aussi) */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <button onClick={() => zoomBy(1 / 1.3)} disabled={view.zoom <= 1} title="Dézoomer" className="bpc-btn" style={histBtn(view.zoom > 1)}>－</button>
+          <span title="Molette = zoom · Espace = déplacer" style={{ ...type.small, color: C.textMut, minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>{Math.round(view.zoom * 100)}%</span>
+          <button onClick={() => zoomBy(1.3)} disabled={view.zoom >= 6} title="Zoomer (molette)" className="bpc-btn" style={histBtn(view.zoom < 6)}>＋</button>
+          <button onClick={resetZoom} disabled={view.zoom === 1} title="Réinitialiser le zoom" className="bpc-btn" style={histBtn(view.zoom !== 1)}>⟲</button>
         </div>
 
         {/* Historique */}

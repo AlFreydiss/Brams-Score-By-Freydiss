@@ -130,9 +130,9 @@ export function LiveRoster({ players, submittedSeats, meUserId }) {
 }
 
 // ── Cadre de phase : header (eyebrow + consigne + minuteur) + corps + footer ──
-export function PhaseFrame({ eyebrow, prompt, remaining, total, children, footer }) {
+export function PhaseFrame({ eyebrow, prompt, remaining, total, children, footer, wide }) {
   return (
-    <div style={{ ...panel, padding: 'clamp(18px,3vw,28px)', width: '100%', maxWidth: 880, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ ...panel, padding: 'clamp(18px,3vw,28px)', width: '100%', maxWidth: wide ? 1180 : 880, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(520px 200px at 14% 0%, ${alpha(C.gold, 0.08)}, transparent 64%)` }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0, flex: '1 1 280px' }}>

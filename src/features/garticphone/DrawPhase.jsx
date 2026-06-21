@@ -68,6 +68,7 @@ export default function DrawPhase({ room, remaining, total, mySubmitted, prevPag
     <>
       <style>{KEYFRAMES}</style>
       <PhaseFrame
+        wide
         eyebrow="Dessine cette phrase"
         prompt={loadingPrompt ? '…' : (prompt || 'Dessine ce que t\'inspire ce carnet.')}
         remaining={remaining} total={total}
