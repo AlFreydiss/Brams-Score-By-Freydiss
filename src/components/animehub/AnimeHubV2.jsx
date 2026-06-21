@@ -14,6 +14,7 @@ import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 import { logAnimeOpen, fetchTopWatched } from '../../lib/watchStats.js'
 import { getContinueWatching } from '../../lib/watchProgress.js'
 import { friendsWatching } from '../../lib/social.js'
+import { getStatus, setStatus, syncMyList, getScanContinue, mediaKey } from '../../lib/myList.js'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
 const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergarden', 'aot', 'jjk', 'reze'] // 8 à la une
@@ -162,6 +163,34 @@ export default function AnimeHubV2(props) {
     return next
   })
 
+  // ── Ma Liste : statut explicite par média (à voir / en cours / vu), persisté
+  // (localStorage + miroir Supabase). listVer force le re-render à chaque change.
+  const [listVer, setListVer] = useState(0)
+  useEffect(() => {
+    const h = () => setListVer(v => v + 1)
+    window.addEventListener('mylist:change', h)
+    return () => window.removeEventListener('mylist:change', h)
+  }, [])
+  useEffect(() => { if (discordId) syncMyList() }, [discordId]) // pull serveur au login
+  const setAnimeStatus = (a, st) => setStatus(mediaKey('anime', a.id), st)
+  // Statut effectif : choix explicite de l'utilisateur sinon dérivé de la progression.
+  const statusOf = (a) => {
+    const ex = getStatus(mediaKey('anime', a.id))
+    if (ex) return ex
+    const p = progress[a.id]?.pct || 0
+    return p >= 100 ? 'termine' : p > 0 ? 'encours' : 'avoir'
+  }
+
+  // Reprise scan One Piece (lecteur ScansPage, localStorage). Recalcul au montage
+  // et quand le lecteur pousse une progression (liveSync émet un 'storage'-like).
+  const [scanCont, setScanCont] = useState(() => getScanContinue())
+  useEffect(() => {
+    const h = () => setScanCont(getScanContinue())
+    window.addEventListener('storage', h)
+    window.addEventListener('mylist:change', h)
+    return () => { window.removeEventListener('storage', h); window.removeEventListener('mylist:change', h) }
+  }, [])
+
   // ── Hero rotatif (8 s, pause hover, crossfade, reduced-motion = statique) ──
   const slides = useMemo(() => HERO_IDS
     .map(id => ANIMES.find(a => a.id === id))
@@ -199,10 +228,9 @@ export default function AnimeHubV2(props) {
   const filtered = useMemo(() => {
     let list = ANIMES.filter(a => {
       if (genreSel.size && !(a.genres || []).some(g => genreSel.has(g))) return false
-      const p = progress[a.id]?.pct || 0
-      if (seg === 'encours' && !(p > 0 && p < 100)) return false
-      if (seg === 'termine' && p < 100) return false
-      if (seg === 'avoir' && p !== 0) return false
+      // Segments À voir / En cours / Terminé pilotés par le statut Ma Liste
+      // (explicite sinon dérivé de la progression) → cohérent avec les pills.
+      if ((seg === 'encours' || seg === 'termine' || seg === 'avoir') && statusOf(a) !== seg) return false
       if (seg === 'favoris' && !favs.has(a.id)) return false
       if (debounced && !NORM(`${a.title} ${a.subtitle} ${(a.genres || []).join(' ')} ${(SEARCH_ALIASES[a.id] || []).join(' ')}`).includes(NORM(debounced))) return false
       return true
@@ -210,7 +238,7 @@ export default function AnimeHubV2(props) {
     if (sort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title, 'fr'))
     else if (sort === 'recent') list = [...list].sort((a, b) => (b.badge === 'NOUVEAU' ? 1 : 0) - (a.badge === 'NOUVEAU' ? 1 : 0))
     return list
-  }, [debounced, seg, genreSel, sort, favs, progress])
+  }, [debounced, seg, genreSel, sort, favs, progress, listVer])
 
   // Mode "résultats" : recherche OU n'importe quel filtre actif (segment,
   // genres, tri non défaut) — sinon cliquer « Terminé » ne changeait rien de
@@ -304,7 +332,8 @@ export default function AnimeHubV2(props) {
     <AnimeCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={w}
       progressPct={progress[a.id]?.pct || 0}
       onOpen={openAnime} onPlay={openAnime}
-      onToggleList={toggleFav} inList={favs.has(a.id)} />
+      onToggleList={toggleFav} inList={favs.has(a.id)}
+      status={getStatus(mediaKey('anime', a.id))} onSetStatus={setAnimeStatus} />
   )
 
   const segBtn = (id, label) => (
@@ -523,9 +552,33 @@ export default function AnimeHubV2(props) {
           </>
         ) : (
           <>
-            {/* ── ▶ Reprendre (reprise serveur, connecté · masquée si vide) ── */}
-            {discordId && continueWatch.length > 0 && (
-              <AnimeRow title="▶ Reprendre" count={continueWatch.length}>
+            {/* ── ▶ Reprendre (unifié : épisodes anime + chapitres scans) ──
+                Anime = reprise serveur (connecté). Scan One Piece = progression
+                locale du lecteur (visible même déconnecté). Masquée si tout vide. */}
+            {(continueWatch.length > 0 || scanCont) && (
+              <AnimeRow title="▶ Reprendre" count={continueWatch.length + (scanCont ? 1 : 0)}>
+                {scanCont && (() => {
+                  const opMeta = byNs.get('onepiece')
+                  const cover = opMeta?.coverImage
+                  return (
+                    <div key="cw-scan-onepiece" style={{ width: 280, flexShrink: 0 }}>
+                      <div role="button" tabIndex={0}
+                        onClick={() => props.onOpenScans?.()}
+                        onKeyDown={e => { if (e.key === 'Enter') props.onOpenScans?.() }}
+                        style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
+                        {cover && <img src={cover} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: opMeta?.coverPosition || 'center' }} />}
+                        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
+                        <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 8px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)' }}>📖 Ch.{scanCont.chapter}</span>
+                        <div style={{ position: 'absolute', left: 10, bottom: 12, right: 10 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 600 }}>One Piece — Scans</div>
+                        </div>
+                        <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
+                          <div style={{ width: `${scanCont.pct}%`, height: '100%', background: C.brass }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
                 {continueWatch.map(({ anime: a, episode, pct }) => (
                   <div key={`cw-${a.id}`} style={{ width: 280, flexShrink: 0 }}>
                     <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">

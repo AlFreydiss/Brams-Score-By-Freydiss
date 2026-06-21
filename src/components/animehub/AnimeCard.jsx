@@ -69,7 +69,10 @@ export default function AnimeCard({
   onPlay,           // lecture directe (optionnel)
   onToggleList,     // + ma liste / favori (optionnel)
   inList = false,
+  status = null,    // 'avoir' | 'encours' | 'termine' (statut Ma Liste, optionnel)
+  onSetStatus,      // (anime, status|null) — pose/retire un statut Ma Liste
 }) {
+  const STATUSES = [['avoir', 'À voir'], ['encours', 'En cours'], ['termine', 'Vu']]
   const [hover, setHover] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
@@ -159,6 +162,30 @@ export default function AnimeCard({
               >{inList ? '✓' : '+'}</button>
             )}
           </div>
+          {/* Ma Liste : statut explicite (à voir / en cours / vu). Cliquer le
+              statut actif le retire. Posé sous les actions pour rester compact. */}
+          {onSetStatus && (
+            <div style={{ display: 'flex', gap: 4, marginTop: 7 }}>
+              {STATUSES.map(([val, label]) => {
+                const on = status === val
+                return (
+                  <button
+                    key={val}
+                    aria-label={`Marquer « ${label} »`}
+                    aria-pressed={on}
+                    onClick={e => { e.stopPropagation(); onSetStatus(anime, on ? null : val) }}
+                    style={{
+                      flex: 1, padding: '4px 0', borderRadius: 6, cursor: 'pointer',
+                      fontSize: 10, fontWeight: 700, fontFamily: FONT_BODY, lineHeight: 1.1,
+                      background: on ? C.brass : 'rgba(255,255,255,0.08)',
+                      border: `1px solid ${on ? C.brass : C.hair2}`,
+                      color: on ? '#14110A' : C.dim,
+                    }}
+                  >{label}</button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Progression — UNIQUEMENT si > 0 */}

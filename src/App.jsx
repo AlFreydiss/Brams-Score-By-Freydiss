@@ -684,6 +684,7 @@ export default function App() {
       {animeHubOpen && (
           <AnimeHub
             onClose={() => navigate('/')}
+            onOpenScans={() => navigate('/scans')}
             onOpenOnepiece={() => navigate('/animes-scan/onepiece')}
             onOpenTpn={() => navigate('/animes-scan/tpn')}
             onOpenDrstone={() => navigate('/animes-scan/drstone')}
