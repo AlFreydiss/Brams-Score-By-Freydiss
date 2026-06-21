@@ -18,6 +18,25 @@ function authorName(page) {
   return page?.author?.name || 'Inconnu'
 }
 
+// Effet machine à écrire : le texte s'affiche caractère par caractère (cadence adaptée
+// à la longueur). prefers-reduced-motion → texte complet d'emblée.
+function TypeText({ text }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    const t = text || ''
+    const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce || !t) { setN(t.length); return }
+    setN(0)
+    const step = Math.max(14, Math.min(45, 1100 / t.length))
+    let i = 0
+    const id = setInterval(() => { i += 1; setN(i); if (i >= t.length) clearInterval(id) }, step)
+    return () => clearInterval(id)
+  }, [text])
+  const t = text || '—'
+  const done = n >= t.length
+  return <>{t.slice(0, n)}<span aria-hidden style={{ opacity: done ? 0 : 0.55, fontWeight: 400 }}>▍</span></>
+}
+
 // Rendu d'un album entier sur un canvas offscreen → dataURL PNG (partage Discord).
 async function renderAlbumPng(album, players) {
   const cards = album.pages
@@ -83,7 +102,7 @@ function PageCard({ page, players, kind, climax }) {
         )
       ) : (
         <div style={{ ...type.h2, color: C.text, padding: '24px 22px', borderRadius: 14, background: alpha(C.gold, 0.07), border: `1px solid ${C.hair}`, textAlign: 'center', lineHeight: 1.4 }}>
-          “{page?.content || '—'}”
+          “<TypeText text={page?.content} />”
         </div>
       )}
     </div>
@@ -190,6 +209,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       if (p?.emoji === 'vote') {
         if (typeof p.album !== 'undefined' && p.from != null) {
           setVotes((v) => ({ ...v, [String(p.from)]: p.album }))
+          spawn('💛') // chaque vote fait remonter un cœur (feedback collectif)
         }
         return
       }
@@ -212,8 +232,9 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
     // Clé alignée sur le `from` rebroadcasté → si le canal nous renvoie notre
     // propre vote, il écrase ce bulletin optimiste au lieu d'en créer un second.
     setVotes((v) => ({ ...v, [String(userId)]: book }))
+    spawn('💛')
     playSound('reveal')
-  }, [sendReaction, userId])
+  }, [sendReaction, userId, spawn])
 
   // Blip sonore au changement de page du dévoilement (feedback de défilement).
   useEffect(() => { if (album && pages) playSound('reveal') }, [albumIdx, pageIdx]) // eslint-disable-line react-hooks/exhaustive-deps

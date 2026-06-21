@@ -20,6 +20,7 @@ const PALETTE = [
 ]
 const SIZES = [3, 7, 14, 28, 48]
 const SHAPE_TOOLS = ['line', 'rect', 'ellipse']
+const STAMPS = ['💀', '⭐', '❤️', '⚡', '🔥', '👑', '🏴‍☠️', '🌊', '😂', '💩', '🍖', '⚓']
 
 function hexToRgba(hex) {
   const n = parseInt(hex.replace('#', ''), 16)
@@ -49,6 +50,8 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   const symRef = useRef(symmetry); symRef.current = symmetry
   const rainbowRef = useRef(rainbow); rainbowRef.current = rainbow
   const hueRef = useRef(0)
+  const [stamp, setStamp] = useState('💀') // tampon courant (outil stamp)
+  const stampRef = useRef(stamp); stampRef.current = stamp
   const shiftRef = useRef(false)        // Maj = contraindre (carré/cercle/ligne 45°)
   const shapeBaseRef = useRef(null)     // snapshot AVANT une forme (preview live restaurée à chaque move)
   const startRef = useRef(null)         // point de départ d'une forme
@@ -275,6 +278,17 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
       if (symRef.current) ctx.fillRect(W - x, y, 1.6, 1.6)
     }
   }
+  // Tampon : pose un emoji (taille = pinceau) centré sur le clic. Miroir-aware.
+  const placeStamp = (p) => {
+    const ctx = ctxRef.current
+    const px = Math.max(40, sizeRef.current * 5)
+    ctx.save()
+    ctx.font = `${px}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText(stampRef.current, p.x, p.y)
+    if (symRef.current) ctx.fillText(stampRef.current, W - p.x, p.y)
+    ctx.restore()
+  }
 
   // Maj maintenue = contrainte des formes (carré/cercle/ligne à 45°).
   useEffect(() => {
@@ -319,6 +333,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     const p = pos(e)
     if (tool === 'fill') { floodFill(p.x, p.y, color); snapshot(); saveDraft(); return }
     if (tool === 'eyedropper') { pickColor(p.x, p.y); return }
+    if (tool === 'stamp') { placeStamp(p); snapshot(); saveDraft(); return }
     const ctx = ctxRef.current
     drawingRef.current = true
     try { localRef.current.setPointerCapture?.(e.pointerId) } catch {}
@@ -482,6 +497,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           {toolBtn('rect', '▭', 'Rectangle (Maj = carré)')}
           {toolBtn('ellipse', '⬭', 'Ellipse (Maj = cercle)')}
           {toolBtn('spray', '💨', 'Aérographe')}
+          {toolBtn('stamp', '🌟', 'Tampon (emoji)')}
           {toolBtn('eraser', '🩹', 'Gomme')}
           {toolBtn('fill', '🪣', 'Pot de peinture')}
           {toolBtn('eyedropper', '💧', 'Pipette')}
@@ -515,6 +531,20 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           <button onClick={clearAll} title="Tout effacer" className="bpc-btn" style={{ ...histBtn(true), color: C.danger, fontFamily: fonts.body, fontSize: 13, fontWeight: 800, width: 'auto', padding: '0 12px' }}>Effacer</button>
         </div>
       </div>
+
+      {/* Sélecteur de tampons (visible quand l'outil tampon est actif) */}
+      {tool === 'stamp' && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', padding: '4px 0' }}>
+          <span style={{ ...type.small, color: C.textMut, marginRight: 4 }}>Tampon</span>
+          {STAMPS.map((s) => (
+            <button key={s} onClick={() => setStamp(s)} title={`Tampon ${s}`} className="bpc-btn" style={{
+              width: 38, height: 38, borderRadius: 10, cursor: 'pointer', fontSize: 20, display: 'grid', placeItems: 'center',
+              border: `1px solid ${stamp === s ? alpha(C.gold, 0.6) : C.hairSoft}`,
+              background: stamp === s ? alpha(C.gold, 0.2) : 'rgba(255,255,255,0.04)',
+            }}>{s}</button>
+          ))}
+        </div>
+      )}
 
       {/* Ergonomie tactile : sur petit écran on agrandit les cibles et on étale la
           barre d'outils, et on coupe les gestes parasites (sélection, callout iOS). */}
