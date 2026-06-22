@@ -248,7 +248,7 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
   const decoLongue = decoDepuis && Date.now() - decoDepuis > DELAI_DECO_MS
 
   return (
-    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
+    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)', paddingTop: 8 }}>
       <PlateauReglable
         partie={partie}
         orientation={maCouleur === 'w' ? 'white' : 'black'}
@@ -278,17 +278,17 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
         />
 
         {!adversaireEnLigne && enCours && (
-          <div style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12.5, fontWeight: 600, background: 'rgba(224,82,74,0.10)', border: '1px solid rgba(224,82,74,0.3)', color: '#ffb4ae' }}>
-            📡 Adversaire déconnecté{decoLongue ? ' — son horloge continue de tourner.' : '…'}
+          <div style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12.5, fontWeight: 600, background: 'rgba(212,104,90,0.10)', border: '1px solid rgba(212,104,90,0.3)', color: '#e9b0a8' }}>
+            Adversaire déconnecté{decoLongue ? ' — son horloge continue de tourner.' : '…'}
           </div>
         )}
 
         {nulleRecue && enCours && (
-          <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(116,185,255,0.08)', border: '1px solid rgba(116,185,255,0.35)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: THEME.blue, marginBottom: 8 }}>½ L'adversaire propose la nulle</div>
+          <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(111,168,214,0.08)', border: '1px solid rgba(111,168,214,0.35)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: THEME.blue, marginBottom: 8 }}>L'adversaire propose la nulle</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={accepterNulle} style={{ flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12.5, background: 'rgba(52,211,153,0.15)', color: THEME.success, border: '1px solid rgba(52,211,153,0.4)' }}>✓ Accepter</button>
-              <button onClick={refuserNulle} style={{ flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12.5, background: 'rgba(224,82,74,0.12)', color: '#ffb4ae', border: '1px solid rgba(224,82,74,0.4)' }}>✕ Refuser</button>
+              <button onClick={accepterNulle} style={{ flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12.5, background: 'rgba(127,184,106,0.15)', color: THEME.success, border: '1px solid rgba(127,184,106,0.4)' }}>Accepter</button>
+              <button onClick={refuserNulle} style={{ flex: 1, padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12.5, background: 'rgba(212,104,90,0.12)', color: '#e9b0a8', border: '1px solid rgba(212,104,90,0.4)' }}>Refuser</button>
             </div>
           </div>
         )}
@@ -309,7 +309,7 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
           ← Quitter {enCours ? '(la partie continue)' : ''}
         </button>
         {enEchec && enCours && trait === maCouleur && (
-          <div style={{ textAlign: 'center', color: THEME.accent, fontWeight: 800, fontSize: 13, letterSpacing: '0.06em' }}>⚠ ÉCHEC !</div>
+          <div style={{ textAlign: 'center', color: THEME.accent, fontWeight: 800, fontSize: 13, letterSpacing: '0.08em' }}>ÉCHEC</div>
         )}
       </div>
 
@@ -330,9 +330,9 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
         />
       )}
       {finVisible && revancheRecue && !revancheEnvoyee && (
-        <div style={{ position: 'fixed', bottom: 22, left: '50%', transform: 'translateX(-50%)', zIndex: 1001, padding: '12px 18px', borderRadius: 14, background: THEME.card, border: `1px solid rgba(255,215,0,0.4)`, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 18px 50px -16px rgba(0,0,0,.8)' }}>
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: THEME.text }}>🔄 L'adversaire veut sa revanche !</span>
-          <button onClick={demanderRevanche} style={{ padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontWeight: 800, fontSize: 13, background: `linear-gradient(135deg, ${THEME.gold}, #e8b800)`, color: '#1a1500', border: 'none' }}>
+        <div style={{ position: 'fixed', bottom: 22, left: '50%', transform: 'translateX(-50%)', zIndex: 1001, padding: '12px 18px', borderRadius: 14, background: THEME.bgElev, border: `1px solid rgba(200,164,92,0.4)`, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 18px 50px -16px rgba(0,0,0,.8)' }}>
+          <span style={{ fontSize: 13.5, fontWeight: 700, color: THEME.text }}>L'adversaire veut sa revanche</span>
+          <button onClick={demanderRevanche} style={{ padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontWeight: 800, fontSize: 13, background: `linear-gradient(135deg, ${THEME.goldHi}, ${THEME.gold})`, color: THEME.accentInk, border: 'none' }}>
             Accepter
           </button>
         </div>

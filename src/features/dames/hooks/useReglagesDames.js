@@ -70,6 +70,7 @@ export function useReglagesDames() {
       },
       // Affichage
       vue2D:               resoudre(settings, 'vue2D', vue2DFallback),
+      boardTheme:          resoudre(settings, 'boardTheme', DEF.boardTheme || 'bois'),
       surbrillancePrises:  resoudre(settings, 'surbrillancePrises', DEF.surbrillancePrises),
       coordonnees:         resoudre(settings, 'coordonnees', DEF.coordonnees),
       // Animation

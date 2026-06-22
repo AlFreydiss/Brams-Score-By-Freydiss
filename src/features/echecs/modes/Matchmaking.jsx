@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase.js'
 import { rpcApparier, rpcQuitterFile } from '../lib/api.js'
-import { CADENCES, CADENCE_DEFAUT, CLE_CADENCE, POLL_MATCHMAKING_MS, THEME } from '../constants.js'
+import { CADENCES, CADENCE_CATEGORIES, CADENCE_DEFAUT, CLE_CADENCE, POLL_MATCHMAKING_MS, THEME } from '../constants.js'
 import { rangPourElo } from '../lib/elo.js'
 import { sons } from '../lib/sons.js'
 
@@ -83,20 +83,20 @@ export default function Matchmaking({ monUid, pseudo, avatar, profil, onPartieTr
         <div style={{
           width: 110, height: 110, margin: '30px auto 22px', borderRadius: '50%', position: 'relative',
           border: `2px solid ${THEME.cardBorderHover}`,
-          background: 'radial-gradient(circle, rgba(255,215,0,0.06), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(200,164,92,0.08), transparent 70%)',
         }}>
           <div style={{
             position: 'absolute', inset: -2, borderRadius: '50%',
             border: '2px solid transparent', borderTopColor: THEME.gold,
             animation: 'echecsRadar 1.1s linear infinite',
           }} />
-          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>🧭</span>
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 26, color: THEME.goldHi, fontVariantNumeric: 'tabular-nums' }}>{secondes}s</span>
         </div>
         <h3 style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 22, color: THEME.text, margin: 0 }}>
           Recherche d'un adversaire…
         </h3>
         <div style={{ color: THEME.muted, fontSize: 14, marginTop: 8 }}>
-          Cadence <b style={{ color: THEME.gold }}>{cadence}</b> · ton ELO <b style={{ color: THEME.gold }}>{elo}</b> · {secondes}s
+          Cadence <b style={{ color: THEME.goldHi, fontFamily: THEME.fontMono }}>{cadence}</b> · ELO <b style={{ color: THEME.goldHi, fontFamily: THEME.fontMono }}>{elo}</b>
         </div>
         <div style={{ color: THEME.muted, fontSize: 12.5, marginTop: 4 }}>
           La fenêtre d'appariement s'élargit avec le temps d'attente.
@@ -104,9 +104,9 @@ export default function Matchmaking({ monUid, pseudo, avatar, profil, onPartieTr
         <button onClick={annuler} style={{
           marginTop: 26, padding: '12px 28px', borderRadius: 12, cursor: 'pointer',
           fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 14,
-          background: 'rgba(224,82,74,0.12)', color: '#ffb4ae', border: '1px solid rgba(224,82,74,0.4)',
+          background: 'rgba(212,104,90,0.12)', color: '#e9b0a8', border: '1px solid rgba(212,104,90,0.4)',
         }}>
-          ✕ Annuler la recherche
+          Annuler la recherche
         </button>
       </div>
     )
@@ -114,46 +114,50 @@ export default function Matchmaking({ monUid, pseudo, avatar, profil, onPartieTr
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <h2 style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 24, color: THEME.text, margin: '0 0 6px' }}>
-        🌊 Partie en ligne classée
+      <h2 style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 24, color: THEME.text, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+        Partie classée
       </h2>
       <div style={{ color: THEME.muted, fontSize: 13.5, marginBottom: 18 }}>
-        Ton ELO : <b style={{ color: THEME.gold }}>{elo}</b> · {rang.emoji} {rang.label}
+        Ton ELO : <b style={{ color: THEME.goldHi, fontFamily: THEME.fontMono }}>{elo}</b> · <span style={{ color: rang.couleur }}>{rang.label}</span>
       </div>
 
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.muted, marginBottom: 10 }}>Cadence</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
-        {CADENCES.map(c => {
-          const actif = c.id === cadence
-          return (
-            <button key={c.id} onClick={() => setCadence(c.id)} style={{
-              padding: '14px 12px', borderRadius: 14, cursor: 'pointer', textAlign: 'center',
-              background: actif ? 'rgba(255,215,0,0.10)' : THEME.card,
-              border: `1px solid ${actif ? 'rgba(255,215,0,0.45)' : THEME.cardBorder}`,
-              transition: 'border-color .15s, background .15s',
-            }}>
-              <div style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 20, color: actif ? THEME.gold : THEME.text }}>
-                {c.emoji} {c.id}
-              </div>
-              <div style={{ fontSize: 12, color: THEME.muted, fontWeight: 600, marginTop: 3 }}>{c.label}</div>
-            </button>
-          )
-        })}
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: THEME.muted, marginBottom: 12 }}>Cadence</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {CADENCE_CATEGORIES.map(cat => (
+          <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ width: 74, flexShrink: 0, fontSize: 12, fontWeight: 700, color: THEME.textDim }}>{cat}</span>
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              {CADENCES.filter(c => c.cat === cat).map(c => {
+                const actif = c.id === cadence
+                return (
+                  <button key={c.id} onClick={() => setCadence(c.id)} aria-pressed={actif} style={{
+                    fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 14, fontVariantNumeric: 'tabular-nums',
+                    padding: '8px 14px', borderRadius: 999, cursor: 'pointer', minHeight: 34,
+                    color: actif ? THEME.accentInk : THEME.text,
+                    background: actif ? `linear-gradient(135deg, ${THEME.goldHi}, ${THEME.gold})` : THEME.surfaceHi,
+                    border: `1px solid ${actif ? 'transparent' : THEME.cardBorder}`,
+                    transition: 'background .15s, color .15s, border-color .15s',
+                  }}>{c.id}</button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {erreur && (
-        <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: 'rgba(224,82,74,0.10)', border: '1px solid rgba(224,82,74,0.35)', color: '#ffb4ae', fontSize: 13 }}>
-          ⚠ {erreur}
+        <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: 'rgba(212,104,90,0.10)', border: '1px solid rgba(212,104,90,0.35)', color: '#e9b0a8', fontSize: 13 }}>
+          {erreur}
         </div>
       )}
 
       <button onClick={chercher} style={{
         width: '100%', marginTop: 22, padding: '15px 20px', borderRadius: 14, cursor: 'pointer',
-        fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 17,
-        background: `linear-gradient(135deg, ${THEME.accent}, #c23a32)`, color: '#fff', border: 'none',
-        boxShadow: '0 16px 40px -14px rgba(224,82,74,.55)',
+        fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 16,
+        background: `linear-gradient(135deg, ${THEME.goldHi}, ${THEME.gold})`, color: THEME.accentInk, border: 'none',
+        boxShadow: '0 16px 40px -16px rgba(200,164,92,.5)',
       }}>
-        ⚔ Chercher un adversaire
+        Chercher un adversaire
       </button>
       <button onClick={onQuitter} style={{
         width: '100%', marginTop: 10, padding: '10px', borderRadius: 10, cursor: 'pointer',

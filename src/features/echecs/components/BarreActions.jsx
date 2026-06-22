@@ -11,9 +11,9 @@ function Btn({ children, onClick, danger, disabled, title }) {
       style={{
         flex: 1, padding: '9px 12px', borderRadius: 10, cursor: disabled ? 'default' : 'pointer',
         fontFamily: THEME.fontBody, fontWeight: 700, fontSize: 13,
-        color: disabled ? THEME.muted : danger ? '#ffb4ae' : THEME.text,
-        background: hover && !disabled ? (danger ? 'rgba(224,82,74,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.05)',
-        border: `1px solid ${hover && !disabled ? (danger ? 'rgba(224,82,74,0.5)' : THEME.cardBorderHover) : THEME.cardBorder}`,
+        color: disabled ? THEME.muted : danger ? '#e9b0a8' : THEME.text,
+        background: hover && !disabled ? (danger ? 'rgba(212,104,90,0.16)' : 'rgba(255,255,255,0.07)') : THEME.surfaceHi,
+        border: `1px solid ${hover && !disabled ? (danger ? 'rgba(212,104,90,0.5)' : THEME.cardBorderHover) : THEME.cardBorder}`,
         transition: 'background .15s, border-color .15s',
         opacity: disabled ? 0.55 : 1,
       }}

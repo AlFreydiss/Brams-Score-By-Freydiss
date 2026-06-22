@@ -13,15 +13,21 @@ import DamesFxOverlay from './DamesFxOverlay.jsx'
 import DamesPoster from './DamesPoster.jsx'
 import DamesAnalyse from './DamesAnalyse.jsx'
 import { useReglagesDames } from './hooks/useReglagesDames.js'
+import { ui, fonts, damesBoard, damesPieces } from '../games/neutralTheme.js'
 
 const QUALITY = [['high', 'Élevé'], ['medium', 'Moyen'], ['low', 'Basique']]
 
-const GOLD = '#d9b870', PARCH = '#efe6d4', MUTED = '#9a8f7d', EMBER = '#e0623a'
-const PIRATA = "'Pirata One','OnePiece',cursive"   // titres/faction (design system Brams)
-const DIFFS = [['mousse', 'Mousse'], ['marin', 'Pirate'], ['capitaine', 'Corsaire'], ['amiral', 'Amiral'], ['legende', 'Roi des Pirates']]
-const seg = (on) => ({ appearance: 'none', border: 0, background: on ? `linear-gradient(180deg,${GOLD},#b8924a)` : 'transparent', color: on ? '#231703' : MUTED, fontFamily: 'inherit', fontWeight: 600, fontSize: 13, letterSpacing: '.3px', padding: '8px 15px', borderRadius: 999, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, boxShadow: on ? '0 4px 14px rgba(217,184,112,.28), inset 0 1px 1px rgba(255,255,255,.4)' : 'none', transition: '.18s' })
-const segWrap = { display: 'flex', background: 'rgba(18,13,8,.72)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: 4, gap: 3, backdropFilter: 'blur(10px)', flexWrap: 'wrap' }
-const iconBtn = (dis) => ({ appearance: 'none', border: '1px solid rgba(217,184,112,.16)', background: 'rgba(18,13,8,.72)', color: MUTED, width: 40, height: 40, borderRadius: '50%', cursor: dis ? 'not-allowed' : 'pointer', display: 'grid', placeItems: 'center', fontSize: 16, backdropFilter: 'blur(10px)', opacity: dis ? 0.32 : 1 })
+// Tokens NEUTRES (source unique). Plus de Pirates/Marine : on parle Foncé / Clair.
+const GOLD = ui.accent, PARCH = ui.text, MUTED = ui.textDim
+const DISP = fonts.display, MONO = fonts.mono
+const DIFFS = [['mousse', 'Débutant'], ['marin', 'Amateur'], ['capitaine', 'Confirmé'], ['amiral', 'Expert'], ['legende', 'Maître']]
+const BOARDS = Object.entries(damesBoard).map(([id, t]) => [id, t.label])
+// Foncé = P (graphite), Clair = M (ivoire). Couleurs de pastille HUD = tokens pions.
+const SIDE_COL = { [P]: damesPieces.fonce.base, [M]: damesPieces.clair.base }
+const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
+const seg = (on) => ({ appearance: 'none', border: 0, background: on ? `linear-gradient(180deg,${ui.accentHi},${ui.accent})` : 'transparent', color: on ? ui.accentInk : MUTED, fontFamily: 'inherit', fontWeight: 600, fontSize: 13, letterSpacing: '.2px', padding: '8px 15px', borderRadius: ui.radius.pill, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, boxShadow: on ? '0 4px 14px rgba(200,164,92,.28), inset 0 1px 1px rgba(255,255,255,.35)' : 'none', transition: '.18s' })
+const segWrap = { display: 'flex', background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.pill, padding: 4, gap: 3, backdropFilter: 'blur(10px)', flexWrap: 'wrap' }
+const iconBtn = (dis) => ({ appearance: 'none', border: `1px solid ${ui.line}`, background: ui.surface, color: MUTED, width: 40, height: 40, borderRadius: '50%', cursor: dis ? 'not-allowed' : 'pointer', display: 'grid', placeItems: 'center', fontSize: 16, backdropFilter: 'blur(10px)', opacity: dis ? 0.32 : 1, transition: '.16s' })
 
 export default function DamesGame3D() {
   // Réglages live (drawer ⚙ du Nouveau Monde si embarqué, sinon défauts/standalone).
@@ -43,7 +49,8 @@ export default function DamesGame3D() {
   const [music, setMusic] = useState(() => { try { return localStorage.getItem('dames_music') === '1' } catch (e) { return false } })
   const navigate = useNavigate()
   const [quality, setQuality] = useState(() => { try { return localStorage.getItem('dames_quality') || 'high' } catch (e) { return 'high' } })
-  const [view2D, setView2D] = useState(() => { try { return localStorage.getItem('dames_view2d') === '1' } catch (e) { return false } })
+  const [view2D, setView2D] = useState(() => { try { const v = localStorage.getItem('dames_view2d'); return v == null ? true : v === '1' } catch (e) { return true } })
+  const [boardTheme, setBoardThemeState] = useState(() => { try { return localStorage.getItem('dames_board') || 'bois' } catch (e) { return 'bois' } })
   const [fs, setFs] = useState(false)
   const [focused, setFocused] = useState(false)   // focus clavier visible (a11y) — révèle le mode flèches
   const hintTimer = useRef(0)
@@ -241,6 +248,7 @@ export default function DamesGame3D() {
       renderer.onCombo = (n) => fxRef.current?.combo(n)        // bandeau « RAFLE ×N » 2D
       renderer.onPromote = (side) => fxRef.current?.promote(side)  // couronnement Dame 2D
       renderer.mount(canvasRef.current, { reducedMotion: reduced })
+      renderer.setView2D(view2D); renderer.setBoardTheme(boardTheme)
       G.current.rules = R.rules
       G.current.board = initBoard(G.current.rules); renderer.setBoard(G.current.board)
       setHud(h => ({ ...h, ready: true })); refreshTurn()
@@ -260,6 +268,7 @@ export default function DamesGame3D() {
   }, [rulesKey, hud.ready, newGame])
   // Embarqué : vue 2D/3D, sons et niveau IA sont pilotés par le drawer (sinon boutons locaux).
   useEffect(() => { if (R.embarque) { setView2D(R.vue2D); rdrRef.current?.setView2D(R.vue2D) } }, [R.embarque, R.vue2D])
+  useEffect(() => { if (R.embarque && R.boardTheme) { setBoardThemeState(R.boardTheme); rdrRef.current?.setBoardTheme(R.boardTheme) } }, [R.embarque, R.boardTheme])
   useEffect(() => { if (R.embarque) { setMuted(!R.sons); rdrRef.current?.setMuted(!R.sons) } }, [R.embarque, R.sons])
   useEffect(() => { rdrRef.current?.setVolume?.(R.volume) }, [R.volume])
   useEffect(() => { if (R.embarque) { G.current.diff = R.diff; setHud(h => ({ ...h, diff: R.diff })) } }, [R.embarque, R.diff])
@@ -281,6 +290,7 @@ export default function DamesGame3D() {
   const toggleMusic = () => { const m = !music; setMusic(m); rdrRef.current?.setMusic(m) }
   const cycleQuality = () => { const i = QUALITY.findIndex(q => q[0] === quality); const next = QUALITY[(i + 1) % QUALITY.length][0]; setQuality(next); rdrRef.current?.setQuality(next) }
   const toggle2D = () => { const v = !view2D; setView2D(v); rdrRef.current?.setView2D(v) }
+  const cycleBoard = () => { const i = BOARDS.findIndex(b => b[0] === boardTheme); const next = BOARDS[(i + 1) % BOARDS.length][0]; setBoardThemeState(next); rdrRef.current?.setBoardTheme(next) }
   // a11y : navigation du plateau au clavier (flèches = déplacer le curseur, Entrée = sélectionner/jouer, Échap = désélectionner).
   const onKeyDown = (e) => {
     const g = G.current
@@ -295,14 +305,17 @@ export default function DamesGame3D() {
     g.cursor = [nr, nc]; rdrRef.current?.setCursor(g.cursor)
   }
 
-  const turnColor = hud.turn === P ? '#ef8a7c' : '#82b6e6'
-  const turnText = hud.turn === P ? (hud.mode === 'ai' ? 'Pirates — à toi de jouer' : 'Pirates — à vous') : (hud.mode === 'ai' ? (hud.thinking ? 'Marine réfléchit…' : 'Marine') : 'Marine — à vous')
+  const turnColor = hud.turn === P ? ui.text : ui.text
+  const sideName = SIDE_LBL[hud.turn]
+  const turnText = hud.mode === 'ai'
+    ? (hud.turn === P ? 'À vous de jouer' : (hud.thinking ? `${sideName} réfléchit…` : sideName))
+    : `${sideName} — à vous`
   const myTurn = !hud.gameOver && (hud.mode === 'local' || hud.turn === G.current.humanSide) && !hud.thinking
 
   return (
     <div ref={containerRef} tabIndex={0} onKeyDown={onKeyDown} role="application" aria-label="Plateau de dames 3D — flèches pour déplacer le curseur, Entrée pour sélectionner ou jouer, Échap pour annuler la sélection"
       onFocus={(e) => { try { if (e.target.matches(':focus-visible')) setFocused(true) } catch { setFocused(true) } }} onBlur={() => setFocused(false)}
-      style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)', outline: 'none', boxShadow: focused ? 'inset 0 0 0 2px rgba(217,184,112,.4)' : 'none' }}>
+      style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(74vh, 720px)', minHeight: 460, borderRadius: fs ? 0 : ui.radius.lg, overflow: 'hidden', background: `radial-gradient(120% 90% at 50% 12%, ${ui.bgElev} 0%, ${ui.bg} 55%, #08090c 82%)`, border: fs ? 'none' : `1px solid ${ui.line}`, outline: 'none', boxShadow: focused ? `inset 0 0 0 2px ${ui.accent}66` : 'none' }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 200px 30px rgba(0,0,0,.6)' }} />
       <DamesFxOverlay ref={fxRef} winner={hud.gameOver && !hud.draw ? hud.winner : null} />
@@ -319,38 +332,39 @@ export default function DamesGame3D() {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', pointerEvents: 'auto' }}>
           <div style={segWrap}>
-            <button style={seg(hud.mode === 'ai')} onClick={() => setMode('ai')}>⚔️ Solo (IA)</button>
-            <button style={seg(hud.mode === 'local')} onClick={() => setMode('local')}>👥 Ami (2 J)</button>
+            <button style={seg(hud.mode === 'ai')} onClick={() => setMode('ai')}>Solo (IA)</button>
+            <button style={seg(hud.mode === 'local')} onClick={() => setMode('local')}>2 joueurs</button>
           </div>
           {hud.mode === 'ai' && !R.embarque && (<div style={segWrap}>{DIFFS.map(([id, lbl]) => <button key={id} style={{ ...seg(hud.diff === id), fontSize: 12, padding: '7px 11px' }} onClick={() => setDiff(id)}>{lbl}</button>)}</div>)}
-          <button style={iconBtn(false)} title="Nouvelle partie" onClick={newGame}>↻</button>
-          <button style={iconBtn(!hud.canUndo)} title="Annuler" onClick={undo} disabled={!hud.canUndo}>↶</button>
-          <button style={iconBtn(!myTurn || hud.hinting)} title={hud.thinking ? "Indice indisponible — l'IA joue" : hud.hinting ? 'Recherche du meilleur coup…' : 'Indice (meilleur coup)'} onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
-          <button style={iconBtn(false)} title="Recentrer" onClick={() => rdrRef.current?.resetView()}>⌖</button>
-          {!R.embarque && <button style={{ ...iconBtn(false), ...(view2D ? { background: `linear-gradient(180deg,${GOLD},#b8924a)`, color: '#231703', borderColor: GOLD } : {}) }} title={view2D ? 'Vue 3D' : 'Vue 2D (de dessus)'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} onClick={toggle2D}>{view2D ? '🧊' : '🗺️'}</button>}
-          <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '✨' : quality === 'medium' ? '◐' : '○'}</button>
-          <button style={iconBtn(false)} title={fs ? 'Quitter le plein écran' : 'Plein écran'} aria-label="Plein écran" onClick={toggleFs}>{fs ? '🗗' : '⛶'}</button>
-          {!R.embarque && <button style={iconBtn(false)} title="Son" onClick={toggleMute}>{muted ? '🔇' : '🔊'}</button>}
-          <button style={{ ...iconBtn(false), opacity: music ? 1 : 0.45 }} title={music ? 'Musique : on' : 'Musique : off'} aria-label="Musique" onClick={toggleMusic}>🎵</button>
+          <button style={iconBtn(false)} title="Nouvelle partie" aria-label="Nouvelle partie" onClick={newGame}>↻</button>
+          <button style={iconBtn(!hud.canUndo)} title="Annuler le coup" aria-label="Annuler le coup" onClick={undo} disabled={!hud.canUndo}>↶</button>
+          <button style={iconBtn(!myTurn || hud.hinting)} title={hud.thinking ? "Indice indisponible — l'IA joue" : hud.hinting ? 'Recherche du meilleur coup…' : 'Indice (meilleur coup)'} aria-label="Indice" onClick={hint} disabled={!myTurn || hud.hinting}>?</button>
+          <button style={iconBtn(false)} title="Recentrer la vue" aria-label="Recentrer la vue" onClick={() => rdrRef.current?.resetView()}>⌖</button>
+          {!R.embarque && <button style={{ ...iconBtn(false), fontSize: 13, fontWeight: 700 }} title={`Plateau : ${damesBoard[boardTheme]?.label || ''}`} aria-label="Changer le plateau" onClick={cycleBoard}>◧</button>}
+          {!R.embarque && <button style={{ ...iconBtn(false), fontSize: 12.5, fontWeight: 700, ...(view2D ? { background: `linear-gradient(180deg,${ui.accentHi},${ui.accent})`, color: ui.accentInk, borderColor: ui.accent } : {}) }} title={view2D ? 'Passer en vue 3D' : 'Passer en vue 2D'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} onClick={toggle2D}>{view2D ? '2D' : '3D'}</button>}
+          {!view2D && <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '◉' : quality === 'medium' ? '◐' : '○'}</button>}
+          <button style={iconBtn(false)} title={fs ? 'Quitter le plein écran' : 'Plein écran'} aria-label="Plein écran" onClick={toggleFs}>{fs ? '⤬' : '⛶'}</button>
+          {!R.embarque && <button style={iconBtn(false)} title={muted ? 'Activer le son' : 'Couper le son'} aria-label="Son" onClick={toggleMute}>{muted ? '♪̸' : '♪'}</button>}
+          {!view2D && <button style={{ ...iconBtn(false), opacity: music ? 1 : 0.45 }} title={music ? 'Musique : activée' : 'Musique : coupée'} aria-label="Musique" onClick={toggleMusic}>♬</button>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'rgba(14,10,7,.82)', border: '1px solid rgba(217,184,112,.22)', borderRadius: 999, padding: '7px 20px 7px 8px', backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px rgba(0,0,0,.5)' }}>
-          <span style={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 17, background: `radial-gradient(circle at 35% 30%, ${hud.turn === P ? '#d9594d' : '#5a97d6'}, ${hud.turn === P ? '#5e1110' : '#0e2444'})`, boxShadow: `0 0 16px ${hud.turn === P ? 'rgba(217,89,77,.55)' : 'rgba(90,151,214,.55)'}` }}>{hud.turn === P ? '☠️' : '⚓'}</span>
-          {hud.thinking && <span ref={thinkDotRef} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: turnColor, flexShrink: 0 }} />}
-          <span style={{ fontFamily: PIRATA, fontSize: 19, letterSpacing: '.5px', color: turnColor }}>{turnText}</span>
-          <span aria-label="Durée de la partie" title="Durée de la partie" style={{ marginLeft: 4, paddingLeft: 11, borderLeft: '1px solid rgba(217,184,112,.2)', fontFamily: "'Inter',system-ui,sans-serif", fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13, color: MUTED, letterSpacing: '.3px' }}>
-            ⏱ {String((elapsed / 60) | 0).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: ui.bgElev, border: `1px solid ${ui.lineHi}`, borderRadius: ui.radius.pill, padding: '7px 20px 7px 8px', backdropFilter: 'blur(12px)', boxShadow: ui.shadow }}>
+          <span aria-hidden style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: `radial-gradient(circle at 36% 30%, ${damesPieces[hud.turn === P ? 'fonce' : 'clair'].haut}, ${SIDE_COL[hud.turn]})`, boxShadow: `0 0 0 1px ${ui.lineHi}, inset 0 -3px 6px rgba(0,0,0,.4)` }} />
+          {hud.thinking && <span ref={thinkDotRef} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: ui.accent, flexShrink: 0 }} />}
+          <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, letterSpacing: '.2px', color: turnColor }}>{turnText}</span>
+          <span aria-label="Durée de la partie" title="Durée de la partie" style={{ marginLeft: 4, paddingLeft: 11, borderLeft: `1px solid ${ui.line}`, fontFamily: MONO, fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 13, color: MUTED, letterSpacing: '.3px' }}>
+            {String((elapsed / 60) | 0).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
           </span>
         </div>
       </div>
 
       {/* Historique notation (desktop) */}
       {moves.length > 0 && !compact && (
-        <div style={{ position: 'absolute', top: 92, right: 12, width: 116, maxHeight: 'min(46vh,360px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, padding: 8, background: 'rgba(14,10,7,.7)', border: '1px solid rgba(217,184,112,.14)', borderRadius: 12, backdropFilter: 'blur(8px)', pointerEvents: 'auto' }} className="dames-hist">
+        <div style={{ position: 'absolute', top: 92, right: 12, width: 118, maxHeight: 'min(46vh,360px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, padding: 8, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, backdropFilter: 'blur(8px)', pointerEvents: 'auto' }} className="dames-hist">
           <div style={{ fontSize: 9.5, letterSpacing: 1.4, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginBottom: 3 }}>Coups</div>
           {moves.slice().reverse().map((m, i) => { const n = moves.length - i; return (
-            <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontFamily: "'Inter',sans-serif", fontWeight: 600, color: PARCH }}>
+            <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontFamily: MONO, fontWeight: 600, color: PARCH }}>
               <span style={{ color: MUTED, fontSize: 10, width: 18 }}>{n}.</span>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: m.side === P ? '#c0392b' : '#3f86c8', flexShrink: 0 }} />
+              <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: SIDE_COL[m.side], border: `1px solid ${ui.lineHi}`, flexShrink: 0 }} />
               {m.n}
             </div>) })}
         </div>
@@ -358,32 +372,34 @@ export default function DamesGame3D() {
 
       {/* Compteurs bas + plateau des pièces capturées */}
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0 14px 14px', display: 'flex', justifyContent: 'center', gap: 12, pointerEvents: 'none' }}>
-        {[['Pirates', hud.pir, '#d9594d', '#5e1110', '☠️'], ['Marine', hud.mar, '#5a97d6', '#0e2444', '⚓']].map(([lbl, n, c1, c2, ic]) => {
+        {[[SIDE_LBL[P], hud.pir, P], [SIDE_LBL[M], hud.mar, M]].map(([lbl, n, side]) => {
           const lost = Math.max(0, 20 - n)
+          const pc = damesPieces[side === P ? 'fonce' : 'clair']
+          const dot = `radial-gradient(circle at 36% 30%,${pc.haut},${pc.base})`
           return (
-          <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'rgba(14,10,7,.78)', border: '1px solid rgba(217,184,112,.18)', borderRadius: 14, padding: '8px 14px', backdropFilter: 'blur(10px)' }}>
-            <span style={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 15, background: `radial-gradient(circle at 35% 30%,${c1},${c2})` }}>{ic}</span>
-            <div><div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: MUTED, fontWeight: 700 }}>{lbl}</div><div style={{ fontFamily: PIRATA, fontSize: 24, lineHeight: 1, color: PARCH }}>{n}</div></div>
+          <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 11, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '8px 14px', backdropFilter: 'blur(10px)' }}>
+            <span aria-hidden style={{ width: 26, height: 26, borderRadius: '50%', background: dot, boxShadow: `0 0 0 1px ${ui.lineHi}, inset 0 -3px 5px rgba(0,0,0,.4)` }} />
+            <div><div style={{ fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase', color: MUTED, fontWeight: 700 }}>{lbl}</div><div style={{ fontFamily: DISP, fontWeight: 800, fontSize: 22, lineHeight: 1, color: PARCH, fontVariantNumeric: 'tabular-nums' }}>{n}</div></div>
             <div title={`${lost} capturé(s)`} style={{ display: 'flex', flexWrap: 'wrap', gap: 3, width: 50, maxHeight: 32, alignContent: 'center', justifyContent: 'flex-start' }}>
-              {Array.from({ length: lost }).map((_, i) => <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: `radial-gradient(circle at 35% 30%,${c1},${c2})`, opacity: 0.85, boxShadow: '0 1px 2px rgba(0,0,0,.4)' }} />)}
+              {Array.from({ length: lost }).map((_, i) => <span key={i} aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: dot, opacity: 0.8, boxShadow: '0 1px 2px rgba(0,0,0,.4)' }} />)}
             </div>
           </div>)
         })}
       </div>
 
-      {!hud.ready && (<div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: GOLD, fontFamily: PIRATA, fontSize: 22, letterSpacing: '.5px' }}>Chargement du plateau 3D…</div>)}
+      {!hud.ready && (<div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: GOLD, fontFamily: DISP, fontWeight: 700, fontSize: 18, letterSpacing: '.3px' }}>Chargement du plateau…</div>)}
 
       {hud.gameOver && (hud.draw || hud.winner) && (
         <DamesPoster
           result={hud.draw ? 'draw' : hud.winner}
           myColor={hud.mode === 'ai' ? G.current.humanSide : null}
           reason={hud.draw ? hud.drawReason
-            : hud.winner === P ? "La Marine n'a plus aucun coup légal." : 'Les Pirates sont à court de coups.'}
+            : hud.winner === P ? `${SIDE_LBL[M]} n'a plus aucun coup légal.` : `${SIDE_LBL[P]} est à court de coups.`}
           stats={[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]]}
           onRematch={newGame}
           onQuit={() => navigate('/jeux')}
           onAnalyse={G.current.history.some(h => h.mv) ? openAnalyse : null}
-          rematchLabel="⚔️ Revanche"
+          rematchLabel="Revanche"
         />
       )}
 

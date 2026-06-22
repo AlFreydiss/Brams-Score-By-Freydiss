@@ -11,11 +11,15 @@ import { ensureRating, matchmake, cancelQueue, getMatch, submitMove, resign, sub
 import { eloToTier, formatPrime } from '../../lib/dames/damesRank.js'
 import DamesFxOverlay from './DamesFxOverlay.jsx'
 import DamesPoster from './DamesPoster.jsx'
+import { ui, fonts, damesPieces } from '../games/neutralTheme.js'
 
-const GOLD = '#d9b870', PARCH = '#efe6d4', MUTED = '#9a8f7d'
-const panel = { width: '100%', maxWidth: 560, background: 'rgba(18,13,8,.72)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 16, padding: 20, textAlign: 'center' }
-const primary = { padding: '12px 26px', borderRadius: 999, border: 0, cursor: 'pointer', background: `linear-gradient(180deg,#e8cf92,#b8924a)`, color: '#231703', fontWeight: 700, fontSize: 15, fontFamily: 'inherit' }
-const ghost = { padding: '9px 18px', borderRadius: 999, cursor: 'pointer', background: 'rgba(255,255,255,.05)', color: PARCH, border: '1px solid rgba(217,184,112,.2)', fontWeight: 700, fontSize: 13, fontFamily: 'inherit' }
+const GOLD = ui.accent, PARCH = ui.text, MUTED = ui.textDim
+const DISP = fonts.display, BODY = fonts.body
+const SIDE_COL = { [P]: damesPieces.fonce.base, [M]: damesPieces.clair.base }
+const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
+const panel = { width: '100%', maxWidth: 560, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: 20, textAlign: 'center' }
+const primary = { padding: '12px 26px', borderRadius: ui.radius.pill, border: 0, cursor: 'pointer', background: `linear-gradient(180deg,${ui.accentHi},${ui.accent})`, color: ui.accentInk, fontWeight: 800, fontSize: 15, fontFamily: BODY }
+const ghost = { padding: '9px 18px', borderRadius: ui.radius.pill, cursor: 'pointer', background: ui.surfaceHi, color: PARCH, border: `1px solid ${ui.lineHi}`, fontWeight: 700, fontSize: 13, fontFamily: BODY }
 
 export default function DamesOnline3D() {
   const { isAuthenticated } = useAuth()
@@ -35,7 +39,7 @@ export default function DamesOnline3D() {
   const [err, setErr] = useState(null)
   const [lb, setLb] = useState([])
   const [fs, setFs] = useState(false)
-  const [view2D, setView2D] = useState(() => { try { return localStorage.getItem('dames_view2d') === '1' } catch (e) { return false } })
+  const [view2D, setView2D] = useState(() => { try { const v = localStorage.getItem('dames_view2d'); return v == null ? true : v === '1' } catch (e) { return true } })
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const rdrRef = useRef(null)
@@ -139,6 +143,7 @@ export default function DamesOnline3D() {
       renderer.onCombo = (n) => fxRef.current?.combo(n)        // bandeau « RAFLE ×N » 2D
       renderer.onPromote = (side) => fxRef.current?.promote(side)  // couronnement Dame 2D
       renderer.mount(canvasRef.current, { reducedMotion: reduced })
+      renderer.setView2D(view2D)
       const m = await getMatch(G.current.matchId)
       if (!alive || !m) return
       setOpponent(m.opponent || null)
@@ -181,7 +186,7 @@ export default function DamesOnline3D() {
   // ── Rendu ──────────────────────────────────────────────────────────────────
   const Lb = () => (
     <div style={{ ...panel, maxWidth: 560, marginTop: 16, textAlign: 'left' }}>
-      <div style={{ fontWeight: 800, fontSize: 14, color: PARCH, marginBottom: 10 }}>🏆 Classement ELO</div>
+      <div style={{ fontFamily: DISP, fontWeight: 800, fontSize: 14, color: PARCH, marginBottom: 10 }}>Classement ELO</div>
       {lb.length === 0 ? <div style={{ color: MUTED, fontSize: 13, textAlign: 'center', padding: 10 }}>Aucune partie classée — sois le premier !</div>
         : lb.map((r, i) => (
           <div key={r.discord_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px', borderRadius: 9, background: i < 3 ? 'rgba(217,184,112,.06)' : 'transparent' }}>
@@ -202,15 +207,14 @@ export default function DamesOnline3D() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }}>
         <div style={panel}>
-          <div style={{ fontSize: 40, marginBottom: 6 }}>🌐</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: PARCH, marginBottom: 4 }}>En ligne classé</div>
+          <div style={{ fontFamily: DISP, fontSize: 19, fontWeight: 800, color: PARCH, marginBottom: 4 }}>Partie classée</div>
           {rating ? (() => { const t = eloToTier(rating.rating); return (
             <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}><span style={{ color: t.color, fontWeight: 800 }}>{t.emoji} {t.label}</span> · <strong style={{ color: GOLD }}>{formatPrime(t.prime)}</strong> · {rating.rating} ELO · {rating.wins}V {rating.losses}D {rating.draws}N</div>
           ) })() : <div style={{ fontSize: 13, color: MUTED, marginBottom: 16 }}>Ton ELO : <strong style={{ color: GOLD }}>—</strong></div>}
-          {err && <div style={{ color: '#ef8a7c', fontSize: 13, marginBottom: 12 }}>{err}</div>}
+          {err && <div style={{ color: ui.bad, fontSize: 13, marginBottom: 12 }}>{err}</div>}
           {phase === 'searching'
-            ? <div><div style={{ fontSize: 15, color: PARCH, marginBottom: 14 }}>🧭 Recherche d'un adversaire… ({waited}s)</div><button style={ghost} onClick={cancel}>Annuler</button></div>
-            : <button style={primary} onClick={search} disabled={!isAuthenticated}>{isAuthenticated ? '⚔️ Trouver une partie' : 'Connecte-toi pour jouer'}</button>}
+            ? <div><div style={{ fontSize: 15, color: PARCH, marginBottom: 14 }}>Recherche d'un adversaire… ({waited}s)</div><button style={ghost} onClick={cancel}>Annuler</button></div>
+            : <button style={primary} onClick={search} disabled={!isAuthenticated}>{isAuthenticated ? 'Trouver une partie' : 'Connecte-toi pour jouer'}</button>}
         </div>
         <Lb />
       </div>
@@ -225,33 +229,33 @@ export default function DamesOnline3D() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: MUTED }}>
-        Tu joues <strong style={{ color: G.current.myColor === P ? '#ef8a7c' : '#82b6e6' }}>{G.current.myColor === P ? '☠️ Pirates' : '⚓ Marine'}</strong>
+        Tu joues <span aria-hidden style={{ display: 'inline-block', width: 11, height: 11, borderRadius: '50%', background: SIDE_COL[G.current.myColor], border: `1px solid ${ui.lineHi}`, verticalAlign: 'middle', marginRight: 4 }} /><strong style={{ color: PARCH }}>{SIDE_LBL[G.current.myColor]}</strong>
         <span style={{ opacity: .4 }}>·</span> vs <strong style={{ color: PARCH }}>{opponent?.username || 'Adversaire'}</strong>
       </div>
-      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(70vh, 680px)', minHeight: 440, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)' }}>
+      <div ref={containerRef} style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(70vh, 680px)', minHeight: 440, borderRadius: fs ? 0 : ui.radius.lg, overflow: 'hidden', background: `radial-gradient(120% 90% at 50% 12%, ${ui.bgElev} 0%, ${ui.bg} 55%, #08090c 82%)`, border: fs ? 'none' : `1px solid ${ui.line}` }}>
         <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
         <DamesFxOverlay ref={fxRef} winner={result && (result.winner === P || result.winner === M) ? result.winner : null} />
-        <button onClick={() => { const v = !view2D; setView2D(v); rdrRef.current?.setView2D(v) }} title={view2D ? 'Vue 3D' : 'Vue 2D (de dessus)'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} style={{ position: 'absolute', top: 12, right: 56, width: 38, height: 38, borderRadius: '50%', border: `1px solid ${view2D ? GOLD : 'rgba(217,184,112,.2)'}`, background: view2D ? `linear-gradient(180deg,${GOLD},#b8924a)` : 'rgba(14,10,7,.7)', color: view2D ? '#231703' : MUTED, cursor: 'pointer', fontSize: 15 }}>{view2D ? '🧊' : '🗺️'}</button>
-        <button onClick={toggleFs} title="Plein écran" aria-label="Plein écran" style={{ position: 'absolute', top: 12, right: 12, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(217,184,112,.2)', background: 'rgba(14,10,7,.7)', color: MUTED, cursor: 'pointer', fontSize: 15 }}>{fs ? '🗗' : '⛶'}</button>
+        <button onClick={() => { const v = !view2D; setView2D(v); rdrRef.current?.setView2D(v) }} title={view2D ? 'Passer en vue 3D' : 'Passer en vue 2D'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} style={{ position: 'absolute', top: 12, right: 56, width: 38, height: 38, borderRadius: '50%', border: `1px solid ${view2D ? GOLD : ui.lineHi}`, background: view2D ? `linear-gradient(180deg,${ui.accentHi},${ui.accent})` : ui.surface, color: view2D ? ui.accentInk : MUTED, cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}>{view2D ? '2D' : '3D'}</button>
+        <button onClick={toggleFs} title="Plein écran" aria-label="Plein écran" style={{ position: 'absolute', top: 12, right: 12, width: 38, height: 38, borderRadius: '50%', border: `1px solid ${ui.lineHi}`, background: ui.surface, color: MUTED, cursor: 'pointer', fontSize: 15 }}>{fs ? '⤬' : '⛶'}</button>
         <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(14,10,7,.8)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 14, color: myTurn ? '#9fe0a0' : MUTED }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: turn === P ? '#c0392b' : '#3f86c8' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: ui.bgElev, border: `1px solid ${ui.line}`, borderRadius: ui.radius.pill, padding: '8px 16px', fontFamily: BODY, fontWeight: 700, fontSize: 14, color: myTurn ? ui.good : MUTED }}>
+            <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: SIDE_COL[turn], border: `1px solid ${ui.lineHi}` }} />
             {G.current.status !== 'active' ? 'Partie terminée' : myTurn ? 'À toi de jouer' : "Tour de l'adversaire…"}
           </div>
         </div>
         <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 10, pointerEvents: 'auto' }}>
           <div style={{ display: 'flex', gap: 10 }}>
-            {[['☠️', pir, '#5e1110'], ['⚓', mar, '#0e2444']].map(([ic, n, bg]) => (
-              <div key={ic} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(14,10,7,.74)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 12, padding: '6px 12px' }}>
-                <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 12, background: bg }}>{ic}</span>
-                <span style={{ fontFamily: "'Pirata One',cursive", fontWeight: 700, fontSize: 18, color: PARCH }}>{n}</span>
+            {[[P, pir], [M, mar]].map(([side, n]) => { const pc = damesPieces[side === P ? 'fonce' : 'clair']; return (
+              <div key={side} style={{ display: 'flex', alignItems: 'center', gap: 8, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '6px 12px' }}>
+                <span aria-hidden style={{ width: 20, height: 20, borderRadius: '50%', background: `radial-gradient(circle at 36% 30%,${pc.haut},${pc.base})`, boxShadow: `0 0 0 1px ${ui.lineHi}` }} />
+                <span style={{ fontFamily: DISP, fontWeight: 800, fontSize: 18, color: PARCH, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
               </div>
-            ))}
-            {G.current.status === 'active' && <button style={{ ...ghost, padding: '6px 14px', ...(confirmResign ? { background: 'rgba(192,57,43,.25)', color: '#ffd9cf', borderColor: 'rgba(192,57,43,.5)' } : {}) }} onClick={() => { if (confirmResign) { doResign() } else { setConfirmResign(true); setTimeout(() => setConfirmResign(false), 3000) } }}>{confirmResign ? '🏳️ Confirmer ?' : '🏳️ Abandonner'}</button>}
+            ) })}
+            {G.current.status === 'active' && <button style={{ ...ghost, padding: '6px 14px', ...(confirmResign ? { background: 'rgba(212,104,90,.2)', color: '#f3c9c0', borderColor: `${ui.bad}80` } : {}) }} onClick={() => { if (confirmResign) { doResign() } else { setConfirmResign(true); setTimeout(() => setConfirmResign(false), 3000) } }}>{confirmResign ? 'Confirmer ?' : 'Abandonner'}</button>}
           </div>
         </div>
         {err && phase === 'playing' && (
-          <div style={{ position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)', background: 'rgba(120,24,18,.9)', color: '#ffd9cf', padding: '7px 16px', borderRadius: 999, fontSize: 13, fontWeight: 700, zIndex: 5 }}>{err}</div>
+          <div role="alert" style={{ position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)', background: ui.surfaceHi, border: `1px solid ${ui.bad}80`, color: '#f3c9c0', padding: '7px 16px', borderRadius: ui.radius.pill, fontSize: 13, fontWeight: 700, zIndex: 5 }}>{err}</div>
         )}
         {phase === 'finished' && result && (() => {
           const after = rating ? eloToTier(rating.rating) : null
@@ -261,15 +265,15 @@ export default function DamesOnline3D() {
             <DamesPoster
               result={result.winner === 'draw' ? 'draw' : result.winner}
               myColor={G.current.myColor}
-              reason={result.winner === 'draw' ? 'Trêve — aucun camp n\'a forcé la décision.'
-                : won ? 'Prime encaissée sur les eaux classées.' : 'Ta tête a une nouvelle valeur.'}
+              reason={result.winner === 'draw' ? 'Partie nulle — aucun camp n\'a forcé la décision.'
+                : won ? 'Victoire en partie classée.' : 'Défaite en partie classée.'}
               stats={[['Prises', Math.max(0, startMen * 2 - pir - mar)], ['Pièces', won ? Math.max(pir, mar) : Math.min(pir, mar)]]}
               prime={after ? { text: formatPrime(after.prime), label: after.label, emoji: after.emoji, color: after.color } : null}
               eloDelta={typeof result.myDelta === 'number' ? result.myDelta : null}
               promoted={promoted}
               onRematch={leave}
               onQuit={() => navigate('/jeux')}
-              rematchLabel="⚔️ Revanche"
+              rematchLabel="Revanche"
             />
           )
         })()}

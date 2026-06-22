@@ -19,16 +19,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { type, fonts } from '../../styles/typography.js'
+import { type } from '../../styles/typography.js'
 import { P, M, applyMove } from './engine/draughts-engine.js'
 import { moveToNotation } from './engine/notation.js'
 import { analyserPartie, CLASSES, precisionDepuisACPL } from './lib/analyse.js'
 import DamesEvalBar from './DamesEvalBar.jsx'
+import { ui, fonts, damesBoard, damesPieces } from '../games/neutralTheme.js'
 
-// ── Tokens maison ──
-const INK = '#08090D', PANEL = '#0d0f16', GOLD = '#d9b870', GOLD_DIM = '#BFA46A'
-const PARCH = '#efe6d4', PIR = '#d9594d', MAR = '#5a97d6', LINE = 'rgba(217,184,112,.18)'
-const PIRATA = "'Pirata One','OnePiece',cursive"
+// ── Tokens NEUTRES (source unique). P = Foncé (graphite), M = Clair (ivoire). ──
+const INK = ui.bg, PANEL = ui.surface, GOLD = ui.accent, GOLD_DIM = ui.accentHi
+const PARCH = ui.text, FONC = damesPieces.fonce.base, CLAIR = damesPieces.clair.bord, LINE = ui.line
+const DISP = fonts.display
+const SIDE_COL = { [P]: FONC, [M]: CLAIR }, SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
+const BOARD = damesBoard.bois
 const SIZE = 10
 const isDark = (r, c) => (r + c) % 2 === 1
 
@@ -36,13 +39,9 @@ const isDark = (r, c) => (r + c) % 2 === 1
 // Mini-plateau autonome (inline-SVG/div) — DamesView2D dépend d'un store externe,
 // donc on rend un 10×10 simple ici, avec dernier coup + flèche meilleur coup.
 // ─────────────────────────────────────────────────────────────────────────────
-function pieceFill(side, king) {
-  if (side === P) return king
-    ? 'radial-gradient(circle at 34% 28%, #e98a7c 0%, #a83d33 52%, #5a130d 100%)'
-    : 'radial-gradient(circle at 34% 28%, #c46658 0%, #8a352c 52%, #4a0f0a 100%)'
-  return king
-    ? 'radial-gradient(circle at 34% 28%, #8fb4dc 0%, #3a6d9c 52%, #112c48 100%)'
-    : 'radial-gradient(circle at 34% 28%, #5b82a6 0%, #2c4d6c 52%, #0c2038 100%)'
+function pieceFill(side) {
+  const c = side === P ? damesPieces.fonce : damesPieces.clair
+  return `radial-gradient(circle at 38% 30%, ${c.haut} 0%, ${c.base} 58%, ${c.bord} 100%)`
 }
 
 function MiniBoard({ board, lastMv, bestMv }) {
@@ -58,8 +57,8 @@ function MiniBoard({ board, lastMv, bestMv }) {
   const arrow = bestMv ? { a: center(bestMv.from[0], bestMv.from[1]), b: center(bestMv.to[0], bestMv.to[1]) } : null
 
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden',
-      border: '5px solid #241710', boxShadow: '0 18px 50px rgba(0,0,0,.6), inset 0 0 0 2px rgba(217,184,112,.32)' }}>
+    <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden',
+      boxShadow: `0 0 0 1px ${BOARD.sombre}, 0 0 0 8px ${BOARD.sombre}, 0 0 0 9px rgba(200,164,92,.18), 0 18px 50px rgba(0,0,0,.55)` }}>
       <div style={{ position: 'absolute', inset: 0, display: 'grid',
         gridTemplateColumns: `repeat(${SIZE},1fr)`, gridTemplateRows: `repeat(${SIZE},1fr)` }}>
         {board.flatMap((row, r) => row.map((cell, c) => {
@@ -68,15 +67,14 @@ function MiniBoard({ board, lastMv, bestMv }) {
           const isLast = lastKeys.has(key)
           return (
             <div key={key} style={{ position: 'relative', display: 'grid', placeItems: 'center',
-              background: dark ? 'linear-gradient(150deg,#6b4427,#533318)' : 'linear-gradient(150deg,#ead8b0,#d8c194)',
-              boxShadow: isLast ? 'inset 0 0 0 2px rgba(217,184,112,.6)' : 'none' }}>
-              {isLast && <div aria-hidden style={{ position: 'absolute', inset: 3, borderRadius: 5, background: 'radial-gradient(circle, rgba(242,214,138,.25), transparent 70%)' }} />}
+              background: dark ? BOARD.sombre : BOARD.clair,
+              boxShadow: isLast ? `inset 0 0 0 2px ${ui.accent}99` : 'none' }}>
+              {isLast && <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'rgba(200,164,92,.22)' }} />}
               {cell && (
-                <div style={{ width: '76%', height: '76%', borderRadius: '50%', background: pieceFill(cell.side, cell.king),
-                  border: `2px solid ${cell.king ? '#e7c46a' : (cell.side === P ? '#3c0c08' : '#0a1a30')}`,
-                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,.22), inset 0 -3px 6px rgba(0,0,0,.5), 0 3px 7px rgba(0,0,0,.45)',
+                <div style={{ width: '76%', height: '76%', borderRadius: '50%', background: pieceFill(cell.side),
+                  boxShadow: `inset 0 2px 3px rgba(255,255,255,.16), inset 0 -4px 7px rgba(0,0,0,.42), inset 0 0 0 2px ${(cell.side === P ? damesPieces.fonce : damesPieces.clair).bord}, 0 3px 6px rgba(0,0,0,.4)`,
                   display: 'grid', placeItems: 'center' }}>
-                  {cell.king && <span aria-hidden style={{ fontSize: '1.7vmin', lineHeight: 1 }}>👑</span>}
+                  {cell.king && <span aria-hidden style={{ position: 'absolute', inset: '8%', borderRadius: '50%', boxShadow: `inset 0 0 0 2px ${damesPieces.roi}` }} />}
                 </div>
               )}
             </div>
@@ -137,10 +135,10 @@ function EvalGraph({ records, current, onPick }) {
         onClick={() => hover != null && onPick(hover)}>
         <defs>
           <linearGradient id="dmsArea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={PIR} stopOpacity="0.55" />
-            <stop offset="50%" stopColor={PIR} stopOpacity="0.05" />
-            <stop offset="50%" stopColor={MAR} stopOpacity="0.05" />
-            <stop offset="100%" stopColor={MAR} stopOpacity="0.55" />
+            <stop offset="0%" stopColor={ui.accent} stopOpacity="0.5" />
+            <stop offset="50%" stopColor={ui.accent} stopOpacity="0.04" />
+            <stop offset="50%" stopColor={ui.textMute} stopOpacity="0.04" />
+            <stop offset="100%" stopColor={ui.textMute} stopOpacity="0.5" />
           </linearGradient>
         </defs>
         <line x1="0" y1={H / 2} x2={W} y2={H / 2} stroke={GOLD_DIM} strokeWidth="0.4" opacity="0.4" />
@@ -156,7 +154,7 @@ function EvalGraph({ records, current, onPick }) {
           transform: 'translate(-50%,-100%)', pointerEvents: 'none', whiteSpace: 'nowrap',
           background: 'rgba(8,9,13,.94)', border: `1px solid ${LINE}`, borderRadius: 6, padding: '3px 7px',
           ...type.small, fontSize: 11, color: PARCH }}>
-          {Math.floor(hover / 2) + 1}. {records[hover].side === P ? '☠️' : '⚓'} {moveToNotation(records[hover].mv)}
+          {Math.floor(hover / 2) + 1}. <span style={{ color: SIDE_COL[records[hover].side], fontWeight: 700 }}>{SIDE_LBL[records[hover].side]}</span> {moveToNotation(records[hover].mv)}
           {'  '}<span style={{ color: records[hover].classe.color }}>{(records[hover].evalApres / 100).toFixed(1)}</span>
         </div>
       )}
@@ -242,18 +240,18 @@ export default function DamesAnalyse({ positions = [], result = null, finalBoard
 
   const pct = total ? Math.round((records.length / total) * 100) : 100
 
-  const titre = result === 'draw' ? 'Trêve — analyse' : result === P ? 'Victoire Pirates — analyse'
-    : result === M ? 'Victoire Marine — analyse' : 'Analyse de la partie'
+  const titre = result === 'draw' ? 'Partie nulle — analyse' : result === P ? 'Victoire Foncé — analyse'
+    : result === M ? 'Victoire Clair — analyse' : 'Analyse de la partie'
 
   return (
-    <div style={{ minHeight: '100%', background: `radial-gradient(120% 90% at 50% 0%, #14110c 0%, ${INK} 60%)`, color: PARCH, padding: 'clamp(12px,2.5vw,28px)' }}>
+    <div style={{ minHeight: '100%', background: `radial-gradient(120% 90% at 50% 0%, ${ui.bgElev} 0%, ${INK} 60%)`, color: PARCH, padding: 'clamp(12px,2.5vw,28px)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
 
         {/* en-tête */}
         <header style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
-            <div style={{ ...type.eyebrow, color: GOLD_DIM, marginBottom: 6 }}>Journal de bord</div>
-            <h1 style={{ fontFamily: PIRATA, fontSize: 'clamp(1.6rem,4vw,2.4rem)', margin: 0, color: PARCH, letterSpacing: '.5px' }}>{titre}</h1>
+            <div style={{ ...type.eyebrow, color: GOLD, marginBottom: 6 }}>Analyse de partie</div>
+            <h1 style={{ fontFamily: DISP, fontWeight: 800, fontSize: 'clamp(1.6rem,4vw,2.4rem)', margin: 0, color: PARCH, letterSpacing: '-.01em' }}>{titre}</h1>
           </div>
           {onClose && (
             <button onClick={onClose} style={{ appearance: 'none', cursor: 'pointer', ...type.button, padding: '9px 18px',
@@ -263,13 +261,13 @@ export default function DamesAnalyse({ positions = [], result = null, finalBoard
 
         {/* précision par camp */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 18 }}>
-          {[[P, 'Pirates', '☠️', PIR], [M, 'Marine', '⚓', MAR]].map(([s, name, emo, col]) => {
+          {[[P, SIDE_LBL[P], FONC], [M, SIDE_LBL[M], CLAIR]].map(([s, name, col]) => {
             const a = resume?.[s]
             return (
               <div key={s} style={{ background: PANEL, border: `1px solid ${LINE}`, borderRadius: 12, padding: '12px 16px' }}>
-                <div style={{ ...type.eyebrow, color: col, marginBottom: 6 }}>{emo} {name}</div>
+                <div style={{ ...type.eyebrow, color: ui.textDim, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}><span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: col, border: `1px solid ${ui.lineHi}` }} />{name}</div>
                 <div style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 30, lineHeight: 1 }}>
-                  {a ? <PrecCount value={a.precision} color={col} /> : <span style={{ color: '#6b6f78' }}>—</span>}
+                  {a ? <PrecCount value={a.precision} color={ui.text} /> : <span style={{ color: ui.textMute }}>—</span>}
                 </div>
                 <div style={{ ...type.small, color: '#9aa0aa', marginTop: 6, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {a ? <>
@@ -341,7 +339,7 @@ export default function DamesAnalyse({ positions = [], result = null, finalBoard
                     <span style={{ ...type.small, width: 26, color: '#6b6f78', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                       {showNum ? num + '.' : ''}
                     </span>
-                    <span aria-hidden style={{ fontSize: 13 }}>{r.side === P ? '☠️' : '⚓'}</span>
+                    <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: SIDE_COL[r.side], border: `1px solid ${ui.lineHi}`, flexShrink: 0 }} />
                     <span style={{ ...type.small, fontFamily: fonts.body, fontWeight: 600, flex: 1, fontVariantNumeric: 'tabular-nums' }}>
                       {moveToNotation(r.mv)}
                       {r.classe.symbole && <span style={{ color: r.classe.color, marginLeft: 3 }}>{r.classe.symbole}</span>}
@@ -371,9 +369,9 @@ export default function DamesAnalyse({ positions = [], result = null, finalBoard
                   style={{ appearance: 'none', cursor: 'pointer', ...type.small, padding: '7px 12px', borderRadius: 9,
                     color: PARCH, background: 'rgba(217,89,77,.1)', border: `1px solid ${CLASSES.gaffe.color}44`,
                     display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span>{t.side === P ? '☠️' : '⚓'}</span>
+                  <span aria-hidden style={{ width: 10, height: 10, borderRadius: '50%', background: SIDE_COL[t.side], border: `1px solid ${ui.lineHi}`, flexShrink: 0 }} />
                   <span style={{ fontWeight: 700 }}>{Math.floor(t.ply / 2) + 1}. {moveToNotation(t.mv)}</span>
-                  <span style={{ color: t.delta < 0 ? PIR : MAR }}>{t.delta > 0 ? '+' : ''}{(t.delta / 100).toFixed(1)}</span>
+                  <span style={{ color: t.delta < 0 ? ui.bad : ui.good }}>{t.delta > 0 ? '+' : ''}{(t.delta / 100).toFixed(1)}</span>
                 </button>
               ))}
             </div>

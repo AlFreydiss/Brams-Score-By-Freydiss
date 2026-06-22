@@ -65,8 +65,8 @@ function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
 
   return (
     <div style={{ maxWidth: 660, margin: '0 auto' }}>
-      <h2 style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 24, color: THEME.text, margin: '0 0 18px' }}>
-        ⚔️ Défier l'IA
+      <h2 style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 24, color: THEME.text, margin: '0 0 18px', letterSpacing: '-0.02em' }}>
+        Contre l'IA
       </h2>
 
       <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: THEME.muted, marginBottom: 10 }}>Niveau</div>
@@ -76,16 +76,16 @@ function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
           return (
             <button key={n.id} onClick={() => setNiveauId(n.id)} style={{
               textAlign: 'left', padding: '12px 14px', borderRadius: 14, cursor: 'pointer',
-              background: actif ? 'rgba(255,215,0,0.10)' : THEME.card,
-              border: `1px solid ${actif ? 'rgba(255,215,0,0.45)' : THEME.cardBorder}`,
+              background: actif ? 'rgba(200,164,92,0.12)' : THEME.card,
+              border: `1px solid ${actif ? 'rgba(200,164,92,0.45)' : THEME.cardBorder}`,
               transition: 'border-color .15s, background .15s',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 20 }}>{n.emoji}</span>
-                <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 15, color: actif ? THEME.gold : THEME.text }}>{n.label}</span>
+                <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 15, color: actif ? THEME.goldHi : THEME.text }}>{n.label}</span>
               </div>
               <div style={{ fontSize: 12, color: THEME.muted, marginTop: 3 }}>{n.sousTitre}</div>
-              <div style={{ fontSize: 11.5, color: actif ? THEME.gold : THEME.muted, fontWeight: 700, marginTop: 5 }}>
+              <div style={{ fontSize: 11.5, color: actif ? THEME.goldHi : THEME.muted, fontWeight: 700, marginTop: 5 }}>
                 {n.limitStrength ? `~${n.elo} ELO` : 'Pleine puissance'}
               </div>
             </button>
@@ -98,19 +98,19 @@ function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
         onClick={() => setNiveauId('perso')}
         style={{
           width: '100%', textAlign: 'left', marginTop: 12, padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
-          background: persoActif ? 'rgba(191,164,106,0.10)' : THEME.card,
-          border: `1px solid ${persoActif ? 'rgba(191,164,106,0.55)' : THEME.cardBorder}`,
+          background: persoActif ? 'rgba(200,164,92,0.12)' : THEME.card,
+          border: `1px solid ${persoActif ? 'rgba(200,164,92,0.55)' : THEME.cardBorder}`,
           transition: 'border-color .15s, background .15s',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 20 }}>🎚️</span>
-            <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 15, color: persoActif ? '#BFA46A' : THEME.text }}>
+            <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 15, color: persoActif ? THEME.goldHi : THEME.text }}>
               Force sur-mesure
             </span>
           </span>
-          <span style={{ fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 16, color: persoActif ? '#BFA46A' : THEME.muted }}>
+          <span style={{ fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 16, color: persoActif ? THEME.goldHi : THEME.muted, fontVariantNumeric: 'tabular-nums' }}>
             {elo >= 2850 ? 'MAX' : `${elo} ELO`}
           </span>
         </div>
@@ -121,7 +121,7 @@ function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
           aria-label="Force de l'IA en ELO"
           style={{
             width: '100%', marginTop: 12, cursor: 'pointer',
-            accentColor: '#BFA46A', height: 24,
+            accentColor: THEME.gold, height: 24,
           }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: THEME.muted, marginTop: 2 }}>
@@ -134,9 +134,9 @@ function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
         {[{ id: 'w', label: '♔ Blancs' }, { id: 'b', label: '♚ Noirs' }, { id: 'alea', label: '🎲 Aléatoire' }].map(c => (
           <button key={c.id} onClick={() => setCouleur(c.id)} style={{
             flex: 1, padding: '11px 10px', borderRadius: 12, cursor: 'pointer', fontWeight: 700, fontSize: 14,
-            fontFamily: THEME.fontBody, color: couleur === c.id ? THEME.gold : THEME.text,
-            background: couleur === c.id ? 'rgba(255,215,0,0.10)' : THEME.card,
-            border: `1px solid ${couleur === c.id ? 'rgba(255,215,0,0.45)' : THEME.cardBorder}`,
+            fontFamily: THEME.fontBody, color: couleur === c.id ? THEME.goldHi : THEME.text,
+            background: couleur === c.id ? 'rgba(200,164,92,0.12)' : THEME.card,
+            border: `1px solid ${couleur === c.id ? 'rgba(200,164,92,0.45)' : THEME.cardBorder}`,
           }}>
             {c.label}
           </button>
@@ -145,11 +145,11 @@ function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
 
       <button onClick={lancer} style={{
         width: '100%', marginTop: 24, padding: '15px 20px', borderRadius: 14, cursor: 'pointer',
-        fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 17, letterSpacing: '0.01em',
-        background: `linear-gradient(135deg, ${THEME.accent}, #c23a32)`, color: '#fff', border: 'none',
-        boxShadow: '0 16px 40px -14px rgba(224,82,74,.55)',
+        fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 16, letterSpacing: '0.01em',
+        background: `linear-gradient(135deg, ${THEME.goldHi}, ${THEME.gold})`, color: THEME.accentInk, border: 'none',
+        boxShadow: '0 16px 40px -16px rgba(200,164,92,.5)',
       }}>
-        Hisser les voiles ⛵
+        Lancer la partie
       </button>
     </div>
   )
@@ -259,8 +259,8 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
   const avantageMoi = maCouleur === 'w' ? captures.avantage : -captures.avantage
 
   return (
-    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)', paddingTop: 8 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         {reglages.barreEval && (
           <BarreEval
             ratio={evalPos?.ratio ?? 0.5}
@@ -307,11 +307,11 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
             padding: '11px 12px', borderRadius: 12,
             cursor: (!estMonTour || fin.terminee || abandonnee || reflechit) ? 'default' : 'pointer',
             fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 13.5, letterSpacing: '0.01em',
-            color: (!estMonTour || fin.terminee || abandonnee) ? THEME.muted : '#08090D',
+            color: (!estMonTour || fin.terminee || abandonnee) ? THEME.muted : THEME.accentInk,
             background: (!estMonTour || fin.terminee || abandonnee)
               ? THEME.card
-              : 'linear-gradient(135deg, #BFA46A, #d8c089)',
-            border: `1px solid rgba(191,164,106,0.45)`,
+              : `linear-gradient(135deg, ${THEME.goldHi}, ${THEME.gold})`,
+            border: `1px solid rgba(200,164,92,0.45)`,
             opacity: chargementIndice ? 0.7 : 1,
             minHeight: 24,
           }}
@@ -323,12 +323,12 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
             data-testid="indice-coup"
             style={{
               textAlign: 'center', padding: '8px 10px', borderRadius: 10,
-              background: 'rgba(191,164,106,0.10)', border: '1px solid rgba(191,164,106,0.30)',
+              background: 'rgba(200,164,92,0.10)', border: '1px solid rgba(200,164,92,0.30)',
               fontFamily: THEME.fontBody, fontSize: 13, color: THEME.text,
             }}
           >
             Meilleur coup :{' '}
-            <strong style={{ color: '#BFA46A', fontFamily: THEME.fontDisplay, letterSpacing: '0.04em' }}>
+            <strong style={{ color: THEME.goldHi, fontFamily: THEME.fontMono, letterSpacing: '0.04em' }}>
               {indice.cases[0]} → {indice.cases[1]}
             </strong>
             {indice.evalTexte ? <span style={{ color: THEME.muted }}>{`  (${indice.evalTexte})`}</span> : null}
@@ -348,7 +348,7 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
           ← Retour au menu
         </button>
         {enEchec && !fin.terminee && (
-          <div style={{ textAlign: 'center', color: THEME.accent, fontWeight: 800, fontSize: 13, letterSpacing: '0.06em' }}>⚠ ÉCHEC !</div>
+          <div style={{ textAlign: 'center', color: THEME.accent, fontWeight: 800, fontSize: 13, letterSpacing: '0.08em' }}>ÉCHEC</div>
         )}
       </div>
 

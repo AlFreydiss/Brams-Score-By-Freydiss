@@ -17,10 +17,10 @@ export default function PanneauJoueur({
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-      background: THEME.card, backdropFilter: 'blur(10px)',
-      border: `1px solid ${auTrait ? 'rgba(255,215,0,0.38)' : THEME.cardBorder}`,
+      background: THEME.card,
+      border: `1px solid ${auTrait ? 'rgba(200,164,92,0.42)' : THEME.cardBorder}`,
       borderRadius: 14,
-      boxShadow: auTrait ? '0 0 24px -10px rgba(255,215,0,.5)' : '0 14px 34px -20px rgba(0,0,0,.7)',
+      boxShadow: auTrait ? '0 0 0 1px rgba(200,164,92,0.18), 0 0 26px -12px rgba(200,164,92,.55)' : '0 14px 34px -22px rgba(0,0,0,.7)',
       transition: 'border-color .25s, box-shadow .25s',
     }}>
       <div style={{ position: 'relative', flexShrink: 0 }}>

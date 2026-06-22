@@ -31,10 +31,10 @@ import {
   analyserPartieEchecs, CLASSES, ANALYSE_DEPTH, ratioDepuisCpBlanc,
 } from './lib/analysePartie.js'
 
-// ── Tokens maison (alignés sur DamesAnalyse, adaptés aux blancs/noirs) ──
-const INK = '#08090D', PANEL = '#0d0f16', GOLD = '#d9b870', GOLD_DIM = '#BFA46A'
-const PARCH = '#efe6d4', BLANC = '#e6c980', NOIR = '#6f8fb8', LINE = 'rgba(217,184,112,.18)'
-const PIRATA = "'Pirata One','OnePiece',cursive"
+// ── Tokens NEUTRES PREMIUM (charcoal + un accent or, mono pour chiffres) ──
+const INK = THEME.bg, PANEL = THEME.surface, GOLD = THEME.goldHi, GOLD_DIM = THEME.gold
+const PARCH = THEME.text, BLANC = '#e0c074', NOIR = '#6fa8d6', LINE = THEME.cardBorder
+const PIRATA = THEME.fontDisplay
 
 // Niveau « pleine force » pour le moteur d'analyse (skillLevel max, pas de bridage).
 const NIVEAU_ANALYSE = { limitStrength: false, skillLevel: 20, movetimeMs: 600 }
@@ -229,7 +229,7 @@ export default function EchecsAnalyse({ pgn = null, historique = [], resultat = 
 
   const pct = total ? Math.round((records.length / total) * 100) : 100
 
-  const titre = resultat === 'nulle' ? 'Trêve — analyse'
+  const titre = resultat === 'nulle' ? 'Partie nulle — analyse'
     : resultat === 'blanc' ? 'Victoire des Blancs — analyse'
     : resultat === 'noir' ? 'Victoire des Noirs — analyse'
     : 'Analyse de la partie'
@@ -252,13 +252,13 @@ export default function EchecsAnalyse({ pgn = null, historique = [], resultat = 
   }), [view.fen, view.arrows, orientation, tema])
 
   return (
-    <div style={{ minHeight: '100%', background: `radial-gradient(120% 90% at 50% 0%, #14110c 0%, ${INK} 60%)`, color: PARCH, padding: 'clamp(12px,2.5vw,28px)' }}>
+    <div style={{ minHeight: '100%', background: `radial-gradient(120% 90% at 50% 0%, ${THEME.bgElev} 0%, ${INK} 60%)`, color: PARCH, padding: 'clamp(12px,2.5vw,28px)' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
 
         {/* en-tête */}
         <header style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
           <div>
-            <div style={{ ...type.eyebrow, color: GOLD_DIM, marginBottom: 6 }}>Journal de bord</div>
+            <div style={{ ...type.eyebrow, color: GOLD_DIM, marginBottom: 6 }}>Analyse moteur</div>
             <h1 style={{ fontFamily: PIRATA, fontSize: 'clamp(1.6rem,4vw,2.4rem)', margin: 0, color: PARCH, letterSpacing: '.5px' }}>{titre}</h1>
           </div>
           {onClose && (

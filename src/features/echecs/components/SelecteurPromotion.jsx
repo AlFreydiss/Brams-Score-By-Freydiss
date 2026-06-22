@@ -36,7 +36,7 @@ export default function SelecteurPromotion({ couleur, onChoisir, onAnnuler }) {
               border: `1px solid ${THEME.cardBorder}`, borderRadius: 12,
               cursor: 'pointer', transition: 'background .15s, transform .12s, border-color .15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,215,0,0.14)'; e.currentTarget.style.borderColor = THEME.gold; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200,164,92,0.16)'; e.currentTarget.style.borderColor = THEME.gold; e.currentTarget.style.transform = 'translateY(-2px)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = THEME.cardBorder; e.currentTarget.style.transform = 'none' }}
           >
             {GLYPHES_PIECES[couleur === 'w' ? 'w' : 'b'][p]}

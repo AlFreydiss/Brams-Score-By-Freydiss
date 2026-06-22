@@ -112,18 +112,29 @@ function drawAnchor(ctx, cx, cy, S, light) {
   ctx.beginPath(); ctx.moveTo(cx + S * 0.295, cy + S * 0.10); ctx.lineTo(cx + S * 0.37, cy + S * 0.02); ctx.lineTo(cx + S * 0.30, cy + S * 0.24); ctx.closePath(); ctx.fill()
   ctx.restore()
 }
+// Médaillon NEUTRE : disque graphite (P) / ivoire (M), rainures concentriques de
+// jeton de dames, dame = liseré or. Plus de crâne/ancre (factions retirées).
 function makeMedallion(side, king) {
   const S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S
   const ctx = cv.getContext('2d'); const cx = S / 2, cy = S / 2, R = S * 0.46
-  const g = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R * 1.08)
-  if (side === P) { g.addColorStop(0, '#bf5a4e'); g.addColorStop(.55, '#7e2a22'); g.addColorStop(1, '#491310') }
-  else { g.addColorStop(0, '#5b82a6'); g.addColorStop(.55, '#2e4f6e'); g.addColorStop(1, '#152f49') }
+  const g = ctx.createRadialGradient(cx - R * 0.32, cy - R * 0.36, R * 0.1, cx, cy, R * 1.08)
+  if (side === P) { g.addColorStop(0, '#3a3c44'); g.addColorStop(.58, '#2a2b30'); g.addColorStop(1, '#16171b') }
+  else { g.addColorStop(0, '#fbf6ec'); g.addColorStop(.58, '#efe7d6'); g.addColorStop(1, '#cdbfa6') }
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill()
-  ctx.lineWidth = S * 0.035; ctx.strokeStyle = king ? '#e7c878' : (side === P ? '#3c0c0b' : '#0a1c33')
+  // rainures concentriques sobres (lecture jeton)
+  const ring = side === P ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.10)'
+  ctx.lineWidth = S * 0.012; ctx.strokeStyle = ring
+  for (const f of [0.78, 0.62]) { ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, 7); ctx.stroke() }
+  // liseré (or pour la dame, sinon le bord du jeton)
+  ctx.lineWidth = S * 0.035; ctx.strokeStyle = king ? '#c8a45c' : (side === P ? '#16171b' : '#cdbfa6')
   ctx.beginPath(); ctx.arc(cx, cy, R * 0.9, 0, 7); ctx.stroke()
-  if (king) { ctx.lineWidth = S * 0.012; ctx.strokeStyle = '#f4e2a6'; ctx.beginPath(); ctx.arc(cx, cy, R * 0.82, 0, 7); ctx.stroke() }
-  const light = king ? '#f6e7b0' : '#f3ead6', dark = side === P ? '#4a0f0d' : '#0c2038'
-  if (side === P) drawSkull(ctx, cx, cy + S * 0.01, S * 0.42, light, dark); else drawAnchor(ctx, cx, cy, S * 0.46, light)
+  if (king) {
+    ctx.lineWidth = S * 0.016; ctx.strokeStyle = '#e0c074'; ctx.beginPath(); ctx.arc(cx, cy, R * 0.82, 0, 7); ctx.stroke()
+    // couronne gravée minimaliste au centre (or)
+    ctx.strokeStyle = '#e0c074'; ctx.lineWidth = S * 0.03; ctx.lineJoin = 'round'; ctx.lineCap = 'round'
+    const w = R * 0.5, h = R * 0.34, bx = cx - w / 2, by = cy + h * 0.4
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + w * 0.18, by - h); ctx.lineTo(cx, by - h * 0.42); ctx.lineTo(bx + w * 0.82, by - h); ctx.lineTo(bx + w, by); ctx.closePath(); ctx.stroke()
+  }
   const t = new THREE.CanvasTexture(cv); t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true
   return t
 }
@@ -160,17 +171,18 @@ function useMaterials() {
   return useMemo(() => {
     const med = { [P]: makeMedallion(P, false), [M]: makeMedallion(M, false), [P + 'K']: makeMedallion(P, true), [M + 'K']: makeMedallion(M, true) }
     const wood = makeWoodBump()
-    // pièces sobres : peu d'émissif, peu d'iridescence, semi-mat (DA premium, pas "RGB")
-    const pirateSide = new THREE.MeshPhysicalMaterial({ color: 0x8a352c, metalness: 0.2, roughness: 0.44, clearcoat: 0.5, clearcoatRoughness: 0.3, envMapIntensity: 0.85, emissive: 0x1c0805, emissiveIntensity: 0.05 })
-    const marineSide = new THREE.MeshPhysicalMaterial({ color: 0x2c4d6c, metalness: 0.55, roughness: 0.42, clearcoat: 0.45, clearcoatRoughness: 0.3, iridescence: 0.12, iridescenceIOR: 1.3, envMapIntensity: 1.0 })
-    const mk = (side, king) => new THREE.MeshStandardMaterial({ map: med[side + (king ? 'K' : '')], bumpMap: med[side + (king ? 'K' : '')], bumpScale: 0.3, metalness: 0.35, roughness: 0.42, envMapIntensity: 0.95 })
+    // pièces NEUTRES : Foncé (graphite mat) vs Clair (ivoire), zéro faction/RGB.
+    const pirateSide = new THREE.MeshPhysicalMaterial({ color: 0x2a2b30, metalness: 0.18, roughness: 0.5, clearcoat: 0.4, clearcoatRoughness: 0.35, envMapIntensity: 0.8 })
+    const marineSide = new THREE.MeshPhysicalMaterial({ color: 0xe6ddca, metalness: 0.06, roughness: 0.46, clearcoat: 0.4, clearcoatRoughness: 0.32, envMapIntensity: 0.85 })
+    const mk = (side, king) => new THREE.MeshStandardMaterial({ map: med[side + (king ? 'K' : '')], bumpMap: med[side + (king ? 'K' : '')], bumpScale: 0.3, metalness: 0.2, roughness: 0.5, envMapIntensity: 0.85 })
     const top = { [P]: mk(P, false), [M]: mk(M, false), [P + 'K']: mk(P, true), [M + 'K']: mk(M, true) }
-    const bot = { [P]: new THREE.MeshStandardMaterial({ color: 0x4a0f0a, metalness: 0.3, roughness: 0.6 }), [M]: new THREE.MeshStandardMaterial({ color: 0x0c2038, metalness: 0.3, roughness: 0.6 }) }
-    const rim = { [P]: new THREE.MeshStandardMaterial({ color: 0x3c0c08, metalness: 0.5, roughness: 0.45 }), [M]: new THREE.MeshStandardMaterial({ color: 0x0a1a30, metalness: 0.6, roughness: 0.4 }) }
-    const gold = new THREE.MeshPhysicalMaterial({ color: 0xe7c46a, metalness: 1, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.16, envMapIntensity: 1.3, emissive: 0x6a4a12, emissiveIntensity: 0.55, toneMapped: true })
-    const gem = { [P]: new THREE.MeshStandardMaterial({ color: 0xb8564a, metalness: 0.6, roughness: 0.28, emissive: 0x3a0d05, emissiveIntensity: 0.3 }), [M]: new THREE.MeshStandardMaterial({ color: 0x5a83ad, metalness: 0.6, roughness: 0.28, emissive: 0x0a2240, emissiveIntensity: 0.3 }) }
-    const tileDark = new THREE.MeshStandardMaterial({ color: 0x6b4427, roughness: 0.62, metalness: 0.08, bumpMap: wood, bumpScale: 0.04 })
-    const tileLight = new THREE.MeshStandardMaterial({ color: 0xe9d7af, roughness: 0.5, metalness: 0.04, bumpMap: wood, bumpScale: 0.03 })
+    const bot = { [P]: new THREE.MeshStandardMaterial({ color: 0x16171b, metalness: 0.2, roughness: 0.62 }), [M]: new THREE.MeshStandardMaterial({ color: 0xcdbfa6, metalness: 0.1, roughness: 0.6 }) }
+    const rim = { [P]: new THREE.MeshStandardMaterial({ color: 0x16171b, metalness: 0.4, roughness: 0.5 }), [M]: new THREE.MeshStandardMaterial({ color: 0xcdbfa6, metalness: 0.3, roughness: 0.5 }) }
+    const gold = new THREE.MeshPhysicalMaterial({ color: 0xc8a45c, metalness: 1, roughness: 0.24, clearcoat: 1, clearcoatRoughness: 0.18, envMapIntensity: 1.2, emissive: 0x5a4416, emissiveIntensity: 0.4, toneMapped: true })
+    // "gem" sur la couronne de la dame → or sobre des deux côtés (plus de couleur faction)
+    const gem = { [P]: new THREE.MeshStandardMaterial({ color: 0xc8a45c, metalness: 0.7, roughness: 0.3, emissive: 0x4a3812, emissiveIntensity: 0.25 }), [M]: new THREE.MeshStandardMaterial({ color: 0xc8a45c, metalness: 0.7, roughness: 0.3, emissive: 0x4a3812, emissiveIntensity: 0.25 }) }
+    const tileDark = new THREE.MeshStandardMaterial({ color: 0x8a5a3c, roughness: 0.62, metalness: 0.08, bumpMap: wood, bumpScale: 0.04 })
+    const tileLight = new THREE.MeshStandardMaterial({ color: 0xe8d3a8, roughness: 0.5, metalness: 0.04, bumpMap: wood, bumpScale: 0.03 })
     const frame = new THREE.MeshStandardMaterial({ color: 0x241710, roughness: 0.55, metalness: 0.2, bumpMap: wood, bumpScale: 0.05 })
     const all = [...Object.values(med), wood, pirateSide, marineSide, ...Object.values(top), ...Object.values(bot), ...Object.values(rim), gold, ...Object.values(gem), tileDark, tileLight, frame]
     return { med, pirateSide, marineSide, top, bot, rim, gold, gem, tileDark, tileLight, frame, _all: all }
@@ -289,7 +301,7 @@ function Pieces({ store, audio, events }) {
 
   useFrame(() => {
     const now = performance.now()
-    mats.pirateSide.emissiveIntensity = 0.05 + 0.025 * Math.sin(now * 0.0016)  // braise très subtile (Pirates)
+    // (pièces neutres : plus de braise émissive faction)
     const sel = state.selected ? state.selected[0] + '_' + state.selected[1] : null
     const hk = hoverKey.current
     // repos / hover lift / bob de la sélection (le mover écrasera sa propre transform plus bas)
@@ -393,7 +405,7 @@ function Pieces({ store, audio, events }) {
           if (s.y < -0.5) { s.vy *= 0.4; s.vx *= 0.86; s.vz *= 0.86 }   // traînée sous l'eau (descente molle)
           const sc = s.y < -0.5 ? Math.max(0.001, 1 - (-0.5 - s.y) * 0.55) : 1   // se dissout en profondeur
           dummy.position.set(s.x, Math.min(s.y, 1.6), s.z); dummy.rotation.set(s.ax, 0, s.az); dummy.scale.setScalar(sc); dummy.updateMatrix(); sm.setMatrixAt(k, dummy.matrix)
-          if (sm.instanceColor) sm.setColorAt(k, s.side === P ? new THREE.Color(0x8a352c) : new THREE.Color(0x2c4d6c))
+          if (sm.instanceColor) sm.setColorAt(k, s.side === P ? new THREE.Color(0x2a2b30) : new THREE.Color(0xefe7d6))
         } else { dummy.scale.setScalar(0); dummy.position.set(0, -60, 0); dummy.updateMatrix(); sm.setMatrixAt(k, dummy.matrix) }
       }
       sm.instanceMatrix.needsUpdate = true; if (sm.instanceColor) sm.instanceColor.needsUpdate = true; sm.visible = any
@@ -503,8 +515,9 @@ function Celebration({ store, quality }) {
   useFrame(() => {
     const now = performance.now()
     const a = active.current
-    const goldPal = [0xffd56a, 0xffe9a8, 0xffb24d, 0xfff3c8]
-    const facPal = a ? (a.side === P ? [0xff7a3a, 0xffb060, 0xffd56a, 0xff5024] : [0x6fb4ff, 0xa8d0ff, 0xffd56a, 0x3a7cff]) : goldPal
+    const goldPal = [0xe0c074, 0xefe7d6, 0xc8a45c, 0xfbf6ec]
+    // feux d'artifice NEUTRES : or + ivoire (plus de couleur faction)
+    const facPal = goldPal
     // tirs périodiques pendant ~7s
     if (a && N > 0) {
       const el = now - a.t0
@@ -863,7 +876,7 @@ export default function DamesScene({ store, onSquareClick, audio, events }) {
   return (
     <>
       <div ref={flashRef} aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 55%, #fff,rgba(255,238,200,.6) 55%,transparent 75%)', opacity: 0, pointerEvents: 'none', mixBlendMode: 'screen', zIndex: 3 }} />
-      <div ref={comboRef} aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%) scale(.4)', opacity: 0, pointerEvents: 'none', zIndex: 4, fontFamily: "'Pirata One','Cinzel',serif", fontSize: 'clamp(38px,7vw,82px)', fontWeight: 700, color: '#ffd56a', textShadow: '0 0 22px rgba(255,180,60,.85), 0 4px 14px rgba(0,0,0,.6)', WebkitTextStroke: '1px rgba(90,30,5,.5)' }} />
+      <div ref={comboRef} aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%) scale(.4)', opacity: 0, pointerEvents: 'none', zIndex: 4, fontFamily: "'Bricolage Grotesque','Inter',sans-serif", fontSize: 'clamp(38px,7vw,82px)', fontWeight: 800, color: '#e0c074', textShadow: '0 0 20px rgba(200,164,92,.7), 0 4px 14px rgba(0,0,0,.6)' }} />
       {/* peau alternative : vue 2D top-down (jouable, même store, même onSquareClick) */}
       <DamesView2D store={store} onSquareClick={onSquareClick} />
       <Canvas

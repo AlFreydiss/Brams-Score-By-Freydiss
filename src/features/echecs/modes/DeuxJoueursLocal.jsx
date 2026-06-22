@@ -37,7 +37,7 @@ export default function DeuxJoueursLocal({ onQuitter, troisD = false }) {
   const taillePlateau = useMemo(() => taillePlateauAuto(utiliser3D), [utiliser3D])
 
   return (
-    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
+    <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'flex-start', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)', paddingTop: 8 }}>
       <PlateauReglable
         partie={partie}
         orientation="white"
@@ -50,8 +50,8 @@ export default function DeuxJoueursLocal({ onQuitter, troisD = false }) {
       <div style={{ width: 'min(330px, 92vw)', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ padding: '12px 14px', background: THEME.card, border: `1px solid ${THEME.cardBorder}`, borderRadius: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: THEME.text, fontFamily: THEME.fontDisplay }}>
-            {fin.terminee ? '🏁 Partie terminée' : trait === 'w' ? '♔ Aux Blancs de jouer' : '♚ Aux Noirs de jouer'}
-            {enEchec && !fin.terminee && <span style={{ color: THEME.accent, marginLeft: 8 }}>⚠ ÉCHEC</span>}
+            {fin.terminee ? 'Partie terminée' : trait === 'w' ? 'Trait aux Blancs' : 'Trait aux Noirs'}
+            {enEchec && !fin.terminee && <span style={{ color: THEME.accent, marginLeft: 8, letterSpacing: '0.08em' }}>ÉCHEC</span>}
           </div>
           {reglages.piecesCapturees && (
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>

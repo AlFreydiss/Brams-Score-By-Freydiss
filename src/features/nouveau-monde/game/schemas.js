@@ -9,9 +9,11 @@ export const ECHECS_SETTINGS = [
   // Plateau & pièces
   { group: 'Plateau & pièces', key: 'themePlateau', label: 'Thème du plateau', type: 'select',
     options: [
-      { value: 'parchemin', label: 'Bois Wano (parchemin)' },
+      { value: 'bois', label: 'Bois' },
+      { value: 'vert', label: 'Vert' },
+      { value: 'marbre', label: 'Marbre' },
       { value: 'ardoise', label: 'Ardoise' },
-      { value: 'emeraude', label: 'Émeraude' },
+      { value: 'glace', label: 'Bleu glace' },
     ] },
   { group: 'Plateau & pièces', key: 'plateau3D', label: 'Plateau 3D', type: 'toggle', hint: 'Inclinaison perspective' },
 
@@ -50,7 +52,9 @@ export const DAMES_SETTINGS = [
   { group: 'Règles', key: 'priseObligatoire', label: 'Prise obligatoire', type: 'toggle' },
   { group: 'Règles', key: 'priseMaximale', label: 'Prise maximale obligatoire', type: 'toggle' },
   { group: 'Règles', key: 'dameVolante', label: 'Dame volante', type: 'toggle' },
-  { group: 'Affichage', key: 'vue2D', label: 'Vue 2D top-down', type: 'toggle' },
+  { group: 'Affichage', key: 'vue2D', label: 'Vue 2D (plateau plat)', type: 'toggle' },
+  { group: 'Affichage', key: 'boardTheme', label: 'Plateau', type: 'segmented',
+    options: [{ value: 'bois', label: 'Bois' }, { value: 'marbre', label: 'Marbre' }, { value: 'ardoise', label: 'Ardoise' }] },
   { group: 'Affichage', key: 'surbrillancePrises', label: 'Surbrillance des prises', type: 'toggle' },
   { group: 'Affichage', key: 'coordonnees', label: 'Coordonnées', type: 'toggle' },
   { group: 'Animation', key: 'vitesseRafle', label: 'Vitesse des rafles', type: 'segmented',
@@ -65,14 +69,14 @@ export const SCHEMAS = { echecs: ECHECS_SETTINGS, dames: DAMES_SETTINGS }
 // Valeurs par défaut "raisonnables" par jeu (le board lit ces clés via useGameShell()).
 export const DEFAULTS = {
   echecs: {
-    themePlateau: 'parchemin', plateau3D: true, coupsLegaux: true, surbrillanceDernier: true,
+    themePlateau: 'bois', plateau3D: true, coupsLegaux: true, surbrillanceDernier: true,
     indicateurEchec: true, vitesseAnim: 'normal', premove: true, autoPromo: false,
     coordonnees: 'exterieur', barreEval: true, piecesCapturees: true, sons: true, volume: 0.6,
     daltonien: false, mesPiecesEnBas: true, niveauIA: 4,
   },
   dames: {
     variante: '10x10', priseObligatoire: true, priseMaximale: true, dameVolante: true,
-    vue2D: false, surbrillancePrises: true, coordonnees: true, vitesseRafle: 'normal',
+    vue2D: true, boardTheme: 'bois', surbrillancePrises: true, coordonnees: true, vitesseRafle: 'normal',
     sons: true, volume: 0.6, niveauIA: 2,
   },
 }

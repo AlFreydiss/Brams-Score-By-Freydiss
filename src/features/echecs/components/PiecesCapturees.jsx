@@ -11,7 +11,7 @@ export default function PiecesCapturees({ pieces = [], couleurPieces, avantage =
         </span>
       ))}
       {avantage > 0 && (
-        <span style={{ marginLeft: 5, fontSize: 12, fontWeight: 700, color: THEME.success, fontFamily: THEME.fontBody }}>
+        <span style={{ marginLeft: 5, fontSize: 12, fontWeight: 700, color: THEME.success, fontFamily: THEME.fontMono, fontVariantNumeric: 'tabular-nums' }}>
           +{avantage}
         </span>
       )}

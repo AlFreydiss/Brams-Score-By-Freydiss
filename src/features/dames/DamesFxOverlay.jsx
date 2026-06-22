@@ -9,8 +9,10 @@
 // Styles inline + el.animate (repo inline-only). Respecte prefers-reduced-motion.
 // ─────────────────────────────────────────────────────────────────────────────
 import { forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo } from 'react'
+import { ui, fonts, damesPieces } from '../games/neutralTheme.js'
 
-const PIRATA = "'Pirata One','OnePiece',cursive"
+const DISP = fonts.display
+const GOLD = ui.accentHi
 const reducedMotion = () => { try { return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches } catch (e) { return false } }
 const vibrate = (pat) => { try { if (navigator.vibrate && !reducedMotion()) navigator.vibrate(pat) } catch (e) { /* */ } }
 
@@ -57,9 +59,9 @@ const DamesFxOverlay = forwardRef(function DamesFxOverlay({ winner = null }, ref
         { duration: 980, easing: 'cubic-bezier(.18,1.5,.4,1)' },
       )
     },
-    // un pion vient d'être couronné Dame. side = 'P' (Pirates) | 'M' (Marine).
+    // un pion vient d'être couronné Dame. side = 'P' (Foncé) | 'M' (Clair).
     promote(side) {
-      const accent = side === 'M' ? '#9fd0ff' : '#ffd56a'
+      const accent = GOLD   // dame = liseré or, neutre quel que soit le camp
       vibrate([0, 22, 40, 30])
       const el = promoRef.current
       if (!el || !el.animate || reducedMotion()) return
@@ -95,22 +97,19 @@ const DamesFxOverlay = forwardRef(function DamesFxOverlay({ winner = null }, ref
     return () => clearTimeout(t)
   }, [winner])
 
-  const isP = winner === 'P'
+  // confettis NEUTRES : or + ivoire + graphite clair (pas de couleur de faction)
   const confColors = useMemo(() => (
-    winner === 'M' ? ['#ffd56a', '#9fd0ff', '#6fb4ff', '#ffe9a8', '#fff3c8']
-      : ['#ffd56a', '#ffb060', '#ff7a3a', '#ffe9a8', '#fff3c8']
-  ), [winner])
+    [ui.accentHi, ui.accent, damesPieces.clair.haut, damesPieces.clair.bord, '#d8d2c4']
+  ), [])
   const confetti = useMemo(() => (confettiOn ? makeConfetti(70, confColors) : []), [confettiOn, confColors])
 
   return (
     <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 9 }}>
-      {/* projecteur du camp gagnant (apparaît avec la cinématique de victoire) */}
+      {/* projecteur de victoire (neutre, doré sobre) */}
       {winner && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: isP
-            ? 'radial-gradient(120% 80% at 50% 8%, rgba(255,120,60,.22), transparent 60%)'
-            : 'radial-gradient(120% 80% at 50% 8%, rgba(90,160,255,.22), transparent 60%)',
+          background: 'radial-gradient(120% 80% at 50% 8%, rgba(200,164,92,.20), transparent 60%)',
           animation: reducedMotion() ? 'none' : 'damesGlowPulse 3.4s ease-in-out infinite',
         }} />
       )}
@@ -120,7 +119,7 @@ const DamesFxOverlay = forwardRef(function DamesFxOverlay({ winner = null }, ref
         <span key={i} style={{
           position: 'absolute', top: -18, left: c.left + '%', width: c.size, height: c.round ? c.size : c.size * 0.42,
           background: c.col, borderRadius: c.round ? '50%' : 2, opacity: 0.92,
-          boxShadow: '0 0 6px rgba(255,200,90,.5)',
+          boxShadow: '0 0 5px rgba(200,164,92,.45)',
           transform: `rotate(${c.rot}deg)`,
           animation: `damesConfettiFall ${c.dur}s linear ${c.delay}s infinite`,
           ['--drift']: c.drift + 'px',
@@ -132,16 +131,20 @@ const DamesFxOverlay = forwardRef(function DamesFxOverlay({ winner = null }, ref
         position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%) scale(.5)', opacity: 0,
         textAlign: 'center',
       }}>
-        <div ref={comboLblRef} style={{ fontFamily: PIRATA, fontSize: 'clamp(18px,3.4vw,38px)', letterSpacing: '3px', color: '#ffe9a8', textShadow: '0 0 18px rgba(255,180,60,.85), 0 3px 10px rgba(0,0,0,.6)', whiteSpace: 'nowrap' }}>RAFLE</div>
+        <div ref={comboLblRef} style={{ fontFamily: DISP, fontWeight: 800, fontSize: 'clamp(18px,3.4vw,38px)', letterSpacing: '2px', color: GOLD, textShadow: '0 0 16px rgba(200,164,92,.7), 0 3px 10px rgba(0,0,0,.6)', whiteSpace: 'nowrap' }}>RAFLE</div>
       </div>
 
-      {/* bandeau de promotion (couronnement) */}
+      {/* bandeau de promotion (couronnement) — neutre, couronne SVG or */}
       <div ref={promoRef} style={{
         position: 'absolute', top: '38%', left: '50%', transform: 'translate(-50%,-50%) scale(.7)', opacity: 0,
-        textAlign: 'center', ['--accent']: '#ffd56a',
+        textAlign: 'center', ['--accent']: GOLD,
       }}>
-        <div ref={promoCrownRef} style={{ fontSize: 'clamp(40px,8vw,86px)', filter: 'drop-shadow(0 0 22px var(--accent))', marginBottom: 2 }}>👑</div>
-        <div style={{ fontFamily: PIRATA, fontSize: 'clamp(22px,4.2vw,46px)', letterSpacing: '2px', color: 'var(--accent)', textShadow: '0 0 24px var(--accent), 0 4px 14px rgba(0,0,0,.6)' }}>Dame couronnée</div>
+        <div ref={promoCrownRef} style={{ filter: 'drop-shadow(0 0 18px var(--accent))', marginBottom: 2, display: 'grid', placeItems: 'center' }}>
+          <svg viewBox="0 0 24 24" aria-hidden style={{ width: 'clamp(40px,8vw,82px)', height: 'clamp(40px,8vw,82px)' }}>
+            <path d="M3 8l3.5 3L12 5l5.5 6L21 8l-1.6 9H4.6L3 8z" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
+          </svg>
+        </div>
+        <div style={{ fontFamily: DISP, fontWeight: 800, fontSize: 'clamp(20px,4vw,42px)', letterSpacing: '1px', color: 'var(--accent)', textShadow: '0 0 22px var(--accent), 0 4px 14px rgba(0,0,0,.6)' }}>Dame couronnée</div>
       </div>
 
       {/* keyframes inline (repo inline-only — pas de Tailwind/CSS global ici) */}

@@ -16,7 +16,9 @@ function createStore() {
   let s = {
     board: null, selected: null, legalMoves: [], movableKeys: new Set(),
     interactive: true, gameOver: false, last: null, hint: null, cursor: null,
-    quality: 'high', reduced: false, theme: 'sunset', winner: null, view2D: false,
+    quality: 'high', reduced: false, theme: 'sunset', winner: null,
+    // 2D NEUTRE par défaut (vue plane premium, façon site de dames sérieux).
+    view2D: true, boardTheme: 'bois', coordonnees: true,
   }
   const subs = new Set()
   return {
@@ -56,8 +58,10 @@ export default class DamesRenderer {
     const minWH = Math.min(host.clientWidth || 800, host.clientHeight || 600)
     const tier = saved || (reducedMotion ? 'low' : (coarse && minWH < 820) ? 'medium' : 'high')
     let savedTheme = null; try { savedTheme = localStorage.getItem('dames_theme') } catch (e) { /* */ }
-    let saved2D = false; try { saved2D = localStorage.getItem('dames_view2d') === '1' } catch (e) { /* */ }
-    this.store.setState({ reduced: reducedMotion, quality: tier, theme: savedTheme || 'sunset', view2D: saved2D })
+    // 2D = défaut. Si rien n'est stocké → vue 2D neutre (le 3D devient le toggle secondaire).
+    let saved2D = true; try { const v = localStorage.getItem('dames_view2d'); if (v != null) saved2D = v === '1' } catch (e) { /* */ }
+    let savedBoard = 'bois'; try { savedBoard = localStorage.getItem('dames_board') || 'bois' } catch (e) { /* */ }
+    this.store.setState({ reduced: reducedMotion, quality: tier, theme: savedTheme || 'sunset', view2D: saved2D, boardTheme: savedBoard })
 
     this.root = createRoot(mountEl)
     this.root.render(createElement(DamesScene, {
@@ -88,6 +92,9 @@ export default class DamesRenderer {
   // ── vue 2D top-down (toggle) : overlay CSS jouable par-dessus la scène 3D ───────
   view2D() { return this.store.getState().view2D }
   setView2D(b) { this.store.setState({ view2D: !!b }); try { localStorage.setItem('dames_view2d', b ? '1' : '0') } catch (e) { /* */ } }
+  // ── thème de plateau 2D NEUTRE : 'bois' (défaut) · 'marbre' · 'ardoise' ────────
+  boardTheme() { return this.store.getState().boardTheme }
+  setBoardTheme(t) { this.store.setState({ boardTheme: t }); try { localStorage.setItem('dames_board', t) } catch (e) { /* */ } }
   setMuted(b) { this.muted = b; if (b) { this._stopAmbiance(); this._stopMusic() } else { this._resumeAudio() } }
   // Volume maître 0..1 — applique en douceur sur le gain master (et persiste).
   setVolume(v) {

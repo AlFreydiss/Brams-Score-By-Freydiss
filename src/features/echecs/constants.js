@@ -1,78 +1,85 @@
 // ── Échecs Brams — constantes globales du module ────────────────────────────
 // Toutes les valeurs magiques vivent ici (standard du projet).
-import { colors, fonts } from '../../styles/tokens.js'
+// DA : tokens NEUTRES PREMIUM partagés (neutralTheme) — charcoal + un seul accent
+// or laiton, mono pour chiffres. Niveau chess.com / lichess, zéro One Piece criard.
+import { fonts as nfonts, ui, echecsBoards, ECHECS_BOARD_DEFAUT, marks } from '../games/neutralTheme.js'
 
-// Palette du module : réutilise les tokens du site + spécifiques échiquier.
-// Cases chaudes « parchemin / bois sombre » — lisibles, cohérentes avec la DA
-// One Piece du site (pas de noir + or froid).
+// Palette du module : dérivée des tokens neutres. `THEME` reste l'API consommée par
+// tous les composants → on ne change QUE les valeurs (charcoal premium, 1 accent or).
 export const THEME = {
-  bg:            colors.bg,
-  surface:       colors.surface,
-  card:          'rgba(30,32,36,0.78)',          // glass card
-  cardBorder:    colors.border,
-  cardBorderHover: colors.borderHover,
-  text:          colors.text,
-  muted:         colors.muted,
-  accent:        colors.accent,                  // #e0524a
-  accentHover:   colors.accentHover,
-  gold:          colors.gold,                    // #ffd700
-  success:       colors.success,
-  blue:          colors.blue,
-  fontBody:      fonts.body,
-  fontDisplay:   fonts.display,
-  fontPirate:    fonts.pirate,
+  bg:            ui.bg,
+  bgElev:        ui.bgElev,
+  surface:       ui.surface,
+  surfaceHi:     ui.surfaceHi,
+  card:          ui.surface,                     // carte opaque (plus de glass criard)
+  cardBorder:    ui.line,
+  cardBorderHover: ui.lineHi,
+  text:          ui.text,
+  textDim:       ui.textDim,
+  muted:         ui.textMute,
+  accent:        ui.bad,                         // rouge sobre (danger / abandon)
+  accentHover:   ui.bad,
+  gold:          ui.accent,                      // or laiton — accent retenu unique
+  goldHi:        ui.accentHi,
+  accentInk:     ui.accentInk,
+  success:       ui.good,
+  blue:          ui.info,
+  warn:          ui.warn,
+  radius:        ui.radius,
+  space:         ui.space,
+  shadow:        ui.shadow,
+  fontBody:      nfonts.body,
+  fontDisplay:   nfonts.display,
+  fontMono:      nfonts.mono,
+  fontPirate:    nfonts.display,
 
-  caseClaire:    '#C8B188',                      // parchemin
-  caseFoncee:    '#71503C',                      // bois sombre chaud
-  notationClaire:'#5d4534',
-  notationFoncee:'#e3d3ae',
-  dernierCoup:   'rgba(255, 215, 0, 0.32)',      // surbrillance or du dernier coup
-  selection:     'rgba(255, 215, 0, 0.45)',
-  pastilleLegale:'rgba(20, 14, 8, 0.32)',        // pastille coup légal (case vide)
-  anneauCapture: 'rgba(224, 82, 74, 0.85)',      // anneau sur capture possible
-  echecRoi:      'radial-gradient(circle, rgba(224,82,74,.85) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
+  caseClaire:    echecsBoards[ECHECS_BOARD_DEFAUT].clair,
+  caseFoncee:    echecsBoards[ECHECS_BOARD_DEFAUT].sombre,
+  notationClaire:'#7a6a4a',
+  notationFoncee:'#efe6d2',
+  dernierCoup:   marks.dernier,
+  selection:     marks.selection,
+  pastilleLegale:marks.legal,
+  anneauCapture: marks.capture,
+  echecRoi:      marks.echec,
 }
 
-// ── Thèmes de plateau (le PLATEAU reste neutre/pro — pas de surcharge One Piece
-// dessus). 3 thèmes sobres + lisibles ; le défaut « parchemin » colle à la DA du
-// site sans nuire à la lecture. Chaque thème porte ses propres surbrillances pour
-// rester contrastées sur ses cases. Sélection persistée (CLE_THEME_PLATEAU).
-export const THEMES_PLATEAU = {
-  parchemin: {
-    id: 'parchemin', label: 'Parchemin', emoji: '🗺️',
-    claire: '#C8B188', foncee: '#71503C',
-    notationClaire: '#5d4534', notationFoncee: '#e3d3ae',
-    dernierCoup: 'rgba(255, 215, 0, 0.34)',
-    selection: 'rgba(255, 215, 0, 0.46)',
-    pastilleLegale: 'rgba(20, 14, 8, 0.30)',
-    anneauCapture: 'rgba(224, 82, 74, 0.85)',
-    premove: 'rgba(116, 185, 255, 0.45)',
-    echecRoi: 'radial-gradient(circle, rgba(224,82,74,.85) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
-  },
-  ardoise: {
-    id: 'ardoise', label: 'Ardoise', emoji: '🪨',
-    claire: '#B6C0CC', foncee: '#5C6B7E',
-    notationClaire: '#3a4654', notationFoncee: '#dde4ec',
-    dernierCoup: 'rgba(255, 211, 105, 0.34)',
-    selection: 'rgba(255, 211, 105, 0.46)',
-    pastilleLegale: 'rgba(12, 18, 26, 0.32)',
-    anneauCapture: 'rgba(224, 82, 74, 0.85)',
-    premove: 'rgba(116, 185, 255, 0.50)',
-    echecRoi: 'radial-gradient(circle, rgba(224,82,74,.88) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
-  },
-  emeraude: {
-    id: 'emeraude', label: 'Émeraude', emoji: '🌿',
-    claire: '#E9E4CE', foncee: '#5B8265',
-    notationClaire: '#3c5642', notationFoncee: '#eef3e6',
-    dernierCoup: 'rgba(255, 215, 0, 0.32)',
-    selection: 'rgba(255, 215, 0, 0.44)',
-    pastilleLegale: 'rgba(14, 24, 16, 0.30)',
-    anneauCapture: 'rgba(224, 82, 74, 0.85)',
-    premove: 'rgba(116, 185, 255, 0.48)',
-    echecRoi: 'radial-gradient(circle, rgba(224,82,74,.85) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
-  },
+// Notation lisible dérivée d'une paire de cases (clair foncé) — contraste auto.
+function notation(clair, sombre) {
+  return { notationClaire: assombrir(clair, 0.5), notationFoncee: eclaircir(sombre, 0.6) }
 }
-export const THEME_PLATEAU_DEFAUT = 'parchemin'
+// helpers hex → ajuste la luminosité (mélange vers noir/blanc). Hex 6 chiffres only.
+function mix(hex, vers, k) {
+  const c = hex.replace('#', '')
+  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16)
+  const t = vers === 'noir' ? 0 : 255
+  const mr = Math.round(r + (t - r) * k), mg = Math.round(g + (t - g) * k), mb = Math.round(b + (t - b) * k)
+  return '#' + [mr, mg, mb].map(v => v.toString(16).padStart(2, '0')).join('')
+}
+const assombrir = (h, k) => mix(h, 'noir', k)
+const eclaircir = (h, k) => mix(h, 'blanc', k)
+
+// ── Thèmes de plateau NEUTRES (façon chess.com) wirés sur echecsBoards (tokens
+// partagés). Chaque thème porte ses surbrillances (héritées de `marks`, donc
+// cohérentes échecs↔dames). Sélection persistée (CLE_THEME_PLATEAU).
+// id = clé echecsBoards → le sélecteur du lobby tape directement dedans.
+function themePlateauDepuis(id) {
+  const b = echecsBoards[id]
+  return {
+    id, label: b.label, claire: b.clair, foncee: b.sombre,
+    ...notation(b.clair, b.sombre),
+    dernierCoup: marks.dernier,
+    selection: marks.selection,
+    pastilleLegale: marks.legal,
+    anneauCapture: marks.capture,
+    premove: 'rgba(111,168,214,0.45)',           // bleu info sobre (coup anticipé)
+    echecRoi: marks.echec,
+  }
+}
+export const THEMES_PLATEAU = Object.fromEntries(
+  Object.keys(echecsBoards).map(id => [id, themePlateauDepuis(id)])
+)
+export const THEME_PLATEAU_DEFAUT = ECHECS_BOARD_DEFAUT
 export const CLE_THEME_PLATEAU = 'echecs_theme_plateau'
 
 export function themePlateau() {
@@ -133,15 +140,23 @@ export const GLYPHES_PIECES = {
   b: { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' },
 }
 
-// Cadences proposées (a+b = a minutes + b secondes d'incrément)
+// Cadences proposées (a+b = a minutes + b secondes d'incrément), regroupées par
+// famille (façon chess.com / lichess). `cat` = catégorie pour le rendu en chips.
 export const CADENCES = [
-  { id: '1+0',   label: 'Bullet',  minutes: 1,  incrementSec: 0,  emoji: '🔥' },
-  { id: '3+2',   label: 'Blitz',   minutes: 3,  incrementSec: 2,  emoji: '⚡' },
-  { id: '5+0',   label: 'Blitz',   minutes: 5,  incrementSec: 0,  emoji: '⚡' },
-  { id: '10+0',  label: 'Rapide',  minutes: 10, incrementSec: 0,  emoji: '⛵' },
-  { id: '15+10', label: 'Rapide',  minutes: 15, incrementSec: 10, emoji: '⛵' },
+  { id: '1+0',   label: 'Bullet',    cat: 'Bullet',    minutes: 1,  incrementSec: 0 },
+  { id: '2+1',   label: 'Bullet',    cat: 'Bullet',    minutes: 2,  incrementSec: 1 },
+  { id: '3+0',   label: 'Blitz',     cat: 'Blitz',     minutes: 3,  incrementSec: 0 },
+  { id: '3+2',   label: 'Blitz',     cat: 'Blitz',     minutes: 3,  incrementSec: 2 },
+  { id: '5+0',   label: 'Blitz',     cat: 'Blitz',     minutes: 5,  incrementSec: 0 },
+  { id: '5+3',   label: 'Blitz',     cat: 'Blitz',     minutes: 5,  incrementSec: 3 },
+  { id: '10+0',  label: 'Rapide',    cat: 'Rapide',    minutes: 10, incrementSec: 0 },
+  { id: '15+10', label: 'Rapide',    cat: 'Rapide',    minutes: 15, incrementSec: 10 },
+  { id: '30+0',  label: 'Classique', cat: 'Classique', minutes: 30, incrementSec: 0 },
+  { id: '30+20', label: 'Classique', cat: 'Classique', minutes: 30, incrementSec: 20 },
 ]
 export const CADENCE_DEFAUT = '5+0'
+// Familles dans l'ordre d'affichage (chips groupées dans le lobby / matchmaking).
+export const CADENCE_CATEGORIES = ['Bullet', 'Blitz', 'Rapide', 'Classique']
 
 export function parseCadence(id) {
   const [min, inc] = String(id || CADENCE_DEFAUT).split('+').map(Number)

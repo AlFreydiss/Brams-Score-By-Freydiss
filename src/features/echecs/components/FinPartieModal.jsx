@@ -1,24 +1,12 @@
-// ── Modale de fin : POSTER « AVIS DE RECHERCHE » (One Piece) ─────────────────
-// DA pilotée par les tokens nm (or champagne, Cinzel gravé, parchemin). L'ELO
-// s'affiche en prime ฿ et sa variation est animée. Bouton REMATCH proéminent.
-// API INCHANGÉE (mêmes props que la version v4) → les 3 modes restent compatibles.
+// ── Modale de fin de partie — NEUTRE PREMIUM (charcoal + un accent or) ───────
+// Surface sombre, titre Bricolage, ELO + delta animé en mono, bouton revanche
+// proéminent. Confettis or sur victoire (respecte prefers-reduced-motion).
+// API INCHANGÉE (mêmes props) → les 3 modes restent compatibles.
 import { useEffect, useState, useRef } from 'react'
 import { rangPourElo } from '../lib/elo.js'
-import { nm } from '../../nouveau-monde/theme/tokens.js'
-
-// Charge la police Cinzel une seule fois (poster gravé) — idempotent.
-function useCinzel() {
-  useEffect(() => {
-    if (typeof document === 'undefined') return
-    if (document.querySelector('link[data-echecs-cinzel]')) return
-    const l = document.createElement('link')
-    l.rel = 'stylesheet'; l.href = nm.FONT_HREF; l.setAttribute('data-echecs-cinzel', '1')
-    document.head.appendChild(l)
-  }, [])
-}
+import { THEME } from '../constants.js'
 
 // Confettis « pièces d'or » (canvas, zéro dépendance) — joués uniquement sur victoire.
-// Respecte prefers-reduced-motion (rendu statique discret) et se nettoie au démontage.
 function ConfettisOr({ actif }) {
   const ref = useRef(null)
   useEffect(() => {
@@ -30,7 +18,7 @@ function ConfettisOr({ actif }) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     const W = cv.clientWidth, H = cv.clientHeight
     cv.width = W * dpr; cv.height = H * dpr; ctx.scale(dpr, dpr)
-    const teintes = ['#e9c878', '#d4a64b', '#a87a2c', '#f0d79a']
+    const teintes = ['#e0c074', '#c8a45c', '#a07f3a', '#efddb0']
     const N = reduit ? 26 : 90
     const parts = Array.from({ length: N }, () => ({
       x: W / 2 + (Math.random() - 0.5) * W * 0.4,
@@ -77,8 +65,8 @@ const LIBELLES_CAUSE = {
   deconnexion: 'Déconnexion',
 }
 
-// Compteur animé pour le delta ELO (prime ฿)
-function DeltaElo({ delta, eloFinal }) {
+// Compteur animé pour le delta ELO
+function DeltaElo({ delta }) {
   const [affiche, setAffiche] = useState(0)
   useEffect(() => {
     if (!delta) { setAffiche(0); return }
@@ -95,9 +83,37 @@ function DeltaElo({ delta, eloFinal }) {
   if (delta == null) return null
   const pos = delta >= 0
   return (
-    <span style={{ fontFamily: nm.fonts.poster, fontWeight: 700, fontSize: 24, color: pos ? nm.color.win : nm.color.danger, fontVariantNumeric: 'tabular-nums' }}>
-      {pos ? '+' : ''}{affiche} ELO
+    <span style={{ fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 18, color: pos ? THEME.success : THEME.accent, fontVariantNumeric: 'tabular-nums' }}>
+      {pos ? '+' : ''}{affiche}
     </span>
+  )
+}
+
+function Btn({ onClick, disabled, variant, children }) {
+  const [hover, setHover] = useState(false)
+  const primaire = variant === 'primaire'
+  return (
+    <button
+      onClick={onClick} disabled={disabled}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
+      style={{
+        appearance: 'none', cursor: disabled ? 'default' : 'pointer',
+        fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 14.5, padding: '12px 24px',
+        borderRadius: THEME.radius.pill, transition: 'background .15s, border-color .15s, transform .12s',
+        transform: hover && !disabled ? 'translateY(-1px)' : 'none',
+        ...(primaire
+          ? {
+            color: THEME.accentInk, border: '1px solid transparent',
+            background: disabled ? THEME.surfaceHi : `linear-gradient(135deg, ${THEME.goldHi}, ${THEME.gold})`,
+            boxShadow: disabled ? 'none' : '0 14px 34px -16px rgba(200,164,92,.55)',
+          }
+          : {
+            color: THEME.text, border: `1px solid ${hover ? THEME.cardBorderHover : THEME.cardBorder}`,
+            background: hover ? THEME.surfaceHi : 'transparent',
+          }),
+        opacity: disabled ? 0.7 : 1,
+      }}
+    >{children}</button>
   )
 }
 
@@ -111,25 +127,22 @@ export default function FinPartieModal({
   onFermer, onNouvellePartie,
   onAnalyser,          // () => void (optionnel) — ouvre l'analyse post-partie
 }) {
-  useCinzel()
   const cardRef = useRef(null)
   const gagne = maCouleur && resultat !== 'nulle' && ((resultat === 'blanc') === (maCouleur === 'w'))
   const draw = resultat === 'nulle'
 
-  const titre = draw ? 'Trêve en haute mer'
-    : maCouleur ? (gagne ? 'Prime encaissée' : 'Capturé !')
-    : (resultat === 'blanc' ? 'Les Blancs triomphent' : 'Les Noirs triomphent')
-  const eyebrow = draw ? 'Avis · Match nul' : 'Avis de recherche'
-  const emoji = draw ? '🏴' : gagne ? '👑' : maCouleur ? '⚓' : '⚔️'
-  const accentGlow = draw ? 'rgba(122,135,148,.12)' : gagne ? 'rgba(212,166,75,.16)' : 'rgba(158,59,46,.16)'
-  const deepGlow = draw ? 'rgba(40,46,54,.6)' : gagne ? 'rgba(40,34,22,.6)' : 'rgba(74,18,12,.55)'
+  const titre = draw ? 'Partie nulle'
+    : maCouleur ? (gagne ? 'Victoire' : 'Défaite')
+    : (resultat === 'blanc' ? 'Les Blancs gagnent' : 'Les Noirs gagnent')
+  const accentTitre = draw ? THEME.text : gagne ? THEME.goldHi : THEME.accent
+  const glow = draw ? 'rgba(154,160,170,.10)' : gagne ? 'rgba(200,164,92,.16)' : 'rgba(212,104,90,.14)'
   const rang = eloFinal != null ? rangPourElo(eloFinal) : null
 
   useEffect(() => {
     const el = cardRef.current
     if (el && el.animate) el.animate(
-      [{ opacity: 0, transform: 'translateY(22px) scale(.94)' }, { opacity: 1, transform: 'none' }],
-      { duration: 420, easing: 'cubic-bezier(.2,1.3,.4,1)' },
+      [{ opacity: 0, transform: 'translateY(20px) scale(.95)' }, { opacity: 1, transform: 'none' }],
+      { duration: 360, easing: 'cubic-bezier(.2,1.1,.4,1)' },
     )
     const k = (e) => { if (e.key === 'Escape') onFermer?.() }
     window.addEventListener('keydown', k)
@@ -137,96 +150,49 @@ export default function FinPartieModal({
   }, [onFermer])
 
   return (
-    <div role="dialog" aria-modal="true" onClick={onFermer} style={{
+    <div role="dialog" aria-modal="true" aria-label={titre} onClick={onFermer} style={{
       position: 'fixed', inset: 0, zIndex: 1000, display: 'grid', placeItems: 'center', padding: 16,
-      background: `radial-gradient(circle at 50% 36%, ${deepGlow}, rgba(6,8,12,.94))`,
-      backdropFilter: 'blur(7px)',
+      background: 'rgba(6,8,12,.72)', backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)',
     }}>
       <ConfettisOr actif={!!gagne} />
       <div ref={cardRef} onClick={(e) => e.stopPropagation()} style={{
-        position: 'relative', zIndex: 1002, width: 'min(420px, calc(100vw - 32px))', textAlign: 'center', overflow: 'hidden',
-        padding: '30px 28px 26px', borderRadius: nm.radius.lg,
-        background: `linear-gradient(168deg, ${nm.color.parchment}, ${nm.color.parchmentDim})`,
-        color: nm.color.ink, border: `2px solid ${nm.color.goldDeep}`,
-        boxShadow: `0 34px 90px rgba(3,10,18,.8), 0 0 0 1px rgba(0,0,0,.5), inset 0 0 60px ${accentGlow}`,
+        position: 'relative', zIndex: 1002, width: 'min(400px, calc(100vw - 32px))', textAlign: 'center', overflow: 'hidden',
+        padding: '28px 26px 24px', borderRadius: THEME.radius.lg,
+        background: THEME.bgElev, color: THEME.text,
+        border: `1px solid ${THEME.cardBorderHover}`,
+        boxShadow: `0 40px 110px -30px rgba(0,0,0,.85), inset 0 0 70px ${glow}`,
       }}>
-        {/* coins gravés (cartographie) */}
-        {[['top', 'left'], ['top', 'right'], ['bottom', 'left'], ['bottom', 'right']].map(([v, h], i) => (
-          <span key={i} aria-hidden style={{ position: 'absolute', [v]: 8, [h]: 8, width: 18, height: 18, borderTop: v === 'top' ? `2px solid ${nm.color.goldDeep}` : 'none', borderBottom: v === 'bottom' ? `2px solid ${nm.color.goldDeep}` : 'none', borderLeft: h === 'left' ? `2px solid ${nm.color.goldDeep}` : 'none', borderRight: h === 'right' ? `2px solid ${nm.color.goldDeep}` : 'none', opacity: .7 }} />
-        ))}
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', color: THEME.muted, marginBottom: 8 }}>
+          {draw ? 'Match nul' : 'Fin de partie'}
+        </div>
+        <h2 style={{ margin: '0 0 4px', fontFamily: THEME.fontDisplay, fontWeight: 800, fontSize: 'clamp(1.7rem,5vw,2.2rem)', color: accentTitre, letterSpacing: '-0.02em' }}>{titre}</h2>
+        <div style={{ fontSize: 13, color: THEME.textDim, fontWeight: 600 }}>{LIBELLES_CAUSE[cause] || cause || ''}</div>
 
-        <div style={{ ...nm.type.eyebrow, color: nm.color.danger, marginBottom: 6 }}>{eyebrow}</div>
-        <div style={{ fontSize: 54, lineHeight: 1, marginBottom: 2, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,.3))' }}>{emoji}</div>
-        <h2 style={{ ...nm.type.posterTitle, margin: '4px 0 2px', color: nm.color.ink, fontSize: 'clamp(1.5rem,4vw,2rem)' }}>{titre}</h2>
-        <div style={{ ...nm.type.small, color: nm.color.inkLine, fontWeight: 600 }}>{LIBELLES_CAUSE[cause] || cause || ''}</div>
-
-        {/* prime ฿ (mode classé) : ELO final gravé + variation animée */}
+        {/* ELO classé : valeur finale (mono) + variation animée */}
         {eloFinal != null && (
-          <div style={{ margin: '16px auto 4px', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '12px 24px', borderRadius: nm.radius.md, background: 'rgba(42,32,20,.08)', border: `1px dashed ${nm.color.goldDeep}` }}>
-            <span style={{ ...nm.type.eyebrow, color: nm.color.goldDeep }}>Prime{rang ? ` · ${rang.label}` : ''}</span>
-            <span style={{ ...nm.type.bounty, color: nm.color.goldDeep }}>฿ {eloFinal.toLocaleString('fr-FR')}</span>
-            {deltaElo != null && <DeltaElo delta={deltaElo} eloFinal={eloFinal} />}
+          <div style={{ margin: '18px auto 4px', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '14px 28px', borderRadius: THEME.radius.md, background: THEME.surface, border: `1px solid ${THEME.cardBorder}` }}>
+            <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.12em', textTransform: 'uppercase', color: THEME.muted }}>Nouvel ELO{rang ? ` · ${rang.label}` : ''}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 10 }}>
+              <span style={{ fontFamily: THEME.fontMono, fontWeight: 700, fontSize: 30, color: THEME.goldHi, fontVariantNumeric: 'tabular-nums' }}>{eloFinal}</span>
+              {deltaElo != null && <DeltaElo delta={deltaElo} />}
+            </span>
           </div>
         )}
-        {/* delta seul (cas sans eloFinal mais avec delta) */}
         {eloFinal == null && deltaElo != null && (
-          <div style={{ marginTop: 10 }}><DeltaElo delta={deltaElo} /></div>
-        )}
-        {rang && eloFinal != null && (
-          <div style={{ marginTop: 4, fontSize: 12.5, color: nm.color.ink, fontWeight: 700, fontFamily: nm.fonts.body }}>
-            {rang.emoji} {rang.label} · {rang.zone}
-          </div>
+          <div style={{ marginTop: 12 }}><DeltaElo delta={deltaElo} /> <span style={{ fontSize: 12, color: THEME.muted }}>ELO</span></div>
         )}
 
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginTop: 24 }}>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginTop: 22 }}>
           {onRevanche && (
-            <button
-              onClick={onRevanche} disabled={revancheEnAttente}
-              style={{
-                appearance: 'none', border: 0, cursor: revancheEnAttente ? 'default' : 'pointer',
-                fontFamily: nm.fonts.body, fontWeight: 800, fontSize: 15, padding: '12px 26px', borderRadius: nm.radius.pill,
-                color: revancheEnAttente ? nm.color.goldDeep : '#1a1304',
-                background: revancheEnAttente ? 'rgba(42,32,20,.10)' : `linear-gradient(180deg, ${nm.color.goldHi}, ${nm.color.gold})`,
-                boxShadow: revancheEnAttente ? 'none' : nm.shadow.goldGlow,
-              }}
-            >
-              {revancheEnAttente ? '⏳ En attente…' : '⚔️ Revanche'}
-            </button>
+            <Btn variant="primaire" onClick={onRevanche} disabled={revancheEnAttente}>
+              {revancheEnAttente ? 'En attente…' : 'Revanche'}
+            </Btn>
           )}
           {onNouvellePartie && (
-            <button
-              onClick={onNouvellePartie}
-              style={{
-                appearance: 'none', border: 0, cursor: 'pointer',
-                fontFamily: nm.fonts.body, fontWeight: 800, fontSize: 15, padding: '12px 26px', borderRadius: nm.radius.pill,
-                color: '#1a1304', background: `linear-gradient(180deg, ${nm.color.goldHi}, ${nm.color.gold})`, boxShadow: nm.shadow.goldGlow,
-              }}
-            >
-              ♟ Nouvelle partie
-            </button>
+            <Btn variant="primaire" onClick={onNouvellePartie}>Nouvelle partie</Btn>
           )}
-          {onAnalyser && (
-            <button
-              onClick={onAnalyser}
-              style={{
-                appearance: 'none', cursor: 'pointer', fontFamily: nm.fonts.body, fontWeight: 700, fontSize: 14,
-                padding: '12px 22px', borderRadius: nm.radius.pill, color: nm.color.ink, background: 'transparent',
-                border: `1px solid ${nm.color.goldDeep}`,
-              }}
-            >
-              🔍 Analyser
-            </button>
-          )}
-          <button
-            onClick={onFermer}
-            style={{
-              appearance: 'none', cursor: 'pointer', fontFamily: nm.fonts.body, fontWeight: 700, fontSize: 14,
-              padding: '12px 22px', borderRadius: nm.radius.pill, color: nm.color.ink, background: 'transparent',
-              border: `1px solid ${nm.color.goldDeep}`,
-            }}
-          >
-            Fermer
-          </button>
+          {onAnalyser && <Btn onClick={onAnalyser}>Analyser</Btn>}
+          <Btn onClick={onFermer}>Fermer</Btn>
         </div>
       </div>
     </div>

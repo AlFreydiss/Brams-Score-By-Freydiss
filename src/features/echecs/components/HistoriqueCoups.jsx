@@ -23,10 +23,11 @@ export default function HistoriqueCoups({ historique = [], hauteur = 180, onSele
         onClick={cliquable ? () => onSelectPly(ply) : undefined}
         title={cliquable ? 'Revenir à cette position' : undefined}
         style={{
-          width: 64, padding: '1px 5px', borderRadius: 5, color: THEME.text, fontWeight: 600,
+          width: 64, padding: '2px 6px', borderRadius: 5, color: THEME.text, fontWeight: 600,
+          fontFamily: THEME.fontMono, fontVariantNumeric: 'tabular-nums', fontSize: 13,
           cursor: cliquable ? 'pointer' : 'default',
-          background: actif ? 'rgba(255,215,0,0.16)' : 'transparent',
-          boxShadow: actif ? 'inset 0 0 0 1px rgba(255,215,0,0.35)' : 'none',
+          background: actif ? 'rgba(200,164,92,0.18)' : 'transparent',
+          boxShadow: actif ? 'inset 0 0 0 1px rgba(200,164,92,0.40)' : 'none',
           transition: 'background .12s',
         }}
         onMouseEnter={cliquable ? e => { if (!actif) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' } : undefined}
@@ -53,8 +54,8 @@ export default function HistoriqueCoups({ historique = [], hauteur = 180, onSele
           const estDerniere = idx === lignes.length - 1
           const dernierEstNoir = historique.length % 2 === 0
           return (
-            <div key={l.n} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 6px', fontSize: 13.5, fontFamily: THEME.fontBody }}>
-              <span style={{ width: 26, color: THEME.muted, fontVariantNumeric: 'tabular-nums' }}>{l.n}.</span>
+            <div key={l.n} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '1px 6px', fontSize: 13.5, fontFamily: THEME.fontBody, background: idx % 2 ? 'transparent' : 'rgba(255,255,255,0.018)', borderRadius: 5 }}>
+              <span style={{ width: 26, color: THEME.muted, fontFamily: THEME.fontMono, fontVariantNumeric: 'tabular-nums' }}>{l.n}.</span>
               {cellule(l.blanc, l.iBlanc, estDerniere && !dernierEstNoir)}
               {cellule(l.noir, l.iNoir, estDerniere && dernierEstNoir)}
             </div>

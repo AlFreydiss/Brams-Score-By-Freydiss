@@ -2,14 +2,16 @@
 // Le calcul OFFICIEL est server-side (RPC finaliser_partie). Ici : prévision
 // affichée avant la fin (« +8 / −8 ») et rang décoratif.
 
+// Échelle de tiers NEUTRE PREMIUM : du graphite (débutant) au laiton lumineux
+// (élite), une seule famille chaude — pas de RGB criard. Labels = tiers d'échecs.
 export const RANGS = [
-  { min: 0,    label: 'Mousse',          zone: 'East Blue',     couleur: '#9aa4b2', emoji: '🧹' },
-  { min: 1000, label: 'Pirate',          zone: 'Grand Line',    couleur: '#74b9ff', emoji: '🏴‍☠️' },
-  { min: 1300, label: 'Super-Nova',      zone: 'Nouveau Monde', couleur: '#00cec9', emoji: '💫' },
-  { min: 1600, label: 'Shichibukai',     zone: 'Nouveau Monde', couleur: '#9b59b6', emoji: '⚔️' },
-  { min: 1900, label: 'Amiral',          zone: 'Marine',        couleur: '#e0524a', emoji: '🦅' },
-  { min: 2200, label: 'Yonkou',          zone: 'Empereur',      couleur: '#ffd700', emoji: '👑' },
-  { min: 2500, label: 'Roi des Pirates', zone: 'Légende',       couleur: '#ff9f43', emoji: '☠️' },
+  { min: 0,    label: 'Bronze',   zone: 'Débutant',   couleur: '#9aa1ad', emoji: '♟' },
+  { min: 1000, label: 'Argent',   zone: 'Confirmé',   couleur: '#b9c0cc', emoji: '♟' },
+  { min: 1300, label: 'Or',       zone: 'Avancé',     couleur: '#c8a45c', emoji: '♞' },
+  { min: 1600, label: 'Platine',  zone: 'Expert',     couleur: '#d6b878', emoji: '♝' },
+  { min: 1900, label: 'Diamant',  zone: 'Maître',     couleur: '#e0c074', emoji: '♜' },
+  { min: 2200, label: 'Maître',   zone: 'Élite',      couleur: '#ecd28c', emoji: '♛' },
+  { min: 2500, label: 'Grand Maître', zone: 'Légende', couleur: '#f3e0a8', emoji: '♚' },
 ]
 
 export function rangPourElo(elo) {
