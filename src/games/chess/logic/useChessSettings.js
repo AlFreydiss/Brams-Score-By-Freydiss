@@ -2,10 +2,12 @@
 // Une seule clé JSON ('brams_chess_settings') pour tout regrouper. Pas de
 // dépendance Supabase (aucun helper game_settings trivial ici → localStorage only,
 // documenté). Diffuse un event pour que toute instance montée se resynchronise.
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { BOARD_DEFAUT } from './boards.js'
 import { NIVEAU_IA_DEFAUT } from '../../../features/echecs/lib/niveauxIA.js'
 import { getVolume, setVolume as setVolumeSon, isMuted, setMuted as setMutedSon } from '../../../features/echecs/lib/sons.js'
+import { useAuth } from '../../../contexts/AuthContext.jsx'
+import { loadRemoteSettings, saveRemoteSettings } from '../../_shell/settingsSync.js'
 
 const CLE = 'brams_chess_settings'
 const EVT = 'brams:chess-settings'
@@ -45,6 +47,8 @@ export function useChessSettings() {
   // sons : volume + mute vivent dans le module sons (clés dédiées) → on les expose ici.
   const [volume, setVolumeState] = useState(getVolume)
   const [muet, setMuetState] = useState(isMuted)
+  const { userId } = useAuth()
+  const uidRef = useRef(userId); uidRef.current = userId
 
   useEffect(() => {
     const maj = (e) => setReglages(e?.detail || lire())
@@ -54,10 +58,25 @@ export function useChessSettings() {
     return () => { window.removeEventListener(EVT, maj); window.removeEventListener('storage', majStorage) }
   }, [])
 
+  // Au login : tire les réglages du compte (cross-device). Le distant gagne sur le
+  // local au premier chargement ; ecrire() ne re-pousse pas (le push n'a lieu que
+  // dans set). Best-effort : sans RPC déployée, on garde le localStorage.
+  useEffect(() => {
+    if (!userId) return
+    let mort = false
+    loadRemoteSettings('chess').then(remote => {
+      if (mort || !remote) return
+      const merged = { ...REGLAGES_DEFAUT, ...remote }
+      ecrire(merged); setReglages(merged)
+    })
+    return () => { mort = true }
+  }, [userId])
+
   const set = useCallback((patch) => {
     setReglages(prev => {
       const next = { ...prev, ...patch }
       ecrire(next)
+      if (uidRef.current) saveRemoteSettings('chess', next)
       return next
     })
   }, [])
@@ -68,6 +87,7 @@ export function useChessSettings() {
   const reinitialiser = useCallback(() => {
     ecrire({ ...REGLAGES_DEFAUT })
     setReglages({ ...REGLAGES_DEFAUT })
+    if (uidRef.current) saveRemoteSettings('chess', { ...REGLAGES_DEFAUT })
   }, [])
 
   return { reglages, set, volume, setVolume, muet, setMuet, reinitialiser }
