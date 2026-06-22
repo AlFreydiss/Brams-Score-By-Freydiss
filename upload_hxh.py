@@ -71,12 +71,17 @@ def sub_map_vo(mkv):
     return f"0:{fre[0]['index']}"
 
 def encode(src,out):
-    # MAX QUALITE : x264 slow crf16 tune animation (profil High), bien meilleur que NVENC sur l'anime.
+    # GPU MAX QUALITE : NVENC H264 (RTX 5070 Blackwell) preset p7 + multipass + spatial/temporal AQ.
+    # cq19 VBR sans plafond bitrate + AQ fort tue le banding du vieux cq23 Main. ~6x temps reel
+    # (vs x264 slow ~0.5x), donc ~9h pour 148 ep au lieu de ~3j. Decodage HEVC 10bit sur GPU (cuda),
+    # sortie 8bit yuv420p web-safe.
     for dec in (['-hwaccel','cuda'],[]):
         try:
-            ff([*dec,'-i',str(src),'-map','0:v:0','-map','0:a:m:language:jpn','-c:v','libx264','-preset','slow','-crf','16',
-                '-tune','animation','-profile:v','high','-pix_fmt','yuv420p','-c:a','aac','-b:a','256k',
-                '-movflags','+faststart',str(out)])
+            ff([*dec,'-i',str(src),'-map','0:v:0','-map','0:a:m:language:jpn',
+                '-c:v','h264_nvenc','-preset','p7','-tune','hq','-rc','vbr','-cq','19','-b:v','0',
+                '-multipass','fullres','-spatial_aq','1','-temporal_aq','1','-aq-strength','8',
+                '-bf','3','-b_ref_mode','middle','-rc-lookahead','32','-profile:v','high',
+                '-pix_fmt','yuv420p','-c:a','aac','-b:a','256k','-movflags','+faststart',str(out)])
             return True
         except subprocess.CalledProcessError:
             if out.exists(): out.unlink()
