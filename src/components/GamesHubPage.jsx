@@ -1,7 +1,14 @@
 // ── Brams Arcade — hub de tous les jeux développés par Freydiss ──────────────
 // Page de présentation premium (dark/or) qui regroupe Undercover, Blind Test,
 // Tournoi, Fred'isu (rhythm game), Dames classées, Échecs, Akinator.
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useTeleport } from '../features/nouveau-monde/transition/TeleportTransition.jsx'
+
+// Jeux ayant une île dans Le Nouveau Monde : clic carte → téléportation → page d'île.
+const ISLAND_OF = {
+  '/echecs': 'echecs', '/dames': 'dames', '/fredisu.html': 'fredisu',
+  '/blind-test': 'blind-test', '/brams-phone': 'brams-phone',
+}
 
 const GOLD = '#d4a017'
 const GOLD_HI = '#f0d27a'
@@ -59,6 +66,23 @@ function GameCard({ g, i }) {
       </span>
     </>
   )
+  const navigate = useNavigate()
+  const { teleport } = useTeleport()
+  const islandId = ISLAND_OF[g.to]
+
+  // Jeu avec île au Nouveau Monde : clic → téléportation marine → page d'île (accostage).
+  if (islandId) {
+    return (
+      <button
+        type="button"
+        className="gh-card"
+        style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', font: 'inherit', width: '100%', appearance: 'none' }}
+        onClick={() => teleport(islandId, () => navigate(`/nouveau-monde/${islandId}`))}
+      >
+        {inner}
+      </button>
+    )
+  }
   // Jeu externe (Fred'isu = page statique autonome) → vraie navigation top-level,
   // pas d'iframe SPA (audio/pointer/fullscreen marchent mal embarqués).
   return g.external

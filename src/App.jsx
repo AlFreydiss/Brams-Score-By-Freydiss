@@ -29,6 +29,7 @@ import Footer from './components/Footer.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import { useInView } from './hooks/useInView.js'
 import { useAnalytics, setAnalyticsUser, track } from './lib/analytics.js'
+import { TeleportProvider } from './features/nouveau-monde/transition/TeleportTransition.jsx'
 
 // Lazy â€” chargÃ©s uniquement quand ouverts
 const ProfilePage     = lazyWithReload(() => import('./components/ProfilePage.jsx'))
@@ -577,6 +578,7 @@ export default function App() {
   )
 
   return (
+    <TeleportProvider>
     <ThemeProvider>
       <OpeningBgProvider>
       <SocialProvider>
@@ -799,5 +801,6 @@ export default function App() {
       </SocialProvider>
       </OpeningBgProvider>
     </ThemeProvider>
+    </TeleportProvider>
   )
 }
