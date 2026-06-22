@@ -105,6 +105,8 @@ const NMLogPosePage      = lazyWithReload(() => import('./features/nouveau-monde
 const NMJournalPage      = lazyWithReload(() => import('./features/nouveau-monde/pages/JournalPage.jsx'))
 const NMIlePage          = lazyWithReload(() => import('./features/nouveau-monde/pages/IlePage.jsx'))
 const NMPlayFrame        = lazyWithReload(() => import('./features/nouveau-monde/PlayFrame.jsx'))
+const ChessUniverse      = lazyWithReload(() => import('./games/chess/ChessUniverse.jsx'))
+const DraughtsUniverse   = lazyWithReload(() => import('./games/draughts/DraughtsUniverse.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
@@ -679,6 +681,11 @@ export default function App() {
         <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
         <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />
         <Route path="/jeux"        element={<PageLayout><GamesHubPage /></PageLayout>} />
+        {/* Univers de jeu autonomes plein écran (2D stricte, onglets Jouer/Règles/Classement/Paramètres) */}
+        <Route path="/jeux/echecs"       element={<Suspense fallback={null}><ChessUniverse /></Suspense>} />
+        <Route path="/jeux/echecs/:tab"  element={<Suspense fallback={null}><ChessUniverse /></Suspense>} />
+        <Route path="/jeux/dames"        element={<Suspense fallback={null}><DraughtsUniverse /></Suspense>} />
+        <Route path="/jeux/dames/:tab"   element={<Suspense fallback={null}><DraughtsUniverse /></Suspense>} />
 
         {/* Le Nouveau Monde — hub arcade immersif (layout plein écran, nav interne) */}
         <Route path="/nouveau-monde" element={<Suspense fallback={null}><NouveauMondeLayout /></Suspense>}>
