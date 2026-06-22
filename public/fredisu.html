@@ -611,6 +611,118 @@ body.playing{cursor:none}
 @media (prefers-reduced-motion:reduce){
   #sLoad #loadTxt::after{animation:none}
   #sDuo .seg button,#sDuo .iconbtn,#sPause .btn{transition:none}}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ACCUEIL v2 — refonte complète (style osu!lazer, identité Fred'isu or/encre)
+   Garde #menuFX (auras + particules canvas) et le fond triangles dessiné sur
+   #cv ; #sMenu reste transparent pour les laisser transparaître.
+   ════════════════════════════════════════════════════════════════════════ */
+#sMenu{justify-content:flex-start;align-items:stretch;gap:0;padding:0;background:transparent}
+/* léger voile bas->haut pour asseoir le contenu sans noyer le décor */
+#sMenu::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(5,3,9,.30) 0%,transparent 22%,transparent 60%,rgba(5,3,9,.55) 100%)}
+
+/* ── Barre du haut : marque + méta ── */
+.m2-top{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 26px 0;animation:m2Drop .55s var(--m-soft) both}
+.m2-brand{display:flex;align-items:center;gap:10px}
+.m2-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,#f6e0a0,#d4a017 60%,#8a6510);
+  box-shadow:0 0 16px #d4a017aa;animation:m2DotPulse var(--beatDur,.6s) infinite ease-in-out}
+.m2-wordmark{font:800 18px/1 var(--m-font);letter-spacing:2.5px;color:#f3e6c4;
+  text-shadow:0 1px 12px #00000088}
+.m2-wordmark span{color:#d4a017}
+.m2-tag{font:700 10px/1 var(--m-font);letter-spacing:3px;text-transform:uppercase;color:#ffffff44;
+  border:1px solid #ffffff1c;border-radius:999px;padding:4px 9px;margin-left:4px}
+.m2-meta{font:700 11.5px/1.5 var(--m-font);color:#ffffff66;text-align:right;letter-spacing:.4px}
+.m2-meta b{color:#f0d27a}
+
+/* ── Hero centré : occupe l'espace restant, contenu centré verticalement ── */
+.m2-hero{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:0;padding:8px 20px 0;min-height:0}
+/* l'orbe-logo conserve ses anims existantes ; on l'espace juste de l'accroche */
+#sMenu .logo-wrap{margin-bottom:10px}
+.m2-title{font:800 clamp(30px,5.2vw,52px)/1 'Exo 2','Nunito Sans',sans-serif;
+  letter-spacing:-.02em;color:#fff;margin-top:4px;text-shadow:0 4px 30px #00000099;
+  animation:m2Rise .55s var(--m-pop) .25s both}
+.m2-title b{background:linear-gradient(110deg,#f6e0a0,#d4a017 55%,#b8860b);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.m2-sub{font:600 14px/1.5 var(--m-font);color:#ffffff9e;max-width:520px;text-align:center;
+  margin-top:9px;animation:m2Rise .55s var(--m-pop) .32s both}
+
+/* ── Liste de boutons verticale (signature lazer) ── */
+.m2-list{display:flex;flex-direction:column;gap:9px;width:min(420px,90vw);margin-top:22px}
+.btn.m2-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  padding:13px 18px;border-radius:16px;min-height:60px;
+  background:linear-gradient(100deg,rgba(28,22,14,.72),rgba(18,14,9,.62));
+  border:1px solid #ffffff12;box-shadow:inset 0 1px 0 #ffffff14,0 10px 30px -18px #000;
+  --hglow:rgba(212,160,23,.4);animation:m2Rise .5s var(--m-pop) both}
+.m2-list .m2-row:nth-child(1){animation-delay:.40s}
+.m2-list .m2-row:nth-child(2){animation-delay:.47s}
+.m2-list .m2-row:nth-child(3){animation-delay:.54s}
+.btn.m2-row .ic{font-size:21px;width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;border-radius:12px;background:#ffffff0e;box-shadow:inset 0 0 0 1px #ffffff10;
+  transition:transform .25s var(--m-pop),background .2s}
+.btn.m2-row .m2-l{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.btn.m2-row .m2-l b{font:800 16px/1.1 var(--m-font);color:#fff;letter-spacing:.2px}
+.btn.m2-row .m2-l em{font:600 11.5px/1.2 var(--m-font);font-style:normal;color:#ffffff70;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn.m2-row .m2-arr{font:800 22px/1 var(--m-font);color:#ffffff3a;flex-shrink:0;
+  transition:transform .25s var(--m-pop),color .2s}
+.btn.m2-row:hover{transform:translateX(4px);border-color:#ffffff28;
+  box-shadow:0 14px 38px -16px var(--hglow),inset 0 1px 0 #ffffff1f}
+.btn.m2-row:hover .ic{transform:scale(1.08) rotate(-7deg);background:#ffffff1c}
+.btn.m2-row:hover .m2-arr{transform:translateX(4px);color:#fff}
+/* CTA principal : or plein, le plus désirable */
+.btn.m2-go{background:linear-gradient(110deg,#e8b53c,#d4a017 60%,#b8860b);
+  border-color:#ffe9a800;box-shadow:0 14px 40px -14px #d4a017cc,inset 0 1px 0 #ffffff55;
+  --hglow:rgba(212,160,23,.7)}
+.btn.m2-go .ic{background:#ffffff2e}
+.btn.m2-go .m2-l b{color:#1b1407}
+.btn.m2-go .m2-l em{color:#3a2c08;font-weight:700}
+.btn.m2-go .m2-arr{color:#1b140788}
+.btn.m2-go:hover{transform:translateX(4px) scale(1.012);filter:brightness(1.06);
+  box-shadow:0 18px 52px -14px #ffd700cc,inset 0 1px 0 #ffffff66}
+.btn.m2-go:hover .m2-arr{color:#1b1407}
+/* balayage de lumière (réutilise le pseudo ::after déjà défini sur #sMenu .btn) */
+
+/* ── Chips secondaires ── */
+.m2-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:min(460px,92vw);
+  margin-top:16px;animation:m2Rise .5s var(--m-soft) .62s both}
+.btn.m2-chip{padding:9px 15px;min-height:0;border-radius:999px;font-size:13px;
+  background:rgba(20,16,28,.6);border:1px solid #ffffff14;color:#ffffffcf;
+  box-shadow:inset 0 1px 0 #ffffff10}
+.btn.m2-chip .ic{font-size:14px;transition:transform .25s var(--m-pop)}
+.btn.m2-chip:hover{transform:translateY(-2px);color:#fff;border-color:#ffffff2e}
+.btn.m2-chip:hover .ic{transform:scale(1.18) rotate(-8deg)}
+
+/* ── Barre du bas : raccourcis ── */
+.m2-hint{position:relative;z-index:3;margin:0 0 16px;padding:0 20px;opacity:.6;
+  animation:m2Rise .5s var(--m-soft) .7s both}
+
+@keyframes m2Drop{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+@keyframes m2Rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes m2DotPulse{0%,100%{transform:scale(1);box-shadow:0 0 12px #d4a01788}50%{transform:scale(1.25);box-shadow:0 0 22px #d4a017cc}}
+
+/* ── Responsive ── */
+@media (max-width:560px){
+  .m2-top{padding:12px 16px 0}.m2-tag{display:none}
+  .m2-hero{padding:4px 14px 0;justify-content:flex-start}
+  #sMenu .logo-wrap{transform:scale(.82)}
+  .m2-title{margin-top:0}.m2-sub{font-size:12.5px}
+  .m2-list{margin-top:14px;gap:8px}.btn.m2-row{min-height:54px;padding:11px 14px}
+  .m2-chips{margin-top:12px}
+}
+@media (max-height:680px){
+  .m2-hero{justify-content:flex-start;padding-top:6px}
+  #sMenu .logo-wrap{transform:scale(.7);margin-bottom:0}
+  .m2-list{margin-top:12px}
+}
+/* reduced-motion : on fige toute la cascade, état final visible */
+@media (prefers-reduced-motion:reduce){
+  .m2-top,.m2-title,.m2-sub,.m2-list .m2-row,.m2-chips,.m2-hint,.m2-dot{animation:none!important}
+  .btn.m2-row:hover,.btn.m2-go:hover,.btn.m2-chip:hover{transform:none}
+}
 </style>
 </head>
 <body>
@@ -624,25 +736,48 @@ body.playing{cursor:none}
     <canvas id="menuParticles"></canvas>
     <span class="vig"></span>
   </div>
-  <div class="logo-wrap">
-    <div class="logo-halo" aria-hidden="true"></div>
-    <div class="logo-ring" aria-hidden="true"></div>
-    <div class="logo" id="logo">Fred'isu<span class="ripple" aria-hidden="true"></span></div>
+
+  <!-- Barre du haut : marque à gauche, méta à droite (vibe lazer toolbar) -->
+  <div class="m2-top" aria-hidden="false">
+    <div class="m2-brand">
+      <span class="m2-dot"></span>
+      <span class="m2-wordmark">FRED<span>'</span>ISU</span>
+      <span class="m2-tag">rhythm</span>
+    </div>
+    <div class="m2-meta" id="m2Meta"></div>
   </div>
-  <div class="btnrow">
-    <button class="btn big go" id="bLevels"><span class="ic">🎮</span> &nbsp;Niveaux prêts</button>
-    <button class="btn big glass" id="bDemo" style="--hglow:rgba(125,62,232,.4)"><span class="ic">▶</span> &nbsp;Démo</button>
-    <button class="btn big glass" id="bImport" style="--hglow:rgba(0,223,200,.35)"><span class="ic">🎵</span> &nbsp;Importer un MP3 / MP4</button>
+
+  <!-- Hero centré : orbe-logo cliquable + accroche -->
+  <div class="m2-hero">
+    <div class="logo-wrap">
+      <div class="logo-halo" aria-hidden="true"></div>
+      <div class="logo-ring" aria-hidden="true"></div>
+      <div class="logo" id="logo">Fred'isu<span class="ripple" aria-hidden="true"></span></div>
+    </div>
+    <h1 class="m2-title">Tape le <b>beat</b>.</h1>
+    <p class="m2-sub">Importe un MP3 / MP4 — la map se génère par analyse du son, calée sur le BPM.</p>
+
+    <!-- Liste de boutons verticale signature lazer -->
+    <nav class="m2-list">
+      <button class="btn m2-row m2-go" id="bLevels"><span class="ic">🎮</span><span class="m2-l"><b>Niveaux prêts</b><em>Les openings de Brams Community</em></span><span class="m2-arr">›</span></button>
+      <button class="btn m2-row" id="bImport" style="--hglow:rgba(0,223,200,.4)"><span class="ic">🎵</span><span class="m2-l"><b>Importer un morceau</b><em>MP3 · MP4 · MKV · WebM</em></span><span class="m2-arr">›</span></button>
+      <button class="btn m2-row" id="bDemo" style="--hglow:rgba(160,107,255,.4)"><span class="ic">▶</span><span class="m2-l"><b>Démo rapide</b><em>Une map générée, prête à jouer</em></span><span class="m2-arr">›</span></button>
+    </nav>
+
+    <!-- Chips secondaires -->
+    <div class="m2-chips">
+      <button class="btn m2-chip" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Relais</button>
+      <button class="btn m2-chip" id="bBoard" style="--hglow:rgba(255,209,43,.4)"><span class="ic">🏆</span> Classement</button>
+      <button class="btn m2-chip" id="bMedals" style="--hglow:rgba(255,200,90,.4)"><span class="ic">🏅</span> Médailles</button>
+      <button class="btn m2-chip" id="bProfile" style="--hglow:rgba(0,229,255,.4)"><span class="ic">👤</span> Profil</button>
+      <button class="btn m2-chip" id="bOpt1" style="--hglow:rgba(160,107,255,.4)"><span class="ic">⚙</span> Options</button>
+    </div>
   </div>
-  <div class="btnrow">
-    <button class="btn glass" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Relais</button>
-    <button class="btn glass" id="bOpt1" style="--hglow:rgba(160,107,255,.4)"><span class="ic">⚙</span> Options</button>
-    <button class="btn glass" id="bBoard" style="--hglow:rgba(255,209,43,.35)"><span class="ic">🏆</span> Classement</button>
-  </div>  <div class="btnrow">
-    <button class="btn glass" id="bMedals" style="--hglow:rgba(255,200,90,.4)"><span class="ic">🏅</span> Médailles</button>
-    <button class="btn glass" id="bProfile" style="--hglow:rgba(0,229,255,.4)"><span class="ic">👤</span> Profil</button>
-  </div>
-  <p class="hint">MP3 · MP4 · MKV · WebM — map générée par analyse spectrale, calée sur le BPM<br><kbd>Clic</kbd><kbd>Z</kbd><kbd>X</kbd> jouer · <kbd>Échap</kbd> pause · <kbd>Espace</kbd> skip intro · <kbd>²</kbd> retry</p>
+
+  <!-- Barre du bas : raccourcis clavier -->
+  <p class="hint m2-hint">
+    <kbd>Clic</kbd><kbd>Z</kbd><kbd>X</kbd> jouer &nbsp;·&nbsp; <kbd>Échap</kbd> pause &nbsp;·&nbsp; <kbd>Espace</kbd> skip intro &nbsp;·&nbsp; <kbd>²</kbd> retry
+  </p>
   <input type="file" id="file" accept="audio/*,video/mp4,video/webm,video/x-matroska,.mp4,.mkv,.webm,.mov,.m4a" hidden>
 </div>
 
@@ -4192,6 +4327,22 @@ $('bGo').onkeydown=e=>{if(e.key==='Enter')$('bGo').click();};
   document.querySelectorAll('#modRow .chip').forEach(x=>x.classList.toggle('sel',!!mods[x.dataset.m]));
   if(IS_MOBILE){const f=document.querySelector('#modRow [data-m=fl]');if(f)f.style.display='none';}
 })();
+
+/* ── Accueil v2 : méta en haut à droite (lecture seule du store, aucune logique de jeu) ── */
+function refreshMenuMeta(){
+  const el=$('m2Meta');if(!el)return;
+  const plays=store.get('plays',0)|0;
+  const bd=store.get('board',{}),got=store.get('medals',{});
+  let scores=0;for(const k in bd)scores+=bd[k].length;
+  const nMed=Object.keys(got).length;
+  el.innerHTML=plays
+    ?'<b>'+plays+'</b> partie'+(plays>1?'s':'')+' &nbsp;·&nbsp; <b>'+nMed+'</b>/'+MEDALS.length+' médailles'
+    :'Prêt à jouer ?';
+}
+refreshMenuMeta();
+// rafraîchit la méta à chaque retour au menu (sans toucher show())
+if($('sMenu'))new MutationObserver(()=>{if($('sMenu').classList.contains('on'))refreshMenuMeta();})
+  .observe($('sMenu'),{attributes:true,attributeFilter:['class']});
 
 /* ── Écran titre : sprites prêts dès le boot (curseur custom) + blip de hover ── */
 const REDUCED_MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches;
