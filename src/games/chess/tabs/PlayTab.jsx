@@ -24,6 +24,7 @@ import MoveList from '../ui/MoveList.jsx'
 import MiniBoard from '../ui/MiniBoard.jsx'
 import Controls from '../ui/Controls.jsx'
 import EndOverlay from '../ui/EndOverlay.jsx'
+import OnlineFlow from '../online/OnlineFlow.jsx'
 
 const BRASS = '#b09467'
 
@@ -120,20 +121,7 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
       </div>
 
       {mode === 'online' ? (
-        <div style={{
-          padding: '16px 18px', borderRadius: ui.radius.md, background: ui.surface,
-          border: `1px dashed ${ui.lineHi}`, color: ui.textDim, font: `500 13px ${fonts.body}`, lineHeight: 1.6,
-        }}>
-          Le jeu en ligne classé (matchmaking ELO temps réel) arrive bientôt dans cet
-          univers. En attendant, affronte l'IA Stockfish ou un ami en local — les deux
-          modes sont complets (horloges, historique, analyse).
-          <div style={{ marginTop: 14 }}>
-            <button onClick={() => setMode('ia')} style={{
-              padding: '9px 14px', borderRadius: ui.radius.sm, cursor: 'pointer',
-              font: `700 13px ${fonts.body}`, color: '#15110a', background: BRASS, border: 'none',
-            }}>Jouer contre l'IA</button>
-          </div>
-        </div>
+        <OnlineFlow accent={BRASS} />
       ) : (
         <>
           <SectionLabel>Cadence</SectionLabel>
