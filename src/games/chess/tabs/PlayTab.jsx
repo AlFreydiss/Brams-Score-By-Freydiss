@@ -1,10 +1,512 @@
-// PlayTab (Échecs) — STUB. L'agent construit ici le board 2D (drag+clic),
-// chess.js, Stockfish, eval bar, move list, horloges, contrôles, fin de partie.
+// ── PlayTab (Échecs) : l'expérience de jeu complète, 2D STRICTE ─────────────
+// Modes : vs IA (Stockfish), 2 joueurs local (option flip à chaque coup),
+// online classé (stub clair). Layout : EvalBar | échiquier carré | panneau droit
+// (horloges isolées, liste de coups SAN cliquable, contrôles, indicateur de trait).
+// Réutilise : usePartie (chess.js), useStockfish (IA + eval), Plateau (board 2D),
+// niveauxIA/elo/sons/analyse, et nos atomes (Clock/EvalBar/MoveList/EndOverlay).
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Chess } from 'chess.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
-export default function PlayTab() {
+import { usePartie } from '../../../features/echecs/hooks/usePartie.js'
+import { useStockfish } from '../../../features/echecs/hooks/useStockfish.js'
+import Plateau from '../../../features/echecs/components/Plateau.jsx'
+import { NIVEAUX_IA, niveauParId } from '../../../features/echecs/lib/niveauxIA.js'
+import { CADENCES, parseCadence } from '../../../features/echecs/constants.js'
+import { construireEval } from '../../../features/echecs/lib/analyse.js'
+import { previsionElo } from '../../../features/echecs/lib/elo.js'
+import { sons } from '../../../features/echecs/lib/sons.js'
+import { boardParId } from '../logic/boards.js'
+import { useChessSettings } from '../logic/useChessSettings.js'
+import { useLocalClock } from '../logic/useLocalClock.js'
+import Clock from '../ui/Clock.jsx'
+import EvalBar from '../ui/EvalBar.jsx'
+import MoveList from '../ui/MoveList.jsx'
+import MiniBoard from '../ui/MiniBoard.jsx'
+import Controls from '../ui/Controls.jsx'
+import EndOverlay from '../ui/EndOverlay.jsx'
+
+const BRASS = '#b09467'
+
+function sonDuCoup(mv, enEchec) {
+  if (mv.promotion || mv.flags?.includes('p')) sons.promotion()
+  else if (enEchec) sons.echec()
+  else if (mv.flags?.includes('k') || mv.flags?.includes('q')) sons.roque()
+  else if (mv.captured) sons.capture()
+  else sons.coup()
+}
+
+// FEN à un demi-coup donné (revue d'historique) en rejouant les SAN.
+function fenAuCoup(historique, idx) {
+  const c = new Chess()
+  for (let i = 0; i <= idx && i < historique.length; i++) {
+    try { c.move(historique[i].san) } catch { break }
+  }
+  return c.fen()
+}
+
+// ── Taille responsive de l'échiquier : carré borné par min(largeur dispo, hauteur).
+function useTaillePlateau(refConteneur) {
+  const [taille, setTaille] = useState(440)
+  useEffect(() => {
+    const calc = () => {
+      const vw = window.innerWidth, vh = window.innerHeight
+      const mobile = vw < 880
+      // desktop : on laisse la place au panneau droit (~320) + eval (~40) + gaps
+      const dispoLargeur = mobile ? vw - 28 : vw - 320 - 64 - 40
+      const dispoHauteur = vh - (mobile ? 320 : 150)
+      const t = Math.max(260, Math.min(640, dispoLargeur, dispoHauteur))
+      setTaille(Math.floor(t))
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [refConteneur])
+  return taille
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Écran de configuration (mode + cadence + couleur/niveau)
+// ════════════════════════════════════════════════════════════════════════════
+function Chip({ actif, onClick, children, sub }) {
   return (
-    <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: ui.textDim, font: `600 14px ${fonts.body}` }}>
-      Échiquier — en construction
+    <button onClick={onClick} style={{
+      padding: '9px 13px', borderRadius: ui.radius.sm, cursor: 'pointer', textAlign: 'left',
+      background: actif ? 'rgba(176,148,103,0.14)' : ui.surface,
+      border: `1px solid ${actif ? 'rgba(176,148,103,0.5)' : ui.line}`,
+      transition: 'background .15s, border-color .15s', minWidth: 0,
+    }}>
+      <span style={{ display: 'block', font: `700 13px ${fonts.body}`, color: actif ? '#e7d8b8' : ui.text }}>{children}</span>
+      {sub && <span style={{ display: 'block', font: `500 11px ${fonts.mono}`, color: ui.textMute, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{sub}</span>}
+    </button>
+  )
+}
+
+function SectionLabel({ children }) {
+  return <div style={{ font: `700 11px ${fonts.body}`, letterSpacing: '0.09em', textTransform: 'uppercase', color: ui.textMute, margin: '0 0 9px' }}>{children}</div>
+}
+
+function ConfigJeu({ onLancer, niveauDefaut }) {
+  const [mode, setMode] = useState('ia')          // 'ia' | 'local' | 'online'
+  const [cadenceId, setCadenceId] = useState('5+0')
+  const [illimite, setIllimite] = useState(false)
+  const [niveauId, setNiveauId] = useState(niveauDefaut)
+  const [couleur, setCouleur] = useState('w')      // 'w' | 'b' | 'alea'
+
+  // 4–6 niveaux exposés (spec). On retient Mousse → Yonkou (6 paliers).
+  const niveaux = NIVEAUX_IA
+
+  const lancer = () => {
+    sons.debloquer()
+    const c = couleur === 'alea' ? (Math.random() < 0.5 ? 'w' : 'b') : couleur
+    onLancer({
+      mode,
+      cadence: illimite ? null : cadenceId,
+      niveau: niveauParId(niveauId),
+      maCouleur: mode === 'local' ? 'w' : c,
+    })
+  }
+
+  return (
+    <div style={{ maxWidth: 620, margin: '0 auto', padding: '8px 4px 40px' }}>
+      <h2 style={{ margin: '4px 0 22px', font: `800 24px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>
+        Nouvelle partie
+      </h2>
+
+      <SectionLabel>Mode</SectionLabel>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 22 }}>
+        <Chip actif={mode === 'ia'} onClick={() => setMode('ia')} sub="Stockfish">Contre l'IA</Chip>
+        <Chip actif={mode === 'local'} onClick={() => setMode('local')} sub="même écran">2 joueurs</Chip>
+        <Chip actif={mode === 'online'} onClick={() => setMode('online')} sub="classé">En ligne</Chip>
+      </div>
+
+      {mode === 'online' ? (
+        <div style={{
+          padding: '16px 18px', borderRadius: ui.radius.md, background: ui.surface,
+          border: `1px dashed ${ui.lineHi}`, color: ui.textDim, font: `500 13px ${fonts.body}`, lineHeight: 1.6,
+        }}>
+          Le jeu en ligne classé (matchmaking ELO temps réel) arrive bientôt dans cet
+          univers. En attendant, affronte l'IA Stockfish ou un ami en local — les deux
+          modes sont complets (horloges, historique, analyse).
+          <div style={{ marginTop: 14 }}>
+            <button onClick={() => setMode('ia')} style={{
+              padding: '9px 14px', borderRadius: ui.radius.sm, cursor: 'pointer',
+              font: `700 13px ${fonts.body}`, color: '#15110a', background: BRASS, border: 'none',
+            }}>Jouer contre l'IA</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <SectionLabel>Cadence</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px,1fr))', gap: 8, marginBottom: 10 }}>
+            {CADENCES.map(c => (
+              <Chip key={c.id} actif={!illimite && cadenceId === c.id} onClick={() => { setCadenceId(c.id); setIllimite(false) }} sub={c.label}>
+                {c.id}
+              </Chip>
+            ))}
+            <Chip actif={illimite} onClick={() => setIllimite(true)} sub="sans pendule">Illimité</Chip>
+          </div>
+
+          {mode === 'ia' && (
+            <>
+              <SectionLabel>Niveau de l'IA</SectionLabel>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))', gap: 8, marginBottom: 22 }}>
+                {niveaux.map(n => (
+                  <Chip key={n.id} actif={niveauId === n.id} onClick={() => setNiveauId(n.id)}
+                    sub={n.limitStrength ? `~${n.elo} ELO` : 'Pleine force'}>
+                    {n.label}
+                  </Chip>
+                ))}
+              </div>
+
+              <SectionLabel>Je joue</SectionLabel>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                {[{ id: 'w', l: 'Blancs' }, { id: 'b', l: 'Noirs' }, { id: 'alea', l: 'Aléatoire' }].map(c => (
+                  <button key={c.id} onClick={() => setCouleur(c.id)} style={{
+                    flex: 1, padding: '10px', borderRadius: ui.radius.sm, cursor: 'pointer',
+                    font: `700 13px ${fonts.body}`, color: couleur === c.id ? '#e7d8b8' : ui.text,
+                    background: couleur === c.id ? 'rgba(176,148,103,0.14)' : ui.surface,
+                    border: `1px solid ${couleur === c.id ? 'rgba(176,148,103,0.5)' : ui.line}`,
+                  }}>{c.l}</button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <button onClick={lancer} style={{
+            width: '100%', marginTop: 24, padding: '14px', borderRadius: ui.radius.md, cursor: 'pointer',
+            font: `800 15px ${fonts.display}`, letterSpacing: '0.01em', color: '#15110a',
+            background: BRASS, border: 'none', transition: 'filter .15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
+            {mode === 'local' ? 'Commencer' : 'Lancer la partie'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Partie en cours
+// ════════════════════════════════════════════════════════════════════════════
+function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
+  const { mode, cadence: cadenceId, niveau, maCouleur } = config
+  const { reglages } = reglagesCtx
+  const partie = usePartie()
+  const { fen, trait, fin, historique, captures, enEchec } = partie
+  const cadence = useMemo(() => (cadenceId ? parseCadence(cadenceId) : null), [cadenceId])
+  const horloge = useLocalClock(cadence)
+  const isIA = mode === 'ia'
+  const couleurIA = maCouleur === 'w' ? 'b' : 'w'
+
+  const refConteneur = useRef(null)
+  const taille = useTaillePlateau(refConteneur)
+  const mobile = typeof window !== 'undefined' && window.innerWidth < 880
+
+  const sf = useStockfish(isIA ? niveau : null)
+  const { pret, reflechit, chercherCoup, analyser, nouvellePartie } = sf
+
+  const [abandonnee, setAbandonnee] = useState(false)
+  const [resultatForce, setResultatForce] = useState(null)   // { resultat, cause }
+  const [finVisible, setFinVisible] = useState(false)
+  const [curseur, setCurseur] = useState(-1)                 // demi-coup affiché (-1 → suit le live)
+  const [evalPos, setEvalPos] = useState(null)
+  const [nulleProposee, setNulleProposee] = useState(false)
+  const [flip, setFlip] = useState(false)
+  const rechercheRef = useRef(false)
+
+  // orientation : MES pièces en bas (IA) ; en local on suit le trait si auto-flip.
+  const orientationBase = isIA ? (maCouleur === 'w' ? 'white' : 'black') : 'white'
+  const autoFlip = mode === 'local' && reglages.autoFlipLocal
+  const orientation = useMemo(() => {
+    let o = orientationBase
+    if (autoFlip) o = trait === 'w' ? 'white' : 'black'
+    if (flip) o = o === 'white' ? 'black' : 'white'
+    return o
+  }, [orientationBase, autoFlip, trait, flip])
+
+  const termine = fin.terminee || abandonnee || !!resultatForce
+  const enRevue = curseur >= 0 && curseur < historique.length - 1
+
+  // ── Démarrage horloge ──
+  useEffect(() => { sons.debut(); if (cadence) horloge.demarrer('w') }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Eval bar : analyse débouncée quand c'est mon tour (worker dédié) ──
+  const estMonTour = isIA ? trait === maCouleur : true
+  useEffect(() => {
+    if (!isIA || termine || !pret || !estMonTour) return
+    let annule = false
+    const id = setTimeout(() => {
+      analyser(fen, { movetime: 500 }).then(res => { if (!annule && res) setEvalPos(construireEval(res, trait)) })
+    }, 320)
+    return () => { annule = true; clearTimeout(id) }
+  }, [fen, estMonTour, pret, termine, isIA]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Coup de l'IA ──
+  useEffect(() => {
+    if (!isIA || termine || trait !== couleurIA || !pret || rechercheRef.current) return
+    rechercheRef.current = true
+    let annule = false
+    chercherCoup(fen).then(coup => {
+      rechercheRef.current = false
+      if (annule || partie.fin.terminee) return
+      let mv = coup ? partie.jouer(coup) : null
+      if (!mv) {
+        const legaux = partie.chess.moves({ verbose: true })
+        if (legaux.length) { const a = legaux[(Math.random() * legaux.length) | 0]; mv = partie.jouer({ from: a.from, to: a.to, promotion: a.promotion }) }
+      }
+      if (mv) { sonDuCoup(mv, partie.chess.isCheck()); if (cadence) horloge.basculer(partie.trait) }
+    })
+    return () => { annule = true }
+  }, [fen, trait, couleurIA, pret, termine, isIA]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Coup joué (humain) → son + horloge + suit le live ──
+  const onCoup = useCallback((mv) => {
+    sonDuCoup(mv, partie.chess.isCheck())
+    setNulleProposee(false)
+    setCurseur(-1)
+    if (cadence) horloge.basculer(partie.trait)
+  }, [partie, cadence, horloge])
+
+  // ── Fin de partie (mat/pat/nulle/abandon/temps) ──
+  useEffect(() => {
+    if (!fin.terminee) return
+    if (cadence) horloge.stopper()
+    const t = setTimeout(() => {
+      const gagne = isIA && fin.resultat !== 'nulle' && (fin.resultat === 'blanc') === (maCouleur === 'w')
+      if (fin.resultat === 'nulle') sons.nulle(); else if (isIA) (gagne ? sons.victoire() : sons.defaite()); else sons.victoire()
+      setFinVisible(true)
+    }, 420)
+    return () => clearTimeout(t)
+  }, [fin.terminee]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Drapeau (temps écoulé) ──
+  useEffect(() => {
+    if (!horloge.drapeau || termine) return
+    const perdant = horloge.drapeau                       // 'w' | 'b'
+    setResultatForce({ resultat: perdant === 'w' ? 'noir' : 'blanc', cause: 'temps' })
+    horloge.stopper()
+    const gagne = isIA && (perdant === 'w') !== (maCouleur === 'w')
+    setTimeout(() => { isIA ? (gagne ? sons.victoire() : sons.defaite()) : sons.victoire(); setFinVisible(true) }, 200)
+  }, [horloge.drapeau]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Navigation clavier ←/→ ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); aller(Math.max(-1, (curseur === -1 ? historique.length - 1 : curseur) - 1)) }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); aller(Math.min(historique.length - 1, (curseur === -1 ? historique.length - 1 : curseur) + 1)) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }) // re-attache à chaque render pour capturer curseur/historique courants
+
+  const aller = useCallback((idx) => {
+    const clamp = Math.max(-1, Math.min(historique.length - 1, idx))
+    setCurseur(clamp === historique.length - 1 ? -1 : clamp)
+  }, [historique.length])
+
+  // ── Annuler (vs IA : paire ; local : 1) ──
+  const annuler = useCallback(() => {
+    if (termine || reflechit) return
+    const n = isIA && trait === maCouleur ? 2 : 1
+    if (historique.length >= n) { partie.annuler(n); setCurseur(-1) }
+  }, [termine, reflechit, isIA, trait, maCouleur, historique.length, partie])
+
+  const abandonner = useCallback(() => {
+    if (isIA) setAbandonnee(true)
+    else setResultatForce({ resultat: trait === 'w' ? 'noir' : 'blanc', cause: 'abandon' })
+    sons.defaite()
+    if (cadence) horloge.stopper()
+    setFinVisible(true)
+  }, [isIA, trait, cadence, horloge])
+
+  const proposerNulle = useCallback(() => {
+    // local/IA : accord immédiat (pas d'adversaire réseau à consulter)
+    setResultatForce({ resultat: 'nulle', cause: 'nulle_accord' })
+    sons.nulle(); if (cadence) horloge.stopper(); setFinVisible(true)
+  }, [cadence, horloge])
+
+  const rejouer = useCallback(() => { nouvellePartie?.(); onRejouer() }, [nouvellePartie, onRejouer])
+
+  // ── Résultat final + delta ELO (prévision, vs IA classé seulement → ici non classé) ──
+  const resultatFinal = resultatForce?.resultat ?? (abandonnee ? (maCouleur === 'w' ? 'noir' : 'blanc') : fin.resultat)
+  const causeFinale = resultatForce?.cause ?? (abandonnee ? 'abandon' : fin.cause)
+
+  // ── Données panneaux ──
+  const peutJouer = useCallback((c) => {
+    if (termine || enRevue) return false
+    if (isIA) return c === maCouleur && !reflechit
+    return c === trait   // local : chacun son tour
+  }, [termine, enRevue, isIA, maCouleur, reflechit, trait])
+
+  // FEN affichée : live ou position en revue
+  const fenAffichee = enRevue ? fenAuCoup(historique, curseur) : fen
+  const boardId = reglages.board
+  const tema = useMemo(() => boardParId(boardId), [boardId])
+
+  // labels des deux camps (haut = adversaire, bas = moi en IA)
+  const labelHaut = isIA ? `IA · ${niveau.label}` : 'Noirs'
+  const labelBas = isIA ? 'Vous' : 'Blancs'
+  const campHaut = orientation === 'white' ? 'b' : 'w'
+  const campBas = orientation === 'white' ? 'w' : 'b'
+
+  const Indicateur = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: ui.radius.sm,
+      background: ui.surface, border: `1px solid ${ui.line}`,
+    }}>
+      <span aria-hidden style={{ width: 11, height: 11, borderRadius: 3, background: trait === 'w' ? '#ece3cc' : '#26282e', border: `1px solid ${ui.lineHi}` }} />
+      <span style={{ font: `600 12.5px ${fonts.body}`, color: ui.textDim }}>
+        {termine ? 'Partie terminée' : enEchec ? 'Échec' : `Trait aux ${trait === 'w' ? 'Blancs' : 'Noirs'}`}
+        {isIA && reflechit && !termine ? ' · l\'IA réfléchit…' : ''}
+      </span>
+    </div>
+  )
+
+  // ── Rangée joueur (avatar/label + horloge + capturées) ──
+  const Joueur = ({ label, camp, capturees }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      padding: '8px 10px', borderRadius: ui.radius.sm,
+      background: trait === camp && !termine ? ui.surfaceHi : ui.surface,
+      border: `1px solid ${trait === camp && !termine ? ui.lineHi : ui.line}`,
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ font: `700 13px ${fonts.body}`, color: ui.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+        {capturees.length > 0 && (
+          <div style={{ font: `400 13px ${fonts.body}`, color: ui.textDim, lineHeight: 1, marginTop: 2 }}>
+            {capturees.map((p, i) => <span key={i} style={{ opacity: 0.8 }}>{glyphe(camp, p)}</span>)}
+          </div>
+        )}
+      </div>
+      {cadence && <Clock horloge={horloge} camp={camp} actif={trait === camp && !termine} />}
+    </div>
+  )
+
+  const sesCaptures = campHaut === 'w' ? captures.parBlanc : captures.parNoir
+  const mesCaptures = campBas === 'w' ? captures.parBlanc : captures.parNoir
+
+  // ── Layout ──
+  return (
+    <div ref={refConteneur} style={{
+      display: 'flex', flexDirection: mobile ? 'column' : 'row',
+      gap: mobile ? 14 : 24, alignItems: mobile ? 'stretch' : 'flex-start',
+      justifyContent: 'center', padding: mobile ? '12px 10px 30px' : '18px 22px 24px',
+      minHeight: 0,
+    }}>
+      {/* EvalBar + board */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {!mobile && (
+          <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={taille} />
+        )}
+        <div style={{ position: 'relative', width: taille, height: taille }}>
+          {enRevue ? (
+            <MiniBoard fen={fenAffichee} taille={taille} boardId={boardId} orientation={orientation} coords={reglages.coords} />
+          ) : (
+            <Plateau
+              partie={partie}
+              orientation={orientation}
+              peutJouer={peutJouer}
+              onCoup={onCoup}
+              taille={taille}
+              interactif={!termine}
+              maCouleur={isIA ? maCouleur : null}
+              theme={tema}
+              animationMs={reglages.animations ? reglages.vitesseAnim : 0}
+              afficherCoupsLegaux={reglages.surbrillanceLegale}
+              afficherDernierCoup
+              afficherEchec
+              premoveActif={isIA && reglages.premoves}
+              autoPromo={reglages.autoQueen}
+              coordonnees={reglages.coords ? 'exterieur' : 'masque'}
+            />
+          )}
+          {enRevue && (
+            <div style={{
+              position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+              padding: '4px 12px', borderRadius: ui.radius.pill, background: 'rgba(8,9,12,0.82)',
+              border: `1px solid ${BRASS}`, font: `700 11px ${fonts.body}`, color: BRASS, whiteSpace: 'nowrap',
+            }}>Revue · coup {curseur + 1}/{historique.length}</div>
+          )}
+        </div>
+      </div>
+
+      {/* Panneau droit */}
+      <div style={{
+        width: mobile ? '100%' : 320, flexShrink: 0,
+        display: 'flex', flexDirection: 'column', gap: 10,
+        maxHeight: mobile ? 'none' : taille + 20, minHeight: 0,
+      }}>
+        <Joueur label={labelHaut} camp={campHaut} capturees={sesCaptures} />
+        <Indicateur />
+        {mobile && (
+          <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={120} />
+        )}
+        <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
+          <MoveList historique={historique} curseur={curseur === -1 ? historique.length - 1 : curseur} onAller={aller} />
+        </div>
+        <Controls
+          onNouvelle={rejouer}
+          onAbandonner={abandonner}
+          onNulle={termine ? null : proposerNulle}
+          onAnnuler={annuler}
+          onFlip={() => setFlip(f => !f)}
+          peutAnnuler={!termine && historique.length > 0 && !reflechit}
+          peutAbandonner={!termine && historique.length > 0}
+          nulleProposee={nulleProposee}
+          curseur={curseur === -1 ? historique.length - 1 : curseur}
+          nbCoups={historique.length}
+          onAller={aller}
+        />
+        <Joueur label={labelBas} camp={campBas} capturees={mesCaptures} />
+        <button onClick={onQuitter} style={{
+          padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',
+          font: `600 12px ${fonts.body}`, color: ui.textMute, background: 'transparent',
+          border: `1px solid ${ui.line}`,
+        }}>← Menu</button>
+      </div>
+
+      {finVisible && (
+        <EndOverlay
+          resultat={resultatFinal} cause={causeFinale} maCouleur={isIA ? maCouleur : null}
+          deltaElo={null}
+          onRejouer={rejouer}
+          onRevoir={historique.length ? () => { setFinVisible(false); setCurseur(0) } : undefined}
+          onRetour={onQuitter}
+          onFermer={() => setFinVisible(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// glyphe d'une pièce capturée (camp = qui a capturé → pièce adverse)
+const GLYPHES = { w: { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' }, b: { p: '♙', n: '♘', b: '♗', r: '♖', q: '♕' } }
+function glyphe(campCapteur, type) { return (GLYPHES[campCapteur] && GLYPHES[campCapteur][type]) || '' }
+
+// ════════════════════════════════════════════════════════════════════════════
+export default function PlayTab() {
+  const reglagesCtx = useChessSettings()
+  const [config, setConfig] = useState(null)
+  const [cle, setCle] = useState(0)
+
+  if (!config) {
+    return (
+      <div style={{ height: '100%', overflowY: 'auto', display: 'grid', placeItems: 'start center', padding: '24px 16px' }}>
+        <ConfigJeu onLancer={setConfig} niveauDefaut={reglagesCtx.reglages.niveauIa} />
+      </div>
+    )
+  }
+  return (
+    <div style={{ height: '100%', overflowY: 'auto' }}>
+      <PartieEnCours
+        key={cle}
+        config={config}
+        reglagesCtx={reglagesCtx}
+        onRejouer={() => setCle(k => k + 1)}
+        onQuitter={() => setConfig(null)}
+      />
     </div>
   )
 }
