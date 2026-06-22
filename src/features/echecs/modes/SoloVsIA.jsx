@@ -32,7 +32,8 @@ function niveauDepuisElo(elo) {
 }
 
 function sonDuCoup(mv, enEchec) {
-  if (enEchec) sons.echec()
+  if (mv.promotion || mv.flags?.includes('p')) sons.promotion()
+  else if (enEchec) sons.echec()
   else if (mv.flags?.includes('k') || mv.flags?.includes('q')) sons.roque()
   else if (mv.captured) sons.capture()
   else sons.coup()
@@ -273,6 +274,7 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
           onCoup={onCoup}
           taille={taillePlateau}
           interactif={!fin.terminee && !abandonnee}
+          maCouleur={maCouleur}
           troisD={troisD}
         />
       </div>

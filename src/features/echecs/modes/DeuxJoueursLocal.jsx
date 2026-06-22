@@ -16,7 +16,8 @@ export default function DeuxJoueursLocal({ onQuitter, troisD = false }) {
   const { trait, fin, captures, historique, enEchec } = partie
 
   const onCoup = useCallback(mv => {
-    if (partie.chess.isCheck()) sons.echec()
+    if (mv.promotion || mv.flags?.includes('p')) sons.promotion()
+    else if (partie.chess.isCheck()) sons.echec()
     else if (mv.flags?.includes('k') || mv.flags?.includes('q')) sons.roque()
     else if (mv.captured) sons.capture()
     else sons.coup()

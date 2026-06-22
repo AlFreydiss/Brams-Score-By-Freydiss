@@ -10,6 +10,7 @@ import { initBoard, generateMoves, applyMove, countPieces, opp, aiMove, isDark, 
 import { moveToNotation } from './engine/notation.js'
 import DamesEvalBar from './DamesEvalBar.jsx'
 import DamesFxOverlay from './DamesFxOverlay.jsx'
+import DamesPoster from './DamesPoster.jsx'
 
 const QUALITY = [['high', 'Élevé'], ['medium', 'Moyen'], ['low', 'Basique']]
 
@@ -34,6 +35,7 @@ export default function DamesGame3D() {
   const [music, setMusic] = useState(() => { try { return localStorage.getItem('dames_music') === '1' } catch (e) { return false } })
   const navigate = useNavigate()
   const [quality, setQuality] = useState(() => { try { return localStorage.getItem('dames_quality') || 'high' } catch (e) { return 'high' } })
+  const [view2D, setView2D] = useState(() => { try { return localStorage.getItem('dames_view2d') === '1' } catch (e) { return false } })
   const [fs, setFs] = useState(false)
   const [focused, setFocused] = useState(false)   // focus clavier visible (a11y) — révèle le mode flèches
   const hintTimer = useRef(0)
@@ -42,8 +44,18 @@ export default function DamesGame3D() {
   // Sur petit écran, la barre de boutons du haut déborde sur plusieurs lignes : l'historique
   // (top:92) chevaucherait alors les boutons et le plateau. On le masque sous 760px.
   const [compact, setCompact] = useState(() => typeof window !== 'undefined' && window.innerWidth < 760)
+  // horloge de durée de partie (informative, sans contrôle de temps) — démarre au 1er coup, gèle à la fin
+  const [elapsed, setElapsed] = useState(0)
+  const startedAt = useRef(0)
 
   useEffect(() => { const r = () => setCompact(window.innerWidth < 760); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r) }, [])
+
+  useEffect(() => {
+    if (hud.gameOver || moves.length === 0) return
+    if (!startedAt.current) startedAt.current = Date.now() - elapsed * 1000
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt.current) / 1000)), 1000)
+    return () => clearInterval(t)
+  }, [hud.gameOver, moves.length, elapsed])
 
   useEffect(() => {
     if (!hud.thinking || !thinkDotRef.current) return
@@ -165,6 +177,7 @@ export default function DamesGame3D() {
     const g = G.current; g.seq++; g.pendingMove = null; g.pendingHint = null; g.pendingEval = null; clearTimeout(hintTimer.current); clearTimeout(evalTimer.current)
     g.board = initBoard(); g.turn = P; g.gameOver = false; g.history = []; g.selected = null; g.inputLocked = false; g.last = null
     g.halfmoveClock = 0; g.reps = new Map(); g.reps.set(positionKey(g.board, g.turn), 1); setEvalState(null)
+    startedAt.current = 0; setElapsed(0)
     setMoves([]); setHud(h => ({ ...h, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, hinting: false }))
     rdrRef.current?.setHint(null); rdrRef.current?.setBoard(g.board); rdrRef.current?.resetView(); refreshTurn()
   }, [refreshTurn])
@@ -229,6 +242,7 @@ export default function DamesGame3D() {
   const toggleMute = () => { const m = !muted; setMuted(m); rdrRef.current?.setMuted(m) }
   const toggleMusic = () => { const m = !music; setMusic(m); rdrRef.current?.setMusic(m) }
   const cycleQuality = () => { const i = QUALITY.findIndex(q => q[0] === quality); const next = QUALITY[(i + 1) % QUALITY.length][0]; setQuality(next); rdrRef.current?.setQuality(next) }
+  const toggle2D = () => { const v = !view2D; setView2D(v); rdrRef.current?.setView2D(v) }
   // a11y : navigation du plateau au clavier (flèches = déplacer le curseur, Entrée = sélectionner/jouer, Échap = désélectionner).
   const onKeyDown = (e) => {
     const g = G.current
@@ -267,14 +281,15 @@ export default function DamesGame3D() {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, pointerEvents: 'none' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', pointerEvents: 'auto' }}>
           <div style={segWrap}>
-            <button style={seg(hud.mode === 'local')} onClick={() => setMode('local')}>👥 Local 2 J</button>
-            <button style={seg(hud.mode === 'ai')} onClick={() => setMode('ai')}>⚔️ vs IA</button>
+            <button style={seg(hud.mode === 'ai')} onClick={() => setMode('ai')}>⚔️ Solo (IA)</button>
+            <button style={seg(hud.mode === 'local')} onClick={() => setMode('local')}>👥 Ami (2 J)</button>
           </div>
           {hud.mode === 'ai' && (<div style={segWrap}>{DIFFS.map(([id, lbl]) => <button key={id} style={{ ...seg(hud.diff === id), fontSize: 12, padding: '7px 11px' }} onClick={() => setDiff(id)}>{lbl}</button>)}</div>)}
           <button style={iconBtn(false)} title="Nouvelle partie" onClick={newGame}>↻</button>
           <button style={iconBtn(!hud.canUndo)} title="Annuler" onClick={undo} disabled={!hud.canUndo}>↶</button>
           <button style={iconBtn(!myTurn || hud.hinting)} title={hud.thinking ? "Indice indisponible — l'IA joue" : hud.hinting ? 'Recherche du meilleur coup…' : 'Indice (meilleur coup)'} onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
           <button style={iconBtn(false)} title="Recentrer" onClick={() => rdrRef.current?.resetView()}>⌖</button>
+          <button style={{ ...iconBtn(false), ...(view2D ? { background: `linear-gradient(180deg,${GOLD},#b8924a)`, color: '#231703', borderColor: GOLD } : {}) }} title={view2D ? 'Vue 3D' : 'Vue 2D (de dessus)'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} onClick={toggle2D}>{view2D ? '🧊' : '🗺️'}</button>
           <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '✨' : quality === 'medium' ? '◐' : '○'}</button>
           <button style={iconBtn(false)} title={fs ? 'Quitter le plein écran' : 'Plein écran'} aria-label="Plein écran" onClick={toggleFs}>{fs ? '🗗' : '⛶'}</button>
           <button style={iconBtn(false)} title="Son" onClick={toggleMute}>{muted ? '🔇' : '🔊'}</button>
@@ -284,6 +299,9 @@ export default function DamesGame3D() {
           <span style={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 17, background: `radial-gradient(circle at 35% 30%, ${hud.turn === P ? '#d9594d' : '#5a97d6'}, ${hud.turn === P ? '#5e1110' : '#0e2444'})`, boxShadow: `0 0 16px ${hud.turn === P ? 'rgba(217,89,77,.55)' : 'rgba(90,151,214,.55)'}` }}>{hud.turn === P ? '☠️' : '⚓'}</span>
           {hud.thinking && <span ref={thinkDotRef} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: turnColor, flexShrink: 0 }} />}
           <span style={{ fontFamily: PIRATA, fontSize: 19, letterSpacing: '.5px', color: turnColor }}>{turnText}</span>
+          <span aria-label="Durée de la partie" title="Durée de la partie" style={{ marginLeft: 4, paddingLeft: 11, borderLeft: '1px solid rgba(217,184,112,.2)', fontFamily: "'Inter',system-ui,sans-serif", fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13, color: MUTED, letterSpacing: '.3px' }}>
+            ⏱ {String((elapsed / 60) | 0).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
+          </span>
         </div>
       </div>
 
@@ -317,43 +335,17 @@ export default function DamesGame3D() {
 
       {!hud.ready && (<div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: GOLD, fontFamily: PIRATA, fontSize: 22, letterSpacing: '.5px' }}>Chargement du plateau 3D…</div>)}
 
-      {hud.gameOver && hud.draw && (
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 20, background: 'radial-gradient(circle at 50% 38%, rgba(40,34,22,.6), rgba(8,7,5,.95))', backdropFilter: 'blur(7px)' }}>
-          <div style={{ width: 'min(460px,92%)', textAlign: 'center', padding: '40px 32px 30px', background: 'linear-gradient(180deg, rgba(27,20,13,.92), rgba(12,9,7,.96))', border: '1px solid rgba(217,184,112,.4)', borderRadius: 24, boxShadow: '0 30px 90px rgba(0,0,0,.75), 0 0 60px rgba(191,164,106,.2)' }}>
-            <div style={{ fontSize: 60, marginBottom: 4, filter: 'drop-shadow(0 0 22px rgba(191,164,106,.6))' }}>⚖️</div>
-            <div style={{ fontFamily: PIRATA, fontSize: 'clamp(30px,5vw,46px)', lineHeight: 1.05, color: '#e8cf92', textShadow: '0 0 24px rgba(191,164,106,.5)' }}>Match nul</div>
-            <p style={{ color: PARCH, fontSize: 13.5, margin: '12px 0 6px', lineHeight: 1.5 }}>{hud.drawReason}</p>
-            <p style={{ color: MUTED, fontSize: 12, margin: '0 0 20px', lineHeight: 1.5 }}>Pirates et Marine se séparent dos à dos — aucun camp n'a pu forcer la décision.</p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 26, marginBottom: 24 }}>
-              {[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]].map(([l, v]) => (
-                <div key={l}><div style={{ fontFamily: PIRATA, fontSize: 30, color: GOLD, lineHeight: 1 }}>{v}</div><div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginTop: 3 }}>{l}</div></div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={newGame} style={{ appearance: 'none', border: 0, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, padding: '13px 26px', borderRadius: 999, color: '#231703', background: 'linear-gradient(180deg,#e8cf92,#b8924a)', boxShadow: '0 8px 24px rgba(217,184,112,.32)' }}>↻ Rejouer</button>
-              <button onClick={() => navigate('/jeux')} style={{ appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, padding: '13px 22px', borderRadius: 999, color: PARCH, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(217,184,112,.22)' }}>Quitter</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {hud.gameOver && hud.winner && (
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', zIndex: 20, background: hud.winner === P ? 'radial-gradient(circle at 50% 38%, rgba(120,24,18,.55), rgba(8,5,4,.94))' : 'radial-gradient(circle at 50% 38%, rgba(16,52,92,.55), rgba(5,7,12,.94))', backdropFilter: 'blur(7px)' }}>
-          <div style={{ width: 'min(460px,92%)', textAlign: 'center', padding: '40px 32px 30px', background: 'linear-gradient(180deg, rgba(27,20,13,.92), rgba(12,9,7,.96))', border: `1px solid ${hud.winner === P ? 'rgba(224,98,58,.4)' : 'rgba(90,151,214,.4)'}`, borderRadius: 24, boxShadow: `0 30px 90px rgba(0,0,0,.75), 0 0 60px ${hud.winner === P ? 'rgba(200,50,30,.22)' : 'rgba(60,120,200,.22)'}` }}>
-            <div style={{ fontSize: 64, marginBottom: 4, filter: `drop-shadow(0 0 24px ${hud.winner === P ? 'rgba(224,98,58,.7)' : 'rgba(90,151,214,.7)'})` }}>{hud.winner === P ? '☠️' : '⚓'}</div>
-            <div style={{ fontFamily: PIRATA, fontSize: 'clamp(30px,5vw,46px)', lineHeight: 1.05, color: hud.winner === P ? '#ffb38a' : '#9fd0ff', textShadow: `0 0 26px ${hud.winner === P ? 'rgba(224,98,58,.55)' : 'rgba(90,151,214,.55)'}` }}>{hud.winner === P ? "Les Pirates l'emportent" : 'La Marine triomphe'}</div>
-            <p style={{ color: MUTED, fontSize: 13.5, margin: '12px 0 20px', lineHeight: 1.5 }}>{hud.winner === P ? "Le trésor est à toi — la Marine n'a plus aucun coup légal." : "L'ordre est rétabli — les Pirates sont à court de coups."}</p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 26, marginBottom: 24 }}>
-              {[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]].map(([l, v]) => (
-                <div key={l}><div style={{ fontFamily: PIRATA, fontSize: 30, color: GOLD, lineHeight: 1 }}>{v}</div><div style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginTop: 3 }}>{l}</div></div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={newGame} style={{ appearance: 'none', border: 0, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, padding: '13px 26px', borderRadius: 999, color: '#231703', background: `linear-gradient(180deg,#e8cf92,#b8924a)`, boxShadow: '0 8px 24px rgba(217,184,112,.32)' }}>↻ Rejouer</button>
-              <button onClick={() => navigate('/jeux')} style={{ appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, padding: '13px 22px', borderRadius: 999, color: PARCH, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(217,184,112,.22)' }}>Quitter</button>
-            </div>
-          </div>
-        </div>
+      {hud.gameOver && (hud.draw || hud.winner) && (
+        <DamesPoster
+          result={hud.draw ? 'draw' : hud.winner}
+          myColor={hud.mode === 'ai' ? G.current.humanSide : null}
+          reason={hud.draw ? hud.drawReason
+            : hud.winner === P ? "La Marine n'a plus aucun coup légal." : 'Les Pirates sont à court de coups.'}
+          stats={[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]]}
+          onRematch={newGame}
+          onQuit={() => navigate('/jeux')}
+          rematchLabel="⚔️ Revanche"
+        />
       )}
     </div>
   )

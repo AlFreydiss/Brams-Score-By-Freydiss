@@ -97,6 +97,12 @@ const EchecsPage         = lazyWithReload(() => import('./features/echecs/Echecs
 const DamesPage          = lazyWithReload(() => import('./features/dames/DamesPage.jsx'))
 const GamesHubPage       = lazyWithReload(() => import('./components/GamesHubPage.jsx'))
 const FredisuPage        = lazyWithReload(() => import('./components/FredisuPage.jsx'))
+const NouveauMondeLayout = lazyWithReload(() => import('./features/nouveau-monde/NouveauMondeLayout.jsx'))
+const NMCartePage        = lazyWithReload(() => import('./features/nouveau-monde/pages/CartePage.jsx'))
+const NMClassementsPage  = lazyWithReload(() => import('./features/nouveau-monde/pages/ClassementsPage.jsx'))
+const NMLogPosePage      = lazyWithReload(() => import('./features/nouveau-monde/pages/LogPosePage.jsx'))
+const NMJournalPage      = lazyWithReload(() => import('./features/nouveau-monde/pages/JournalPage.jsx'))
+const NMIlePage          = lazyWithReload(() => import('./features/nouveau-monde/pages/IlePage.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
@@ -670,6 +676,16 @@ export default function App() {
         <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
         <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />
         <Route path="/jeux"        element={<PageLayout><GamesHubPage /></PageLayout>} />
+
+        {/* Le Nouveau Monde — hub arcade immersif (layout plein écran, nav interne) */}
+        <Route path="/nouveau-monde" element={<Suspense fallback={null}><NouveauMondeLayout /></Suspense>}>
+          <Route index                element={<Suspense fallback={null}><NMCartePage /></Suspense>} />
+          <Route path="classements"   element={<Suspense fallback={null}><NMClassementsPage /></Suspense>} />
+          <Route path="profil"        element={<Suspense fallback={null}><NMLogPosePage /></Suspense>} />
+          <Route path="news"          element={<Suspense fallback={null}><NMJournalPage /></Suspense>} />
+          <Route path=":jeu"          element={<Suspense fallback={null}><NMIlePage /></Suspense>} />
+        </Route>
+        <Route path="/arcade" element={<Navigate to="/nouveau-monde" replace />} />
         <Route path="/fredisu"     element={<FredisuPage />} />
 
         {/* Profil Yonkou â€” Next-Gen 3D */}

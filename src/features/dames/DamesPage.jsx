@@ -25,7 +25,7 @@ export default function DamesPage() {
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {[['play', '🎲 Partie (3D)'], ['online', '🌐 En ligne classé']].map(([id, lbl]) => (
+          {[['play', '🎲 Solo & Ami'], ['online', '🌐 Classé (primes ฿)']].map(([id, lbl]) => (
             <button key={id} onClick={() => setTab(id)} style={{
               padding: '8px 18px', borderRadius: 999, cursor: 'pointer', fontWeight: 700, fontSize: 13,
               background: tab === id ? GOLD : 'rgba(255,255,255,.05)', color: tab === id ? '#1a1200' : 'rgba(243,234,216,.7)',

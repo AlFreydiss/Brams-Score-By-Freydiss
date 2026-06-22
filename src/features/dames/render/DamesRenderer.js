@@ -16,7 +16,7 @@ function createStore() {
   let s = {
     board: null, selected: null, legalMoves: [], movableKeys: new Set(),
     interactive: true, gameOver: false, last: null, hint: null, cursor: null,
-    quality: 'high', reduced: false, theme: 'sunset', winner: null,
+    quality: 'high', reduced: false, theme: 'sunset', winner: null, view2D: false,
   }
   const subs = new Set()
   return {
@@ -54,7 +54,8 @@ export default class DamesRenderer {
     const minWH = Math.min(host.clientWidth || 800, host.clientHeight || 600)
     const tier = saved || (reducedMotion ? 'low' : (coarse && minWH < 820) ? 'medium' : 'high')
     let savedTheme = null; try { savedTheme = localStorage.getItem('dames_theme') } catch (e) { /* */ }
-    this.store.setState({ reduced: reducedMotion, quality: tier, theme: savedTheme || 'sunset' })
+    let saved2D = false; try { saved2D = localStorage.getItem('dames_view2d') === '1' } catch (e) { /* */ }
+    this.store.setState({ reduced: reducedMotion, quality: tier, theme: savedTheme || 'sunset', view2D: saved2D })
 
     this.root = createRoot(mountEl)
     this.root.render(createElement(DamesScene, {
@@ -82,6 +83,9 @@ export default class DamesRenderer {
   // ── win cinematic : déclenche orbite caméra + feux d'artifice côté faction ─────
   // winner: 'P' (Pirates) | 'M' (Marine). Additif — n'altère pas l'API existante.
   setWinner(side) { this.store.setState({ winner: side || null, gameOver: true }) }
+  // ── vue 2D top-down (toggle) : overlay CSS jouable par-dessus la scène 3D ───────
+  view2D() { return this.store.getState().view2D }
+  setView2D(b) { this.store.setState({ view2D: !!b }); try { localStorage.setItem('dames_view2d', b ? '1' : '0') } catch (e) { /* */ } }
   setMuted(b) { this.muted = b; if (b) { this._stopAmbiance(); this._stopMusic() } else { this._resumeAudio() } }
   setMusic(b) { this.musicOn = b; try { localStorage.setItem('dames_music', b ? '1' : '0') } catch (e) { /* */ } if (b && !this.muted) { this._resumeAudio(); this._startMusic() } else this._stopMusic() }
   music() { return this.musicOn }

@@ -12,8 +12,8 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Environment, Sky, MeshReflectorMaterial, ContactShadows, Line } from '@react-three/drei'
 import { EffectComposer, N8AO, SMAA, Bloom, DepthOfField, Vignette, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { BlendFunction, ToneMappingMode } from 'postprocessing'
-import { Leva, useControls } from 'leva'
 import * as THREE from 'three'
+import DamesView2D from './DamesView2D.jsx'
 
 const DEV = !!(import.meta.env && import.meta.env.DEV)
 const SIZE = 10, P = 'P', M = 'M'
@@ -751,13 +751,9 @@ function CameraRig({ store }) {
 function Effects({ quality, theme }) {
   const { gl } = useThree()
   const baseExp = getTheme(theme).exposure
-  const tune = useControls('Dames · rendu', {
-    exposure: { value: 1.08, min: 0.6, max: 1.6, step: 0.01 },
-    bloom: { value: 0.7, min: 0, max: 2, step: 0.05 },
-    bloomThreshold: { value: 0.72, min: 0, max: 1, step: 0.01 },
-    ao: { value: 1.0, min: 0, max: 3, step: 0.1 },
-    dof: { value: 1, min: 0, max: 4, step: 0.1 },
-  }, { collapsed: true })
+  // leva retiré : v0.9.36 monte son panneau via ReactDOM.render, API supprimée en React 19 → crash
+  // prod (pas dev). Le tuning live était DEV-only ; on fige les défauts (comportement prod inchangé).
+  const tune = { exposure: 1.08, bloom: 0.7, bloomThreshold: 0.72, ao: 1.0, dof: 1 }
   // l'ambiance fixe l'exposition de base ; en DEV le leva (≠ défaut) reprend la main
   useEffect(() => { gl.toneMappingExposure = (DEV && tune.exposure !== 1.08) ? tune.exposure : baseExp }, [gl, tune.exposure, baseExp])
   useEffect(() => {
@@ -799,9 +795,10 @@ export default function DamesScene({ store, onSquareClick, audio, events }) {
   }, [])
   return (
     <>
-      {DEV && <Leva collapsed />}
       <div ref={flashRef} aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 55%, #fff,rgba(255,238,200,.6) 55%,transparent 75%)', opacity: 0, pointerEvents: 'none', mixBlendMode: 'screen', zIndex: 3 }} />
       <div ref={comboRef} aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%) scale(.4)', opacity: 0, pointerEvents: 'none', zIndex: 4, fontFamily: "'Pirata One','Cinzel',serif", fontSize: 'clamp(38px,7vw,82px)', fontWeight: 700, color: '#ffd56a', textShadow: '0 0 22px rgba(255,180,60,.85), 0 4px 14px rgba(0,0,0,.6)', WebkitTextStroke: '1px rgba(90,30,5,.5)' }} />
+      {/* peau alternative : vue 2D top-down (jouable, même store, même onSquareClick) */}
+      <DamesView2D store={store} onSquareClick={onSquareClick} />
       <Canvas
         shadows
         dpr={[1, 2]}

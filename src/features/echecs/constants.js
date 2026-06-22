@@ -33,6 +33,62 @@ export const THEME = {
   echecRoi:      'radial-gradient(circle, rgba(224,82,74,.85) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
 }
 
+// ── Thèmes de plateau (le PLATEAU reste neutre/pro — pas de surcharge One Piece
+// dessus). 3 thèmes sobres + lisibles ; le défaut « parchemin » colle à la DA du
+// site sans nuire à la lecture. Chaque thème porte ses propres surbrillances pour
+// rester contrastées sur ses cases. Sélection persistée (CLE_THEME_PLATEAU).
+export const THEMES_PLATEAU = {
+  parchemin: {
+    id: 'parchemin', label: 'Parchemin', emoji: '🗺️',
+    claire: '#C8B188', foncee: '#71503C',
+    notationClaire: '#5d4534', notationFoncee: '#e3d3ae',
+    dernierCoup: 'rgba(255, 215, 0, 0.34)',
+    selection: 'rgba(255, 215, 0, 0.46)',
+    pastilleLegale: 'rgba(20, 14, 8, 0.30)',
+    anneauCapture: 'rgba(224, 82, 74, 0.85)',
+    premove: 'rgba(116, 185, 255, 0.45)',
+    echecRoi: 'radial-gradient(circle, rgba(224,82,74,.85) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
+  },
+  ardoise: {
+    id: 'ardoise', label: 'Ardoise', emoji: '🪨',
+    claire: '#B6C0CC', foncee: '#5C6B7E',
+    notationClaire: '#3a4654', notationFoncee: '#dde4ec',
+    dernierCoup: 'rgba(255, 211, 105, 0.34)',
+    selection: 'rgba(255, 211, 105, 0.46)',
+    pastilleLegale: 'rgba(12, 18, 26, 0.32)',
+    anneauCapture: 'rgba(224, 82, 74, 0.85)',
+    premove: 'rgba(116, 185, 255, 0.50)',
+    echecRoi: 'radial-gradient(circle, rgba(224,82,74,.88) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
+  },
+  emeraude: {
+    id: 'emeraude', label: 'Émeraude', emoji: '🌿',
+    claire: '#E9E4CE', foncee: '#5B8265',
+    notationClaire: '#3c5642', notationFoncee: '#eef3e6',
+    dernierCoup: 'rgba(255, 215, 0, 0.32)',
+    selection: 'rgba(255, 215, 0, 0.44)',
+    pastilleLegale: 'rgba(14, 24, 16, 0.30)',
+    anneauCapture: 'rgba(224, 82, 74, 0.85)',
+    premove: 'rgba(116, 185, 255, 0.48)',
+    echecRoi: 'radial-gradient(circle, rgba(224,82,74,.85) 18%, rgba(224,82,74,.35) 55%, transparent 72%)',
+  },
+}
+export const THEME_PLATEAU_DEFAUT = 'parchemin'
+export const CLE_THEME_PLATEAU = 'echecs_theme_plateau'
+
+export function themePlateau() {
+  try { return THEMES_PLATEAU[localStorage.getItem(CLE_THEME_PLATEAU)] || THEMES_PLATEAU[THEME_PLATEAU_DEFAUT] }
+  catch { return THEMES_PLATEAU[THEME_PLATEAU_DEFAUT] }
+}
+export function setThemePlateau(id) {
+  try {
+    if (THEMES_PLATEAU[id]) {
+      localStorage.setItem(CLE_THEME_PLATEAU, id)
+      // notifie les plateaux montés ailleurs dans l'arbre (pas de prop drilling)
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('echecs:theme-plateau', { detail: id }))
+    }
+  } catch {}
+}
+
 // Taille du plateau : s'adapte au viewport, plafonnée pour rester net.
 export const PLATEAU_MAX_PX = 640
 export const PLATEAU_MIN_PX = 280

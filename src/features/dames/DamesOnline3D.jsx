@@ -9,6 +9,7 @@ import { initBoard, generateMoves, applyMove, opp, countPieces, P, M } from './e
 import { ensureRating, matchmake, cancelQueue, getMatch, submitMove, resign, subscribeMatch, leaderboard } from './online/damesRanked.js'
 import { eloToTier, formatPrime } from '../../lib/dames/damesRank.js'
 import DamesFxOverlay from './DamesFxOverlay.jsx'
+import DamesPoster from './DamesPoster.jsx'
 
 const GOLD = '#d9b870', PARCH = '#efe6d4', MUTED = '#9a8f7d'
 const panel = { width: '100%', maxWidth: 560, background: 'rgba(18,13,8,.72)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 16, padding: 20, textAlign: 'center' }
@@ -29,6 +30,7 @@ export default function DamesOnline3D() {
   const [err, setErr] = useState(null)
   const [lb, setLb] = useState([])
   const [fs, setFs] = useState(false)
+  const [view2D, setView2D] = useState(() => { try { return localStorage.getItem('dames_view2d') === '1' } catch (e) { return false } })
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const rdrRef = useRef(null)
@@ -217,6 +219,7 @@ export default function DamesOnline3D() {
       <div ref={containerRef} style={{ position: 'relative', width: '100%', height: fs ? '100vh' : 'min(70vh, 680px)', minHeight: 440, borderRadius: fs ? 0 : 18, overflow: 'hidden', background: 'radial-gradient(120% 90% at 50% 12%, #241a10 0%, #150f0a 40%, #0a0807 78%)', border: fs ? 'none' : '1px solid rgba(217,184,112,.16)' }}>
         <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
         <DamesFxOverlay ref={fxRef} winner={result && (result.winner === P || result.winner === M) ? result.winner : null} />
+        <button onClick={() => { const v = !view2D; setView2D(v); rdrRef.current?.setView2D(v) }} title={view2D ? 'Vue 3D' : 'Vue 2D (de dessus)'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} style={{ position: 'absolute', top: 12, right: 56, width: 38, height: 38, borderRadius: '50%', border: `1px solid ${view2D ? GOLD : 'rgba(217,184,112,.2)'}`, background: view2D ? `linear-gradient(180deg,${GOLD},#b8924a)` : 'rgba(14,10,7,.7)', color: view2D ? '#231703' : MUTED, cursor: 'pointer', fontSize: 15 }}>{view2D ? '🧊' : '🗺️'}</button>
         <button onClick={toggleFs} title="Plein écran" aria-label="Plein écran" style={{ position: 'absolute', top: 12, right: 12, width: 38, height: 38, borderRadius: '50%', border: '1px solid rgba(217,184,112,.2)', background: 'rgba(14,10,7,.7)', color: MUTED, cursor: 'pointer', fontSize: 15 }}>{fs ? '🗗' : '⛶'}</button>
         <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(14,10,7,.8)', border: '1px solid rgba(217,184,112,.16)', borderRadius: 999, padding: '8px 16px', fontWeight: 700, fontSize: 14, color: myTurn ? '#9fe0a0' : MUTED }}>
@@ -238,33 +241,26 @@ export default function DamesOnline3D() {
         {err && phase === 'playing' && (
           <div style={{ position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)', background: 'rgba(120,24,18,.9)', color: '#ffd9cf', padding: '7px 16px', borderRadius: 999, fontSize: 13, fontWeight: 700, zIndex: 5 }}>{err}</div>
         )}
-        {phase === 'finished' && result && (
-          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'radial-gradient(circle at 50% 45%, rgba(10,8,6,.6), rgba(5,4,3,.92))', backdropFilter: 'blur(6px)' }}>
-            <div style={{ ...panel, maxWidth: 380 }}>
-              <div style={{ fontSize: 44 }}>{result.winner === 'draw' ? '🤝' : won ? '🏆' : '☠️'}</div>
-              <h2 style={{ fontFamily: "'Pirata One',cursive", fontWeight: 700, fontSize: 24, color: '#e8cf92', margin: '6px 0 6px' }}>{result.winner === 'draw' ? 'Match nul' : won ? 'Victoire !' : 'Défaite'}</h2>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 24, margin: '4px 0 14px' }}>
-                {[['Prises', Math.max(0, 40 - pir - mar)], ['Pièces restantes', won ? Math.max(pir, mar) : Math.min(pir, mar)]].map(([l, v]) => (
-                  <div key={l}><div style={{ fontFamily: "'Pirata One',cursive", fontSize: 26, color: GOLD, lineHeight: 1 }}>{v}</div><div style={{ fontSize: 9.5, letterSpacing: 1.2, textTransform: 'uppercase', color: MUTED, fontWeight: 700, marginTop: 3 }}>{l}</div></div>
-                ))}
-              </div>
-              {typeof result.myDelta === 'number' && <p style={{ color: result.myDelta >= 0 ? '#9fe0a0' : '#ef8a7c', fontWeight: 800, marginBottom: 6 }}>{result.myDelta >= 0 ? '+' : ''}{result.myDelta} ELO</p>}
-              {rating && typeof result.myDelta === 'number' && (() => {
-                const before = eloToTier(rating.rating - result.myDelta), after = eloToTier(rating.rating)
-                return (
-                  <>
-                    <p style={{ color: GOLD, fontWeight: 800, fontSize: 13, marginBottom: after.tier !== before.tier ? 8 : 14 }}>{after.emoji} {formatPrime(after.prime)}</p>
-                    {after.tier !== before.tier && <div style={{ color: GOLD, fontWeight: 800, fontSize: 12, marginBottom: 14, padding: '6px 12px', borderRadius: 999, background: 'rgba(217,184,112,.12)', border: '1px solid rgba(217,184,112,.3)', boxShadow: '0 0 18px rgba(217,184,112,.18)' }}>Palier {after.label} atteint !</div>}
-                  </>
-                )
-              })()}
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button style={primary} onClick={leave}>↻ Rejouer</button>
-                <button style={ghost} onClick={() => navigate('/jeux')}>Quitter</button>
-              </div>
-            </div>
-          </div>
-        )}
+        {phase === 'finished' && result && (() => {
+          const after = rating ? eloToTier(rating.rating) : null
+          const before = (rating && typeof result.myDelta === 'number') ? eloToTier(rating.rating - result.myDelta) : null
+          const promoted = !!(after && before && after.tier !== before.tier && result.myDelta >= 0)
+          return (
+            <DamesPoster
+              result={result.winner === 'draw' ? 'draw' : result.winner}
+              myColor={G.current.myColor}
+              reason={result.winner === 'draw' ? 'Trêve — aucun camp n\'a forcé la décision.'
+                : won ? 'Prime encaissée sur les eaux classées.' : 'Ta tête a une nouvelle valeur.'}
+              stats={[['Prises', Math.max(0, 40 - pir - mar)], ['Pièces', won ? Math.max(pir, mar) : Math.min(pir, mar)]]}
+              prime={after ? { text: formatPrime(after.prime), label: after.label, emoji: after.emoji, color: after.color } : null}
+              eloDelta={typeof result.myDelta === 'number' ? result.myDelta : null}
+              promoted={promoted}
+              onRematch={leave}
+              onQuit={() => navigate('/jeux')}
+              rematchLabel="⚔️ Revanche"
+            />
+          )
+        })()}
       </div>
       <Lb />
     </div>

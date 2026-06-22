@@ -482,8 +482,12 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, inte
     // recolore plus la case ici pour ne pas troubler la teinte sous la plaque émissive.
     if (inter.selection) s[inter.selection] = { color: C3D.selection }
     for (const m of inter.coupsLegauxSel) s[m.to] = { ...(s[m.to] || {}), legal: true, capture: !!(m.captured || m.flags?.includes('e')) }
+    if (inter.premove) {
+      s[inter.premove.from] = { ...(s[inter.premove.from] || {}), color: '#74b9ff' }
+      s[inter.premove.to]   = { ...(s[inter.premove.to] || {}), color: '#74b9ff' }
+    }
     return s
-  }, [partie.dernierCoup, inter.selection, inter.coupsLegauxSel])
+  }, [partie.dernierCoup, inter.selection, inter.coupsLegauxSel, inter.premove])
 
   const matVers = matInfo ? squareVers3D(matInfo.square, orientation) : null
 
@@ -521,22 +525,23 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, inte
   )
 }
 
-export default function Plateau3D({ partie, orientation = 'white', peutJouer, onCoup, interactif = true }) {
-  const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif })
-  const controlsRef = useRef()
-  const reduit = useMemo(() => prefersReducedMotion(), [])
-  // Restaure le curseur si on démonte le plateau en plein survol (sinon curseur bloqué).
-  useEffect(() => () => { document.body.style.cursor = 'auto' }, [])
+export default function Plateau3D({ partie, orientation = 'white', peutJouer, onCoup, interactif = true, maCouleur = null }) {
+  // couleur de la pièce sur une case ('w'|'b'|null) — sert au rendu ET aux premoves.
   const pieceSur = useMemo(() => {
     const m = {}; for (const p of piecesDepuisFen(partie.fen)) m[p.square] = p.couleur
     return (sq) => m[sq] || null
   }, [partie.fen])
+  const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif, maCouleur, pieceSur })
+  const controlsRef = useRef()
+  const reduit = useMemo(() => prefersReducedMotion(), [])
+  // Restaure le curseur si on démonte le plateau en plein survol (sinon curseur bloqué).
+  useEffect(() => () => { document.body.style.cursor = 'auto' }, [])
 
   // Fallback 2D si WebGL absent (sinon <Canvas> crash). Après tous les hooks.
   const webgl = useMemo(() => {
     try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))) } catch { return false }
   }, [])
-  if (!webgl) return <Plateau partie={partie} orientation={orientation} peutJouer={peutJouer} onCoup={onCoup} interactif={interactif} taille={480} />
+  if (!webgl) return <Plateau partie={partie} orientation={orientation} peutJouer={peutJouer} onCoup={onCoup} interactif={interactif} maCouleur={maCouleur} taille={480} />
 
   return (
     <div data-testid="plateau3d-wrap" style={{ position: 'relative', width: '100%', height: 'min(82vh, 820px)' }}>

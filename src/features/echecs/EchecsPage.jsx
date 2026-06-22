@@ -7,7 +7,7 @@ import MultiOnline from './modes/MultiOnline.jsx'
 import DeuxJoueursLocal from './modes/DeuxJoueursLocal.jsx'
 import { assurerProfil, getProfil, getLeaderboard, getPartieEnCours } from './lib/api.js'
 import { rangPourElo } from './lib/elo.js'
-import { THEME, modeTroisD, setModeTroisD } from './constants.js'
+import { THEME, modeTroisD, setModeTroisD, THEMES_PLATEAU, themePlateau, setThemePlateau } from './constants.js'
 import { sons, isMuted, setMuted } from './lib/sons.js'
 import BarreJeu from '../../components/BarreJeu.jsx'
 
@@ -107,6 +107,7 @@ export default function EchecsPage() {
   const [partieEnCours, setPartieEnCours] = useState(null)
   const [mute, setMute] = useState(isMuted())
   const [troisD, setTroisD] = useState(modeTroisD())
+  const [themeP, setThemeP] = useState(() => themePlateau().id)
 
   const rechargerHub = useCallback(() => {
     if (!userId) return
@@ -131,6 +132,23 @@ export default function EchecsPage() {
   return (
     <div style={{ minHeight: '100vh', background: `radial-gradient(1100px 500px at 50% -8%, rgba(224,82,74,0.10), transparent 60%), radial-gradient(900px 420px at 85% 8%, rgba(255,215,0,0.05), transparent 55%), ${THEME.bg}`, paddingTop: 0, paddingBottom: enJeu ? 24 : 80 }}>
       <BarreJeu titre="Échecs Brams">
+        {!troisD && (
+          <button
+            onClick={() => {
+              const ids = Object.keys(THEMES_PLATEAU)
+              const next = ids[(ids.indexOf(themeP) + 1) % ids.length]
+              setThemeP(next); setThemePlateau(next)
+            }}
+            title={`Thème du plateau : ${THEMES_PLATEAU[themeP]?.label}`}
+            style={{ height: 42, padding: '0 12px', borderRadius: 12, cursor: 'pointer', fontSize: 13.5, fontWeight: 800, fontFamily: THEME.fontBody, background: THEME.card, border: `1px solid ${THEME.cardBorder}`, color: THEME.text, display: 'inline-flex', alignItems: 'center', gap: 7 }}
+          >
+            <span style={{ display: 'inline-flex', width: 16, height: 16, borderRadius: 4, overflow: 'hidden', boxShadow: '0 0 0 1px rgba(0,0,0,.3)' }}>
+              <span style={{ width: 8, background: THEMES_PLATEAU[themeP]?.claire }} />
+              <span style={{ width: 8, background: THEMES_PLATEAU[themeP]?.foncee }} />
+            </span>
+            {THEMES_PLATEAU[themeP]?.emoji}
+          </button>
+        )}
         <button
           onClick={() => { const v = !troisD; setTroisD(v); setModeTroisD(v) }}
           title={troisD ? 'Passer en vue 2D classique' : 'Passer en vue 3D'}

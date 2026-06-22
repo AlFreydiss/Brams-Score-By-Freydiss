@@ -74,6 +74,10 @@ export const sons = {
   capture() { toc(700, 0.62, 95, 150); toc(1500, 0.3, 50, 240) },
   roque()   { toc(1100, 0.42, 60, 190); setTimeout(() => toc(900, 0.42, 60, 170), 90) },
   echec()   { note(740, 0, 130, 0.16, 'square'); note(622, 0.1, 170, 0.14, 'square') },
+  // promotion : petit arpège ascendant brillant (la pièce « monte en grade »)
+  promotion() { toc(900, 0.4, 60, 170); note(659, 0.05, 120, 0.14); note(880, 0.15, 140, 0.14); note(1175, 0.27, 200, 0.13) },
+  // temps bas : double tic aigu et insistant (distinct du tic d'horloge normal)
+  tempsBas() { toc(2600, 0.2, 28, 700); setTimeout(() => toc(2600, 0.2, 28, 700), 130) },
   illegal() { note(180, 0, 110, 0.12, 'sawtooth') },
   debut()   { note(392, 0, 140); note(523, 0.1, 140); note(659, 0.2, 220) },
   victoire(){ note(523, 0, 150); note(659, 0.12, 150); note(784, 0.24, 150); note(1046, 0.36, 320, 0.2) },
