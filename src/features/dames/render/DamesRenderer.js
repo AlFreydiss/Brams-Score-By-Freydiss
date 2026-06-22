@@ -37,6 +37,8 @@ export default class DamesRenderer {
     this.onCombo = null; this.onPromote = null
     this.muted = false; this._disposed = false; this.ac = null; this.master = null
     this._amb = null; this._mus = null
+    // volume maître 0..1 (gain du nœud master) — persistant, piloté par le réglage drawer.
+    this.volume = 0.6; try { const v = parseFloat(localStorage.getItem('dames_volume')); if (!isNaN(v)) this.volume = Math.max(0, Math.min(1, v)) } catch (e) { /* */ }
     this.musicOn = false; try { this.musicOn = localStorage.getItem('dames_music') === '1' } catch (e) { /* */ }
   }
 
@@ -87,6 +89,13 @@ export default class DamesRenderer {
   view2D() { return this.store.getState().view2D }
   setView2D(b) { this.store.setState({ view2D: !!b }); try { localStorage.setItem('dames_view2d', b ? '1' : '0') } catch (e) { /* */ } }
   setMuted(b) { this.muted = b; if (b) { this._stopAmbiance(); this._stopMusic() } else { this._resumeAudio() } }
+  // Volume maître 0..1 — applique en douceur sur le gain master (et persiste).
+  setVolume(v) {
+    this.volume = Math.max(0, Math.min(1, Number(v)))
+    try { localStorage.setItem('dames_volume', String(this.volume)) } catch (e) { /* */ }
+    if (this.master && this.ac) { try { this.master.gain.setTargetAtTime(this.volume, this.ac.currentTime, 0.02) } catch (e) { this.master.gain.value = this.volume } }
+  }
+  volumeNiveau() { return this.volume }
   setMusic(b) { this.musicOn = b; try { localStorage.setItem('dames_music', b ? '1' : '0') } catch (e) { /* */ } if (b && !this.muted) { this._resumeAudio(); this._startMusic() } else this._stopMusic() }
   music() { return this.musicOn }
   sfxSelect() { this._sfxSelect() }
@@ -95,7 +104,7 @@ export default class DamesRenderer {
 
   // ── audio synth (WebAudio) — ambiance océan + SFX + musique, sans fichier ─────
   _resumeAudio() {
-    if (!this.ac) { try { this.ac = new (window.AudioContext || window.webkitAudioContext)(); this.master = this.ac.createGain(); this.master.gain.value = 0.5; this.master.connect(this.ac.destination) } catch (e) { /* no audio */ } }
+    if (!this.ac) { try { this.ac = new (window.AudioContext || window.webkitAudioContext)(); this.master = this.ac.createGain(); this.master.gain.value = this.volume; this.master.connect(this.ac.destination) } catch (e) { /* no audio */ } }
     if (this.ac && this.ac.state === 'suspended') this.ac.resume()
     if (this.ac && !this.muted) { this._startAmbiance(); if (this.musicOn) this._startMusic() }
   }

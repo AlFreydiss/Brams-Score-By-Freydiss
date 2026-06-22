@@ -261,6 +261,7 @@ export default function DamesGame3D() {
   // Embarqué : vue 2D/3D, sons et niveau IA sont pilotés par le drawer (sinon boutons locaux).
   useEffect(() => { if (R.embarque) { setView2D(R.vue2D); rdrRef.current?.setView2D(R.vue2D) } }, [R.embarque, R.vue2D])
   useEffect(() => { if (R.embarque) { setMuted(!R.sons); rdrRef.current?.setMuted(!R.sons) } }, [R.embarque, R.sons])
+  useEffect(() => { rdrRef.current?.setVolume?.(R.volume) }, [R.volume])
   useEffect(() => { if (R.embarque) { G.current.diff = R.diff; setHud(h => ({ ...h, diff: R.diff })) } }, [R.embarque, R.diff])
   // Surbrillance des prises possibles (pastilles) — pilotée par le réglage, redessine.
   useEffect(() => { G.current.surbrillancePrises = R.surbrillancePrises; drawMarkers() }, [R.surbrillancePrises, drawMarkers])
