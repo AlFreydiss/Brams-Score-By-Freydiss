@@ -66,7 +66,9 @@ export default function OceanFallback({ hour = 18, leaders = {}, onSelect }) {
                   borderRadius: nm.radius.lg, padding: nm.space.md,
                   minHeight: 96, // target size confortable (>24px)
                   background: live
-                    ? `linear-gradient(160deg, rgba(11,36,54,0.92), rgba(6,20,31,0.96))`
+                    ? (isl.art
+                        ? `linear-gradient(160deg, rgba(11,36,54,0.62), rgba(6,20,31,0.9)), url(${isl.art}) center/cover`
+                        : `linear-gradient(160deg, rgba(11,36,54,0.92), rgba(6,20,31,0.96))`)
                     : 'rgba(6,20,31,0.6)',
                   boxShadow: live ? nm.shadow.card : 'none',
                   opacity: live ? 1 : 0.55, color: nm.color.foam,

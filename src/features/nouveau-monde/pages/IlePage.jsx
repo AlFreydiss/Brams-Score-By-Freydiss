@@ -105,7 +105,10 @@ export default function IlePage() {
             style={{
               position: 'relative', overflow: 'hidden', borderRadius: nm.radius.lg,
               padding: nm.space.xl, marginTop: nm.space.md,
-              background: `linear-gradient(135deg, ${island.accent}28, rgba(6,20,31,0.92)), ${nm.color.deepSea}`,
+              background: island.art
+                ? `linear-gradient(135deg, ${island.accent}22, rgba(6,20,31,0.74) 52%, rgba(6,20,31,0.95)), url(${island.art}) right center/cover`
+                : `linear-gradient(135deg, ${island.accent}28, rgba(6,20,31,0.92)), ${nm.color.deepSea}`,
+              minHeight: 240,
               border: `1px solid ${island.accent}55`, boxShadow: nm.shadow.island,
             }}
           >
