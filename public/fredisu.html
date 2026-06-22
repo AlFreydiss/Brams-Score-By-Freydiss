@@ -723,6 +723,161 @@ body.playing{cursor:none}
   .m2-top,.m2-title,.m2-sub,.m2-list .m2-row,.m2-chips,.m2-hint,.m2-dot{animation:none!important}
   .btn.m2-row:hover,.btn.m2-go:hover,.btn.m2-chip:hover{transform:none}
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ACCUEIL v3 — "PULSE" : refonte motion-design, palette néon magenta/cyan.
+   Bloc 100% scoped #sMenu / #menuCursor : n'altère AUCUN token :root (gameplay,
+   autres écrans, options gardent l'or). Override les anciens accents or du menu.
+   ════════════════════════════════════════════════════════════════════════════ */
+#sMenu{
+  --nk:#ff2e88;            /* magenta osu, accent primaire */
+  --nk-soft:#ff5fa2;       /* magenta clair */
+  --nk-deep:#b9135f;       /* magenta profond */
+  --cy:#22e6ff;            /* cyan électrique, secondaire */
+  --vi:#a06bff;            /* violet d'appoint (déjà dans le décor) */
+  --ink:#070611;           /* encre de base */
+  --disp:'Exo 2','Nunito Sans',sans-serif;
+}
+
+/* ── Décor : on rebascule les auras/halo sur magenta/cyan (override des règles or) ── */
+#sMenu #menuFX{
+  background:
+    radial-gradient(120% 90% at 50% -10%,rgba(255,46,136,.12),transparent 60%),
+    radial-gradient(90% 80% at 16% 10%,rgba(34,230,255,.11),transparent 55%),
+    radial-gradient(90% 80% at 84% 90%,rgba(160,107,255,.13),transparent 55%),
+    var(--ink);
+}
+#sMenu #menuFX .aura.a1{background:radial-gradient(circle,rgba(34,230,255,.5),transparent 65%)}
+#sMenu #menuFX .aura.a2{background:radial-gradient(circle,rgba(160,107,255,.55),transparent 65%)}
+#sMenu #menuFX .aura.a3{background:radial-gradient(circle,rgba(255,46,136,.5),transparent 65%)}
+#sMenu::before{background:linear-gradient(180deg,rgba(4,3,11,.34) 0%,transparent 22%,transparent 58%,rgba(4,3,11,.6) 100%)}
+
+/* ── Toolbar : wordmark mini sans or ── */
+#sMenu .m2-dot{background:radial-gradient(circle at 35% 30%,#ffd2e6,var(--nk) 60%,var(--nk-deep));
+  box-shadow:0 0 16px rgba(255,46,136,.7)}
+#sMenu .m2-wordmark{color:#f4eefb;text-shadow:0 1px 12px #000a}
+#sMenu .m2-wordmark span{color:var(--nk-soft)}
+#sMenu .m2-meta b{color:var(--cy)}
+#sMenu .m2-tag{color:#ffffff55;border-color:#ffffff1f}
+
+/* ── HERO : wordmark cinétique (remplace l'orbe rond #logo) ── */
+#sMenu .logo-wrap{margin-bottom:14px;animation:none;transform:translate3d(calc(var(--mpx,0)*-16px),calc(var(--mpy,0)*-12px),0);transition:transform .2s var(--m-soft)}
+#sMenu .logo-wrap::before{display:none}             /* anciens anneaux orbe : off */
+.hero-mark{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:none;border:0;padding:6px 8px;cursor:none;color:#fff;font-family:var(--disp);
+  -webkit-tap-highlight-color:transparent}
+.hm-eyebrow{font:800 11px/1 var(--m-font);letter-spacing:.42em;text-transform:uppercase;
+  color:var(--cy);opacity:0;transform:translateY(8px);
+  text-shadow:0 0 18px rgba(34,230,255,.45);
+  animation:hmEye .6s var(--m-soft) .15s both;padding-left:.42em}
+.hm-word{position:relative;display:inline-flex;align-items:baseline;
+  font-style:italic;font-weight:800;letter-spacing:-.012em;line-height:.86;
+  font-size:clamp(54px,12.5vw,150px)}
+.hm-c{display:inline-block;font-style:inherit;
+  background:linear-gradient(178deg,#fff 6%,#ffd9ec 38%,var(--nk-soft) 72%,var(--nk) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 10px 26px rgba(255,46,136,.32));
+  opacity:0;transform:translateY(120%) rotate(7deg);
+  animation:hmDrop .62s var(--m-pop) both}
+.hm-c:nth-child(1){animation-delay:.18s}
+.hm-c:nth-child(2){animation-delay:.235s}
+.hm-c:nth-child(3){animation-delay:.29s}
+.hm-c:nth-child(4){animation-delay:.345s}
+.hm-c.hm-ap{animation-delay:.40s;
+  background:linear-gradient(178deg,#bff6ff,var(--cy) 70%,#0bb6d6);
+  -webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(0 0 22px rgba(34,230,255,.6));transform:translateY(120%) rotate(-10deg);margin:0 .01em}
+.hm-c:nth-child(6){animation-delay:.455s}
+.hm-c:nth-child(7){animation-delay:.51s}
+.hm-c:nth-child(8){animation-delay:.565s}
+/* écho fantôme cyan décalé = profondeur kinetic */
+.hm-echo{position:absolute;left:0;top:0;font-style:italic;font-weight:800;letter-spacing:-.012em;
+  color:transparent;-webkit-text-stroke:1.5px rgba(34,230,255,.34);
+  transform:translate(10px,9px);z-index:-1;pointer-events:none;
+  opacity:0;animation:hmEcho .7s var(--m-soft) .5s both;mix-blend-mode:screen}
+/* barre lumineuse sous le mot, pulse sur le beat */
+.hm-bar{height:4px;width:0;border-radius:99px;
+  background:linear-gradient(90deg,transparent,var(--nk),var(--cy),transparent);
+  box-shadow:0 0 22px rgba(255,46,136,.6);
+  animation:hmBar .7s var(--m-soft) .62s both,hmBarPulse var(--beatDur) .9s infinite ease-in-out}
+.hero-mark:hover .hm-c{filter:drop-shadow(0 12px 30px rgba(255,46,136,.5))}
+.hero-mark:hover .hm-word{animation:hmShake .5s ease}
+.hero-mark:hover .hm-echo{transform:translate(15px,12px);transition:transform .25s var(--m-soft)}
+.hero-mark:active{transform:scale(.985)}
+.hero-mark:focus-visible{outline:2px solid var(--cy);outline-offset:8px;border-radius:14px}
+@keyframes hmEye{to{opacity:.92;transform:none}}
+@keyframes hmDrop{0%{opacity:0;transform:translateY(120%) rotate(7deg)}70%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes hmEcho{to{opacity:.85}}
+@keyframes hmBar{to{width:min(78%,420px)}}
+@keyframes hmBarPulse{0%,100%{filter:brightness(1) saturate(1)}50%{filter:brightness(1.5) saturate(1.3)}}
+@keyframes hmShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px) skewX(-2deg)}75%{transform:translateX(4px) skewX(2deg)}}
+
+/* ── Titres / sous-titre : accent magenta au lieu de l'or ── */
+#sMenu .m2-title b{background:linear-gradient(110deg,#ff8fc0,var(--nk) 55%,var(--cy));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#sMenu .m2-hint kbd{color:var(--nk-soft)}
+
+/* ── Liste boutons : verre néon (override des fonds or) ── */
+#sMenu .btn.m2-row{
+  background:linear-gradient(100deg,rgba(20,14,30,.74),rgba(12,9,22,.62));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 34px -20px #000;
+  --hglow:rgba(255,46,136,.42)}
+#sMenu .btn.m2-row .ic{background:rgba(255,255,255,.07)}
+#sMenu .btn.m2-row:hover .ic{background:rgba(255,46,136,.20)}
+/* CTA principal : magenta plein, dégradé osu */
+#sMenu .btn.m2-go{
+  background:linear-gradient(110deg,var(--nk-soft),var(--nk) 52%,var(--nk-deep));
+  border-color:transparent;
+  box-shadow:0 14px 42px -14px rgba(255,46,136,.8),inset 0 1px 0 rgba(255,255,255,.45);
+  --hglow:rgba(255,46,136,.75)}
+#sMenu .btn.m2-go .ic{background:rgba(255,255,255,.24)}
+#sMenu .btn.m2-go .m2-l b{color:#fff;text-shadow:0 1px 8px rgba(120,0,50,.5)}
+#sMenu .btn.m2-go .m2-l em{color:#ffe3f0;font-weight:700}
+#sMenu .btn.m2-go .m2-arr{color:#ffffffbf}
+#sMenu .btn.m2-go:hover{filter:brightness(1.05) saturate(1.06);
+  box-shadow:0 18px 56px -14px rgba(255,46,136,.95),inset 0 1px 0 rgba(255,255,255,.6)}
+#sMenu .btn.m2-go:hover .m2-arr{color:#fff}
+/* balayage de lumière néon sur le hover des rangées */
+#sMenu .btn::after{background:linear-gradient(110deg,transparent 30%,rgba(34,230,255,.22) 50%,transparent 70%)}
+
+/* ── Chips : verre sombre, halo coloré par bouton (via --hglow) ── */
+#sMenu .btn.m2-chip{background:rgba(16,12,26,.62);border:1px solid rgba(255,255,255,.12);color:#ece6f5}
+#sMenu .btn.m2-chip:hover{color:#fff;border-color:rgba(255,255,255,.26)}
+
+/* ── Particules : recolorées via JS (voir menuFX COLS), focus-ring magenta ── */
+#sMenu .btn:focus-visible,.hero-mark:focus-visible{outline-color:var(--cy)}
+
+/* ════ CURSEUR CUSTOM (DOM, menu only) ════ */
+#menuCursor{position:fixed;left:0;top:0;width:0;height:0;z-index:90;pointer-events:none;
+  opacity:0;will-change:transform;
+  transform:translate3d(-100px,-100px,0) rotate(-14deg) scale(var(--mc-sc,1))}
+#menuCursor.show{opacity:1}
+#menuCursor .mc-arrow{position:absolute;left:0;top:0;width:26px;height:26px;overflow:visible;
+  transition:filter .18s ease}
+#menuCursor .mc-arrow path{
+  fill:#ff5fa2;stroke:#fff;stroke-width:1.1;stroke-linejoin:round;
+  filter:drop-shadow(0 3px 7px rgba(0,0,0,.55))}
+#menuCursor .mc-ring{position:absolute;left:0;top:0;width:34px;height:34px;border-radius:50%;
+  transform:translate(-13px,-13px) scale(var(--mc-ring,.55));opacity:var(--mc-ringO,0);
+  border:2px solid var(--cy);box-shadow:0 0 16px rgba(34,230,255,.6);
+  transition:transform .22s var(--m-pop),opacity .22s ease}
+/* état hover (classe posée par le JS quand on survole un bouton) */
+#menuCursor.hot{--mc-sc:1.18}
+#menuCursor.hot .mc-arrow path{fill:#22e6ff;filter:drop-shadow(0 0 10px rgba(34,230,255,.8))}
+#menuCursor.hot .mc-ring{--mc-ring:1;--mc-ringO:.9}
+#menuCursor.down{--mc-sc:.82}
+/* on n'affiche le curseur custom QUE sur le menu ; ailleurs il reste opacity:0 via JS */
+
+@media (prefers-reduced-motion:reduce){
+  .hm-eyebrow,.hm-c,.hm-echo,.hm-bar{animation:none!important;opacity:1;transform:none;width:auto}
+  .hm-bar{width:min(78%,420px)}
+  #sMenu .logo-wrap{transform:none}
+  #menuCursor{display:none}
+  #sMenu,#sMenu *{cursor:auto}
+}
+@media (pointer:coarse){#menuCursor{display:none}#sMenu,#sMenu *{cursor:auto}}
+@media (max-width:560px){.hm-eyebrow{letter-spacing:.3em;font-size:9.5px}.hm-word{font-size:clamp(46px,16vw,90px)}}
 </style>
 </head>
 <body>
@@ -737,6 +892,12 @@ body.playing{cursor:none}
     <span class="vig"></span>
   </div>
 
+  <!-- Curseur custom néon (DOM, scoped menu uniquement) -->
+  <div id="menuCursor" aria-hidden="true">
+    <span class="mc-ring"></span>
+    <svg class="mc-arrow" viewBox="0 0 24 24"><path d="M3 2 L3 21 L8.5 15.5 L12 23 L15.5 21.3 L12 13.8 L20 13.8 Z"/></svg>
+  </div>
+
   <!-- Barre du haut : marque à gauche, méta à droite (vibe lazer toolbar) -->
   <div class="m2-top" aria-hidden="false">
     <div class="m2-brand">
@@ -747,12 +908,18 @@ body.playing{cursor:none}
     <div class="m2-meta" id="m2Meta"></div>
   </div>
 
-  <!-- Hero centré : orbe-logo cliquable + accroche -->
+  <!-- Hero centré : wordmark cinétique cliquable (remplace l'orbe rond) + accroche -->
   <div class="m2-hero">
+    <!-- #logo conservé pour le binding click existant : c'est désormais le wordmark hero -->
     <div class="logo-wrap">
-      <div class="logo-halo" aria-hidden="true"></div>
-      <div class="logo-ring" aria-hidden="true"></div>
-      <div class="logo" id="logo">Fred'isu<span class="ripple" aria-hidden="true"></span></div>
+      <button class="hero-mark" id="logo" type="button" aria-label="Jouer les niveaux prêts">
+        <span class="hm-eyebrow">RHYTHM · NAVIGATEUR · IMPORTE TON SON</span>
+        <span class="hm-word" aria-hidden="true">
+          <em class="hm-c">F</em><em class="hm-c">R</em><em class="hm-c">E</em><em class="hm-c">D</em><em class="hm-c hm-ap">'</em><em class="hm-c">I</em><em class="hm-c">S</em><em class="hm-c">U</em>
+          <span class="hm-echo">FRED'ISU</span>
+        </span>
+        <span class="hm-bar" aria-hidden="true"></span>
+      </button>
     </div>
     <h1 class="m2-title">Tape le <b>beat</b>.</h1>
     <p class="m2-sub">Importe un MP3 / MP4 — la map se génère par analyse du son, calée sur le BPM.</p>
@@ -760,17 +927,17 @@ body.playing{cursor:none}
     <!-- Liste de boutons verticale signature lazer -->
     <nav class="m2-list">
       <button class="btn m2-row m2-go" id="bLevels"><span class="ic">🎮</span><span class="m2-l"><b>Niveaux prêts</b><em>Les openings de Brams Community</em></span><span class="m2-arr">›</span></button>
-      <button class="btn m2-row" id="bImport" style="--hglow:rgba(0,223,200,.4)"><span class="ic">🎵</span><span class="m2-l"><b>Importer un morceau</b><em>MP3 · MP4 · MKV · WebM</em></span><span class="m2-arr">›</span></button>
-      <button class="btn m2-row" id="bDemo" style="--hglow:rgba(160,107,255,.4)"><span class="ic">▶</span><span class="m2-l"><b>Démo rapide</b><em>Une map générée, prête à jouer</em></span><span class="m2-arr">›</span></button>
+      <button class="btn m2-row" id="bImport" style="--hglow:rgba(34,230,255,.42)"><span class="ic">🎵</span><span class="m2-l"><b>Importer un morceau</b><em>MP3 · MP4 · MKV · WebM</em></span><span class="m2-arr">›</span></button>
+      <button class="btn m2-row" id="bDemo" style="--hglow:rgba(160,107,255,.42)"><span class="ic">▶</span><span class="m2-l"><b>Démo rapide</b><em>Une map générée, prête à jouer</em></span><span class="m2-arr">›</span></button>
     </nav>
 
     <!-- Chips secondaires -->
     <div class="m2-chips">
-      <button class="btn m2-chip" id="bDuo" style="--hglow:rgba(95,230,140,.4)"><span class="ic">👥</span> Relais</button>
-      <button class="btn m2-chip" id="bBoard" style="--hglow:rgba(255,209,43,.4)"><span class="ic">🏆</span> Classement</button>
-      <button class="btn m2-chip" id="bMedals" style="--hglow:rgba(255,200,90,.4)"><span class="ic">🏅</span> Médailles</button>
-      <button class="btn m2-chip" id="bProfile" style="--hglow:rgba(0,229,255,.4)"><span class="ic">👤</span> Profil</button>
-      <button class="btn m2-chip" id="bOpt1" style="--hglow:rgba(160,107,255,.4)"><span class="ic">⚙</span> Options</button>
+      <button class="btn m2-chip" id="bDuo" style="--hglow:rgba(95,230,140,.42)"><span class="ic">👥</span> Relais</button>
+      <button class="btn m2-chip" id="bBoard" style="--hglow:rgba(255,46,136,.45)"><span class="ic">🏆</span> Classement</button>
+      <button class="btn m2-chip" id="bMedals" style="--hglow:rgba(255,95,162,.45)"><span class="ic">🏅</span> Médailles</button>
+      <button class="btn m2-chip" id="bProfile" style="--hglow:rgba(34,230,255,.42)"><span class="ic">👤</span> Profil</button>
+      <button class="btn m2-chip" id="bOpt1" style="--hglow:rgba(160,107,255,.42)"><span class="ic">⚙</span> Options</button>
     </div>
   </div>
 
@@ -2789,20 +2956,24 @@ let cmx=mx,cmy=my;
 function drawCursor(g=cx){
   const now=performance.now();
   const sm=opt.curSmooth||0;
-  if(sm<=0){cmx=mx;cmy=my;}
+  // garde-fou : si la position lissée n'est pas un nombre valide (undefined/NaN au démarrage),
+  // on la recale sur la position brute. Sans ça le sprite se dessine hors écran / pas du tout.
+  if(!Number.isFinite(cmx)||!Number.isFinite(cmy)){cmx=mx;cmy=my;}
+  if(sm<=0){cmx=mx;cmy=my;} // lissage 0 → snap instantané sur le brut (raw 1:1)
   else{const a=lerpF(1-sm*.82);cmx+=(mx-cmx)*a;cmy+=(my-cmy)*a;} // .82 max → reste réactif même à fond
-  const mx=cmx,my=cmy; // le rendu du curseur+traînée utilise la position lissée (ombre locale volontaire)
+  // rx/ry = position de RENDU (lissée). On NE shadow PAS mx/my (sinon TDZ → le curseur ne s'affiche jamais).
+  const rx=cmx,ry=cmy;
   if(opt.trail&&SPRITES.dot){
     // interpolation : la traînée reste continue même en mouvement rapide
     const lt=trail[trail.length-1];
     if(lt){
-      const dxy=Math.hypot(mx-lt.x,my-lt.y);
+      const dxy=Math.hypot(rx-lt.x,ry-lt.y);
       if(dxy>14){
         const n=Math.min(6,Math.floor(dxy/14));
-        for(let i=1;i<=n;i++)trail.push({x:lt.x+(mx-lt.x)*i/(n+1),y:lt.y+(my-lt.y)*i/(n+1),t:now});
+        for(let i=1;i<=n;i++)trail.push({x:lt.x+(rx-lt.x)*i/(n+1),y:lt.y+(ry-lt.y)*i/(n+1),t:now});
       }
     }
-    trail.push({x:mx,y:my,t:now});
+    trail.push({x:rx,y:ry,t:now});
     while(trail.length&&now-trail[0].t>SKIN.CURSOR_TRAIL_MS)trail.shift();
     // ruban effilé : segments reliés, largeur et alpha décroissants (rendu lazer),
     // + halo doux par drawImage du dot aux extrémités récentes
@@ -2833,18 +3004,18 @@ function drawCursor(g=cx){
     const pulse=1+.07*Math.sin(now/110);
     const rad=(34+lvl*52)*pulse*(opt.curSize||1.15);
     g.save();g.globalCompositeOperation='lighter';
-    const gr=g.createRadialGradient(mx,my,rad*.25,mx,my,rad);
+    const gr=g.createRadialGradient(rx,ry,rad*.25,rx,ry,rad);
     gr.addColorStop(0,'rgba(255,221,140,'+(.09+lvl*.20)+')');
     gr.addColorStop(.6,'rgba(255,200,90,'+(.04+lvl*.10)+')');
     gr.addColorStop(1,'rgba(255,200,90,0)');
-    g.fillStyle=gr;g.beginPath();g.arc(mx,my,rad,0,PI2);g.fill();
+    g.fillStyle=gr;g.beginPath();g.arc(rx,ry,rad,0,PI2);g.fill();
     g.restore();
   }
   cursorSc+=((pressing?1.3:1)-cursorSc)*lerpF(.32); // expansion douce au clic, comme lazer
   const sp=pressing?SPRITES.cursorHi:SPRITES.cursor;
   if(sp){
     const s=96*cursorSc*(opt.curSize||1.15); // gros par défaut, réglable dans les Options
-    g.drawImage(sp,mx-s/2,my-s/2,s,s);
+    g.drawImage(sp,rx-s/2,ry-s/2,s,s);
   }
 }
 
@@ -3233,7 +3404,8 @@ function drawMenuBG(){
   }
   cx.globalAlpha=1;
   // curseur custom de l'écran titre (sprite + traînée, masqué par CSS cursor:none)
-  if(state==='menu'&&!REDUCED_MOTION){ensureMenuCursor();drawCursor(ctTop);}
+  // Curseur du menu : désormais rendu par le curseur DOM custom (#menuCursor).
+  // On garde le sprite prêt pour le jeu mais on ne dessine plus sur ctTop au menu.
 }
 /* Vignette rouge progressive façon osu : monte quand la vie passe sous 50 %, pulse */
 let vigGrad=null,vigKey='';
@@ -3419,6 +3591,7 @@ function buildPlay(){
   score=0;combo=0;maxCombo=0;hp=1;n3=0;n1=0;n5=0;nm=0;lastBurst=0;
   vfxList=[];trail=[];kp=[];errs=[];errsAll=[];bgFlash=0;cfFlash=0;beatPtr=0;shake=0;missFlash=0;
   keysOv.forEach(k=>{k.n=0;k.on=false;});clickTimes=[];comboBreakFX=null;_lbCache=null;liveStart=0;cursorSc=1;dispScore=0;
+  cmx=mx;cmy=my; // recale la position VISUELLE du curseur sur le brut à l'entrée de partie (pas de saut depuis le menu)
   // leaderboard in-game : top mondial de la map + l'entrée du joueur (réordonnée en live)
   lbLive=[{pseudo:store.get('pseudo','')||'TOI',score:0,me:true}];lbLiveY=null;
   if(LB_ON)lbTop().then(rows=>{
@@ -4385,7 +4558,7 @@ document.querySelectorAll('#sMenu .btn, #sMenu .logo').forEach(el=>{
     const n=Math.round(Math.min(60,(wp*hp)/26000)); // densité bornée → cheap
     parts=Array.from({length:n},()=>spawn());
   }
-  const COLS=['rgba(0,223,200,','rgba(160,107,255,','rgba(212,160,23,'];
+  const COLS=['rgba(34,230,255,','rgba(160,107,255,','rgba(255,46,136,'];
   function spawn(){
     return{x:Math.random()*innerWidth,y:Math.random()*innerHeight,
       r:.6+Math.random()*2.1,vx:(Math.random()-.5)*.12,vy:-.12-Math.random()*.28,
@@ -4420,6 +4593,53 @@ document.querySelectorAll('#sMenu .btn, #sMenu .logo').forEach(el=>{
   });
   menu.addEventListener('mouseleave',()=>{fx.style.setProperty('--mpx',0);fx.style.setProperty('--mpy',0);});
   resize();kick();
+})();
+
+/* ── Curseur custom néon de l'écran titre (DOM, menu uniquement) ──────────────
+   Flèche élégante qui suit la souris en douceur, s'incline selon la vitesse,
+   réagit au survol des boutons (ring + couleur cyan) et au clic (scale down).
+   N'EXISTE QUE SUR #sMenu : caché dès qu'on quitte le menu → ne casse pas le
+   curseur de jeu (dessiné sur ctTop par drawCursor pendant le gameplay). */
+(function menuCursorInit(){
+  const cur=$('menuCursor'),menu=$('sMenu');
+  if(!cur||!menu)return;
+  const coarse=matchMedia('(pointer:coarse)').matches;
+  if(coarse||REDUCED_MOTION)return; // tactile / reduced-motion : curseur système, pas de custom
+  let tx=innerWidth/2,ty=innerHeight/2,cx0=tx,cy0=ty,prevx=tx,prevy=ty;
+  let active=false,raf=0;
+  const isOn=()=>menu.classList.contains('on');
+  function onMove(e){
+    tx=e.clientX;ty=e.clientY;
+    if(!active&&isOn())show();
+  }
+  function show(){active=true;cur.classList.add('show');if(!raf)raf=requestAnimationFrame(tick);}
+  function hide(){active=false;cur.classList.remove('show','hot','down');}
+  function tick(){
+    raf=0;
+    if(!active||!isOn()){hide();return;}
+    // suivi lissé (lerp) + inclinaison selon la vélocité = sensation vivante
+    cx0+=(tx-cx0)*.30;cy0+=(ty-cy0)*.30;
+    const vx=cx0-prevx,vy=cy0-prevy;prevx=cx0;prevy=cy0;
+    const speed=Math.min(1,Math.hypot(vx,vy)/26);
+    const tilt=-14+Math.max(-22,Math.min(22,vx*1.4)); // base -14°, penche dans le sens du mouvement
+    const sc=cur.classList.contains('hot')?1.18:cur.classList.contains('down')?.82:1;
+    cur.style.setProperty('--mc-sc',sc.toFixed(3));
+    cur.style.transform='translate3d('+cx0.toFixed(1)+'px,'+cy0.toFixed(1)+'px,0) rotate('+tilt.toFixed(1)+'deg) scale('+(sc*(1+speed*.06)).toFixed(3)+')';
+    raf=requestAnimationFrame(tick);
+  }
+  // survol des cibles interactives du menu → état "hot"
+  addEventListener('mouseover',e=>{
+    if(!active)return;
+    cur.classList.toggle('hot',!!(e.target.closest&&e.target.closest('#sMenu .btn, #sMenu .hero-mark')));
+  });
+  addEventListener('mousedown',()=>{if(active)cur.classList.add('down');});
+  addEventListener('mouseup',()=>cur.classList.remove('down'));
+  addEventListener('mousemove',onMove,{passive:true});
+  addEventListener('mouseleave',()=>hide()); // souris hors fenêtre
+  // bascule menu↔jeu : on suit la classe .on de #sMenu pour activer/couper le curseur
+  new MutationObserver(()=>{ if(isOn()){ if(!active){cur.classList.add('show');active=true;if(!raf)raf=requestAnimationFrame(tick);} } else hide(); })
+    .observe(menu,{attributes:true,attributeFilter:['class']});
+  if(isOn())show();
 })();
 
 /* ════ BOUCLE ════ */
