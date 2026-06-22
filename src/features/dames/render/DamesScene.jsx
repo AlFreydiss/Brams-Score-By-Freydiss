@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useRef, useMemo, useEffect, useSyncExternalStore } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Environment, Sky, MeshReflectorMaterial, ContactShadows, Line } from '@react-three/drei'
+import { OrbitControls, Environment, Sky, MeshReflectorMaterial, ContactShadows, Line, Text } from '@react-three/drei'
 import { EffectComposer, N8AO, SMAA, Bloom, DepthOfField, Vignette, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { BlendFunction, ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
@@ -653,6 +653,43 @@ function PathLine({ points, color }) {
 }
 const HintPath = ({ points }) => <PathLine points={points} color="#6fe0ff" />
 
+// ── coordonnées (réglage) : numérotation internationale des cases jouables ──────
+// Étiquettes 1..N (row-major, cases sombres) posées à plat sur le plateau, dans le
+// coin de chaque case sombre — MÊME formule que la vue 2D (DamesView2D). Désactivable
+// via store.coordonnees (false → masqué). Taille/position liées à `step` (8×8 / 10×10).
+// Set statique de ≤50 <Text> mémoïsé par (size, on) → jamais reconstruit dans useFrame.
+function Coords({ store }) {
+  const s = useSyncExternalStore(store.subscribe, store.getState)
+  const on = s.coordonnees !== false
+  const size = boardSize(s.board)
+  const labels = useMemo(() => {
+    if (!on) return []
+    const step = stepFor(size)
+    const tile = TILE * step
+    const off = tile * 0.5 - tile * 0.16   // décalage vers le coin "haut-gauche" de la case (lecture caméra par défaut)
+    const out = []
+    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+      if (!isDark(r, c)) continue
+      const w = worldPos(r, c, size)
+      const num = Math.floor((r * size + c) / 2) + 1   // identique à la vue 2D
+      out.push({ key: r + '_' + c, x: w.x - off, z: w.z - off, num, fs: step * 0.18 })
+    }
+    return out
+  }, [on, size])
+  if (!on) return null
+  return (
+    <group>
+      {labels.map(l => (
+        <Text key={l.key} position={[l.x, MARK_Y, l.z]} rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={l.fs} color="#efe6d4" fillOpacity={0.4} anchorX="center" anchorY="middle"
+          depthOffset={-1} renderOrder={10} material-toneMapped={false} material-depthWrite={false}>
+          {l.num}
+        </Text>
+      ))}
+    </group>
+  )
+}
+
 // ── océan + ciel + particules d'ambiance ───────────────────────────────────────
 function Ocean({ quality, theme }) {
   const t = getTheme(theme)
@@ -843,6 +880,7 @@ export default function DamesScene({ store, onSquareClick, audio, events }) {
         <Board store={store} />
         <Pieces store={store} audio={audio} events={events} />
         <Markers store={store} />
+        <Coords store={store} />
         <Celebration store={store} quality={quality} />
         {quality !== 'low' && <ContactShadows position={[0, 0.1, 0]} scale={16} resolution={1024} blur={2.6} opacity={0.5} far={6} color="#0a0604" />}
         <Ocean quality={quality} theme={theme} />

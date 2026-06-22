@@ -109,11 +109,15 @@ export default defineConfig({
   build: {
     emptyOutDir: false,
     target:               'es2020',
-    chunkSizeWarningLimit: 3000,
+    chunkSizeWarningLimit: 3500,   // le chunk r3f+drei (~3,1 Mo) est lazy-chargé (pages 3D only)
     cssCodeSplit:         true,
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // postprocessing s'isole proprement (dépend de r3f, pas l'inverse → pas de cycle).
+          // drei reste avec r3f : le séparer crée un cycle drei↔r3f (ordre de chargement cassé).
+          if (id.includes('@react-three/postprocessing') ||
+              id.includes('node_modules/postprocessing'))   return 'postfx'
           if (id.includes('node_modules/three/'))           return 'three'
           if (id.includes('@react-three'))                  return 'r3f'
           if (id.includes('node_modules/framer-motion'))    return 'motion'
