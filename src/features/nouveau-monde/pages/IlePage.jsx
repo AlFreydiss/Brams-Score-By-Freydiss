@@ -88,9 +88,10 @@ export default function IlePage() {
   }
 
   const onPlay = (mode) => {
-    if (!island.route) return
-    const sep = island.route.includes('?') ? '&' : '?'
-    teleport(island.id, () => navigate(`${island.route}${mode ? `${sep}mode=${mode}` : ''}`))
+    if (island.status !== 'live') return
+    // On reste DANS le monde : accostage = route /jouer embarquée (le jeu se charge sous la
+    // nav du Nouveau Monde). La transition douce du layout suffit (pas de gros téléport in-world).
+    navigate(`/nouveau-monde/${island.id}/jouer${mode ? `?mode=${mode}` : ''}`)
   }
 
   return (

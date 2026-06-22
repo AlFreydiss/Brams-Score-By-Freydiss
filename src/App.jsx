@@ -104,6 +104,7 @@ const NMClassementsPage  = lazyWithReload(() => import('./features/nouveau-monde
 const NMLogPosePage      = lazyWithReload(() => import('./features/nouveau-monde/pages/LogPosePage.jsx'))
 const NMJournalPage      = lazyWithReload(() => import('./features/nouveau-monde/pages/JournalPage.jsx'))
 const NMIlePage          = lazyWithReload(() => import('./features/nouveau-monde/pages/IlePage.jsx'))
+const NMPlayFrame        = lazyWithReload(() => import('./features/nouveau-monde/PlayFrame.jsx'))
 const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
@@ -686,6 +687,7 @@ export default function App() {
           <Route path="profil"        element={<Suspense fallback={null}><NMLogPosePage /></Suspense>} />
           <Route path="news"          element={<Suspense fallback={null}><NMJournalPage /></Suspense>} />
           <Route path=":jeu"          element={<Suspense fallback={null}><NMIlePage /></Suspense>} />
+          <Route path=":jeu/jouer"    element={<Suspense fallback={null}><NMPlayFrame /></Suspense>} />
         </Route>
         <Route path="/arcade" element={<Navigate to="/nouveau-monde" replace />} />
         <Route path="/fredisu"     element={<FredisuPage />} />
