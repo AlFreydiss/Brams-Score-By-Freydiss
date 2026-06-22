@@ -16,6 +16,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E001.jpg",
     "subtitles": [
       {
@@ -43,6 +44,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E002.jpg",
     "subtitles": [
       {
@@ -70,6 +72,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E003.jpg",
     "subtitles": [
       {
@@ -97,6 +100,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E004.jpg",
     "subtitles": [
       {
@@ -124,6 +128,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E005.jpg",
     "subtitles": [
       {
@@ -151,6 +156,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E006.jpg",
     "subtitles": [
       {
@@ -178,6 +184,7 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E007.jpg",
     "subtitles": [
       {
@@ -205,12 +212,1133 @@
         "default": true
       }
     ],
+    "hq": true,
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E008.jpg",
     "subtitles": [
       {
         "label": "Français",
         "srclang": "fr",
         "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E008-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 9,
+    "title": "Épisode 9",
+    "episodeLabel": "E009",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E009-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E009",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E009.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E009-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 10,
+    "title": "Épisode 10",
+    "episodeLabel": "E010",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E010-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E010",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E010.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E010-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 11,
+    "title": "Épisode 11",
+    "episodeLabel": "E011",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E011-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E011",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E011.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E011-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 12,
+    "title": "Épisode 12",
+    "episodeLabel": "E012",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E012-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E012",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E012.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E012-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 13,
+    "title": "Épisode 13",
+    "episodeLabel": "E013",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E013-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E013",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E013.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E013-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 14,
+    "title": "Épisode 14",
+    "episodeLabel": "E014",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E014-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E014",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E014.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E014-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 15,
+    "title": "Épisode 15",
+    "episodeLabel": "E015",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E015-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E015",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E015.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E015-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 16,
+    "title": "Épisode 16",
+    "episodeLabel": "E016",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E016-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E016",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E016.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E016-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 17,
+    "title": "Épisode 17",
+    "episodeLabel": "E017",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E017-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E017",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E017.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E017-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 18,
+    "title": "Épisode 18",
+    "episodeLabel": "E018",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E018-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E018",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E018.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E018-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 19,
+    "title": "Épisode 19",
+    "episodeLabel": "E019",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E019-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E019",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E019.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E019-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 20,
+    "title": "Épisode 20",
+    "episodeLabel": "E020",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E020-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E020",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E020.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E020-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 21,
+    "title": "Épisode 21",
+    "episodeLabel": "E021",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E021-vostfr.mp4",
+    "season": "S01",
+    "arc": "Arc de l’Examen de Hunter",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E021",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E021.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E021-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 22,
+    "title": "Épisode 22",
+    "episodeLabel": "E022",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E022-vostfr.mp4",
+    "season": "S02",
+    "arc": "Arc de la Famille Zoldyck",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E022",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E022.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E022-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 23,
+    "title": "Épisode 23",
+    "episodeLabel": "E023",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E023-vostfr.mp4",
+    "season": "S02",
+    "arc": "Arc de la Famille Zoldyck",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E023",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E023.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E023-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 24,
+    "title": "Épisode 24",
+    "episodeLabel": "E024",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E024-vostfr.mp4",
+    "season": "S02",
+    "arc": "Arc de la Famille Zoldyck",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E024",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E024.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E024-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 25,
+    "title": "Épisode 25",
+    "episodeLabel": "E025",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E025-vostfr.mp4",
+    "season": "S02",
+    "arc": "Arc de la Famille Zoldyck",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E025",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E025.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E025-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 26,
+    "title": "Épisode 26",
+    "episodeLabel": "E026",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E026-vostfr.mp4",
+    "season": "S02",
+    "arc": "Arc de la Famille Zoldyck",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E026",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E026.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E026-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 27,
+    "title": "Épisode 27",
+    "episodeLabel": "E027",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E027-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E027",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E027.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E027-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 28,
+    "title": "Épisode 28",
+    "episodeLabel": "E028",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E028-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E028",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E028.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E028-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 29,
+    "title": "Épisode 29",
+    "episodeLabel": "E029",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E029-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E029",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E029.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E029-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 30,
+    "title": "Épisode 30",
+    "episodeLabel": "E030",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E030-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E030",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E030.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E030-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 31,
+    "title": "Épisode 31",
+    "episodeLabel": "E031",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E031-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E031",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E031.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E031-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 32,
+    "title": "Épisode 32",
+    "episodeLabel": "E032",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E032-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E032",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E032.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E032-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 33,
+    "title": "Épisode 33",
+    "episodeLabel": "E033",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E033-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E033",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E033.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E033-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 34,
+    "title": "Épisode 34",
+    "episodeLabel": "E034",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E034-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E034",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E034.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E034-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 35,
+    "title": "Épisode 35",
+    "episodeLabel": "E035",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E035-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E035",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E035.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E035-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 36,
+    "title": "Épisode 36",
+    "episodeLabel": "E036",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E036-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc de la Tour Céleste",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E036",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E036.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E036-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 37,
+    "title": "Épisode 37",
+    "episodeLabel": "E037",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E037-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E037",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E037.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E037-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 38,
+    "title": "Épisode 38",
+    "episodeLabel": "E038",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E038-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E038",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E038.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E038-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 39,
+    "title": "Épisode 39",
+    "episodeLabel": "E039",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E039-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E039",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E039.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E039-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 40,
+    "title": "Épisode 40",
+    "episodeLabel": "E040",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E040-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E040",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E040.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E040-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 41,
+    "title": "Épisode 41",
+    "episodeLabel": "E041",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E041-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E041",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E041.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E041-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 42,
+    "title": "Épisode 42",
+    "episodeLabel": "E042",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E042-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E042",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E042.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E042-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 43,
+    "title": "Épisode 43",
+    "episodeLabel": "E043",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E043-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E043",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E043.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E043-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 44,
+    "title": "Épisode 44",
+    "episodeLabel": "E044",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E044-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E044",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E044.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E044-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 45,
+    "title": "Épisode 45",
+    "episodeLabel": "E045",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E045-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E045",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E045.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E045-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 46,
+    "title": "Épisode 46",
+    "episodeLabel": "E046",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E046-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E046",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E046.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E046-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 47,
+    "title": "Épisode 47",
+    "episodeLabel": "E047",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E047-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E047",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E047.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E047-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 48,
+    "title": "Épisode 48",
+    "episodeLabel": "E048",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E048-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E048",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E048.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E048-fr.vtt",
         "default": true
       }
     ]
