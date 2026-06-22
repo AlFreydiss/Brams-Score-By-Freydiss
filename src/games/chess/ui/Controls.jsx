@@ -10,6 +10,7 @@ function Btn({ children, onClick, disabled, danger, title, large }) {
   return (
     <button
       onClick={onClick} disabled={disabled} title={title}
+      className="cc-btn"
       style={{
         flex: large ? 1 : '0 0 auto',
         padding: large ? '10px 12px' : '8px 11px', borderRadius: ui.radius.sm,
@@ -39,6 +40,7 @@ export default function Controls({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <style>{`.cc-btn:focus-visible{ outline:2px solid ${BRASS}; outline-offset:2px; }`}</style>
       {/* Navigation historique */}
       <div style={{ display: 'flex', gap: 6 }}>
         <Btn onClick={() => onAller(-1)} disabled={nbCoups === 0 || curseur === -1} title="Début" large>⏮</Btn>
@@ -76,6 +78,7 @@ export default function Controls({
 
       <button
         onClick={onNouvelle}
+        className="cc-btn"
         style={{
           padding: '11px 14px', borderRadius: ui.radius.sm, cursor: 'pointer', marginTop: 2,
           font: `700 13.5px ${fonts.body}`, color: '#15110a',

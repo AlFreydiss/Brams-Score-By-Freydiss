@@ -56,6 +56,7 @@ export default function OnlineFlow({ accent = '#b09467' }) {
         maxWidth: 460, margin: '8px auto 40px', padding: '24px 22px', textAlign: 'center',
         background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg,
       }}>
+        <style>{`button:focus-visible{outline:2px solid ${accent};outline-offset:2px}`}</style>
         <div aria-hidden style={{ width: 38, height: 4, borderRadius: 2, background: accent, margin: '0 auto 16px' }} />
         <h3 style={{ margin: 0, font: `800 20px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>
           Connexion requise pour le classé
@@ -95,6 +96,7 @@ export default function OnlineFlow({ accent = '#b09467' }) {
   // ── Menu : reprise éventuelle + matchmaking ──
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
+      <style>{`button:focus-visible{outline:2px solid ${accent};outline-offset:2px}`}</style>
       {partieEnCours && (
         <div style={{
           maxWidth: 560, margin: '8px auto 0', padding: '14px 16px',
@@ -107,7 +109,10 @@ export default function OnlineFlow({ accent = '#b09467' }) {
           <button onClick={() => ouvrirPartie(partieEnCours.id)} style={{
             padding: '9px 16px', borderRadius: ui.radius.sm, cursor: 'pointer',
             font: `700 13px ${fonts.body}`, color: '#15110a', background: accent, border: 'none',
-          }}>
+            transition: 'filter .15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
             Reprendre la partie en cours
           </button>
         </div>

@@ -75,6 +75,10 @@ export default function DraughtsBoard({
   const SIZE = board?.length || size
   const theme = damesBoard[boardTheme] || damesBoard[DAMES_BOARD_DEFAUT]
   const movable = movableKeys || new Set()
+  const noMotion = reduced()
+
+  // Numérotation des cases sombres : 1–50 en 10×10, 1–32 en 8×8 (variante).
+  const squareNo = (r, c) => Math.floor((r * SIZE + c) / 2) + 1
 
   // ── animation FLIP du dernier coup (déplacement + rafle) ──
   useLayoutEffect(() => {
@@ -225,7 +229,7 @@ export default function DraughtsBoard({
           const hideForDrag = drag && drag.r === r && drag.c === c
           return (
             <div key={key} role="gridcell" data-cell={key}
-              aria-label={dark ? `Case ${Math.floor((r * SIZE + c) / 2) + 1}${cell ? `, pion ${cell.side === P ? 'foncé' : 'clair'}${cell.king ? ' dame' : ''}` : ''}` : undefined}
+              aria-label={dark ? `Case ${squareNo(r, c)}${cell ? `, pion ${cell.side === P ? 'foncé' : 'clair'}${cell.king ? ' dame' : ''}` : ''}` : undefined}
               onClick={() => { if (canPlay && !dragRef.current && !movedRef.current) onSquareClick?.(r, c) }}
               onPointerDown={(e) => { if (cell) onPointerDownPiece(e, r, c) }}
               style={{
@@ -244,13 +248,13 @@ export default function DraughtsBoard({
               {kind === 'cap' && <div aria-hidden style={{ position: 'absolute', inset: '15%', borderRadius: '50%', boxShadow: `inset 0 0 0 3px ${marks.capture}`, pointerEvents: 'none' }} />}
               {isHop && <div aria-hidden style={{ width: '16%', height: '16%', borderRadius: '50%', background: marks.capture, opacity: .85, pointerEvents: 'none' }} />}
               {coordsOn && dark && (
-                <span aria-hidden style={{ position: 'absolute', top: 2, left: 4, fontSize: 'clamp(7px,1.05vmin,11px)', fontWeight: 700, color: 'rgba(236,238,242,.34)', pointerEvents: 'none', fontFamily: fonts.mono }}>
-                  {Math.floor((r * SIZE + c) / 2) + 1}
+                <span aria-hidden style={{ position: 'absolute', top: 2, left: 4, fontSize: 'clamp(7px,1.05vmin,11px)', fontWeight: 700, color: 'rgba(236,238,242,.34)', pointerEvents: 'none', fontFamily: fonts.mono, fontVariantNumeric: 'tabular-nums' }}>
+                  {squareNo(r, c)}
                 </span>
               )}
               {cell && !hideForAnim && !hideForDrag && (
                 <div style={{ width: '88%', height: '88%', display: 'grid', placeItems: 'center', position: 'relative' }}>
-                  {mandatory && <span aria-hidden style={{ position: 'absolute', inset: '4%', borderRadius: '50%', boxShadow: `0 0 0 2.5px ${marks.capture}`, animation: 'draughtsPulse 1.15s ease-in-out infinite', pointerEvents: 'none' }} />}
+                  {mandatory && <span aria-hidden style={{ position: 'absolute', inset: '4%', borderRadius: '50%', boxShadow: `inset 0 0 0 1px ${marks.capture}`, animation: noMotion ? 'none' : 'draughtsPulse 1.15s ease-in-out infinite', pointerEvents: 'none' }} />}
                   <Disc side={cell.side} king={cell.king} scale={isSel ? 1.05 : 1} />
                 </div>
               )}
@@ -294,7 +298,7 @@ export default function DraughtsBoard({
           fontFamily: fonts.body, fontWeight: 700, fontSize: 12.5, letterSpacing: '.3px',
           boxShadow: ui.shadow, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 8, zIndex: 8,
         }}>
-          <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: ui.bad, boxShadow: `0 0 8px ${ui.bad}` }} />
+          <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: ui.bad, boxShadow: `0 0 0 1px ${ui.bad}66` }} />
           Prise obligatoire — rafle maximale
         </div>
       )}

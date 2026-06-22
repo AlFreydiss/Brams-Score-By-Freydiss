@@ -6,6 +6,7 @@
 // les atomes de l'univers (Plateau 2D, MoveList, EndOverlay). Zéro 3D, zéro
 // ancien THEME pirate.
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { Chess } from 'chess.js'
 import { usePartie } from '../../../features/echecs/hooks/usePartie.js'
 import { useRealtimeGame } from '../../../features/echecs/hooks/useRealtimeGame.js'
 import { useHorloge } from '../../../features/echecs/hooks/useHorloge.js'
@@ -18,6 +19,7 @@ import { sons } from '../../../features/echecs/lib/sons.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import Plateau from '../../../features/echecs/components/Plateau.jsx'
 import MoveList from '../ui/MoveList.jsx'
+import MiniBoard from '../ui/MiniBoard.jsx'
 import EndOverlay from '../ui/EndOverlay.jsx'
 import { boardParId } from '../logic/boards.js'
 import { useChessSettings } from '../logic/useChessSettings.js'
@@ -37,6 +39,15 @@ function sonDuCoup(mv, enEchec) {
 // glyphe d'une pièce capturée (campCapteur = qui a capturé → pièce adverse)
 const GLYPHES = { w: { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛' }, b: { p: '♙', n: '♘', b: '♗', r: '♖', q: '♕' } }
 function glyphe(campCapteur, type) { return (GLYPHES[campCapteur] && GLYPHES[campCapteur][type]) || '' }
+
+// FEN à un demi-coup donné (revue d'historique) en rejouant les SAN.
+function fenAuCoup(historique, idx) {
+  const c = new Chess()
+  for (let i = 0; i <= idx && i < historique.length; i++) {
+    try { c.move(historique[i].san) } catch { break }
+  }
+  return c.fen()
+}
 
 // ── Horloge serveur (valeur ms brute, pas d'abonnement local) ──────────────
 // Mirroir visuel de l'atome Clock mais alimenté par useHorloge (temps serveur).
@@ -117,6 +128,7 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
   const [revancheRecue, setRevancheRecue] = useState(false)
   const [revancheEnvoyee, setRevancheEnvoyee] = useState(false)
   const [decoDepuis, setDecoDepuis] = useState(null)
+  const [curseur, setCurseur] = useState(-1)               // demi-coup affiché (-1 → suit le live)
   const rowRef = useRef(null); rowRef.current = row
   const finaliseRef = useRef(false)
   const pgnChargeRef = useRef('')
@@ -152,7 +164,7 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
     let mort = false
     setChargement(true)
     // reset des états de partie quand on change de partieId (revanche)
-    setFinVisible(false); setDeltaElo(null); setEloFinal(null)
+    setFinVisible(false); setDeltaElo(null); setEloFinal(null); setCurseur(-1)
     setNulleRecue(false); setNulleEnvoyee(false); setRevancheRecue(false); setRevancheEnvoyee(false)
     finaliseRef.current = false
     getPartie(partieId).then(({ data }) => {
@@ -247,6 +259,7 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
   const onCoup = useCallback(async mv => {
     sonDuCoup(mv, partie.chess.isCheck())
     setNulleRecue(false)
+    setCurseur(-1)
     const fen = partie.chess.fen()
     const pgn = partie.pgn()
     pgnChargeRef.current = pgn
@@ -305,13 +318,14 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
     }
   }, [revancheRecue, revancheEnvoyee]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Taille responsive du plateau (mirroir de PlayTab) ──
+  // ── Taille responsive du plateau + flag mobile (mirroir de PlayTab) ──
   const [taille, setTaille] = useState(440)
-  const mobile = typeof window !== 'undefined' && window.innerWidth < 880
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 880)
   useEffect(() => {
     const calc = () => {
       const vw = window.innerWidth, vh = window.innerHeight
       const m = vw < 880
+      setMobile(m)
       const dispoLargeur = m ? vw - 28 : vw - 320 - 64 - 16
       const dispoHauteur = vh - (m ? 320 : 150)
       const t = Math.max(260, Math.min(640, dispoLargeur, dispoHauteur))
@@ -325,8 +339,49 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
   const boardId = reglages.board
   const tema = useMemo(() => boardParId(boardId), [boardId])
 
+  // ── Revue d'historique : curseur cliquable/clampé + nav clavier ←/→ ──
+  const nbCoups = partie.historique.length
+  const aller = useCallback((idx) => {
+    const clamp = Math.max(-1, Math.min(nbCoups - 1, idx))
+    setCurseur(clamp === nbCoups - 1 ? -1 : clamp)
+  }, [nbCoups])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); aller(Math.max(-1, (curseur === -1 ? nbCoups - 1 : curseur) - 1)) }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); aller(Math.min(nbCoups - 1, (curseur === -1 ? nbCoups - 1 : curseur) + 1)) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }) // re-attache à chaque render pour capturer curseur/historique courants
+
   if (chargement) {
-    return <div style={{ textAlign: 'center', padding: 60, color: ui.textDim, font: `500 14px ${fonts.body}` }}>Chargement de la partie…</div>
+    return (
+      <div style={{
+        display: 'flex', flexDirection: mobile ? 'column' : 'row',
+        gap: mobile ? 14 : 24, alignItems: mobile ? 'stretch' : 'flex-start',
+        justifyContent: 'center', padding: mobile ? '12px 10px 30px' : '18px 22px 24px',
+        minHeight: 0,
+      }}>
+        <style>{`@keyframes chessSkel { 0%,100% { opacity: .5 } 50% { opacity: .85 } }`}</style>
+        <div style={{ display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+          <div aria-hidden style={{
+            width: taille, height: taille, borderRadius: ui.radius.sm,
+            background: ui.surface, border: `1px solid ${ui.line}`,
+            animation: 'chessSkel 1.4s ease-in-out infinite',
+          }} />
+        </div>
+        <div style={{ width: mobile ? '100%' : 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[56, 56, 200, 44, 56].map((h, i) => (
+            <div key={i} aria-hidden style={{
+              height: h, borderRadius: ui.radius.sm,
+              background: ui.surface, border: `1px solid ${ui.line}`,
+              animation: 'chessSkel 1.4s ease-in-out infinite', animationDelay: `${i * 0.08}s`,
+            }} />
+          ))}
+        </div>
+      </div>
+    )
   }
   if (!row) {
     return (
@@ -337,9 +392,11 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
     )
   }
 
-  const { trait, captures, historique, enEchec } = partie
+  const { trait, captures, historique, enEchec, fen } = partie
   const monTrait = maCouleur === 'w' ? 'blanc' : 'noir'
   const enCours = row.statut === 'en_cours'
+  const enRevue = curseur >= 0 && curseur < historique.length - 1
+  const fenAffichee = enRevue ? fenAuCoup(historique, curseur) : fen
   const mesCaptures = maCouleur === 'w' ? captures.parBlanc : captures.parNoir
   const sesCaptures = maCouleur === 'w' ? captures.parNoir : captures.parBlanc
   const tempsMoi = maCouleur === 'w' ? tempsBlanc : tempsNoir
@@ -354,26 +411,38 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
       justifyContent: 'center', padding: mobile ? '12px 10px 30px' : '18px 22px 24px',
       minHeight: 0, position: 'relative',
     }}>
+      <style>{`button:focus-visible{outline:2px solid ${BRASS};outline-offset:2px}`}</style>
       {/* Board */}
       <div style={{ display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
         <div style={{ position: 'relative', width: taille, height: taille }}>
-          <Plateau
-            partie={partie}
-            orientation={orientation}
-            peutJouer={c => enCours && c === maCouleur}
-            onCoup={onCoup}
-            taille={taille}
-            interactif={enCours}
-            maCouleur={maCouleur}
-            theme={tema}
-            animationMs={reglages.animations ? reglages.vitesseAnim : 0}
-            afficherCoupsLegaux={reglages.surbrillanceLegale}
-            afficherDernierCoup
-            afficherEchec
-            premoveActif={reglages.premoves}
-            autoPromo={reglages.autoQueen}
-            coordonnees={reglages.coords ? 'exterieur' : 'masque'}
-          />
+          {enRevue ? (
+            <MiniBoard fen={fenAffichee} taille={taille} boardId={boardId} orientation={orientation} coords={reglages.coords} />
+          ) : (
+            <Plateau
+              partie={partie}
+              orientation={orientation}
+              peutJouer={c => enCours && c === maCouleur}
+              onCoup={onCoup}
+              taille={taille}
+              interactif={enCours}
+              maCouleur={maCouleur}
+              theme={tema}
+              animationMs={reglages.animations ? reglages.vitesseAnim : 0}
+              afficherCoupsLegaux={reglages.surbrillanceLegale}
+              afficherDernierCoup
+              afficherEchec
+              premoveActif={reglages.premoves}
+              autoPromo={reglages.autoQueen}
+              coordonnees={reglages.coords ? 'exterieur' : 'masque'}
+            />
+          )}
+          {enRevue && (
+            <div style={{
+              position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
+              padding: '4px 12px', borderRadius: ui.radius.pill, background: 'rgba(8,9,12,0.82)',
+              border: `1px solid ${BRASS}`, font: `700 11px ${fonts.body}`, color: BRASS, whiteSpace: 'nowrap',
+            }}>Revue · coup {curseur + 1}/{historique.length}</div>
+          )}
         </div>
       </div>
 
@@ -401,14 +470,37 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
           <div style={{ padding: '10px 12px', borderRadius: ui.radius.sm, background: ui.surface, border: `1px solid ${ui.lineHi}` }}>
             <div style={{ font: `700 13px ${fonts.body}`, color: ui.text, marginBottom: 8 }}>L'adversaire propose la nulle</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={accepterNulle} style={{ flex: 1, padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer', font: `700 12.5px ${fonts.body}`, background: 'rgba(127,184,106,0.14)', color: ui.good, border: '1px solid rgba(127,184,106,0.4)' }}>Accepter</button>
-              <button onClick={refuserNulle} style={{ flex: 1, padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer', font: `700 12.5px ${fonts.body}`, background: 'rgba(212,104,90,0.12)', color: '#e7b3aa', border: '1px solid rgba(212,104,90,0.4)' }}>Refuser</button>
+              <button onClick={accepterNulle} style={{ flex: 1, padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer', font: `700 12.5px ${fonts.body}`, background: 'rgba(127,184,106,0.14)', color: ui.good, border: '1px solid rgba(127,184,106,0.4)', transition: 'filter .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.12)' }}
+                onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>Accepter</button>
+              <button onClick={refuserNulle} style={{ flex: 1, padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer', font: `700 12.5px ${fonts.body}`, background: 'rgba(212,104,90,0.12)', color: '#e7b3aa', border: '1px solid rgba(212,104,90,0.4)', transition: 'filter .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.12)' }}
+                onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>Refuser</button>
             </div>
           </div>
         )}
 
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: ui.radius.sm,
+          background: ui.surface, border: `1px solid ${ui.line}`,
+        }}>
+          <span aria-hidden style={{
+            width: 11, height: 11, borderRadius: 3,
+            background: trait === 'w' ? '#ece3cc' : '#26282e', border: `1px solid ${ui.lineHi}`,
+          }} />
+          <span style={{ font: `600 12.5px ${fonts.body}`, color: enEchec && enCours ? ui.bad : ui.textDim }}>
+            {!enCours
+              ? 'Partie terminée'
+              : enEchec
+                ? (trait === maCouleur ? 'Échec — à vous de jouer' : 'Échec')
+                : trait === maCouleur
+                  ? 'À vous de jouer'
+                  : 'En attente de l\'adversaire…'}
+          </span>
+        </div>
+
         <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
-          <MoveList historique={historique} curseur={historique.length - 1} onAller={() => {}} />
+          <MoveList historique={historique} curseur={curseur === -1 ? historique.length - 1 : curseur} onAller={aller} />
         </div>
 
         {enCours && (
@@ -417,7 +509,10 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
               flex: 1, padding: '10px', borderRadius: ui.radius.sm, cursor: nulleEnvoyee ? 'default' : 'pointer',
               font: `600 12.5px ${fonts.body}`, color: nulleEnvoyee ? ui.textMute : ui.text,
               background: ui.surface, border: `1px solid ${ui.line}`, opacity: nulleEnvoyee ? 0.6 : 1,
-            }}>{nulleEnvoyee ? 'Nulle proposée' : 'Proposer nulle'}</button>
+              transition: 'background .15s, border-color .15s',
+            }}
+              onMouseEnter={e => { if (!nulleEnvoyee) { e.currentTarget.style.background = ui.surfaceHi; e.currentTarget.style.borderColor = ui.lineHi } }}
+              onMouseLeave={e => { e.currentTarget.style.background = ui.surface; e.currentTarget.style.borderColor = ui.line }}>{nulleEnvoyee ? 'Nulle proposée' : 'Proposer nulle'}</button>
             <button onClick={abandonner} style={{
               flex: 1, padding: '10px', borderRadius: ui.radius.sm, cursor: 'pointer',
               font: `600 12.5px ${fonts.body}`, color: '#e7b3aa',
@@ -437,15 +532,13 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
           capturees={mesCaptures} couleurCapturees={maCouleur === 'w' ? 'b' : 'w'}
         />
 
-        {enEchec && enCours && trait === maCouleur && (
-          <div style={{ textAlign: 'center', color: ui.bad, font: `800 13px ${fonts.body}`, letterSpacing: '0.08em' }}>ÉCHEC</div>
-        )}
-
         <button onClick={onQuitter} style={{
           padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',
           font: `600 12px ${fonts.body}`, color: ui.textMute, background: 'transparent',
-          border: `1px solid ${ui.line}`,
-        }}>
+          border: `1px solid ${ui.line}`, transition: 'color .15s, border-color .15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = ui.textDim; e.currentTarget.style.borderColor = ui.lineHi }}
+          onMouseLeave={e => { e.currentTarget.style.color = ui.textMute; e.currentTarget.style.borderColor = ui.line }}>
           ← Quitter {enCours ? '(la partie continue)' : ''}
         </button>
       </div>
@@ -455,7 +548,9 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
           resultat={row.resultat} cause={row.cause} maCouleur={maCouleur}
           deltaElo={deltaElo}
           eloFinal={eloFinal}
+          revancheEnvoyee={revancheEnvoyee}
           onRejouer={demanderRevanche}
+          onRevoir={historique.length ? () => { setFinVisible(false); setCurseur(0) } : undefined}
           onRetour={onQuitter}
           onFermer={() => setFinVisible(false)}
         />
@@ -471,7 +566,10 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
           <button onClick={demanderRevanche} style={{
             padding: '8px 16px', borderRadius: ui.radius.sm, cursor: 'pointer',
             font: `800 13px ${fonts.body}`, color: '#15110a', background: BRASS, border: 'none',
-          }}>
+            transition: 'filter .15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
             Accepter
           </button>
         </div>

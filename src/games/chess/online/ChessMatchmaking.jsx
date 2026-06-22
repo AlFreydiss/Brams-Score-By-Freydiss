@@ -83,7 +83,7 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
   if (enRecherche) {
     return (
       <div style={{ maxWidth: 460, margin: '0 auto', textAlign: 'center', padding: '8px 4px 40px' }}>
-        <style>{`@keyframes chessRadar { from { transform: rotate(0) } to { transform: rotate(360deg) } }`}</style>
+        <style>{`@keyframes chessRadar { from { transform: rotate(0) } to { transform: rotate(360deg) } } button:focus-visible{outline:2px solid ${BRASS};outline-offset:2px}`}</style>
         <div style={{
           width: 110, height: 110, margin: '30px auto 22px', borderRadius: '50%', position: 'relative',
           border: `1px solid ${ui.lineHi}`,
@@ -113,7 +113,10 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
           marginTop: 26, padding: '12px 28px', borderRadius: ui.radius.md, cursor: 'pointer',
           font: `700 14px ${fonts.body}`,
           background: 'rgba(212,104,90,0.12)', color: '#e7b3aa', border: '1px solid rgba(212,104,90,0.4)',
-        }}>
+          transition: 'filter .15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.12)' }}
+          onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
           Annuler la recherche
         </button>
       </div>
@@ -122,6 +125,7 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
 
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '8px 4px 40px' }}>
+      <style>{`button:focus-visible{outline:2px solid ${BRASS};outline-offset:2px}`}</style>
       <h2 style={{ margin: '4px 0 6px', font: `800 24px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>
         Partie classée
       </h2>
@@ -146,7 +150,9 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
                     background: actif ? 'rgba(176,148,103,0.14)' : ui.surface,
                     border: `1px solid ${actif ? 'rgba(176,148,103,0.5)' : ui.line}`,
                     transition: 'background .15s, color .15s, border-color .15s',
-                  }}>{c.id}</button>
+                  }}
+                    onMouseEnter={e => { if (!actif) { e.currentTarget.style.background = ui.surfaceHi; e.currentTarget.style.borderColor = ui.lineHi } }}
+                    onMouseLeave={e => { if (!actif) { e.currentTarget.style.background = ui.surface; e.currentTarget.style.borderColor = ui.line } }}>{c.id}</button>
                 )
               })}
             </div>
@@ -172,8 +178,10 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
       <button onClick={onQuitter} style={{
         width: '100%', marginTop: 10, padding: '10px', borderRadius: ui.radius.sm, cursor: 'pointer',
         font: `600 13px ${fonts.body}`, color: ui.textMute,
-        background: 'transparent', border: `1px solid ${ui.line}`,
-      }}>
+        background: 'transparent', border: `1px solid ${ui.line}`, transition: 'color .15s, border-color .15s',
+      }}
+        onMouseEnter={e => { e.currentTarget.style.color = ui.textDim; e.currentTarget.style.borderColor = ui.lineHi }}
+        onMouseLeave={e => { e.currentTarget.style.color = ui.textMute; e.currentTarget.style.borderColor = ui.line }}>
         ← Retour
       </button>
     </div>

@@ -16,6 +16,12 @@ export default function GameUniverse({ title, accent, bg, tabs, active, onSelect
   const location = useLocation()
   // Morph depuis la carte du hub (origin px viewport, posé dans location.state). Sinon entrée standard.
   const { style: morphStyle, ...morph } = universeMorph(location.state?.gameOrigin)
+  // L'onglet « Jouer » (plateau + moteur) reste MONTÉ en permanence (toggle CSS display) :
+  // visiter Règles puis revenir ne doit pas réinitialiser la partie. Les autres onglets
+  // (sans état) gardent l'animation de swap classique.
+  const jouer = tabs.find((t) => t.id === 'jouer')
+  const showJouer = current.id === 'jouer'
+
   return (
     <motion.div {...morph}
       style={{
@@ -24,12 +30,26 @@ export default function GameUniverse({ title, accent, bg, tabs, active, onSelect
         ...morphStyle,
       }}>
       <UniverseHeader title={title} accent={accent} tabs={tabs} active={current.id} onSelect={onSelect} elo={elo} />
-      <main role="tabpanel" style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+      <main style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        {jouer && (
+          <div
+            role="tabpanel" id="panel-jouer" aria-labelledby="tab-jouer" tabIndex={0}
+            hidden={!showJouer}
+            style={{
+              position: 'absolute', inset: 0, overflow: 'auto',
+              display: showJouer ? 'block' : 'none',
+            }}>
+            {jouer.element}
+          </div>
+        )}
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={current.id} {...tabSwap}
-            style={{ position: 'absolute', inset: 0, overflow: 'auto' }}>
-            {current.element}
-          </motion.div>
+          {!showJouer && (
+            <motion.div key={current.id} {...tabSwap}
+              role="tabpanel" id={`panel-${current.id}`} aria-labelledby={`tab-${current.id}`} tabIndex={0}
+              style={{ position: 'absolute', inset: 0, overflow: 'auto' }}>
+              {current.element}
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
     </motion.div>

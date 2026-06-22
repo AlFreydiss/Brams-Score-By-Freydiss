@@ -1,7 +1,7 @@
 // ── RankingTab (Échecs) : classement ELO neutre ─────────────────────────────
 // Source : getLeaderboard() (REST direct → table echecs_profils, order elo.desc).
 // Colonnes : Rang · Joueur (avatar+pseudo) · ELO · Parties · %V · tendance ▲▼.
-// Joueur courant surligné. Filtre Tous / Saison (heuristique : récents). Zéro
+// Joueur courant surligné. Filtre Tous / Actifs (≥1 partie jouée). Zéro
 // wanted-poster — tableau sobre, tabular-nums, accent laiton discret.
 import { useState, useEffect } from 'react'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
@@ -42,7 +42,7 @@ export default function RankingTab() {
   const { userId } = useAuth()
   const [profils, setProfils] = useState(null)
   const [erreur, setErreur] = useState(false)
-  const [filtre, setFiltre] = useState('tous')   // 'tous' | 'saison'
+  const [filtre, setFiltre] = useState('tous')   // 'tous' | 'actifs' (≥1 partie jouée)
 
   useEffect(() => {
     let actif = true
@@ -54,7 +54,7 @@ export default function RankingTab() {
     return () => { actif = false }
   }, [])
 
-  const liste = (profils || []).filter(p => filtre === 'tous' ? true : (p.parties ?? 0) > 0)
+  const liste = (profils || []).filter(p => filtre === 'tous' ? true : (p.parties ?? 0) > 0)   // 'actifs' = a joué au moins une partie
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', padding: '22px 18px 40px' }}>
@@ -62,7 +62,7 @@ export default function RankingTab() {
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
           <h2 style={{ margin: 0, font: `800 24px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>Classement</h2>
           <div style={{ display: 'flex', gap: 6 }}>
-            {[{ id: 'tous', l: 'Tous' }, { id: 'saison', l: 'Saison' }].map(f => (
+            {[{ id: 'tous', l: 'Tous' }, { id: 'actifs', l: 'Actifs' }].map(f => (
               <button key={f.id} onClick={() => setFiltre(f.id)} style={{
                 padding: '6px 13px', borderRadius: ui.radius.pill, cursor: 'pointer',
                 font: `600 12.5px ${fonts.body}`,

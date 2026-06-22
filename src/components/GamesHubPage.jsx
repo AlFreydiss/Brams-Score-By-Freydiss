@@ -41,13 +41,17 @@ const CSS = `
   .gh-emoji{transition:transform .3s cubic-bezier(.2,.7,.3,1)}
   .gh-card:hover .gh-emoji{transform:scale(1.12) rotate(-6deg)}
   @keyframes gh-fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  /* La carte vedette n'occupe 2 colonnes que quand ≥3 colonnes tiennent (sinon elle déborde en 1 colonne mobile). */
+  @media (min-width:900px){.gh-featured{grid-column:span 2}}
   @media (prefers-reduced-motion:reduce){.gh-card,.gh-card:hover,.gh-emoji,.gh-play{transition:none;transform:none;animation:none}}
 `
 
 function GameCard({ g, i }) {
+  // span 2 réservé aux écrans où ≥3 colonnes tiennent (sinon la carte vedette
+  // déborde en 1 colonne sur mobile). Géré par .gh-featured + media query, pas en inline.
   const cardStyle = {
     position: 'relative', display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none',
-    gridColumn: g.featured ? 'span 2' : 'span 1',
+    gridColumn: 'span 1',
     padding: g.featured ? '26px 26px 24px' : '22px 22px 20px', borderRadius: 18,
     background: `linear-gradient(165deg, ${g.accent}14, rgba(255,255,255,0.012) 55%)`,
     border: `1px solid ${g.accent}33`,
@@ -55,14 +59,15 @@ function GameCard({ g, i }) {
     animation: `gh-fade .5s ease ${0.05 * i}s both`,
     minHeight: g.featured ? 200 : 168,
   }
+  const cls = g.featured ? 'gh-card gh-featured' : 'gh-card'
   const inner = (
     <>
       <span style={{ position: 'absolute', top: 16, right: 16, fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color: g.accent, background: `${g.accent}1a`, border: `1px solid ${g.accent}44`, padding: '4px 10px', borderRadius: 999 }}>{g.tag}</span>
-      <span className="gh-emoji" style={{ fontSize: g.featured ? 52 : 40, lineHeight: 1, filter: `drop-shadow(0 6px 18px ${g.accent}55)` }}>{g.emoji}</span>
+      <span aria-hidden="true" className="gh-emoji" style={{ fontSize: g.featured ? 52 : 40, lineHeight: 1, filter: `drop-shadow(0 6px 18px ${g.accent}55)` }}>{g.emoji}</span>
       <div style={{ fontSize: g.featured ? 26 : 21, fontWeight: 900, color: '#fff', letterSpacing: '-.01em' }}>{g.title}</div>
       <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: 'rgba(236,232,223,0.62)', flex: 1, maxWidth: g.featured ? 520 : 'none' }}>{g.desc}</p>
       <span className="gh-play" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 800, color: g.accent }}>
-        Jouer <span style={{ fontSize: 16 }}>→</span>
+        Jouer <span aria-hidden="true" style={{ fontSize: 16 }}>→</span>
       </span>
     </>
   )
@@ -75,7 +80,7 @@ function GameCard({ g, i }) {
     return (
       <button
         type="button"
-        className="gh-card"
+        className={cls}
         style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', font: 'inherit', width: '100%', appearance: 'none' }}
         onClick={() => teleport(islandId, () => navigate(`/nouveau-monde/${islandId}`))}
       >
@@ -93,7 +98,7 @@ function GameCard({ g, i }) {
     return (
       <button
         type="button"
-        className="gh-card"
+        className={cls}
         style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', font: 'inherit', width: '100%', appearance: 'none' }}
         onClick={ouvrir}
       >
@@ -104,8 +109,8 @@ function GameCard({ g, i }) {
   // Jeu externe (Fred'isu = page statique autonome) → vraie navigation top-level,
   // pas d'iframe SPA (audio/pointer/fullscreen marchent mal embarqués).
   return g.external
-    ? <a href={g.to} className="gh-card" style={cardStyle}>{inner}</a>
-    : <Link to={g.to} className="gh-card" style={cardStyle}>{inner}</Link>
+    ? <a href={g.to} className={cls} style={cardStyle}>{inner}</a>
+    : <Link to={g.to} className={cls} style={cardStyle}>{inner}</Link>
 }
 
 export default function GamesHubPage() {
@@ -121,12 +126,12 @@ export default function GamesHubPage() {
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
         {/* Hero */}
         <header style={{ textAlign: 'center', margin: '0 0 28px' }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.24em', textTransform: 'uppercase', color: GOLD, marginBottom: 12 }}>🏴‍☠️ Brams Arcade</div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.24em', textTransform: 'uppercase', color: GOLD, marginBottom: 12 }}><span aria-hidden="true">🏴‍☠️</span> Brams Arcade</div>
           <h1 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(38px,6vw,68px)', fontWeight: 400, lineHeight: 1.02, color: '#f4ecd8', textShadow: '0 2px 40px rgba(212,160,23,0.2)' }}>
             Les Jeux de la Communauté
           </h1>
           <p style={{ margin: '14px auto 0', maxWidth: 600, fontSize: 15, lineHeight: 1.6, color: 'rgba(236,232,223,0.6)' }}>
-            Tous les jeux développés par <strong style={{ color: GOLD_HI }}>Freydiss</strong> pour la Brams Community. Joue, grimpe au classement, deviens une légende. 🏆
+            Tous les jeux développés par <strong style={{ color: GOLD_HI }}>Freydiss</strong> pour la Brams Community. Joue, grimpe au classement, deviens une légende. <span aria-hidden="true">🏆</span>
           </p>
           <div style={{ display: 'inline-flex', gap: 18, marginTop: 22, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Stat n={GAMES.length} label="jeux" />
@@ -141,7 +146,7 @@ export default function GamesHubPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 40, fontSize: 12.5, color: 'rgba(236,232,223,0.34)' }}>
-          Conçus et codés par Al Freydiss · Brams Community 🏴‍☠️
+          Conçus et codés par Al Freydiss · Brams Community <span aria-hidden="true">🏴‍☠️</span>
         </p>
       </div>
     </div>

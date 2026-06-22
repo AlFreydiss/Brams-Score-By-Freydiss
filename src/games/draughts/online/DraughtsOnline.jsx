@@ -44,6 +44,58 @@ function Dot({ side, size = 14 }) {
   return <span aria-hidden style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: `radial-gradient(circle at 36% 30%, ${pc.haut}, ${pc.base})`, boxShadow: `0 0 0 1px ${ui.lineHi}, inset 0 -2px 3px rgba(0,0,0,.4)` }} />
 }
 
+// Nombre tabulaire (alignement des chiffres) — miroir de RankingTab.
+const num = { fontVariantNumeric: 'tabular-nums' }
+
+// Pulsation discrète "en attente de l'adversaire" (idiome PlayTab.ThinkDot).
+function ThinkDot({ accent }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current; if (!el) return
+    const a = el.animate([{ opacity: 0.3 }, { opacity: 1 }, { opacity: 0.3 }], { duration: 900, iterations: Infinity })
+    return () => { try { a.cancel() } catch { /* */ } }
+  }, [])
+  return <span ref={ref} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: accent, flexShrink: 0 }} />
+}
+
+// Skeleton de chargement (forme reprise de RankingTab.Skeleton) — loading ≠ vide.
+function Skeleton({ rows = 5 }) {
+  return (
+    <div style={{ padding: 4 }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 6px' }}>
+          <div style={{ width: 18, height: 12, borderRadius: 4, background: ui.surfaceHi }} />
+          <div style={{ width: 26, height: 26, borderRadius: '50%', background: ui.surfaceHi }} />
+          <div style={{ flex: 1, height: 11, borderRadius: 4, background: ui.surfaceHi, opacity: 0.7 }} />
+          <div style={{ width: 42, height: 11, borderRadius: 4, background: ui.surfaceHi }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Étiquette de palier : texte coloré, SANS emoji (miroir du traitement RankingTab).
+function TierLabel({ tier, size = 12.5 }) {
+  if (!tier) return null
+  return <span style={{ color: tier.color, fontWeight: 800, fontSize: size }}>{tier.label}</span>
+}
+
+// Focus-visible (inline ne gère pas les pseudo-classes) : contour acier net sur tous
+// les contrôles interactifs du flux online. Injecté une fois, scopé via .dames-online.
+function FocusStyle() {
+  return <style>{`.dames-online :is(button,a,[role="tab"],[role="switch"]):focus-visible{outline:2px solid #6f8fb0;outline-offset:2px;border-radius:8px}`}</style>
+}
+
+// Alerte tokenisée inline réutilisable (in-match + menu) — couleurs depuis ui.bad.
+function Alert({ children, onRetry, accent = ui.accent, style }) {
+  return (
+    <div role="alert" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, background: `${ui.bad}1a`, border: `1px solid ${ui.bad}80`, color: ui.bad, padding: '8px 14px', borderRadius: ui.radius.md, fontSize: 13, fontWeight: 600, ...style }}>
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{children}</span>
+      {onRetry && <Btn accent={accent} onClick={onRetry}>Réessayer</Btn>}
+    </div>
+  )
+}
+
 // Détermine mon camp depuis la ligne match (RPC) ou un fallback par discordId.
 function colorFromMatch(m, discordId) {
   if (!m) return P
@@ -63,11 +115,12 @@ export default function DraughtsOnline({ accent = ui.accent }) {
   const [rating, setRating] = useState(null)
   const [oppRating, setOppRating] = useState(null)
   const [opponent, setOpponent] = useState(null)
-  const [lb, setLb] = useState([])
+  const [lb, setLb] = useState(null)            // null = chargement (≠ vide)
   const [waited, setWaited] = useState(0)
   const [err, setErr] = useState(null)
   const [confirmResign, setConfirmResign] = useState(false)
   const [result, setResult] = useState(null)           // { winner, myDelta }
+  const [elapsed, setElapsed] = useState(0)            // durée du match (s)
 
   // Miroir React pour le rendu du plateau.
   const [view, setView] = useState({ board: null, turn: P, selected: null, legalMoves: [], movableKeys: new Set(), last: null, status: 'active' })
@@ -94,7 +147,7 @@ export default function DraughtsOnline({ accent = ui.accent }) {
     syncView()
   }, [syncView])
 
-  const loadLb = useCallback(() => { leaderboard(30).then(rows => { if (aliveRef.current) setLb(rows) }).catch(() => {}) }, [])
+  const loadLb = useCallback(() => { leaderboard(30).then(rows => { if (aliveRef.current) setLb(Array.isArray(rows) ? rows : []) }).catch(() => { if (aliveRef.current) setLb([]) }) }, [])
 
   useEffect(() => {
     aliveRef.current = true
@@ -108,6 +161,15 @@ export default function DraughtsOnline({ accent = ui.accent }) {
     if (phase !== 'searching') { setWaited(0); return }
     const t = setInterval(() => setWaited(w => w + 1), 1000)
     return () => clearInterval(t)
+  }, [phase])
+
+  // Horloge informative du match : court pendant 'playing', gèle à la fin.
+  useEffect(() => {
+    if (phase === 'playing') {
+      const t = setInterval(() => setElapsed(e => e + 1), 1000)
+      return () => clearInterval(t)
+    }
+    if (phase === 'menu' || phase === 'searching') setElapsed(0)
   }, [phase])
 
   const finish = useCallback((m) => {
@@ -250,10 +312,14 @@ export default function DraughtsOnline({ accent = ui.accent }) {
     if (isAuthenticated) ensureRating().then(r => { if (aliveRef.current) setRating(r) }).catch(() => {})
   }, [isAuthenticated])
 
+  // Fin de partie → relance directe une recherche (nettoie l'ancien match d'abord).
+  const requeue = useCallback(() => { leaveToMenu(); search() }, [leaveToMenu, search])
+
   // ── AUTH GATE ───────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div style={{ minHeight: '100%', padding: 'clamp(20px,4vw,48px)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+      <div className="dames-online" style={{ minHeight: '100%', padding: 'clamp(20px,4vw,48px)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <FocusStyle />
         <div style={{ width: '100%', maxWidth: 460, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: 30, textAlign: 'center', boxShadow: ui.shadow }}>
           <div aria-hidden style={{ width: 38, height: 4, borderRadius: 2, background: accent, margin: '0 auto 18px' }} />
           <h2 style={{ margin: 0, fontFamily: fonts.display, fontWeight: 800, fontSize: 22, color: ui.text }}>Connexion requise</h2>
@@ -269,15 +335,21 @@ export default function DraughtsOnline({ accent = ui.accent }) {
   // ── MENU / RECHERCHE ──────────────────────────────────────────────────────────
   if (phase === 'menu' || phase === 'searching') {
     const tier = rating ? eloToTier(rating.rating) : null
+    const lbFailed = err && phase === 'menu' && lb && lb.length === 0
     return (
-      <div style={{ minHeight: '100%', padding: 'clamp(16px,2.6vw,34px)', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="dames-online" style={{ minHeight: '100%', padding: 'clamp(16px,2.6vw,34px)', display: 'flex', justifyContent: 'center' }}>
+        <FocusStyle />
+        {/* Desktop : carte classée + classement côte à côte. Mobile : empilé. */}
+        <div style={{ width: '100%', maxWidth: 980, display: 'flex', flexWrap: 'wrap', gap: 'clamp(14px,2vw,22px)', alignItems: 'flex-start' }}>
 
-          <div style={{ background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: 26, textAlign: 'center', boxShadow: ui.shadow }}>
+          {/* ── carte partie classée ── */}
+          <div style={{ flex: '1 1 360px', minWidth: 300, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: 26, textAlign: 'center', boxShadow: ui.shadow }}>
             <div style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 20, color: ui.text, marginBottom: 6 }}>Partie classée</div>
-            {tier
-              ? <div style={{ fontSize: 13, color: ui.textDim, marginBottom: 18 }}><span style={{ color: tier.color, fontWeight: 800 }}>{tier.emoji} {tier.label}</span> · <strong style={{ color: accent }}>{formatPrime(tier.prime)}</strong> · {rating.rating} ELO · {rating.wins ?? 0}V {rating.losses ?? 0}D {rating.draws ?? 0}N</div>
-              : <div style={{ fontSize: 13, color: ui.textDim, marginBottom: 18 }}>Ton ELO : <strong style={{ color: accent }}>—</strong></div>}
+            {rating === null
+              ? <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}><div style={{ width: 220, height: 14, borderRadius: 4, background: ui.surfaceHi, opacity: 0.7 }} /></div>
+              : tier
+                ? <div style={{ fontSize: 13, color: ui.textDim, marginBottom: 18 }}><TierLabel tier={tier} size={13} /> · <strong style={{ color: accent }}>{formatPrime(tier.prime)}</strong> · <span style={num}>{rating.rating}</span> ELO · <span style={num}>{rating.wins ?? 0}V {rating.losses ?? 0}D {rating.draws ?? 0}N</span></div>
+                : <div style={{ fontSize: 13, color: ui.textDim, marginBottom: 18 }}>Ton ELO : <strong style={{ color: accent }}>—</strong></div>}
 
             {phase === 'menu' && (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
@@ -285,40 +357,44 @@ export default function DraughtsOnline({ accent = ui.accent }) {
               </div>
             )}
 
-            {err && <div role="alert" style={{ color: ui.bad, fontSize: 13, marginBottom: 14 }}>{err}</div>}
+            {err && <Alert accent={accent} style={{ marginBottom: 14 }} onRetry={phase === 'menu' ? search : undefined}>{err}</Alert>}
 
             {phase === 'searching'
               ? (
                 <div>
-                  <div style={{ fontFamily: fonts.body, fontSize: 15, color: ui.text, marginBottom: 14 }}>Recherche d'un adversaire… ({waited}s)</div>
+                  <div style={{ fontFamily: fonts.body, fontSize: 15, color: ui.text, marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                    <ThinkDot accent={accent} />Recherche d'un adversaire… <span style={num}>({waited}s)</span>
+                  </div>
                   <Btn accent={accent} onClick={cancel}>Annuler la recherche</Btn>
                 </div>
               )
               : <Btn variant="primary" accent={accent} full onClick={search}>Trouver une partie</Btn>}
           </div>
 
-          {/* Classement ELO */}
-          <div style={{ background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, overflow: 'hidden' }}>
+          {/* ── Classement ELO (miroir RankingTab : tabular-nums, palier texte, top-3 accent) ── */}
+          <div style={{ flex: '1 1 360px', minWidth: 300, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: `1px solid ${ui.line}`, fontSize: 10.5, letterSpacing: 1.4, textTransform: 'uppercase', color: ui.textDim, fontWeight: 700 }}>Classement ELO</div>
             <div style={{ padding: 8 }}>
-              {lb.length === 0
-                ? <div style={{ color: ui.textMute, fontSize: 13, textAlign: 'center', padding: 14 }}>Aucune partie classée — sois le premier !</div>
-                : lb.map((r, i) => {
-                  const t = eloToTier(r.rating)
-                  return (
-                    <div key={r.discord_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px', borderRadius: 8, background: i < 3 ? `${accent}10` : 'transparent' }}>
-                      <span style={{ width: 20, textAlign: 'center', fontWeight: 900, color: i === 0 ? accent : ui.textMute }}>{i + 1}</span>
-                      <span style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', background: ui.surfaceHi, display: 'grid', placeItems: 'center', fontSize: 11, color: ui.text, flexShrink: 0 }}>
-                        {r.avatar ? <img loading="lazy" decoding="async" src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (r.username || '?').slice(0, 2).toUpperCase()}
-                      </span>
-                      <span style={{ flex: 1, color: ui.text, fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.username}</span>
-                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.15 }}>
-                        <span style={{ color: t.color, fontWeight: 800, fontSize: 12.5 }}>{t.emoji} {formatPrime(t.prime)}</span>
-                        <span style={{ color: ui.textMute, fontSize: 10 }}>{r.rating} ELO</span>
-                      </span>
-                    </div>
-                  )
-                })}
+              {lb === null
+                ? <Skeleton rows={6} />
+                : lb.length === 0
+                  ? <div style={{ color: ui.textMute, fontSize: 13, textAlign: 'center', padding: 22 }}>{lbFailed ? 'Classement indisponible — réessayez plus tard.' : 'Aucune partie classée — sois le premier !'}</div>
+                  : lb.map((r, i) => {
+                    const t = eloToTier(r.rating)
+                    return (
+                      <div key={r.discord_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', borderRadius: 8, background: i < 3 ? `${accent}10` : 'transparent' }}>
+                        <span style={{ width: 20, textAlign: 'center', fontFamily: fonts.mono, fontWeight: 700, fontSize: 13.5, color: i < 3 ? accent : ui.textMute, ...num }}>{i + 1}</span>
+                        <span style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', background: ui.surfaceHi, display: 'grid', placeItems: 'center', fontSize: 11, color: ui.text, flexShrink: 0 }}>
+                          {r.avatar ? <img loading="lazy" decoding="async" src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (r.username || '?').slice(0, 2).toUpperCase()}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: ui.text, fontWeight: 600, fontSize: 13.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.username || 'Joueur'}</div>
+                          <div style={{ fontSize: 11, color: ui.textMute }}><TierLabel tier={t} size={11} /></div>
+                        </div>
+                        <span style={{ fontFamily: fonts.mono, fontWeight: 700, fontSize: 13, color: ui.text, ...num }}>{r.rating} <span style={{ fontSize: 10, color: ui.textMute, fontWeight: 600 }}>ELO</span></span>
+                      </div>
+                    )
+                  })}
             </div>
           </div>
         </div>
@@ -340,13 +416,17 @@ export default function DraughtsOnline({ accent = ui.accent }) {
   const finished = phase === 'finished' && !!result
   const won = result && result.winner === myColor
   const myTier = rating ? eloToTier(rating.rating) : null
+  const waitingOpp = view.status === 'active' && !myTurn
+  const mm = String((elapsed / 60) | 0).padStart(2, '0')
+  const ss = String(elapsed % 60).padStart(2, '0')
 
   const turnText = view.status !== 'active'
     ? 'Partie terminée'
     : myTurn ? 'À vous de jouer' : "Tour de l'adversaire…"
 
   return (
-    <div style={{ minHeight: '100%', padding: 'clamp(14px,2.4vw,30px)', display: 'flex', justifyContent: 'center' }}>
+    <div className="dames-online" style={{ minHeight: '100%', padding: 'clamp(14px,2.4vw,30px)', display: 'flex', justifyContent: 'center' }}>
+      <FocusStyle />
       <div style={{ width: '100%', maxWidth: 1180, display: 'flex', flexWrap: 'wrap', gap: 'clamp(16px,2vw,26px)', alignItems: 'flex-start' }}>
 
         {/* ── colonne plateau ── */}
@@ -368,11 +448,11 @@ export default function DraughtsOnline({ accent = ui.accent }) {
               onSquareClick={handleSquare}
             />
             {err && (
-              <div role="alert" style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: ui.surfaceHi, border: `1px solid ${ui.bad}80`, color: '#f3c9c0', padding: '7px 16px', borderRadius: ui.radius.pill, fontSize: 13, fontWeight: 700, zIndex: 10 }}>{err}</div>
+              <div role="alert" style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: `${ui.bad}1a`, border: `1px solid ${ui.bad}80`, color: ui.bad, padding: '7px 16px', borderRadius: ui.radius.pill, fontSize: 13, fontWeight: 700, zIndex: 10 }}>{err}</div>
             )}
             {finished && (
               <EndOverlay result={result} won={won} accent={accent} moves={g.ply} captures={lostMine + lostOpp} tier={myTier}
-                onRematch={leaveToMenu} onMenu={leaveToMenu} />
+                onRematch={requeue} onMenu={leaveToMenu} />
             )}
           </div>
         </div>
@@ -380,31 +460,36 @@ export default function DraughtsOnline({ accent = ui.accent }) {
         {/* ── panneau latéral ── */}
         <aside style={{ flex: '1 1 280px', minWidth: 260, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* indicateur de trait */}
+          {/* indicateur de trait + horloge */}
           <div style={{ background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <Dot side={view.turn} size={26} />
+            {waitingOpp && <ThinkDot accent={accent} />}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 16, color: myTurn ? ui.good : ui.text }}>{turnText}</div>
-              <div style={{ fontFamily: fonts.body, fontSize: 11.5, color: ui.textMute, letterSpacing: '.3px', marginTop: 1 }}>Coups : {g.ply}</div>
+              <div style={{ fontFamily: fonts.body, fontSize: 11.5, color: ui.textMute, letterSpacing: '.3px', marginTop: 1 }}>Coups : <span style={{ fontFamily: fonts.mono, ...num }}>{g.ply}</span></div>
             </div>
+            <span title="Durée de la partie" style={{ fontFamily: fonts.mono, fontWeight: 600, fontSize: 14, color: ui.textDim, paddingLeft: 12, borderLeft: `1px solid ${ui.line}`, ...num }}>{mm}:{ss}</span>
           </div>
 
-          {/* ratings joueurs */}
+          {/* ratings joueurs + pions perdus (miroir PlayTab) */}
           <div style={{ display: 'flex', gap: 12 }}>
             {[
               { side: myColor, label: 'Toi', alive: cntMine, lost: lostMine, rt: rating?.rating },
               { side: oppColor, label: opponent?.username || 'Adversaire', alive: cntOpp, lost: lostOpp, rt: oppRating },
             ].map((p) => (
-              <div key={p.side} style={{ flex: 1, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '11px 13px' }}>
+              <div key={p.side} style={{ flex: 1, minWidth: 0, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '11px 13px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Dot side={p.side} size={18} />
                   <span style={{ fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase', color: ui.textMute, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.label}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 7 }}>
-                  <span style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 24, lineHeight: 1, color: ui.text, fontVariantNumeric: 'tabular-nums' }}>{p.alive}</span>
+                  <span style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 24, lineHeight: 1, color: ui.text, ...num }}>{p.alive}</span>
                   <span style={{ fontFamily: fonts.body, fontSize: 11.5, color: ui.textMute }}>en jeu</span>
                 </div>
-                <div style={{ marginTop: 6, fontFamily: fonts.mono, fontSize: 11.5, color: ui.textDim }}>{p.rt != null ? `${p.rt} ELO` : '—'}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 9, minHeight: 9 }}>
+                  {Array.from({ length: p.lost }).map((_, i) => <span key={i} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: `radial-gradient(circle at 36% 30%, ${SIDE_PC[p.side].haut}, ${SIDE_PC[p.side].base})`, opacity: 0.85 }} />)}
+                </div>
+                <div style={{ marginTop: 8, fontFamily: fonts.mono, fontSize: 11.5, color: ui.textDim, ...num }}>{p.rt != null ? `${p.rt} ELO` : '—'}</div>
               </div>
             ))}
           </div>
@@ -412,7 +497,7 @@ export default function DraughtsOnline({ accent = ui.accent }) {
           {/* contrôles */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
             {finished
-              ? <Btn variant="primary" accent={accent} full onClick={leaveToMenu}>Nouvelle recherche</Btn>
+              ? <Btn variant="primary" accent={accent} full onClick={requeue}>Nouvelle recherche</Btn>
               : <Btn accent={accent} full danger disabled={view.status !== 'active'} onClick={() => setConfirmResign(true)}>Abandonner</Btn>}
             <Btn accent={accent} full onClick={leaveToMenu}>← Menu</Btn>
           </div>
@@ -454,8 +539,8 @@ function EndOverlay({ result, won, accent, moves, captures, tier, onRematch, onM
 
         {typeof delta === 'number' && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 16px', borderRadius: ui.radius.pill, background: ui.surface, border: `1px solid ${ui.line}`, marginBottom: 16 }}>
-            <span style={{ fontFamily: fonts.mono, fontWeight: 800, fontSize: 16, color: delta >= 0 ? ui.good : ui.bad }}>{delta >= 0 ? '+' : ''}{delta} ELO</span>
-            {tier && <span style={{ fontSize: 12, color: tier.color, fontWeight: 700 }}>{tier.emoji} {formatPrime(tier.prime)}</span>}
+            <span style={{ fontFamily: fonts.mono, fontWeight: 800, fontSize: 16, color: delta >= 0 ? ui.good : ui.bad, fontVariantNumeric: 'tabular-nums' }}>{delta >= 0 ? '+' : ''}{delta} ELO</span>
+            {tier && <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><TierLabel tier={tier} size={12} /><span style={{ fontSize: 12, color: ui.textMute, fontWeight: 600 }}>{formatPrime(tier.prime)}</span></span>}
           </div>
         )}
 
