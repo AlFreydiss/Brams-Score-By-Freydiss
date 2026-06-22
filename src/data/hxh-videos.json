@@ -1958,5 +1958,2189 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 71,
+    "title": "Épisode 71",
+    "episodeLabel": "E071",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E071-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E071",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E071.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E071-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 72,
+    "title": "Épisode 72",
+    "episodeLabel": "E072",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E072-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E072",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E072.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E072-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 73,
+    "title": "Épisode 73",
+    "episodeLabel": "E073",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E073-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E073",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E073.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E073-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 74,
+    "title": "Épisode 74",
+    "episodeLabel": "E074",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E074-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E074",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E074.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E074-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 75,
+    "title": "Épisode 75",
+    "episodeLabel": "E075",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E075-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E075",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E075.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E075-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 76,
+    "title": "Épisode 76",
+    "episodeLabel": "E076",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E076-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E076",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E076.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E076-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 77,
+    "title": "Épisode 77",
+    "episodeLabel": "E077",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E077-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E077",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E077.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E077-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 78,
+    "title": "Épisode 78",
+    "episodeLabel": "E078",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E078-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E078",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E078.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E078-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 79,
+    "title": "Épisode 79",
+    "episodeLabel": "E079",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E079-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E079",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E079.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E079-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 80,
+    "title": "Épisode 80",
+    "episodeLabel": "E080",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E080-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E080",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E080.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E080-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 81,
+    "title": "Épisode 81",
+    "episodeLabel": "E081",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E081-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E081",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E081.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E081-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 82,
+    "title": "Épisode 82",
+    "episodeLabel": "E082",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E082-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E082",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E082.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E082-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 83,
+    "title": "Épisode 83",
+    "episodeLabel": "E083",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E083-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E083",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E083.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E083-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 84,
+    "title": "Épisode 84",
+    "episodeLabel": "E084",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E084-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E084",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E084.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E084-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 85,
+    "title": "Épisode 85",
+    "episodeLabel": "E085",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E085-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E085",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E085.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E085-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 86,
+    "title": "Épisode 86",
+    "episodeLabel": "E086",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E086-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E086",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E086.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E086-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 87,
+    "title": "Épisode 87",
+    "episodeLabel": "E087",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E087-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E087",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E087.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E087-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 88,
+    "title": "Épisode 88",
+    "episodeLabel": "E088",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E088-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E088",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E088.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E088-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 89,
+    "title": "Épisode 89",
+    "episodeLabel": "E089",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E089-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E089",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E089.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E089-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 90,
+    "title": "Épisode 90",
+    "episodeLabel": "E090",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E090-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E090",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E090.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E090-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 91,
+    "title": "Épisode 91",
+    "episodeLabel": "E091",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E091-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E091",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E091.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E091-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 92,
+    "title": "Épisode 92",
+    "episodeLabel": "E092",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E092-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E092",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E092.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E092-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 93,
+    "title": "Épisode 93",
+    "episodeLabel": "E093",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E093-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E093",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E093.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E093-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 94,
+    "title": "Épisode 94",
+    "episodeLabel": "E094",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E094-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E094",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E094.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E094-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 95,
+    "title": "Épisode 95",
+    "episodeLabel": "E095",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E095-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E095",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E095.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E095-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 96,
+    "title": "Épisode 96",
+    "episodeLabel": "E096",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E096-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E096",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E096.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E096-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 97,
+    "title": "Épisode 97",
+    "episodeLabel": "E097",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E097-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E097",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E097.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E097-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 98,
+    "title": "Épisode 98",
+    "episodeLabel": "E098",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E098-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E098",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E098.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E098-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 99,
+    "title": "Épisode 99",
+    "episodeLabel": "E099",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E099-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E099",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E099.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E099-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 100,
+    "title": "Épisode 100",
+    "episodeLabel": "E100",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E100-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E100",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E100.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E100-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 101,
+    "title": "Épisode 101",
+    "episodeLabel": "E101",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E101-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E101",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E101.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E101-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 102,
+    "title": "Épisode 102",
+    "episodeLabel": "E102",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E102-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E102",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E102.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E102-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 103,
+    "title": "Épisode 103",
+    "episodeLabel": "E103",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E103-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E103",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E103.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E103-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 104,
+    "title": "Épisode 104",
+    "episodeLabel": "E104",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E104-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E104",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E104.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E104-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 105,
+    "title": "Épisode 105",
+    "episodeLabel": "E105",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E105-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E105",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E105.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E105-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 106,
+    "title": "Épisode 106",
+    "episodeLabel": "E106",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E106-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E106",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E106.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E106-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 107,
+    "title": "Épisode 107",
+    "episodeLabel": "E107",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E107-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E107",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E107.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E107-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 108,
+    "title": "Épisode 108",
+    "episodeLabel": "E108",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E108-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E108",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E108.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E108-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 109,
+    "title": "Épisode 109",
+    "episodeLabel": "E109",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E109-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E109",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E109.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E109-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 110,
+    "title": "Épisode 110",
+    "episodeLabel": "E110",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E110-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E110",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E110.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E110-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 111,
+    "title": "Épisode 111",
+    "episodeLabel": "E111",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E111-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E111",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E111.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E111-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 112,
+    "title": "Épisode 112",
+    "episodeLabel": "E112",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E112-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E112",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E112.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E112-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 113,
+    "title": "Épisode 113",
+    "episodeLabel": "E113",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E113-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E113",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E113.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E113-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 114,
+    "title": "Épisode 114",
+    "episodeLabel": "E114",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E114-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E114",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E114.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E114-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 115,
+    "title": "Épisode 115",
+    "episodeLabel": "E115",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E115-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E115",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E115.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E115-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 116,
+    "title": "Épisode 116",
+    "episodeLabel": "E116",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E116-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E116",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E116.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E116-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 117,
+    "title": "Épisode 117",
+    "episodeLabel": "E117",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E117-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E117",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E117.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E117-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 118,
+    "title": "Épisode 118",
+    "episodeLabel": "E118",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E118-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E118",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E118.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E118-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 119,
+    "title": "Épisode 119",
+    "episodeLabel": "E119",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E119-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E119",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E119.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E119-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 120,
+    "title": "Épisode 120",
+    "episodeLabel": "E120",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E120-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E120",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E120.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E120-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 121,
+    "title": "Épisode 121",
+    "episodeLabel": "E121",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E121-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E121",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E121.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E121-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 122,
+    "title": "Épisode 122",
+    "episodeLabel": "E122",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E122-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E122",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E122.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E122-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 123,
+    "title": "Épisode 123",
+    "episodeLabel": "E123",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E123-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E123",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E123.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E123-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 124,
+    "title": "Épisode 124",
+    "episodeLabel": "E124",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E124-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E124",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E124.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E124-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 125,
+    "title": "Épisode 125",
+    "episodeLabel": "E125",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E125-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E125",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E125.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E125-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 126,
+    "title": "Épisode 126",
+    "episodeLabel": "E126",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E126-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E126",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E126.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E126-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 127,
+    "title": "Épisode 127",
+    "episodeLabel": "E127",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E127-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E127",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E127.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E127-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 128,
+    "title": "Épisode 128",
+    "episodeLabel": "E128",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E128-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E128",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E128.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E128-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 129,
+    "title": "Épisode 129",
+    "episodeLabel": "E129",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E129-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E129",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E129.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E129-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 130,
+    "title": "Épisode 130",
+    "episodeLabel": "E130",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E130-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E130",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E130.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E130-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 131,
+    "title": "Épisode 131",
+    "episodeLabel": "E131",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E131-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E131",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E131.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E131-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 132,
+    "title": "Épisode 132",
+    "episodeLabel": "E132",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E132-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E132",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E132.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E132-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 133,
+    "title": "Épisode 133",
+    "episodeLabel": "E133",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E133-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E133",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E133.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E133-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 134,
+    "title": "Épisode 134",
+    "episodeLabel": "E134",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E134-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E134",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E134.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E134-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 135,
+    "title": "Épisode 135",
+    "episodeLabel": "E135",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E135-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E135",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E135.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E135-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 136,
+    "title": "Épisode 136",
+    "episodeLabel": "E136",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E136-vostfr.mp4",
+    "season": "S06",
+    "arc": "Arc des Fourmis-Chimères",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E136",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E136.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E136-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 137,
+    "title": "Épisode 137",
+    "episodeLabel": "E137",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E137-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E137",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E137.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E137-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 138,
+    "title": "Épisode 138",
+    "episodeLabel": "E138",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E138-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E138",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E138.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E138-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 139,
+    "title": "Épisode 139",
+    "episodeLabel": "E139",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E139-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E139",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E139.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E139-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 140,
+    "title": "Épisode 140",
+    "episodeLabel": "E140",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E140-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E140",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E140.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E140-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 141,
+    "title": "Épisode 141",
+    "episodeLabel": "E141",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E141-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E141",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E141.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E141-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 142,
+    "title": "Épisode 142",
+    "episodeLabel": "E142",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E142-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E142",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E142.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E142-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 143,
+    "title": "Épisode 143",
+    "episodeLabel": "E143",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E143-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E143",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E143.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E143-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 144,
+    "title": "Épisode 144",
+    "episodeLabel": "E144",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E144-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E144",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E144.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E144-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 145,
+    "title": "Épisode 145",
+    "episodeLabel": "E145",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E145-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E145",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E145.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E145-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 146,
+    "title": "Épisode 146",
+    "episodeLabel": "E146",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E146-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E146",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E146.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E146-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 147,
+    "title": "Épisode 147",
+    "episodeLabel": "E147",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E147-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E147",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E147.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E147-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 148,
+    "title": "Épisode 148",
+    "episodeLabel": "E148",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E148-vostfr.mp4",
+    "season": "S07",
+    "arc": "Arc de l’Élection du Président",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E148",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E148.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E148-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
