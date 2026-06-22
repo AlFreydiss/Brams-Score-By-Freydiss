@@ -14,7 +14,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { OPENING_BACKGROUNDS } from '../src/data/opening-backgrounds.js'
 import { openingBgPriceCents } from '../src/lib/openingBgPricing.js'
-import { generateMoves as damesLegal, applyMove as damesApply, gameStatus as damesStatus, opp as damesOpp, P as DAMES_P, M as DAMES_M } from '../src/features/dames/engine/draughts-engine.js'
+import { generateMoves as damesLegal, applyMove as damesApply, gameStatus as damesStatus, opp as damesOpp, rulesFromVariante as damesRules, P as DAMES_P, M as DAMES_M } from '../src/features/dames/engine/draughts-engine.js'
 
 const SUPABASE_URL = 'https://zeqetrmulqndxugfbojd.supabase.co'
 
@@ -1456,12 +1456,16 @@ async function damesMove(req, res) {
     const myColor = m.player_pirate === discordId ? DAMES_P : m.player_marine === discordId ? DAMES_M : null
     if (!myColor) return res.status(403).json({ error: 'Pas ta partie' })
     if (m.current_turn !== myColor) return res.status(409).json({ error: 'Pas ton tour' })
-    const legal = damesLegal(m.board_state, myColor)
+    // Règles de la partie : dérivées de la variante stockée dans le match.
+    // Défensif : si la colonne `variante` n'existe pas encore (migration non
+    // appliquée), m.variante === undefined → 10×10 international (legacy).
+    const rules = damesRules(m.variante)
+    const legal = damesLegal(m.board_state, myColor, rules)
     const srv = legal.find(L => L.from[0] === move.from[0] && L.from[1] === move.from[1] && L.to[0] === move.to[0] && L.to[1] === move.to[1] && (L.caps?.length || 0) === (move.caps?.length || 0))
     if (!srv) return res.status(422).json({ error: 'Coup illégal (rejeté par le serveur)' })
-    const { board: nb, promoted } = damesApply(m.board_state, srv)
+    const { board: nb, promoted } = damesApply(m.board_state, srv, rules)
     const next = damesOpp(myColor)
-    const over = damesStatus(nb, next).over
+    const over = damesStatus(nb, next, undefined, rules).over
     const ply = (m.ply || 0) + 1
     const patch = { board_state: nb, current_turn: over ? m.current_turn : next, ply, last_move_at: new Date().toISOString() }
     let winner = null, eloChange = null

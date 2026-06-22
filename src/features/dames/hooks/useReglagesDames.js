@@ -13,6 +13,7 @@
 import { useMemo } from 'react'
 import { useGameShell } from '../../nouveau-monde/game/GameShell'
 import { DEFAULTS } from '../../nouveau-monde/game/schemas'
+import { VARIANTES } from '../engine/draughts-engine.js'
 
 const DEF = DEFAULTS.dames
 
@@ -29,10 +30,8 @@ export function diffDepuisCurseur(n) {
 export const RAFLE_MULT = { rapide: 0.55, normal: 1, lent: 1.6 }
 
 // variante → taille du damier + nombre de rangées peuplées.
-export const VARIANTES = {
-  '10x10': { size: 10, filledRows: 4, men: 20 },
-  '8x8':   { size: 8,  filledRows: 3, men: 12 },
-}
+// Source unique : le moteur (réutilisable côté serveur sans React).
+export { VARIANTES }
 
 function lsBool(cle, def) {
   try { const v = localStorage.getItem(cle); return v == null ? def : v === '1' } catch { return def }

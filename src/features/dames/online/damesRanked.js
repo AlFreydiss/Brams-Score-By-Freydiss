@@ -7,7 +7,21 @@ import { supabase } from '../../../lib/supabase.js'
 const rpc = (fn, args = {}) => sbRpc(fn, args, { tag: 'dames-rank' })
 
 export async function ensureRating() { const r = await rpc('dames_rank_ensure'); return r?.ok ? r.rating : null }
-export async function matchmake(board) { return await rpc('dames_rank_matchmake', { p_board: board }) || { ok: false } }
+// variante : '10x10' (défaut) | '8x8'. On la passe au RPC pour n'apparier que des
+// joueurs de la même variante. Défensif : si la colonne `variante` n'existe pas
+// encore en base (migration non appliquée), le RPC ignore l'argument et tout
+// reste en 10×10 — voir le fallback dans matchmake() ci-dessous.
+export async function matchmake(board, variante = '10x10') {
+  const r = await rpc('dames_rank_matchmake', { p_board: board, p_variante: variante })
+  // Ancienne signature en base (sans p_variante) → PostgREST renvoie une erreur
+  // de résolution de fonction (PGRST202 / "Could not find the function ... in the
+  // schema cache" → http_404). On retombe alors sur le matchmaking 10×10
+  // historique pour ne rien casser tant que la migration n'est pas appliquée.
+  if (r && r.ok === false && /http_404|PGRST202|Could not find the function|does not exist/i.test(String(r.error || ''))) {
+    return await rpc('dames_rank_matchmake', { p_board: board }) || { ok: false }
+  }
+  return r || { ok: false }
+}
 export async function cancelQueue() { return await rpc('dames_rank_cancel') }
 export async function getMatch(matchId = null) { const r = await rpc('dames_rank_match', { p_match_id: matchId }); return r?.ok ? r.match : null }
 export async function leaderboard(limit = 30) { const r = await rpc('dames_rank_leaderboard', { p_limit: limit }); return r?.ok ? (r.rows || []) : [] }

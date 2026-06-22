@@ -36,6 +36,27 @@ function R(rules) {
   }
 }
 
+// Catalogue des variantes jouables (taille + nombre de rangées peuplées). Pur JS,
+// sans dépendance React → réutilisable côté serveur (Vercel) ET dans le hook UI.
+export const VARIANTES = {
+  '10x10': { size: 10, filledRows: 4, men: 20 },
+  '8x8':   { size: 8,  filledRows: 3, men: 12 },
+}
+
+// variante (texte) → objet `rules` complet. Une variante inconnue / absente →
+// 10×10 international (défaut byte-identique à l'historique). Les règles
+// optionnelles (prise obligatoire/maximale, dame volante) restent celles par
+// défaut sauf override explicite via `extra`.
+export function rulesFromVariante(variante, extra) {
+  const v = VARIANTES[variante] || VARIANTES['10x10']
+  return {
+    size: v.size,
+    priseObligatoire: extra?.priseObligatoire ?? DEFAULT_RULES.priseObligatoire,
+    priseMaximale:    extra?.priseMaximale ?? DEFAULT_RULES.priseMaximale,
+    dameVolante:      extra?.dameVolante ?? DEFAULT_RULES.dameVolante,
+  }
+}
+
 const inBounds = (r, c, size) => r >= 0 && r < size && c >= 0 && c < size
 const keyFor = (r, c, size) => r * size + c
 

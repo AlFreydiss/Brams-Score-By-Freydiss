@@ -5,7 +5,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { initBoard, generateMoves, applyMove, opp, countPieces, P, M } from './engine/draughts-engine.js'
+import { initBoard, generateMoves, applyMove, opp, countPieces, rulesFromVariante, VARIANTES, P, M } from './engine/draughts-engine.js'
+import { useReglagesDames } from './hooks/useReglagesDames.js'
 import { ensureRating, matchmake, cancelQueue, getMatch, submitMove, resign, subscribeMatch, leaderboard } from './online/damesRanked.js'
 import { eloToTier, formatPrime } from '../../lib/dames/damesRank.js'
 import DamesFxOverlay from './DamesFxOverlay.jsx'
@@ -19,6 +20,10 @@ const ghost = { padding: '9px 18px', borderRadius: 999, cursor: 'pointer', backg
 export default function DamesOnline3D() {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  // Variante choisie par le joueur dans le drawer (défaut 10×10). Sert à la file
+  // d'attente : on n'apparie que des joueurs de la même variante. Une fois en
+  // match, ce sont les règles DE LA PARTIE (stockées serveur) qui priment.
+  const { variante: myVariante = '10x10' } = useReglagesDames()
   const [phase, setPhase] = useState('lobby')          // lobby | searching | playing | finished
   const [confirmResign, setConfirmResign] = useState(false)  // abandon à 2 temps (anti fat-finger)
   const [waited, setWaited] = useState(0)              // secondes d'attente en matchmaking
@@ -35,7 +40,9 @@ export default function DamesOnline3D() {
   const containerRef = useRef(null)
   const rdrRef = useRef(null)
   const fxRef = useRef(null)          // couche d'effets premium 2D (combo / promotion / victoire)
-  const G = useRef({ matchId: null, myColor: P, board: null, turn: P, ply: 0, legalMoves: [], movableKeys: new Set(), selected: null, locked: false, status: 'active' })
+  // rules = règles de la PARTIE en cours (dérivées de la variante stockée dans le
+  // match côté serveur). Défaut 10×10 tant qu'aucune partie n'est chargée.
+  const G = useRef({ matchId: null, myColor: P, board: null, turn: P, ply: 0, legalMoves: [], movableKeys: new Set(), selected: null, locked: false, status: 'active', variante: '10x10', rules: rulesFromVariante('10x10') })
   const unsubRef = useRef(null), pollRef = useRef(0), aliveRef = useRef(true)
 
   const loadLb = useCallback(() => { leaderboard(30).then(setLb).catch(() => {}) }, [])
@@ -55,13 +62,14 @@ export default function DamesOnline3D() {
 
   const refreshLocal = useCallback(() => {
     const g = G.current
-    g.legalMoves = (g.status === 'active' && g.turn === g.myColor) ? generateMoves(g.board, g.myColor) : []
+    g.legalMoves = (g.status === 'active' && g.turn === g.myColor) ? generateMoves(g.board, g.myColor, g.rules) : []
     g.movableKeys = new Set(g.legalMoves.map(m => m.from[0] + '_' + m.from[1]))
     g.selected = null; drawMarkers(); setBoard(g.board.map(r => r.slice())); setTurn(g.turn)
   }, [drawMarkers])
 
   const resync = useCallback(async () => {
     const g = G.current; const m = await getMatch(g.matchId); if (!m || !aliveRef.current) return
+    g.variante = m.variante || '10x10'; g.rules = rulesFromVariante(g.variante)
     g.board = m.board_state; g.turn = m.current_turn; g.ply = m.ply || 0; g.status = m.status; g.locked = false
     rdrRef.current?.setBoard(g.board); refreshLocal()
     if (m.status === 'finished') finish(m)
@@ -83,7 +91,7 @@ export default function DamesOnline3D() {
     if (!row || g.status !== 'active') return
     if (row.player === g.myColor) { if (row.ply > g.ply) g.ply = row.ply; return }  // mon propre coup (echo)
     if (row.ply <= g.ply) return
-    const before = g.board; const { promoted } = applyMove(before, row.move)
+    const before = g.board; const { promoted } = applyMove(before, row.move, g.rules)
     g.last = row.move; g.locked = true
     rdrRef.current?.playMove(row.move, before, { promoted, ai: true }).then(() => {
       g.board = row.board_after; g.turn = g.myColor; g.ply = row.ply; g.locked = false; refreshLocal()
@@ -93,7 +101,7 @@ export default function DamesOnline3D() {
   // Mon coup : valide localement (UX) → anime optimiste → envoie au serveur (autoritaire).
   const playMyMove = useCallback(async (mv) => {
     const g = G.current; g.locked = true; g.selected = null
-    const before = g.board; const { board: nb, promoted } = applyMove(before, mv)
+    const before = g.board; const { board: nb, promoted } = applyMove(before, mv, g.rules)
     g.last = mv
     await rdrRef.current?.playMove(mv, before, { promoted })
     g.board = nb; g.turn = opp(g.myColor); g.ply += 1; refreshLocal()
@@ -134,7 +142,8 @@ export default function DamesOnline3D() {
       const m = await getMatch(G.current.matchId)
       if (!alive || !m) return
       setOpponent(m.opponent || null)
-      const g = G.current; g.board = m.board_state; g.turn = m.current_turn; g.ply = m.ply || 0; g.status = m.status
+      const g = G.current; g.variante = m.variante || '10x10'; g.rules = rulesFromVariante(g.variante)
+      g.board = m.board_state; g.turn = m.current_turn; g.ply = m.ply || 0; g.status = m.status
       renderer.setBoard(g.board); refreshLocal()
       if (m.status === 'finished') finish(m)
       unsubRef.current = subscribeMatch(G.current.matchId, { onMove: onRemoteMove, onMatch: (row) => { if (row.status === 'finished') getMatch(G.current.matchId).then(mm => mm && finish(mm)) } })
@@ -152,15 +161,17 @@ export default function DamesOnline3D() {
   const search = useCallback(async () => {
     if (!isAuthenticated) { setErr('Connecte-toi pour jouer en ligne.'); return }
     setErr(null); setPhase('searching')
-    const r = await matchmake(initBoard())
+    // Plateau initial DE LA VARIANTE choisie + variante envoyée à la file.
+    const startBoard = () => initBoard(rulesFromVariante(myVariante))
+    const r = await matchmake(startBoard(), myVariante)
     if (r?.matched) { enterMatch(r.match_id, r.color); return }
     if (r?.ok === false) { setErr(r.error || 'Matchmaking indisponible'); setPhase('lobby'); return }
     clearInterval(pollRef.current)
     pollRef.current = setInterval(async () => {
-      const rr = await matchmake(initBoard())
+      const rr = await matchmake(startBoard(), myVariante)
       if (rr?.matched) { clearInterval(pollRef.current); enterMatch(rr.match_id, rr.color) }
     }, 2500)
-  }, [isAuthenticated, enterMatch])
+  }, [isAuthenticated, enterMatch, myVariante])
   const cancel = useCallback(async () => { clearInterval(pollRef.current); await cancelQueue().catch(() => {}); setPhase('lobby') }, [])
   useEffect(() => () => { clearInterval(pollRef.current); cancelQueue().catch(() => {}) }, [])
 
@@ -207,7 +218,8 @@ export default function DamesOnline3D() {
   }
 
   // playing | finished
-  const pir = board ? countPieces(board, P) : 20, mar = board ? countPieces(board, M) : 20
+  const startMen = (VARIANTES[G.current.variante] || VARIANTES['10x10']).men
+  const pir = board ? countPieces(board, P) : startMen, mar = board ? countPieces(board, M) : startMen
   const myTurn = G.current.status === 'active' && turn === G.current.myColor
   const won = result && result.winner === G.current.myColor
   return (
@@ -251,7 +263,7 @@ export default function DamesOnline3D() {
               myColor={G.current.myColor}
               reason={result.winner === 'draw' ? 'Trêve — aucun camp n\'a forcé la décision.'
                 : won ? 'Prime encaissée sur les eaux classées.' : 'Ta tête a une nouvelle valeur.'}
-              stats={[['Prises', Math.max(0, 40 - pir - mar)], ['Pièces', won ? Math.max(pir, mar) : Math.min(pir, mar)]]}
+              stats={[['Prises', Math.max(0, startMen * 2 - pir - mar)], ['Pièces', won ? Math.max(pir, mar) : Math.min(pir, mar)]]}
               prime={after ? { text: formatPrime(after.prime), label: after.label, emoji: after.emoji, color: after.color } : null}
               eloDelta={typeof result.myDelta === 'number' ? result.myDelta : null}
               promoted={promoted}
