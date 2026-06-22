@@ -3,36 +3,68 @@
 // 100% DOM-free, ESM pur → réutilisable tel quel dans une Edge Function Deno
 // pour valider les coups côté serveur (anti-triche). Rafle MAXIMALE + dames
 // volantes. Porté verbatim du prototype testé (11 tests + partie aléatoire OK).
+//
+// VARIANTES : un objet `rules` optionnel paramètre la partie. Quand il est omis
+// le comportement est STRICTEMENT identique à l'historique (10×10, rafle
+// maximale imposée, dames volantes). Voir DEFAULT_RULES.
 // ─────────────────────────────────────────────────────────────────────────────
 export const SIZE = 10
 export const P = 'P'   // Pirates (jouent vers le haut, r décroissant)
 export const M = 'M'   // Marine  (jouent vers le bas, r croissant)
 const DIAG = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
 export const isDark = (r, c) => (r + c) % 2 === 1
-const inB = (r, c) => r >= 0 && r < SIZE && c >= 0 && c < SIZE
 export const opp = (s) => (s === P ? M : P)
 const fwd = (s) => (s === P ? -1 : 1)
-const KEY = (r, c) => r * SIZE + c
 
-export function initBoard() {
-  const b = Array.from({ length: SIZE }, () => Array(SIZE).fill(null))
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+// Règles par défaut = dames internationales historiques.
+export const DEFAULT_RULES = Object.freeze({
+  size: 10,
+  priseObligatoire: true,
+  priseMaximale: true,
+  dameVolante: true,
+})
+
+// Normalise un objet `rules` partiel/absent vers un set complet. `undefined`
+// → DEFAULT_RULES (comportement legacy byte-identique).
+function R(rules) {
+  if (!rules) return DEFAULT_RULES
+  return {
+    size: rules.size ?? DEFAULT_RULES.size,
+    priseObligatoire: rules.priseObligatoire ?? DEFAULT_RULES.priseObligatoire,
+    priseMaximale: rules.priseMaximale ?? DEFAULT_RULES.priseMaximale,
+    dameVolante: rules.dameVolante ?? DEFAULT_RULES.dameVolante,
+  }
+}
+
+const inBounds = (r, c, size) => r >= 0 && r < size && c >= 0 && c < size
+const keyFor = (r, c, size) => r * size + c
+
+export function initBoard(rules) {
+  const { size } = R(rules)
+  const b = Array.from({ length: size }, () => Array(size).fill(null))
+  // Nombre de rangées remplies par camp : 4 en 10×10, 3 en 8×8.
+  const rows = size === 8 ? 3 : 4
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
     if (!isDark(r, c)) continue
-    if (r <= 3) b[r][c] = { side: M, king: false }
-    else if (r >= 6) b[r][c] = { side: P, king: false }
+    if (r <= rows - 1) b[r][c] = { side: M, king: false }
+    else if (r >= size - rows) b[r][c] = { side: P, king: false }
   }
   return b
 }
 export const cloneBoard = (b) => b.map(row => row.map(c => (c ? { ...c } : null)))
 
 // Toutes les séquences de capture possibles depuis (r,c) (récursif, multi-saut).
-export function pieceCaptures(board, r, c) {
+export function pieceCaptures(board, r, c, rules) {
+  const { size, dameVolante } = R(rules)
+  const inB = (rr, cc) => inBounds(rr, cc, size)
+  const KEY = (rr, cc) => keyFor(rr, cc, size)
   const orig = board[r][c]; if (!orig) return []
   board[r][c] = null
   const seqs = []; const captured = new Set()
   function rec(cr, cc, path, caps) {
     let ext = false
-    if (!orig.king) {
+    if (!orig.king || !dameVolante) {
+      // Pion OU dame courte : capture à 1 case dans les 4 diagonales (dame = 2 sens).
       for (const [dr, dc] of DIAG) {
         const er = cr + dr, ec = cc + dc, lr = cr + 2 * dr, lc = cc + 2 * dc
         if (!inB(er, ec) || !inB(lr, lc)) continue
@@ -72,21 +104,29 @@ export function pieceCaptures(board, r, c) {
   rec(r, c, [], []); board[r][c] = orig; return seqs
 }
 
-// Coups légaux pour `side`. Rafle MAXIMALE imposée (on ne garde que les captures
-// les plus longues s'il en existe).
-export function generateMoves(board, side) {
+// Coups légaux pour `side`. Selon `rules` :
+//  - priseObligatoire : si une capture existe, seules les captures sont légales (défaut true).
+//  - priseMaximale    : on ne garde que les rafles les plus longues (défaut true).
+export function generateMoves(board, side, rules) {
+  const { size, priseObligatoire, priseMaximale, dameVolante } = R(rules)
+  const inB = (rr, cc) => inBounds(rr, cc, size)
   let caps = []
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
     const p = board[r][c]
-    if (p && p.side === side) for (const s of pieceCaptures(board, r, c))
+    if (p && p.side === side) for (const s of pieceCaptures(board, r, c, rules))
       caps.push({ from: [r, c], path: s.path, caps: s.caps, count: s.caps.length })
   }
-  if (caps.length) {
-    const max = Math.max(...caps.map(m => m.count))
-    return caps.filter(m => m.count === max).map(m => ({ ...m, isCapture: true, to: m.path[m.path.length - 1] }))
-  }
+  const captureMoves = caps.length
+    ? (priseMaximale
+        ? (() => { const max = Math.max(...caps.map(m => m.count)); return caps.filter(m => m.count === max) })()
+        : caps
+      ).map(m => ({ ...m, isCapture: true, to: m.path[m.path.length - 1] }))
+    : []
+  // Prise obligatoire : dès qu'une capture existe, on ne renvoie que les captures.
+  if (captureMoves.length && priseObligatoire) return captureMoves
+
   const moves = []
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
     const p = board[r][c]; if (!p || p.side !== side) continue
     if (!p.king) {
       for (const dc of [-1, 1]) {
@@ -94,7 +134,7 @@ export function generateMoves(board, side) {
         if (inB(nr, nc) && isDark(nr, nc) && !board[nr][nc])
           moves.push({ from: [r, c], to: [nr, nc], path: [[nr, nc]], caps: [], isCapture: false })
       }
-    } else {
+    } else if (dameVolante) {
       for (const [dr, dc] of DIAG) {
         let k = 1
         while (true) {
@@ -103,16 +143,25 @@ export function generateMoves(board, side) {
           moves.push({ from: [r, c], to: [nr, nc], path: [[nr, nc]], caps: [], isCapture: false }); k++
         }
       }
+    } else {
+      // Dame courte : un pas dans chacune des 4 diagonales.
+      for (const [dr, dc] of DIAG) {
+        const nr = r + dr, nc = c + dc
+        if (inB(nr, nc) && !board[nr][nc])
+          moves.push({ from: [r, c], to: [nr, nc], path: [[nr, nc]], caps: [], isCapture: false })
+      }
     }
   }
-  return moves
+  // priseObligatoire=false : les captures coexistent avec les coups tranquilles.
+  return captureMoves.length ? [...captureMoves, ...moves] : moves
 }
 
-export function applyMove(board, mv) {
+export function applyMove(board, mv, rules) {
+  const { size } = R(rules)
   const b = cloneBoard(board); const [fr, fc] = mv.from; const piece = b[fr][fc]
   b[fr][fc] = null; for (const [cr, cc] of mv.caps) b[cr][cc] = null
   const [tr, tc] = mv.to; let promoted = false
-  if (!piece.king && ((piece.side === P && tr === 0) || (piece.side === M && tr === SIZE - 1))) { piece.king = true; promoted = true }
+  if (!piece.king && ((piece.side === P && tr === 0) || (piece.side === M && tr === size - 1))) { piece.king = true; promoted = true }
   b[tr][tc] = piece; return { board: b, promoted }
 }
 export function countPieces(board, side) { let n = 0; for (const row of board) for (const c of row) if (c && c.side === side) n++; return n }
@@ -153,8 +202,8 @@ export function isMaterialDraw(board) {
 // Statut enrichi. `ctx` (optionnel) = { halfmoveClock, repetitions } où `repetitions`
 // est une Map positionKey -> nombre d'occurrences DÉJÀ vues (>=3 = triple répétition).
 // Rétro-compatible : sans ctx, comportement identique à l'ancien gameStatus.
-export function gameStatus(board, side, ctx) {
-  if (generateMoves(board, side).length === 0) return { over: true, winner: opp(side), draw: false }
+export function gameStatus(board, side, ctx, rules) {
+  if (generateMoves(board, side, rules).length === 0) return { over: true, winner: opp(side), draw: false }
   if (isMaterialDraw(board)) return { over: true, winner: null, draw: true, reason: 'Matériel insuffisant — une dame contre une dame.' }
   if (ctx) {
     if ((ctx.halfmoveClock | 0) >= DRAW_PLIES)
@@ -176,71 +225,75 @@ export function movesEqual(a, b) {
 
 // ── IA : minimax + alpha-beta + garde-temps (porté verbatim) ──────────────────
 let searchDeadline = 0
-export function evaluate(board) {
+export function evaluate(board, rules) {
+  const { size } = R(rules)
+  const center = (size - 1) / 2   // 4.5 en 10×10, 3.5 en 8×8
   let s = 0
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
     const p = board[r][c]; if (!p) continue
     let v = p.king ? 340 : 100
     if (!p.king) {
-      const adv = p.side === P ? (9 - r) : r; v += adv * 5
-      if (c === 0 || c === 9) v += 4
+      const adv = p.side === P ? (size - 1 - r) : r; v += adv * 5
+      if (c === 0 || c === size - 1) v += 4
       // défense de la dernière rangée : tant qu'un pion y reste, l'adversaire ne peut pas promouvoir ici
-      if ((p.side === P && r === 9) || (p.side === M && r === 0)) v += 8
+      if ((p.side === P && r === size - 1) || (p.side === M && r === 0)) v += 8
       // contrôle du centre (colonnes centrales = plus de mobilité)
-      v += (4 - Math.abs(c - 4.5)) * 1.5
+      v += (center - 0.5 - Math.abs(c - center)) * 1.5
     } else {
-      const cd = Math.abs(c - 4.5) + Math.abs(r - 4.5); v += (10 - cd) * 2
+      const cd = Math.abs(c - center) + Math.abs(r - center); v += (size - cd) * 2
     }
     s += p.side === P ? v : -v
   }
   return s
 }
 // score du point de vue du camp `side` (negamax)
-const evalSide = (board, side) => (side === P ? 1 : -1) * evaluate(board)
+const evalSide = (board, side, rules) => (side === P ? 1 : -1) * evaluate(board, rules)
 const sameMove = (a, b) => a && b && a.from[0] === b.from[0] && a.from[1] === b.from[1] && a.to[0] === b.to[0] && a.to[1] === b.to[1]
 // Hash compact du plateau (clé de la table de transposition, pour le move ordering).
 function hashBoard(board) {
   let s = ''
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) { const p = board[r][c]; s += p ? (p.side === P ? (p.king ? 'A' : 'a') : (p.king ? 'B' : 'b')) : '.' }
+  for (const row of board) for (const p of row) { s += p ? (p.side === P ? (p.king ? 'A' : 'a') : (p.king ? 'B' : 'b')) : '.' }
   return s
 }
 // Score statique d'un coup (PAS de clone de plateau) : ordering rapide → on cherche
 // plus profond dans le même budget. Capture > avance/promotion > centre.
-function moveScore(board, side, m) {
+function moveScore(board, side, m, size) {
+  const center = (size - 1) / 2
   let s = 0
   if (m.isCapture) s += 1000 + m.caps.length * 60
   const [fr, fc] = m.from, [tr, tc] = m.to, piece = board[fr][fc]
   if (piece && !piece.king) {
     s += (side === P ? (fr - tr) : (tr - fr)) * 4                 // progression vers la promotion
-    if ((side === P && tr === 0) || (side === M && tr === SIZE - 1)) s += 220
-    s += 4 - Math.abs(tc - 4.5)                                   // biais centre
+    if ((side === P && tr === 0) || (side === M && tr === size - 1)) s += 220
+    s += center - 0.5 - Math.abs(tc - center)                    // biais centre
   }
   return s
 }
 // Tri : ttMove (meilleur de l'itération précédente) en tête, puis killer moves
 // (coups qui ont provoqué une coupure à cette profondeur), puis heuristique statique.
-function orderMoves(board, side, moves, ttMove, depth) {
+function orderMoves(board, side, moves, ttMove, depth, size) {
   const killers = _killers[depth] || []
   return moves
-    .map(m => { let s = moveScore(board, side, m); if (ttMove && sameMove(m, ttMove)) s += 1e6; else if (sameMove(m, killers[0])) s += 9000; else if (sameMove(m, killers[1])) s += 8000; return { m, s } })
+    .map(m => { let s = moveScore(board, side, m, size); if (ttMove && sameMove(m, ttMove)) s += 1e6; else if (sameMove(m, killers[0])) s += 9000; else if (sameMove(m, killers[1])) s += 8000; return { m, s } })
     .sort((a, b) => b.s - a.s).map(x => x.m)
 }
 let _tt, _killers
 // Negamax + alpha-bêta + table de transposition (ordering) + killer moves + quiescence sur les rafles.
-function negamax(board, side, depth, alpha, beta) {
-  if (Date.now() > searchDeadline) return evalSide(board, side)
-  const moves = generateMoves(board, side)
+function negamax(board, side, depth, alpha, beta, rules) {
+  const { size } = rules
+  if (Date.now() > searchDeadline) return evalSide(board, side, rules)
+  const moves = generateMoves(board, side, rules)
   if (moves.length === 0) return -(100000 + depth)            // camp au trait sans coup = perd
   // Quiescence : à profondeur épuisée on s'arrête, SAUF si des rafles sont forcées
   // (sinon effet d'horizon : on couperait au milieu d'une prise).
-  if (depth <= 0 && !moves[0].isCapture) return evalSide(board, side)
+  if (depth <= 0 && !moves[0].isCapture) return evalSide(board, side, rules)
   const key = hashBoard(board) + side
   const ttMove = _tt.get(key)
-  const ordered = orderMoves(board, side, moves, ttMove, depth)
+  const ordered = orderMoves(board, side, moves, ttMove, depth, size)
   let best = -Infinity, bestMove = null
   for (const m of ordered) {
     const nd = m.isCapture ? Math.max(depth - 1, 0) : depth - 1   // les rafles prolongent (quiescence)
-    const v = -negamax(applyMove(board, m).board, opp(side), nd, -beta, -alpha)
+    const v = -negamax(applyMove(board, m, rules).board, opp(side), nd, -beta, -alpha, rules)
     if (v > best) { best = v; bestMove = m }
     if (v > alpha) alpha = v
     if (alpha >= beta) {                                          // coupure : mémorise un killer (coup quiet)
@@ -253,18 +306,20 @@ function negamax(board, side, depth, alpha, beta) {
 }
 // Iterative deepening avec budget temps : on garde le meilleur coup de la dernière
 // profondeur complétée. Le meilleur coup courant amorce l'ordering de la profondeur suivante.
-export function chooseAIMove(board, side, maxDepth, budgetMs) {
-  const moves = generateMoves(board, side); if (!moves.length) return null
+export function chooseAIMove(board, side, maxDepth, budgetMs, rules) {
+  const rr = R(rules)
+  const { size } = rr
+  const moves = generateMoves(board, side, rr); if (!moves.length) return null
   if (moves.length === 1) return moves[0]
   searchDeadline = Date.now() + (budgetMs || 900); _tt = new Map(); _killers = []
   let best = moves[0]
   for (let d = 1; d <= maxDepth; d++) {
     let curBest = null, curV = -Infinity, alpha = -Infinity
-    const ordered = orderMoves(board, side, moves, best, d)
+    const ordered = orderMoves(board, side, moves, best, d, size)
     let completed = true
     for (const m of ordered) {
       if (Date.now() > searchDeadline) { completed = false; break }
-      const v = -negamax(applyMove(board, m).board, opp(side), d - 1, -Infinity, -alpha)
+      const v = -negamax(applyMove(board, m, rr).board, opp(side), d - 1, -Infinity, -alpha, rr)
       if (v > curV) { curV = v; curBest = m }
       if (v > alpha) alpha = v
     }
@@ -275,25 +330,27 @@ export function chooseAIMove(board, side, maxDepth, budgetMs) {
 }
 export const AI_DEPTH = { mousse: 1, marin: 3, capitaine: 6, amiral: 9, legende: 14 }
 export const AI_BUDGET = { mousse: 180, marin: 450, capitaine: 950, amiral: 1600, legende: 2800 }
-export function aiMove(board, side, diff) {
-  const moves = generateMoves(board, side)
+export function aiMove(board, side, diff, rules) {
+  const rr = R(rules)
+  const moves = generateMoves(board, side, rr)
   if (!moves.length) return null
   if (diff === 'mousse') {
     // niveau débutant : capture au hasard si forcé, sinon souvent un coup aléatoire (variété d'ouverture)
     if (moves[0].isCapture) return moves[(Math.random() * moves.length) | 0]
-    return Math.random() < 0.6 ? moves[(Math.random() * moves.length) | 0] : chooseAIMove(board, side, 1, 200)
+    return Math.random() < 0.6 ? moves[(Math.random() * moves.length) | 0] : chooseAIMove(board, side, 1, 200, rr)
   }
-  return chooseAIMove(board, side, AI_DEPTH[diff] ?? 6, AI_BUDGET[diff] ?? 950)
+  return chooseAIMove(board, side, AI_DEPTH[diff] ?? 6, AI_BUDGET[diff] ?? 950, rr)
 }
 // Meilleur coup pour l'humain (bouton Indice) — recherche moyenne, rapide.
-export function bestHint(board, side) { return chooseAIMove(board, side, 8, 700) }
+export function bestHint(board, side, rules) { return chooseAIMove(board, side, 8, 700, rules) }
 
 // Évaluation de la position pour la barre d'éval : negamax peu profond (défaut prof. 6)
 // borné dans le temps, renvoyé en "centipions" du POINT DE VUE BLANC (P = Pirates = positif).
 // Si la partie est finie : ±MATE selon le vainqueur, 0 si nulle.
 const MATE = 100000
-export function analysePosition(board, side, depth, budgetMs) {
-  const moves = generateMoves(board, side)
+export function analysePosition(board, side, depth, budgetMs, rules) {
+  const rr = R(rules)
+  const moves = generateMoves(board, side, rr)
   if (moves.length === 0) {
     // camp au trait sans coup = perd → score extrême du point de vue blanc
     return { score: side === P ? -MATE : MATE, mate: true, depth: 0 }
@@ -302,7 +359,7 @@ export function analysePosition(board, side, depth, budgetMs) {
   searchDeadline = Date.now() + (budgetMs || 500); _tt = new Map(); _killers = []
   const d = depth || 6
   // negamax renvoie le score du point de vue du camp au trait → on reconvertit en POV blanc.
-  const sideScore = negamax(board, side, d, -Infinity, Infinity)
+  const sideScore = negamax(board, side, d, -Infinity, Infinity, rr)
   const whiteScore = side === P ? sideScore : -sideScore
   return { score: Math.round(whiteScore), depth: d }
 }
