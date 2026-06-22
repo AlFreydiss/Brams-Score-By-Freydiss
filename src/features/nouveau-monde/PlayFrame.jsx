@@ -9,6 +9,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { islandById } from './data/islands'
 import { nm } from './theme/tokens'
+import GameShell from './game/GameShell'
 
 // id d'île → composant jeu React embarquable (lazy : hors bundle initial).
 const EMBED = {
@@ -58,34 +59,12 @@ export default function PlayFrame() {
     </Centered>
   }
 
+  // Le jeu vit dans le GameShell (topbar retour/prime/⚙ + panneau Avis de Recherche + réglages).
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* Barre de contexte d'île — on reste dans le monde, retour en 1 clic */}
-      <div style={{
-        flexShrink: 0, display: 'flex', alignItems: 'center', gap: nm.space.md,
-        padding: `8px ${nm.space.lg}`, zIndex: 2,
-        background: 'rgba(6,20,31,0.62)', backdropFilter: 'blur(10px)',
-        borderBottom: `1px solid ${nm.color.mist}`,
-      }}>
-        <button
-          type="button"
-          onClick={() => navigate(`/nouveau-monde/${jeu}`)}
-          style={{
-            ...nm.type.button, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '7px 14px', borderRadius: nm.radius.pill, color: nm.color.foam,
-            background: 'rgba(6,20,31,0.6)', border: `1px solid ${isl.accent}55`,
-          }}
-        >← {isl.title}</button>
-        <Link to="/nouveau-monde" style={{ ...nm.type.button, color: nm.color.foamDim, textDecoration: 'none' }}>🧭 Carte</Link>
-        <span style={{ ...nm.type.eyebrow, color: nm.color.goldHi, marginLeft: 'auto' }}>{isl.tagline}</span>
-      </div>
-
-      {/* Le jeu, scrollable dans le cadre du monde */}
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative', background: nm.color.abyss }}>
-        <Suspense fallback={<Centered><div style={{ ...nm.type.eyebrow, color: nm.color.foamDim }}>Chargement de l'île…</div></Centered>}>
-          <Game />
-        </Suspense>
-      </div>
-    </div>
+    <GameShell jeu={jeu}>
+      <Suspense fallback={<Centered><div style={{ ...nm.type.eyebrow, color: nm.color.foamDim }}>Chargement de l'île…</div></Centered>}>
+        <Game />
+      </Suspense>
+    </GameShell>
   )
 }
