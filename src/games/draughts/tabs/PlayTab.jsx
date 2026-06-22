@@ -16,10 +16,11 @@ import { useDraughtsGame, LEVELS } from '../logic/useDraughtsGame.js'
 import { useDraughtsSettings, SPEED_MULT } from '../logic/useDraughtsSettings.js'
 import { sfx } from '../logic/sfx.js'
 import { Segment, Btn } from '../ui/controls.jsx'
+import DraughtsOnline from '../online/DraughtsOnline.jsx'
 
 const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
 const SIDE_PC = { [P]: damesPieces.fonce, [M]: damesPieces.clair }
-const MODES = [['ai', 'Solo (IA)'], ['local', '2 joueurs']]
+const MODES = [['ai', 'Solo (IA)'], ['local', '2 joueurs'], ['online', 'En ligne']]
 
 function Dot({ side, size = 14 }) {
   const pc = SIDE_PC[side]
@@ -89,6 +90,19 @@ export default function PlayTab({ accent = ui.accent }) {
 
   const mm = String((elapsed / 60) | 0).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
+
+  // ── En ligne classé : flux autonome (auth + matchmaking + match live) sur le
+  // plateau 2D de l'univers. On garde le sélecteur de mode visible en haut.
+  if (mode === 'online') {
+    return (
+      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 'clamp(14px, 2.4vw, 26px) clamp(14px, 2.4vw, 30px) 0' }}>
+          <Segment items={MODES} value={mode} onChange={setMode} accent={accent} />
+        </div>
+        <DraughtsOnline accent={accent} />
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100%', padding: 'clamp(14px, 2.4vw, 30px)', display: 'flex', justifyContent: 'center' }}>
