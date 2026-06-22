@@ -1342,5 +1342,621 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 49,
+    "title": "Épisode 49",
+    "episodeLabel": "E049",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E049-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E049",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E049.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E049-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 50,
+    "title": "Épisode 50",
+    "episodeLabel": "E050",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E050-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E050",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E050.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E050-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 51,
+    "title": "Épisode 51",
+    "episodeLabel": "E051",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E051-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E051",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E051.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E051-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 52,
+    "title": "Épisode 52",
+    "episodeLabel": "E052",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E052-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E052",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E052.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E052-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 53,
+    "title": "Épisode 53",
+    "episodeLabel": "E053",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E053-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E053",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E053.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E053-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 54,
+    "title": "Épisode 54",
+    "episodeLabel": "E054",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E054-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E054",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E054.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E054-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 55,
+    "title": "Épisode 55",
+    "episodeLabel": "E055",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E055-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E055",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E055.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E055-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 56,
+    "title": "Épisode 56",
+    "episodeLabel": "E056",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E056-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E056",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E056.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E056-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 57,
+    "title": "Épisode 57",
+    "episodeLabel": "E057",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E057-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E057",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E057.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E057-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 58,
+    "title": "Épisode 58",
+    "episodeLabel": "E058",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E058-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc de Yorknew City",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E058",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E058.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E058-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 59,
+    "title": "Épisode 59",
+    "episodeLabel": "E059",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E059-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E059",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E059.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E059-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 60,
+    "title": "Épisode 60",
+    "episodeLabel": "E060",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E060-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E060",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E060.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E060-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 61,
+    "title": "Épisode 61",
+    "episodeLabel": "E061",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E061-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E061",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E061.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E061-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 62,
+    "title": "Épisode 62",
+    "episodeLabel": "E062",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E062-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E062",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E062.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E062-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 63,
+    "title": "Épisode 63",
+    "episodeLabel": "E063",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E063-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E063",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E063.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E063-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 64,
+    "title": "Épisode 64",
+    "episodeLabel": "E064",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E064-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E064",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E064.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E064-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 65,
+    "title": "Épisode 65",
+    "episodeLabel": "E065",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E065-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E065",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E065.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E065-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 66,
+    "title": "Épisode 66",
+    "episodeLabel": "E066",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E066-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E066",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E066.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E066-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 67,
+    "title": "Épisode 67",
+    "episodeLabel": "E067",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E067-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E067",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E067.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E067-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 68,
+    "title": "Épisode 68",
+    "episodeLabel": "E068",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E068-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E068",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E068.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E068-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 69,
+    "title": "Épisode 69",
+    "episodeLabel": "E069",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E069-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E069",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E069.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E069-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 70,
+    "title": "Épisode 70",
+    "episodeLabel": "E070",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E070-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de Greed Island",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-E070",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/E070.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/E070-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]
