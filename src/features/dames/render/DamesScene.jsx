@@ -16,10 +16,23 @@ import * as THREE from 'three'
 import DamesView2D from './DamesView2D.jsx'
 
 const DEV = !!(import.meta.env && import.meta.env.DEV)
-const SIZE = 10, P = 'P', M = 'M'
+const P = 'P', M = 'M'
 const PIECE_Y = 0.18, MARK_Y = 0.105
+// Taille de plateau variable (8×8 ou 10×10…). BOARD_SPAN = empreinte monde totale
+// gardée CONSTANTE quelle que soit la taille → cadrage caméra / océan / ombres /
+// lumières restent calibrés. step = BOARD_SPAN / size ; à size=10, step = 1 (valeur
+// d'origine). DEFAULT_SIZE = plateau par défaut tant qu'aucun board n'est posé.
+const DEFAULT_SIZE = 10
+const BOARD_SPAN = 10                       // = step(1) × size(10) du rendu d'origine
+const TILE = 0.96                           // largeur de case d'origine (à step=1)
+const FRAME_OUTER = 11.4, FRAME_LISERE = 11.0, FRAME_EDGE = 5.43  // cadre/liserés d'origine (size=10)
+const boardSize = (board) => (board && board.length) || DEFAULT_SIZE
+const stepFor = (size) => BOARD_SPAN / size
+const centerFor = (size) => (size - 1) / 2
 const isDark = (r, c) => (r + c) % 2 === 1
-const worldPos = (r, c) => ({ x: c - 4.5, z: r - 4.5 })
+// mapping case→monde paramétré par la taille. Sans size → comportement d'origine
+// (size=10 ⇒ step=1, center=4.5 ⇒ {x:c-4.5, z:r-4.5}, identique au byte près).
+const worldPos = (r, c, size = DEFAULT_SIZE) => { const st = stepFor(size), ce = centerFor(size); return { x: (c - ce) * st, z: (r - ce) * st } }
 const easeInOut = (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2)
 const SUN = [-26, 5, -40]   // soleil couchant bas (chaud) — derrière/à gauche du plateau
 
@@ -192,6 +205,10 @@ function Piece({ side, king, mats }) {
 function Pieces({ store, audio, events }) {
   const state = useSyncExternalStore(store.subscribe, store.getState)
   const mats = useMaterials()
+  const size = boardSize(state.board)
+  const wp = (r, c) => worldPos(r, c, size)   // mapping case→monde lié à la taille courante du plateau
+  const step = stepFor(size)
+  const pieceScale = step                     // pièces/anneaux suivent l'échelle de case (8×8 plus grandes, subtil)
   const refs = useRef({})            // `${r}_${c}` -> THREE.Group
   const anim = useRef(null)          // animation de coup en cours
   const sparkRef = useRef(null)      // InstancedMesh des éclats
@@ -220,7 +237,7 @@ function Pieces({ store, audio, events }) {
   const fxSink = (r, c, side) => {
     if (reduced || quality === 'low') return false
     const slot = sinks.current.find(x => x.life <= 0); if (!slot) return false
-    const w = worldPos(r, c)
+    const w = wp(r, c)
     const dir = Math.atan2(w.z, w.x) + (Math.random() - 0.5) * 0.8   // éjectée vers le large
     const sp = 3.4 + Math.random() * 2.2
     slot.x = w.x; slot.y = PIECE_Y; slot.z = w.z
@@ -238,7 +255,7 @@ function Pieces({ store, audio, events }) {
   // éclats : scale ↑ avec le combo (l'intensité monte à chaque prise d'une rafle)
   const fxBurst = (r, c, hue, scale = 1) => {
     if (reduced) return
-    const w = worldPos(r, c); const n = Math.min(40, Math.round(18 * scale))
+    const w = wp(r, c); const n = Math.min(40, Math.round(18 * scale))
     for (let k = 0; k < n; k++) {
       const s = sparks.current.find(x => x.life <= 0); if (!s) break
       s.x = w.x; s.y = 0.22; s.z = w.z
@@ -250,6 +267,8 @@ function Pieces({ store, audio, events }) {
   // expose l'API impérative à la façade
   useEffect(() => {
     store.api.playMove = (move, before, { promoted = false, ai = false } = {}) => new Promise((resolve) => {
+      const sz = boardSize(store.getState().board)   // taille live (le closure de l'effet pourrait être périmé)
+      const lwp = (r, c) => worldPos(r, c, sz)
       const fromKey = move.from[0] + '_' + move.from[1]
       const grp = refs.current[fromKey]
       const caps = move.caps || [], path = move.path || [move.to], isCap = caps.length > 0
@@ -262,7 +281,7 @@ function Pieces({ store, audio, events }) {
         resolve(); return
       }
       audio.move()
-      anim.current = { grp, path, caps, isCap, i: 0, seg0: { ...worldPos(move.from[0], move.from[1]) }, t0: performance.now(), promoted, to: move.to, resolve, capDone: new Set(), combo: 0, phase: 'hop', moverSide }
+      anim.current = { grp, path, caps, isCap, i: 0, seg0: { ...lwp(move.from[0], move.from[1]) }, t0: performance.now(), promoted, to: move.to, resolve, capDone: new Set(), combo: 0, phase: 'hop', moverSide, wp: lwp, ps: stepFor(sz) }
     })
     return () => { store.api.playMove = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -279,57 +298,57 @@ function Pieces({ store, audio, events }) {
       let y = PIECE_Y
       if (k === sel && state.interactive) y = PIECE_Y + 0.12 + Math.sin(now * 0.005) * 0.04
       else if (k === hk && state.movableKeys.has(k) && state.interactive) y = PIECE_Y + 0.07
-      m.position.y = y; m.scale.set(1, 1, 1)
+      m.position.y = y; m.scale.set(pieceScale, pieceScale, pieceScale)
     }
     // halo émissif (outline qui passe dans le bloom) sous la pièce sélectionnée
     if (glowMesh.current) {
-      if (sel && state.interactive && !anim.current) { const w = worldPos(state.selected[0], state.selected[1]); glowMesh.current.position.set(w.x, 0.12, w.z); glowMesh.current.visible = true; glowMesh.current.material.opacity = 0.6 + 0.35 * Math.sin(now * 0.006); const s = 1 + 0.05 * Math.sin(now * 0.006); glowMesh.current.scale.set(s, s, 1) }
+      if (sel && state.interactive && !anim.current) { const w = wp(state.selected[0], state.selected[1]); glowMesh.current.position.set(w.x, 0.12, w.z); glowMesh.current.visible = true; glowMesh.current.material.opacity = 0.6 + 0.35 * Math.sin(now * 0.006); const s = pieceScale + 0.05 * Math.sin(now * 0.006); glowMesh.current.scale.set(s, s, 1) }
       else glowMesh.current.visible = false
     }
     // ring de survol
     if (hoverMesh.current) {
-      if (hk && state.movableKeys.has(hk) && hk !== sel && state.interactive && !anim.current) { const [r, c] = hk.split('_').map(Number); const w = worldPos(r, c); hoverMesh.current.position.set(w.x, MARK_Y, w.z); hoverMesh.current.visible = true; hoverMesh.current.material.opacity = 0.4 + 0.25 * Math.sin(now * 0.008) }
+      if (hk && state.movableKeys.has(hk) && hk !== sel && state.interactive && !anim.current) { const [r, c] = hk.split('_').map(Number); const w = wp(r, c); hoverMesh.current.position.set(w.x, MARK_Y, w.z); hoverMesh.current.visible = true; hoverMesh.current.scale.set(pieceScale, pieceScale, 1); hoverMesh.current.material.opacity = 0.4 + 0.25 * Math.sin(now * 0.008) }
       else hoverMesh.current.visible = false
     }
     // animation d'un coup
     const a = anim.current
     if (a) {
       if (a.phase === 'hop') {
-        const b = worldPos(a.path[a.i][0], a.path[a.i][1]), s0 = a.seg0
+        const b = a.wp(a.path[a.i][0], a.path[a.i][1]), s0 = a.seg0
         const dist = Math.hypot(b.x - s0.x, b.z - s0.z)
         const dur = a.isCap ? 320 : Math.max(240, dist * 70), hopH = a.isCap ? 0.55 : 0.16
         let p = (now - a.t0) / dur; if (p > 1) p = 1
         const e = easeInOut(p)
         a.grp.position.set(s0.x + (b.x - s0.x) * e, PIECE_Y + Math.sin(p * Math.PI) * hopH, s0.z + (b.z - s0.z) * e)
         const stretch = 1 + 0.16 * Math.sin(p * Math.PI)             // stretch en vol (squash/stretch)
-        a.grp.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch))
+        a.grp.scale.set(a.ps / Math.sqrt(stretch), a.ps * stretch, a.ps / Math.sqrt(stretch))
         if (a.isCap && p > 0.5 && !a.capDone.has(a.i)) {
           a.capDone.add(a.i); const cap = a.caps[a.i]
           if (cap) { const cm = refs.current[cap[0] + '_' + cap[1]]; const sd = cm?.userData?.side; if (cm) cm.visible = false; if (sd) fxSink(cap[0], cap[1], sd); a.combo++; fxBurst(cap[0], cap[1], 'fire', 1 + a.combo * 0.28); audio.capture(); store.api.shake?.(0.13 + a.combo * 0.05); store.api.flash?.(0.28 + a.combo * 0.07); if (a.combo >= 2) { store.api.combo?.(a.combo); events?.combo?.(a.combo) } }
         }
         if (p >= 1) {
           a.seg0 = b; a.i++; a.t0 = now
-          if (a.i >= a.path.length) { const wt = worldPos(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4); if (!reduced && quality !== 'low') beamState.current = { t0: now, x: wt.x, z: wt.z }; store.api.shake?.(0.18); events?.promote?.(a.moverSide) } }
+          if (a.i >= a.path.length) { const wt = a.wp(a.to[0], a.to[1]); a.grp.position.set(wt.x, PIECE_Y, wt.z); a.phase = a.promoted ? 'ceremony' : 'settle'; a.t0 = now; if (a.promoted) { audio.king(); store.api.flash?.(0.5); fxBurst(a.to[0], a.to[1], 'gold', 2.4); if (!reduced && quality !== 'low') beamState.current = { t0: now, x: wt.x, z: wt.z }; store.api.shake?.(0.18); events?.promote?.(a.moverSide) } }
           else if (a.isCap) { a.grp.position.set(b.x, PIECE_Y, b.z); a.phase = 'pause' }   // rafle : marque un temps sur la case de chute avant le saut suivant (lecture du combo)
         }
       } else if (a.phase === 'pause') {                             // mini-pause entre deux prises d'une rafle : la pièce se pose, accuse l'impact, puis repart
         let p = (now - a.t0) / 170; if (p > 1) p = 1
-        const sy = 1 - 0.12 * Math.sin(Math.min(1, p * 1.6) * Math.PI); a.grp.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy))
+        const sy = 1 - 0.12 * Math.sin(Math.min(1, p * 1.6) * Math.PI); a.grp.scale.set(a.ps / Math.sqrt(sy), a.ps * sy, a.ps / Math.sqrt(sy))
         a.grp.position.set(a.seg0.x, PIECE_Y, a.seg0.z)
-        if (p >= 1) { a.grp.scale.set(1, 1, 1); a.phase = 'hop'; a.t0 = now }
+        if (p >= 1) { a.grp.scale.set(a.ps, a.ps, a.ps); a.phase = 'hop'; a.t0 = now }
       } else if (a.phase === 'settle') {                            // petit rebond d'atterrissage (overshoot)
         let p = (now - a.t0) / 150; if (p > 1) p = 1
-        const sy = 1 - 0.16 * Math.sin(p * Math.PI); a.grp.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy))
-        if (p >= 1) { a.grp.scale.set(1, 1, 1); const r = a.resolve; anim.current = null; r() }
+        const sy = 1 - 0.16 * Math.sin(p * Math.PI); a.grp.scale.set(a.ps / Math.sqrt(sy), a.ps * sy, a.ps / Math.sqrt(sy))
+        if (p >= 1) { a.grp.scale.set(a.ps, a.ps, a.ps); const r = a.resolve; anim.current = null; r() }
       } else if (a.phase === 'ceremony') {                          // cérémonie de promotion (~900ms) : s'élève + tourne
         let p = (now - a.t0) / 900; if (p > 1) p = 1
-        const wt = worldPos(a.to[0], a.to[1])
+        const wt = a.wp(a.to[0], a.to[1])
         a.grp.position.set(wt.x, PIECE_Y + Math.sin(p * Math.PI) * 0.55, wt.z)
         a.grp.rotation.y = p * Math.PI * 3
-        const s = 1 + 0.12 * Math.sin(p * Math.PI); a.grp.scale.set(s, s, s)
+        const s = a.ps * (1 + 0.12 * Math.sin(p * Math.PI)); a.grp.scale.set(s, s, s)
         if (!a.cerBurst && p > 0.45) { a.cerBurst = true; fxBurst(a.to[0], a.to[1], 'gold', 3); store.api.flash?.(0.55) }
         if (!a.cerBurst2 && p > 0.72) { a.cerBurst2 = true; fxBurst(a.to[0], a.to[1], 'gold', 2.2) }   // 2e gerbe de paillettes
-        if (p >= 1) { a.grp.rotation.y = 0; a.grp.position.set(wt.x, PIECE_Y, wt.z); a.grp.scale.set(1, 1, 1); const r = a.resolve; anim.current = null; r() }
+        if (p >= 1) { a.grp.rotation.y = 0; a.grp.position.set(wt.x, PIECE_Y, wt.z); a.grp.scale.set(a.ps, a.ps, a.ps); const r = a.resolve; anim.current = null; r() }
       }
     }
     // faisceau de couronnement : colonne de lumière qui jaillit puis s'estompe
@@ -406,7 +425,7 @@ function Pieces({ store, audio, events }) {
     <group>
       {board && board.flatMap((row, r) => row.map((cell, c) => {
         if (!cell) return null
-        const key = r + '_' + c, w = worldPos(r, c)
+        const key = r + '_' + c, w = wp(r, c)
         const movable = state.interactive && state.movableKeys.has(key)
         return (
           <group key={key} position={[w.x, PIECE_Y, w.z]}
@@ -531,20 +550,26 @@ function Celebration({ store, quality }) {
 
 // ── plateau (cases + cadre + liseré or) ────────────────────────────────────────
 function Board({ store }) {
+  const state = useSyncExternalStore(store.subscribe, store.getState)
   const mats = useMaterials()
   const click = store._click
+  const size = boardSize(state.board)
+  const step = stepFor(size)
+  const tile = TILE * step                       // largeur de case mise à l'échelle (empreinte constante)
+  // cadre/liserés : empreinte (BOARD_SPAN) constante quelle que soit la taille → géométrie inchangée.
+  const frameOuter = FRAME_OUTER, frameLisere = FRAME_LISERE, frameEdge = FRAME_EDGE
   const tiles = []
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
-    const w = worldPos(r, c)
-    tiles.push(<mesh key={r + '_' + c} position={[w.x, 0, w.z]} receiveShadow material={isDark(r, c) ? mats.tileDark : mats.tileLight} onClick={(e) => click(e, r, c)}><boxGeometry args={[0.96, 0.18, 0.96]} /></mesh>)
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+    const w = worldPos(r, c, size)
+    tiles.push(<mesh key={r + '_' + c} position={[w.x, 0, w.z]} receiveShadow material={isDark(r, c) ? mats.tileDark : mats.tileLight} onClick={(e) => click(e, r, c)}><boxGeometry args={[tile, 0.18, tile]} /></mesh>)
   }
   return (
     <group>
       {tiles}
-      <mesh position={[0, -0.20, 0]} receiveShadow material={mats.frame}><boxGeometry args={[11.4, 0.55, 11.4]} /></mesh>
-      {[[0, 5.43, 11.0, 0.14], [0, -5.43, 11.0, 0.14]].map(([x, z, lw, ld], i) => (
+      <mesh position={[0, -0.20, 0]} receiveShadow material={mats.frame}><boxGeometry args={[frameOuter, 0.55, frameOuter]} /></mesh>
+      {[[0, frameEdge, frameLisere, 0.14], [0, -frameEdge, frameLisere, 0.14]].map(([x, z, lw, ld], i) => (
         <mesh key={'h' + i} position={[x, 0.08, z]} material={mats.gold}><boxGeometry args={[lw, 0.06, ld]} /></mesh>))}
-      {[[5.43, 0, 0.14, 11.0], [-5.43, 0, 0.14, 11.0]].map(([x, z, lw, ld], i) => (
+      {[[frameEdge, 0, 0.14, frameLisere], [-frameEdge, 0, 0.14, frameLisere]].map(([x, z, lw, ld], i) => (
         <mesh key={'v' + i} position={[x, 0.08, z]} material={mats.gold}><boxGeometry args={[lw, 0.06, ld]} /></mesh>))}
     </group>
   )
@@ -561,13 +586,14 @@ const RING = {
   cursor: { col: 0xffffff, inner: 0.40, tube: 0.05, op: 0.95, pulse: true },
   caphop: { col: 0xff7a52, inner: 0.17, tube: 0.03, op: 0.55, pulse: false },  // case intermédiaire d'une rafle (aperçu du chemin de prise)
 }
-function Ring({ r, c, kind, blink }) {
+function Ring({ r, c, kind, blink, size = DEFAULT_SIZE }) {
   const ref = useRef()
   const cfg = RING[kind]
-  const w = worldPos(r, c)
+  const w = worldPos(r, c, size)
+  const ps = stepFor(size)   // anneaux suivent l'échelle de case
   useFrame(() => { if (cfg.pulse && ref.current) ref.current.material.opacity = 0.55 + 0.4 * Math.sin(performance.now() * 0.0064 + (blink || 0)) })
   return (
-    <mesh ref={ref} rotation={[Math.PI / 2, 0, 0]} position={[w.x, MARK_Y, w.z]}>
+    <mesh ref={ref} rotation={[Math.PI / 2, 0, 0]} position={[w.x, MARK_Y, w.z]} scale={[ps, ps, 1]}>
       <torusGeometry args={[cfg.inner, cfg.tube, 12, 40]} />
       <meshBasicMaterial color={cfg.col} transparent opacity={cfg.op} toneMapped={false} />
     </mesh>
@@ -575,10 +601,11 @@ function Ring({ r, c, kind, blink }) {
 }
 // tapis lumineux sous la case d'arrivée du dernier coup : disque additif doré qui
 // respire doucement (100% visuel, marque où la dernière pièce s'est posée)
-function LastTapis({ r, c }) {
+function LastTapis({ r, c, size = DEFAULT_SIZE }) {
   const ref = useRef()
-  const w = worldPos(r, c)
-  useFrame(() => { if (ref.current) { const k = 0.5 + 0.5 * Math.sin(performance.now() * 0.0034); ref.current.material.opacity = 0.16 + 0.16 * k; const s = 0.86 + 0.06 * k; ref.current.scale.set(s, s, 1) } })
+  const w = worldPos(r, c, size)
+  const ps = stepFor(size)
+  useFrame(() => { if (ref.current) { const k = 0.5 + 0.5 * Math.sin(performance.now() * 0.0034); ref.current.material.opacity = 0.16 + 0.16 * k; const s = ps * (0.86 + 0.06 * k); ref.current.scale.set(s, s, 1) } })
   return (
     <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[w.x, MARK_Y - 0.002, w.z]}>
       <circleGeometry args={[0.48, 40]} />
@@ -588,31 +615,32 @@ function LastTapis({ r, c }) {
 }
 function Markers({ store }) {
   const s = useSyncExternalStore(store.subscribe, store.getState)
+  const size = boardSize(s.board)
   const rings = []
-  if (s.last) { rings.push(<LastTapis key="ltapis" r={s.last.to[0]} c={s.last.to[1]} />); rings.push(<Ring key="lf" r={s.last.from[0]} c={s.last.from[1]} kind="last" />); (s.last.path || []).forEach(([r, c], i) => rings.push(<Ring key={'lp' + i} r={r} c={c} kind="last" />)) }
+  if (s.last) { rings.push(<LastTapis key="ltapis" r={s.last.to[0]} c={s.last.to[1]} size={size} />); rings.push(<Ring key="lf" r={s.last.from[0]} c={s.last.from[1]} kind="last" size={size} />); (s.last.path || []).forEach(([r, c], i) => rings.push(<Ring key={'lp' + i} r={r} c={c} kind="last" size={size} />)) }
   if (s.selected) {
-    rings.push(<Ring key="sel" r={s.selected[0]} c={s.selected[1]} kind="sel" />)
+    rings.push(<Ring key="sel" r={s.selected[0]} c={s.selected[1]} kind="sel" size={size} />)
     const own = s.legalMoves.filter(mv => mv.from[0] === s.selected[0] && mv.from[1] === s.selected[1])
-    for (const mv of own) rings.push(<Ring key={'m' + mv.to[0] + '_' + mv.to[1]} r={mv.to[0]} c={mv.to[1]} kind={mv.isCapture ? 'cap' : 'move'} blink={mv.to[0]} />)
+    for (const mv of own) rings.push(<Ring key={'m' + mv.to[0] + '_' + mv.to[1]} r={mv.to[0]} c={mv.to[1]} kind={mv.isCapture ? 'cap' : 'move'} blink={mv.to[0]} size={size} />)
     // aperçu du chemin de RAFLE : si la seule prise possible avec ce pion est une rafle
     // (≥2 sauts), on trace les cases intermédiaires + une ligne orange pour révéler le
     // trajet et les pièces enlevées avant de jouer. Une seule rafle → zéro encombrement.
     const raids = own.filter(mv => mv.isCapture && mv.path && mv.path.length >= 2)
     if (raids.length === 1) {
       const path = raids[0].path
-      path.slice(0, -1).forEach(([r, c], i) => rings.push(<Ring key={'cp' + i} r={r} c={c} kind="caphop" />))
-      const pts = [s.selected, ...path].map(([r, c]) => { const w = worldPos(r, c); return [w.x, MARK_Y + 0.05, w.z] })
+      path.slice(0, -1).forEach(([r, c], i) => rings.push(<Ring key={'cp' + i} r={r} c={c} kind="caphop" size={size} />))
+      const pts = [s.selected, ...path].map(([r, c]) => { const w = worldPos(r, c, size); return [w.x, MARK_Y + 0.05, w.z] })
       rings.push(<PathLine key="cppath" points={pts} color="#ff8a5a" />)
     }
   } else if (s.interactive && !s.gameOver) {
-    s.movableKeys.forEach(k => { const [r, c] = k.split('_').map(Number); rings.push(<Ring key={'d' + k} r={r} c={c} kind="dot" />) })
+    s.movableKeys.forEach(k => { const [r, c] = k.split('_').map(Number); rings.push(<Ring key={'d' + k} r={r} c={c} kind="dot" size={size} />) })
   }
   if (s.hint) {
-    rings.push(<Ring key="hf" r={s.hint.from[0]} c={s.hint.from[1]} kind="hint" />); rings.push(<Ring key="ht" r={s.hint.to[0]} c={s.hint.to[1]} kind="hint" blink={2} />)
-    const pts = [s.hint.from, ...(s.hint.path || [s.hint.to])].map(([r, c]) => { const w = worldPos(r, c); return [w.x, MARK_Y + 0.06, w.z] })
+    rings.push(<Ring key="hf" r={s.hint.from[0]} c={s.hint.from[1]} kind="hint" size={size} />); rings.push(<Ring key="ht" r={s.hint.to[0]} c={s.hint.to[1]} kind="hint" blink={2} size={size} />)
+    const pts = [s.hint.from, ...(s.hint.path || [s.hint.to])].map(([r, c]) => { const w = worldPos(r, c, size); return [w.x, MARK_Y + 0.06, w.z] })
     if (pts.length >= 2) rings.push(<HintPath key="hpath" points={pts} />)
   }
-  if (s.cursor) rings.push(<Ring key="cur" r={s.cursor[0]} c={s.cursor[1]} kind="cursor" />)
+  if (s.cursor) rings.push(<Ring key="cur" r={s.cursor[0]} c={s.cursor[1]} kind="cursor" size={size} />)
   return <group>{rings}</group>
 }
 // ligne de chemin pulsée (pointillés) : indice (cyan) ou aperçu de rafle (orange)
@@ -702,7 +730,7 @@ function CameraRig({ store }) {
   useEffect(() => {
     store.api.resetView = () => { orbit.current = null; camera.position.set(0, 11.5, 13.5); if (ctrl.current) { ctrl.current.target.set(0, 0, 0); ctrl.current.update() } }
     store.api.shake = (amt = 0.15) => { shakeMag.current = Math.min(0.55, Math.max(shakeMag.current, amt)) }   // micro-shake (capture)
-    store.api.focusMove = (from, to) => { const a = worldPos(from[0], from[1]), b = worldPos(to[0], to[1]); focus.current = { mid: { x: (a.x + b.x) / 2, y: 0.3, z: (a.z + b.z) / 2 }, t0: performance.now(), dur: 1100 } }
+    store.api.focusMove = (from, to) => { const sz = boardSize(store.getState().board); const a = worldPos(from[0], from[1], sz), b = worldPos(to[0], to[1], sz); focus.current = { mid: { x: (a.x + b.x) / 2, y: 0.3, z: (a.z + b.z) / 2 }, t0: performance.now(), dur: 1100 } }
     // orbite de victoire : ~8s autour du plateau (désactivée en reduced-motion)
     store.api.orbit = (side) => { if (store.getState().reduced) return; orbit.current = { t0: performance.now(), dur: 8200, side: side || P, a0: Math.atan2(camera.position.z, camera.position.x) } }
     store.api.stopOrbit = () => { orbit.current = null }

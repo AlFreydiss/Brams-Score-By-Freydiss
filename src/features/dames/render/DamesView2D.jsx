@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useSyncExternalStore } from 'react'
 
-const SIZE = 10, P = 'P', M = 'M'
+const P = 'P', M = 'M'
 const isDark = (r, c) => (r + c) % 2 === 1
 const PIRATA = "'Pirata One','OnePiece',cursive"
 
@@ -38,6 +38,7 @@ export default function DamesView2D({ store, onSquareClick }) {
   if (!s.view2D || !s.board) return null
 
   const board = s.board
+  const SIZE = board.length   // taille de grille variable (8×8, 10×10…) dérivée du plateau
   const selKey = s.selected ? s.selected[0] + '_' + s.selected[1] : null
   // coups partant de la pièce sélectionnée (cases d'arrivée + nature capture)
   const own = s.selected ? (s.legalMoves || []).filter(mv => mv.from[0] === s.selected[0] && mv.from[1] === s.selected[1]) : []
