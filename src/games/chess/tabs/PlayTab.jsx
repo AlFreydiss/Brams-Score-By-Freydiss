@@ -5,6 +5,7 @@
 // Réutilise : usePartie (chess.js), useStockfish (IA + eval), Plateau (board 2D),
 // niveauxIA/elo/sons/analyse, et nos atomes (Clock/EvalBar/MoveList/EndOverlay).
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Chess } from 'chess.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { usePartie } from '../../../features/echecs/hooks/usePartie.js'
@@ -86,8 +87,12 @@ function SectionLabel({ children }) {
   return <div style={{ font: `700 11px ${fonts.body}`, letterSpacing: '0.09em', textTransform: 'uppercase', color: ui.textMute, margin: '0 0 9px' }}>{children}</div>
 }
 
+// Mode pré-sélectionné depuis une île du Nouveau Monde (solo/ami/classe → ia/local/online).
+const ISLAND_MODE = { solo: 'ia', ami: 'local', classe: 'online' }
+
 function ConfigJeu({ onLancer, niveauDefaut }) {
-  const [mode, setMode] = useState('ia')          // 'ia' | 'local' | 'online'
+  const loc = useLocation()
+  const [mode, setMode] = useState(() => ISLAND_MODE[loc.state?.playMode] || 'ia')  // 'ia' | 'local' | 'online'
   const [cadenceId, setCadenceId] = useState('5+0')
   const [illimite, setIllimite] = useState(false)
   const [niveauId, setNiveauId] = useState(niveauDefaut)

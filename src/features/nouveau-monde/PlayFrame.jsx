@@ -12,15 +12,18 @@ import { nm } from './theme/tokens'
 import GameShell from './game/GameShell'
 
 // id d'île → composant jeu React embarquable (lazy : hors bundle initial).
+// Échecs/Dames ne sont PLUS embarqués : ils ont leur univers autonome plein écran
+// (/jeux/*, 2D sobre) → on redirige (voir UNIVERSE). Le clic depuis l'île passe déjà
+// par navigate(UNIVERSE) ; ceci couvre les deep-links /nouveau-monde/echecs/jouer.
 const EMBED = {
-  echecs:        lazy(() => import('../echecs/EchecsPage.jsx')),
-  dames:         lazy(() => import('../dames/DamesPage.jsx')),
   'blind-test':  lazy(() => import('../../components/BlindTestPage.jsx')),
   'brams-phone': lazy(() => import('../garticphone/BramsPhonePage.jsx')),
   'brams-arena': lazy(() => import('../../components/BramsTraitorPage.jsx')),
 }
 // Jeux non-embarquables → plein écran hors du monde.
 const EXTERNAL = { fredisu: '/fredisu.html' }
+// Jeux avec univers autonome (route SPA plein écran).
+const UNIVERSE = { echecs: '/jeux/echecs', dames: '/jeux/dames' }
 
 function Centered({ children }) {
   return (
@@ -36,9 +39,12 @@ export default function PlayFrame() {
   const isl = islandById(jeu)
   const Game = EMBED[jeu]
   const ext = EXTERNAL[jeu]
+  const universe = UNIVERSE[jeu]
 
   // Jeu externe (Fred'isu) : sortie plein écran.
   useEffect(() => { if (ext) window.location.assign(ext) }, [ext])
+  // Univers autonome (Échecs/Dames) : redirige vers la route plein écran SPA.
+  useEffect(() => { if (universe) navigate(universe, { replace: true }) }, [universe, navigate])
 
   if (!isl) {
     return <Centered>

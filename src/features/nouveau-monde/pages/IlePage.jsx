@@ -19,6 +19,9 @@ function formatBounty(n) {
   return `${Math.round(n).toLocaleString('fr-FR')} ฿`
 }
 
+// Îles disposant d'un univers de jeu autonome (route plein écran hors-monde).
+const UNIVERSE = { echecs: '/jeux/echecs', dames: '/jeux/dames' }
+
 const RULES = {
   echecs:       ['Mat le roi adverse pour la victoire.', 'Le mode Classé met ta prime ฿ en jeu (ELO).', 'Abandon = défaite et perte de prime.'],
   dames:        ['Capture toutes les pièces ou bloque l\'adversaire.', 'La dame se déplace en diagonale longue.', 'Prise multiple obligatoire.'],
@@ -36,7 +39,7 @@ function ModeButton({ mode, accent, onPlay }) {
     <motion.button
       type="button"
       whileHover={{ y: -3 }} whileTap={{ scale: 0.97 }}
-      onClick={() => onPlay(mode)}
+      onClick={(e) => onPlay(mode, e)}
       style={{
         flex: '1 1 160px', textAlign: 'left', cursor: 'pointer', minHeight: 64,
         padding: nm.space.md, borderRadius: nm.radius.md,
@@ -87,8 +90,17 @@ export default function IlePage() {
     )
   }
 
-  const onPlay = (mode) => {
+  // Échecs/Dames ont leur univers autonome plein écran (2D sobre) → on SORT du monde
+  // vers /jeux/* (les univers sont fixed inset:0 z-50, pas embarquables). Morph depuis
+  // le bouton cliqué + playMode présélectionné. Les autres jeux restent embarqués.
+  const onPlay = (mode, e) => {
     if (island.status !== 'live') return
+    if (UNIVERSE[island.id]) {
+      const r = e?.currentTarget?.getBoundingClientRect?.()
+      const gameOrigin = r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null
+      navigate(UNIVERSE[island.id], { state: { gameOrigin, playMode: mode } })
+      return
+    }
     // On reste DANS le monde : accostage = route /jouer embarquée (le jeu se charge sous la
     // nav du Nouveau Monde). La transition douce du layout suffit (pas de gros téléport in-world).
     navigate(`/nouveau-monde/${island.id}/jouer${mode ? `?mode=${mode}` : ''}`)
@@ -126,7 +138,7 @@ export default function IlePage() {
             <motion.button
               type="button"
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              onClick={() => onPlay(island.modes[0])}
+              onClick={(e) => onPlay(island.modes[0], e)}
               style={{
                 marginTop: nm.space.lg, width: '100%', cursor: 'pointer', minHeight: 52,
                 padding: '14px 22px', borderRadius: nm.radius.pill, border: 'none',

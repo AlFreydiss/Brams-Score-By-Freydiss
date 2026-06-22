@@ -9,6 +9,7 @@
 // Tokens = neutralTheme. Accent univers = bleu-acier (props.accent). Inline only.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ui, fonts, damesPieces } from '../../../features/games/neutralTheme.js'
 import { DEFAULT_RULES, P, M } from '../../../features/dames/engine/draughts-engine.js'
 import DraughtsBoard from '../board/DraughtsBoard.jsx'
@@ -21,6 +22,8 @@ import DraughtsOnline from '../online/DraughtsOnline.jsx'
 const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
 const SIDE_PC = { [P]: damesPieces.fonce, [M]: damesPieces.clair }
 const MODES = [['ai', 'Solo (IA)'], ['local', '2 joueurs'], ['online', 'En ligne']]
+// Mode pré-sélectionné depuis une île du Nouveau Monde (solo/ami/classe → ai/local/online).
+const ISLAND_MODE = { solo: 'ai', ami: 'local', classe: 'online' }
 
 function Dot({ side, size = 14 }) {
   const pc = SIDE_PC[side]
@@ -28,9 +31,10 @@ function Dot({ side, size = 14 }) {
 }
 
 export default function PlayTab({ accent = ui.accent }) {
+  const loc = useLocation()
   const { settings } = useDraughtsSettings()
   const rules = DEFAULT_RULES   // règles internationales (prise max forcée toujours ON)
-  const [mode, setMode] = useState('ai')
+  const [mode, setMode] = useState(() => ISLAND_MODE[loc.state?.playMode] || 'ai')
   const [diff, setDiffState] = useState(settings.aiLevel || 'capitaine')
   const [confirmResign, setConfirmResign] = useState(false)
   const startedRef = useRef(false)
