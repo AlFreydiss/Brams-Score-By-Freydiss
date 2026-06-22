@@ -83,6 +83,24 @@ function GameCard({ g, i }) {
       </button>
     )
   }
+  // Univers de jeu (/jeux/*) : morph « shared-element » — on transmet le point cliqué
+  // pour que l'univers grandisse depuis la carte (transform-origin, voir GameUniverse).
+  if (g.to.startsWith('/jeux/')) {
+    const ouvrir = (e) => {
+      const r = e.currentTarget.getBoundingClientRect()
+      navigate(g.to, { state: { gameOrigin: { x: r.left + r.width / 2, y: r.top + r.height / 2 } } })
+    }
+    return (
+      <button
+        type="button"
+        className="gh-card"
+        style={{ ...cardStyle, textAlign: 'left', cursor: 'pointer', font: 'inherit', width: '100%', appearance: 'none' }}
+        onClick={ouvrir}
+      >
+        {inner}
+      </button>
+    )
+  }
   // Jeu externe (Fred'isu = page statique autonome) → vraie navigation top-level,
   // pas d'iframe SPA (audio/pointer/fullscreen marchent mal embarqués).
   return g.external
