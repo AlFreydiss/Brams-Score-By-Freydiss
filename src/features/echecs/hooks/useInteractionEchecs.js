@@ -17,7 +17,7 @@ export function deciderClic({ square, pieceCouleur, selection, partie, peutJouer
 // usePartie. `pieceSur(square)` → 'w'|'b'|null. `maCouleur` (optionnel, 'w'|'b')
 // active les premoves : un coup tenté hors de mon tour est mis en file et joué dès
 // que le trait me revient (si encore légal). Sans maCouleur → comportement v4 strict.
-export function useInteractionEchecs(partie, { peutJouer, onCoup, interactif = true, maCouleur = null, pieceSur = null } = {}) {
+export function useInteractionEchecs(partie, { peutJouer, onCoup, interactif = true, maCouleur = null, pieceSur = null, autoPromo = false } = {}) {
   const [selection, setSelection] = useState(null)
   const [promo, setPromo] = useState(null)        // { from, to }
   const [premove, setPremove] = useState(null)    // { from, to, promotion? } | null
@@ -34,10 +34,18 @@ export function useInteractionEchecs(partie, { peutJouer, onCoup, interactif = t
   const tenter = useCallback((from, to) => {
     const candidats = partie.coupsLegaux(from).filter(m => m.to === to)
     if (!candidats.length) return
-    if (candidats.some(m => m.promotion)) { setPromo({ from, to }); setSelection(null); return }
+    if (candidats.some(m => m.promotion)) {
+      // Auto-promotion en Dame : on joue directement sans ouvrir le sélecteur.
+      if (autoPromo) {
+        const mv = partie.jouer({ from, to, promotion: 'q' })
+        if (mv) { setSelection(null); onCoup?.(mv) }
+        return
+      }
+      setPromo({ from, to }); setSelection(null); return
+    }
     const mv = partie.jouer({ from, to })
     if (mv) { setSelection(null); onCoup?.(mv) }
-  }, [partie, onCoup])
+  }, [partie, onCoup, autoPromo])
 
   // Tente un coup ; si ce n'est pas mon tour et que les premoves sont actifs, met
   // le coup en file au lieu de le rejeter. Le from doit porter une pièce à MOI.

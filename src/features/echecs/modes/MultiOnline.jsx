@@ -5,15 +5,16 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePartie } from '../hooks/usePartie.js'
 import { useRealtimeGame } from '../hooks/useRealtimeGame.js'
 import { useHorloge } from '../hooks/useHorloge.js'
-import Plateau from '../components/Plateau.jsx'
-import Plateau3D from '../components/Plateau3D.jsx'
+import PlateauReglable from '../components/PlateauReglable.jsx'
 import PanneauJoueur from '../components/PanneauJoueur.jsx'
 import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
 import FinPartieModal from '../components/FinPartieModal.jsx'
+import EchecsAnalyse from '../EchecsAnalyse.jsx'
 import { getPartie, rpcJouerCoup, rpcTerminer, rpcAbandonner, rpcNulleAccord, rpcReclamerTemps, rpcRevanche, rpcFinaliser } from '../lib/api.js'
 import { THEME, DELAI_DECO_MS, taillePlateauAuto } from '../constants.js'
 import { sons } from '../lib/sons.js'
+import { useReglagesEchecs } from '../hooks/useReglagesEchecs.js'
 
 function sonDuCoup(mv, enEchec) {
   if (mv.promotion || mv.flags?.includes('p')) sons.promotion()
@@ -24,10 +25,12 @@ function sonDuCoup(mv, enEchec) {
 }
 
 export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePartie, troisD = false }) {
+  const reglages = useReglagesEchecs()
   const partie = usePartie()
   const [row, setRow] = useState(null)             // ligne echecs_parties (vérité DB)
   const [chargement, setChargement] = useState(true)
   const [finVisible, setFinVisible] = useState(false)
+  const [analyseVisible, setAnalyseVisible] = useState(false)
   const [deltaElo, setDeltaElo] = useState(null)
   const [eloFinal, setEloFinal] = useState(null)
   const [nulleRecue, setNulleRecue] = useState(false)      // l'adversaire propose
@@ -220,7 +223,8 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
     }
   }, [revancheRecue, revancheEnvoyee]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const taillePlateau = useMemo(() => taillePlateauAuto(troisD), [troisD])
+  const utiliser3D = reglages.embarque ? reglages.plateau3D : troisD
+  const taillePlateau = useMemo(() => taillePlateauAuto(utiliser3D), [utiliser3D])
 
   if (chargement) {
     return <div style={{ textAlign: 'center', padding: 60, color: THEME.muted, fontFamily: THEME.fontBody }}>Chargement de la partie…</div>
@@ -242,11 +246,10 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
   const tempsMoi = maCouleur === 'w' ? tempsBlanc : tempsNoir
   const tempsLui = maCouleur === 'w' ? tempsNoir : tempsBlanc
   const decoLongue = decoDepuis && Date.now() - decoDepuis > DELAI_DECO_MS
-  const PlateauComp = troisD ? Plateau3D : Plateau
 
   return (
     <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
-      <PlateauComp
+      <PlateauReglable
         partie={partie}
         orientation={maCouleur === 'w' ? 'white' : 'black'}
         peutJouer={c => enCours && c === maCouleur}
@@ -254,7 +257,7 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
         taille={taillePlateau}
         interactif={enCours}
         maCouleur={maCouleur}
-        troisD={troisD}
+        troisD={reglages.embarque ? undefined : troisD}
       />
 
       <div style={{ width: 'min(330px, 92vw)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -315,7 +318,15 @@ export default function MultiOnline({ partieId, monUid, onQuitter, onRejoindrePa
           resultat={row.resultat} cause={row.cause} maCouleur={maCouleur}
           deltaElo={deltaElo} eloFinal={eloFinal}
           onRevanche={demanderRevanche} revancheEnAttente={revancheEnvoyee && !revancheRecue}
+          onAnalyser={historique.length ? () => setAnalyseVisible(true) : undefined}
           onFermer={() => setFinVisible(false)}
+        />
+      )}
+      {analyseVisible && (
+        <EchecsAnalyse
+          pgn={partie.pgn()} historique={historique}
+          resultat={row.resultat} orientation={maCouleur === 'w' ? 'white' : 'black'}
+          onClose={() => setAnalyseVisible(false)}
         />
       )}
       {finVisible && revancheRecue && !revancheEnvoyee && (

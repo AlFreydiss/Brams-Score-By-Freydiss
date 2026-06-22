@@ -33,19 +33,29 @@ export default function Plateau({
   interactif = true,
   maCouleur = null,        // 'w'|'b' → active les premoves (file pendant le tour adverse)
   theme,                   // override de thème ; sinon préférence persistée
+  // ── Réglages live (useReglagesEchecs) ; défauts = comportement actuel ──
+  reglages,                // override de thème live (themeObj) prioritaire si fourni
+  animationMs,             // durée d'anim des pièces (ms) ; sinon ANIM_PIECE_MS
+  afficherCoupsLegaux = true,   // surbrillance des coups légaux
+  afficherDernierCoup = true,   // surbrillance du dernier coup
+  afficherEchec = true,         // roi en échec en rouge
+  premoveActif = true,          // autorise les premoves (avec maCouleur)
+  autoPromo = false,            // promotion auto en Dame (pas de sélecteur)
+  coordonnees = 'exterieur',    // 'exterieur' | 'interieur' | 'masque'
 }) {
   const { fen, coupsLegaux, dernierCoup, caseRoiEnEchec, trait } = partie
 
-  // Thème : prop explicite prioritaire, sinon préférence persistée + écoute des
-  // changements de thème faits depuis la barre du hub (event 'echecs:theme-plateau').
+  // Thème : réglage live (reglages) prioritaire, puis prop explicite (theme),
+  // sinon préférence persistée + écoute des changements de thème faits depuis la
+  // barre du hub (event 'echecs:theme-plateau').
   const [temaId, setTemaId] = useState(() => themePlateau().id)
   useEffect(() => {
-    if (theme) return
+    if (theme || reglages) return
     const maj = (e) => setTemaId(e?.detail || themePlateau().id)
     window.addEventListener('echecs:theme-plateau', maj)
     return () => window.removeEventListener('echecs:theme-plateau', maj)
-  }, [theme])
-  const tema = theme || THEMES_PLATEAU[temaId] || themePlateau()
+  }, [theme, reglages])
+  const tema = reglages || theme || THEMES_PLATEAU[temaId] || themePlateau()
 
   // Orientation locale : démarre depuis la prop, basculable par le bouton flip.
   // Ne touche PAS la logique des modes (l'orientation n'est qu'un affichage).
@@ -58,7 +68,9 @@ export default function Plateau({
     try { const p = partie.chess.get(sq); return p ? p.color : null } catch { return null }
   }, [partie.chess, fen]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif, maCouleur, pieceSur })
+  // Premoves : désactivés si le réglage est off (on neutralise maCouleur côté hook).
+  const maCouleurInter = premoveActif ? maCouleur : null
+  const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif, maCouleur: maCouleurInter, pieceSur, autoPromo })
   const { selection, coupsLegauxSel, promo, premove, onCaseClic, tenterCoup, choisirPromotion, annulerPromo, annulerPremove } = inter
 
   // ── Handlers react-chessboard v5 (args en objet) ──
@@ -71,7 +83,7 @@ export default function Plateau({
     if (!interactif || !targetSquare) return false
     const couleur = couleurDe(piece)
     // Premove : pas mon tour mais c'est ma pièce → on met en file (legal vérifié au retour du trait).
-    if (maCouleur && couleur === maCouleur && couleur !== trait) {
+    if (maCouleurInter && couleur === maCouleurInter && couleur !== trait) {
       tenterCoup(sourceSquare, targetSquare)
       return true
     }
@@ -80,38 +92,43 @@ export default function Plateau({
     if (!legal) return false
     tenterCoup(sourceSquare, targetSquare)
     return true
-  }, [interactif, peutJouer, trait, maCouleur, coupsLegaux, tenterCoup])
+  }, [interactif, peutJouer, trait, maCouleurInter, coupsLegaux, tenterCoup])
 
   const canDragPiece = useCallback(({ piece }) => {
     if (!interactif) return false
     const couleur = couleurDe(piece)
-    if (maCouleur) return couleur === maCouleur          // premoves : je peux saisir mes pièces même hors trait
+    if (maCouleurInter) return couleur === maCouleurInter   // premoves : je peux saisir mes pièces même hors trait
     return couleur === trait && !!peutJouer?.(couleur)
-  }, [interactif, trait, maCouleur, peutJouer])
+  }, [interactif, trait, maCouleurInter, peutJouer])
 
-  // ── Surbrillances ──
+  // ── Surbrillances (conditionnées par les réglages live) ──
   const squareStyles = useMemo(() => {
     const s = {}
-    if (dernierCoup) {
+    if (afficherDernierCoup && dernierCoup) {
       s[dernierCoup.from] = { background: tema.dernierCoup }
       s[dernierCoup.to]   = { background: tema.dernierCoup }
     }
+    // La sélection reste toujours visible (repère de saisie, pas un "indice").
     if (selection) s[selection] = { background: tema.selection }
-    for (const m of coupsLegauxSel) {
-      s[m.to] = m.captured || m.flags?.includes('e')
-        ? { ...(s[m.to] || {}), boxShadow: `inset 0 0 0 4px ${tema.anneauCapture}`, borderRadius: 2 }
-        : { ...(s[m.to] || {}), background: `${s[m.to]?.background ? s[m.to].background + ', ' : ''}radial-gradient(circle, ${tema.pastilleLegale} 26%, transparent 30%)` }
+    if (afficherCoupsLegaux) {
+      for (const m of coupsLegauxSel) {
+        s[m.to] = m.captured || m.flags?.includes('e')
+          ? { ...(s[m.to] || {}), boxShadow: `inset 0 0 0 4px ${tema.anneauCapture}`, borderRadius: 2 }
+          : { ...(s[m.to] || {}), background: `${s[m.to]?.background ? s[m.to].background + ', ' : ''}radial-gradient(circle, ${tema.pastilleLegale} 26%, transparent 30%)` }
+      }
     }
     // Premove en file : surligne départ + arrivée en bleu (lisible sur tous les thèmes).
     if (premove) {
       s[premove.from] = { ...(s[premove.from] || {}), background: tema.premove }
       s[premove.to]   = { ...(s[premove.to] || {}), background: tema.premove }
     }
-    if (caseRoiEnEchec) s[caseRoiEnEchec] = { ...(s[caseRoiEnEchec] || {}), background: tema.echecRoi }
+    if (afficherEchec && caseRoiEnEchec) s[caseRoiEnEchec] = { ...(s[caseRoiEnEchec] || {}), background: tema.echecRoi }
     return s
-  }, [dernierCoup, selection, coupsLegauxSel, premove, caseRoiEnEchec, tema])
+  }, [dernierCoup, selection, coupsLegauxSel, premove, caseRoiEnEchec, tema, afficherDernierCoup, afficherCoupsLegaux, afficherEchec])
 
   const notationTaille = Math.max(9, taille * 0.022)
+  const dureeAnim = animationMs ?? ANIM_PIECE_MS
+  const montrerNotation = coordonnees !== 'masque'
 
   const options = useMemo(() => ({
     id: 'plateau-brams',
@@ -121,8 +138,8 @@ export default function Plateau({
     onSquareClick,
     canDragPiece,
     allowDragging: interactif,
-    animationDurationInMs: ANIM_PIECE_MS,
-    showNotation: true,
+    animationDurationInMs: dureeAnim,
+    showNotation: montrerNotation,
     squareStyles,
     boardStyle: { borderRadius: 12, overflow: 'hidden', boxShadow: '0 30px 70px -28px rgba(0,0,0,.85), 0 0 0 1px rgba(255,255,255,.05)' },
     darkSquareStyle: { backgroundColor: tema.foncee },
@@ -132,7 +149,7 @@ export default function Plateau({
     alphaNotationStyle: { fontSize: notationTaille, fontFamily: THEME.fontBody, fontWeight: 700 },
     numericNotationStyle: { fontSize: notationTaille, fontFamily: THEME.fontBody, fontWeight: 700 },
     dropSquareStyle: { boxShadow: `inset 0 0 0 3px ${THEME.gold}` },
-  }), [fen, orientationEff, onPieceDrop, onSquareClick, canDragPiece, interactif, squareStyles, tema, notationTaille])
+  }), [fen, orientationEff, onPieceDrop, onSquareClick, canDragPiece, interactif, squareStyles, tema, notationTaille, dureeAnim, montrerNotation])
 
   return (
     <div data-testid="plateau-wrap" style={{ position: 'relative', width: taille, height: taille }}>

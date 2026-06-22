@@ -2,17 +2,18 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { usePartie } from '../hooks/usePartie.js'
 import { useStockfish } from '../hooks/useStockfish.js'
-import Plateau from '../components/Plateau.jsx'
-import Plateau3D from '../components/Plateau3D.jsx'
+import PlateauReglable from '../components/PlateauReglable.jsx'
 import PanneauJoueur from '../components/PanneauJoueur.jsx'
 import HistoriqueCoups from '../components/HistoriqueCoups.jsx'
 import BarreActions from '../components/BarreActions.jsx'
 import FinPartieModal from '../components/FinPartieModal.jsx'
+import EchecsAnalyse from '../EchecsAnalyse.jsx'
 import BarreEval from '../components/BarreEval.jsx'
 import { NIVEAUX_IA, NIVEAU_IA_DEFAUT, niveauParId } from '../lib/niveauxIA.js'
 import { THEME, CLE_NIVEAU_IA, CLE_COULEUR_IA, taillePlateauAuto } from '../constants.js'
 import { construireEval, construireIndice } from '../lib/analyse.js'
 import { sons } from '../lib/sons.js'
+import { useReglagesEchecs } from '../hooks/useReglagesEchecs.js'
 
 const CLE_ELO_PERSO = 'echecs_elo_perso'   // ELO du curseur (mode personnalisé)
 
@@ -40,8 +41,8 @@ function sonDuCoup(mv, enEchec) {
 }
 
 // ── Écran de configuration ──
-function ConfigSolo({ onLancer }) {
-  const [niveauId, setNiveauId] = useState(lireStockage(CLE_NIVEAU_IA, NIVEAU_IA_DEFAUT))
+function ConfigSolo({ onLancer, niveauDefautId = NIVEAU_IA_DEFAUT }) {
+  const [niveauId, setNiveauId] = useState(lireStockage(CLE_NIVEAU_IA, niveauDefautId))
   const [couleur, setCouleur] = useState(lireStockage(CLE_COULEUR_IA, 'w'))
   const [elo, setElo] = useState(() => {
     const v = parseInt(lireStockage(CLE_ELO_PERSO, ''), 10)
@@ -156,9 +157,11 @@ function ConfigSolo({ onLancer }) {
 
 // ── Partie en cours ──
 function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQuitter, taillePlateau, troisD }) {
+  const reglages = useReglagesEchecs()
   const partie = usePartie()
   const { pret, reflechit, chercherCoup, nouvellePartie, analyser } = useStockfish(niveau)
   const [finVisible, setFinVisible] = useState(false)
+  const [analyseVisible, setAnalyseVisible] = useState(false)
   const [abandonnee, setAbandonnee] = useState(false)
   const couleurIA = maCouleur === 'w' ? 'b' : 'w'
   const rechercheEnCours = useRef(false)
@@ -255,19 +258,19 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
   const sesCaptures = maCouleur === 'w' ? captures.parNoir : captures.parBlanc
   const avantageMoi = maCouleur === 'w' ? captures.avantage : -captures.avantage
 
-  const PlateauComp = troisD ? Plateau3D : Plateau
-
   return (
     <div style={{ display: 'flex', gap: 22, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', minHeight: 'calc(100vh - 230px)' }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <BarreEval
-          ratio={evalPos?.ratio ?? 0.5}
-          texte={evalPos?.texte ?? '–'}
-          enCours={reflechit}
-          orientation={maCouleur === 'w' ? 'white' : 'black'}
-          hauteur={Math.min(taillePlateau, 560)}
-        />
-        <PlateauComp
+        {reglages.barreEval && (
+          <BarreEval
+            ratio={evalPos?.ratio ?? 0.5}
+            texte={evalPos?.texte ?? '–'}
+            enCours={reflechit}
+            orientation={maCouleur === 'w' ? 'white' : 'black'}
+            hauteur={Math.min(taillePlateau, 560)}
+          />
+        )}
+        <PlateauReglable
           partie={partie}
           orientation={maCouleur === 'w' ? 'white' : 'black'}
           peutJouer={c => c === maCouleur && !fin.terminee && !abandonnee && !reflechit}
@@ -285,12 +288,14 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
           sousTitre={reflechit ? '🧠 L\'IA réfléchit…' : (niveau.limitStrength ? `~${niveau.elo} ELO` : 'Pleine puissance')}
           auTrait={trait === couleurIA && !fin.terminee}
           capturees={sesCaptures} couleurCapturees={maCouleur} avantage={-avantageMoi > 0 ? -avantageMoi : 0}
+          masquerCaptures={!reglages.piecesCapturees}
         />
         <PanneauJoueur
           pseudo={pseudo} avatar={avatar} elo={profil?.elo ?? null}
           sousTitre={profil ? undefined : 'Partie non classée'}
           auTrait={trait === maCouleur && !fin.terminee}
           capturees={mesCaptures} couleurCapturees={couleurIA} avantage={avantageMoi > 0 ? avantageMoi : 0}
+          masquerCaptures={!reglages.piecesCapturees}
         />
         <HistoriqueCoups historique={historique} hauteur={200} />
 
@@ -351,7 +356,15 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
         <FinPartieModal
           resultat={resultatFinal} cause={causeFinale} maCouleur={maCouleur}
           onNouvellePartie={rejouer}
+          onAnalyser={historique.length ? () => setAnalyseVisible(true) : undefined}
           onFermer={() => setFinVisible(false)}
+        />
+      )}
+      {analyseVisible && (
+        <EchecsAnalyse
+          pgn={partie.pgn()} historique={historique}
+          resultat={resultatFinal} orientation={maCouleur === 'w' ? 'white' : 'black'}
+          onClose={() => setAnalyseVisible(false)}
         />
       )}
     </div>
@@ -359,18 +372,22 @@ function PartieSolo({ niveau, maCouleur, profil, pseudo, avatar, onRejouer, onQu
 }
 
 export default function SoloVsIA({ profil, pseudo, avatar, onQuitter, troisD = false }) {
+  const reglages = useReglagesEchecs()
   const [config, setConfig] = useState(null)   // { niveau, maCouleur } | null
   const [cle, setCle] = useState(0)            // re-mount pour « nouvelle partie »
 
-  const taillePlateau = useMemo(() => taillePlateauAuto(troisD), [troisD])
+  // En 3D le plateau prend toute la place : la taille auto suit le mode RÉEL utilisé
+  // (réglage plateau3D en embarqué, bouton barre `troisD` en standalone).
+  const utiliser3D = reglages.embarque ? reglages.plateau3D : troisD
+  const taillePlateau = useMemo(() => taillePlateauAuto(utiliser3D), [utiliser3D])
 
-  if (!config) return <ConfigSolo onLancer={setConfig} />
+  if (!config) return <ConfigSolo onLancer={setConfig} niveauDefautId={reglages.niveauIaId} />
   return (
     <PartieSolo
       key={cle}
       {...config}
       profil={profil} pseudo={pseudo} avatar={avatar}
-      taillePlateau={taillePlateau} troisD={troisD}
+      taillePlateau={taillePlateau} troisD={reglages.embarque ? undefined : troisD}
       onRejouer={() => setCle(k => k + 1)}
       onQuitter={onQuitter}
     />

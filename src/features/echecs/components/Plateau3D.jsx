@@ -28,6 +28,22 @@ const C3D = {
   or: '#ffd700',                                         // or pirate (particules / éclats)
 }
 
+// Palette 3D dérivée des réglages live : cases du thème choisi (hex) + repères
+// daltonien (bleu/orange) le cas échéant. `reglages` = themeObj résolu (constants
+// THEMES_PLATEAU enrichi). Sans réglages → palette historique C3D.
+function paletteDepuisReglages(reglages) {
+  if (!reglages) return C3D
+  const daltonien = reglages.anneauCapture?.includes('230, 159')   // signature palette daltonien
+  return {
+    ...C3D,
+    claire: reglages.claire || C3D.claire,
+    foncee: reglages.foncee || C3D.foncee,
+    selection: daltonien ? '#009e73' : C3D.selection,
+    legal:     daltonien ? '#56b4e9' : C3D.legal,
+    echec:     daltonien ? '#d55e00' : C3D.echec,
+  }
+}
+
 // Clone profond + normalisation : base à y=0, centré en x/z, mis à l'échelle d'une case.
 function normaliserPiece(src) {
   if (!src) return null
@@ -333,7 +349,7 @@ function CameraRig({ controlsRef, secousse, matVers, reduit }) {
   return null
 }
 
-function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec, coupsLegaux, trait, survolActif }) {
+function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec, coupsLegaux, trait, survolActif, c3d = C3D, afficherCoupsLegaux = true }) {
   const echecRef = useRef()
   // Throb rouge émissif sur la case du roi en échec.
   useFrame(({ clock }) => {
@@ -377,25 +393,25 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
         <boxGeometry args={[1, 0.12, 1]} />
         <meshStandardMaterial
           ref={estEchec ? echecRef : undefined}
-          color={sb?.color || (claire ? C3D.claire : C3D.foncee)}
-          emissive={estEchec ? C3D.echec : '#000000'}
+          color={sb?.color || (claire ? c3d.claire : c3d.foncee)}
+          emissive={estEchec ? c3d.echec : '#000000'}
           emissiveIntensity={estEchec ? 1 : 0}
         />
       </mesh>
     )
-    if (sb?.legal) cases.push(
+    if (afficherCoupsLegaux && sb?.legal) cases.push(
       <mesh key={square + '-l'} position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={sb.capture ? [0.34, 0.46, 28] : [0.12, 0.2, 28]} />
-        <meshStandardMaterial color={sb.capture ? C3D.echec : C3D.legal} emissive={sb.capture ? C3D.echec : C3D.legal} emissiveIntensity={0.7} transparent opacity={0.9} />
+        <meshStandardMaterial color={sb.capture ? c3d.echec : c3d.legal} emissive={sb.capture ? c3d.echec : c3d.legal} emissiveIntensity={0.7} transparent opacity={0.9} />
       </mesh>
     )
     // Aperçu au survol : anneau atténué (skip si la case porte déjà un anneau de sélection).
-    if (apercu && apercu[square] !== undefined && !sb?.legal) {
+    if (afficherCoupsLegaux && apercu && apercu[square] !== undefined && !sb?.legal) {
       const cap = apercu[square]
       cases.push(
         <mesh key={square + '-h'} position={[x, 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={cap ? [0.34, 0.46, 28] : [0.12, 0.2, 28]} />
-          <meshStandardMaterial color={cap ? C3D.echec : C3D.legal} emissive={cap ? C3D.echec : C3D.legal} emissiveIntensity={0.45} transparent opacity={0.42} depthWrite={false} />
+          <meshStandardMaterial color={cap ? c3d.echec : c3d.legal} emissive={cap ? c3d.echec : c3d.legal} emissiveIntensity={0.45} transparent opacity={0.42} depthWrite={false} />
         </mesh>
       )
     }
@@ -403,7 +419,7 @@ function Echiquier({ orientation, surbrillances, onCaseClic, pieceSur, caseEchec
   return <group>{cases}</group>
 }
 
-function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, interactif }) {
+function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, interactif, c3d = C3D, afficherCoupsLegaux = true, afficherDernierCoup = true, afficherEchec = true }) {
   const { nodes } = useGLTF(MODELE_3D_URL)
   const pieces = useMemo(() => piecesDepuisFen(partie.fen), [partie.fen])
 
@@ -480,23 +496,24 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, inte
     const s = {}
     // Le dernier coup est désormais rendu par TapisDernierCoup (tapis lumineux or) — on ne
     // recolore plus la case ici pour ne pas troubler la teinte sous la plaque émissive.
-    if (inter.selection) s[inter.selection] = { color: C3D.selection }
+    if (inter.selection) s[inter.selection] = { color: c3d.selection }
     for (const m of inter.coupsLegauxSel) s[m.to] = { ...(s[m.to] || {}), legal: true, capture: !!(m.captured || m.flags?.includes('e')) }
     if (inter.premove) {
       s[inter.premove.from] = { ...(s[inter.premove.from] || {}), color: '#74b9ff' }
       s[inter.premove.to]   = { ...(s[inter.premove.to] || {}), color: '#74b9ff' }
     }
     return s
-  }, [partie.dernierCoup, inter.selection, inter.coupsLegauxSel, inter.premove])
+  }, [partie.dernierCoup, inter.selection, inter.coupsLegauxSel, inter.premove, c3d])
 
   const matVers = matInfo ? squareVers3D(matInfo.square, orientation) : null
 
   return (
     <>
-      <CameraRig controlsRef={controlsRef} secousse={partie.caseRoiEnEchec} matVers={matVers} reduit={reduit} />
+      <CameraRig controlsRef={controlsRef} secousse={afficherEchec ? partie.caseRoiEnEchec : null} matVers={matVers} reduit={reduit} />
       <Echiquier orientation={orientation} surbrillances={surbrillances} onCaseClic={inter.onCaseClic}
-        pieceSur={pieceSur} caseEchec={partie.caseRoiEnEchec}
+        pieceSur={pieceSur} caseEchec={afficherEchec ? partie.caseRoiEnEchec : null}
         coupsLegaux={partie.coupsLegaux} trait={partie.trait}
+        c3d={c3d} afficherCoupsLegaux={afficherCoupsLegaux}
         survolActif={interactif && !inter.selection && !partie.fin?.terminee} />
       {pieces.map((p) => {
         // Glissement actif sur CETTE pièce (case d'arrivée d'un coup simple, signature FEN à jour).
@@ -519,21 +536,32 @@ function Scene({ partie, orientation, inter, pieceSur, controlsRef, reduit, inte
       ))}
       {matInfo && <PluieOr reduit={reduit} />}
       {matVers && <HaloMat position={matVers} reduit={reduit} />}
-      <TapisDernierCoup dernierCoup={partie.dernierCoup} orientation={orientation} />
-      <TrajectoireCoup dernierCoup={partie.dernierCoup} orientation={orientation} />
+      {afficherDernierCoup && <TapisDernierCoup dernierCoup={partie.dernierCoup} orientation={orientation} />}
+      {afficherDernierCoup && <TrajectoireCoup dernierCoup={partie.dernierCoup} orientation={orientation} />}
     </>
   )
 }
 
-export default function Plateau3D({ partie, orientation = 'white', peutJouer, onCoup, interactif = true, maCouleur = null }) {
+export default function Plateau3D({
+  partie, orientation = 'white', peutJouer, onCoup, interactif = true, maCouleur = null,
+  // ── Réglages live (useReglagesEchecs) ; défauts = comportement actuel ──
+  reglages = null,              // { foncee, claire, dernierCoup, ... } pour teinter la scène 3D
+  afficherCoupsLegaux = true,
+  afficherDernierCoup = true,
+  afficherEchec = true,
+  premoveActif = true,
+  autoPromo = false,
+}) {
   // couleur de la pièce sur une case ('w'|'b'|null) — sert au rendu ET aux premoves.
   const pieceSur = useMemo(() => {
     const m = {}; for (const p of piecesDepuisFen(partie.fen)) m[p.square] = p.couleur
     return (sq) => m[sq] || null
   }, [partie.fen])
-  const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif, maCouleur, pieceSur })
+  const maCouleurInter = premoveActif ? maCouleur : null
+  const inter = useInteractionEchecs(partie, { peutJouer, onCoup, interactif, maCouleur: maCouleurInter, pieceSur, autoPromo })
   const controlsRef = useRef()
   const reduit = useMemo(() => prefersReducedMotion(), [])
+  const c3d = useMemo(() => paletteDepuisReglages(reglages), [reglages])
   // Restaure le curseur si on démonte le plateau en plein survol (sinon curseur bloqué).
   useEffect(() => () => { document.body.style.cursor = 'auto' }, [])
 
@@ -541,7 +569,15 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
   const webgl = useMemo(() => {
     try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl'))) } catch { return false }
   }, [])
-  if (!webgl) return <Plateau partie={partie} orientation={orientation} peutJouer={peutJouer} onCoup={onCoup} interactif={interactif} maCouleur={maCouleur} taille={480} />
+  if (!webgl) return (
+    <Plateau
+      partie={partie} orientation={orientation} peutJouer={peutJouer} onCoup={onCoup}
+      interactif={interactif} maCouleur={maCouleur} taille={480}
+      reglages={reglages}
+      afficherCoupsLegaux={afficherCoupsLegaux} afficherDernierCoup={afficherDernierCoup}
+      afficherEchec={afficherEchec} premoveActif={premoveActif} autoPromo={autoPromo}
+    />
+  )
 
   return (
     <div data-testid="plateau3d-wrap" style={{ position: 'relative', width: '100%', height: 'min(82vh, 820px)' }}>
@@ -559,7 +595,8 @@ export default function Plateau3D({ partie, orientation = 'white', peutJouer, on
             <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbb26b', animation: 'echecsBlink 1s infinite .4s' }} />
           </span>
         </Html>}>
-          <Scene partie={partie} orientation={orientation} inter={inter} pieceSur={pieceSur} controlsRef={controlsRef} reduit={reduit} interactif={interactif} />
+          <Scene partie={partie} orientation={orientation} inter={inter} pieceSur={pieceSur} controlsRef={controlsRef} reduit={reduit} interactif={interactif}
+            c3d={c3d} afficherCoupsLegaux={afficherCoupsLegaux} afficherDernierCoup={afficherDernierCoup} afficherEchec={afficherEchec} />
         </Suspense>
         <ContactShadows position={[0, -0.12, 0]} opacity={0.5} scale={14} blur={2.4} far={5} />
         <OrbitControls ref={controlsRef} enableDamping dampingFactor={0.08} enablePan={false} minDistance={6} maxDistance={18} maxPolarAngle={Math.PI / 2.15} target={[0, 0, 0]} />

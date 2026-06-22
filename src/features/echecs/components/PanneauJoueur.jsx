@@ -11,6 +11,7 @@ export default function PanneauJoueur({
   horlogeMs = null, horlogeActive = false,
   capturees = [], couleurCapturees = 'w', avantage = 0,
   enLigne = null,                      // null = pas d'indicateur ; bool sinon
+  masquerCaptures = false,             // réglage piecesCapturees off → on masque la ligne
 }) {
   const rang = elo != null ? rangPourElo(elo) : null
   return (
@@ -46,9 +47,11 @@ export default function PanneauJoueur({
         <div style={{ fontSize: 11.5, color: rang ? rang.couleur : THEME.muted, fontWeight: 600, marginTop: 1 }}>
           {sousTitre || (rang ? `${rang.emoji} ${rang.label} · ${rang.zone}` : '')}
         </div>
-        <div style={{ marginTop: 4 }}>
-          <PiecesCapturees pieces={capturees} couleurPieces={couleurCapturees} avantage={avantage} />
-        </div>
+        {!masquerCaptures && (
+          <div style={{ marginTop: 4 }}>
+            <PiecesCapturees pieces={capturees} couleurPieces={couleurCapturees} avantage={avantage} />
+          </div>
+        )}
       </div>
 
       {horlogeMs != null && <Horloge ms={horlogeMs} actif={horlogeActive} />}
