@@ -109,6 +109,7 @@ export default function FinPartieModal({
   eloFinal = null,
   onRevanche, revancheEnAttente,
   onFermer, onNouvellePartie,
+  onAnalyser,          // () => void (optionnel) — ouvre l'analyse post-partie
 }) {
   useCinzel()
   const cardRef = useRef(null)
@@ -202,6 +203,18 @@ export default function FinPartieModal({
               }}
             >
               ♟ Nouvelle partie
+            </button>
+          )}
+          {onAnalyser && (
+            <button
+              onClick={onAnalyser}
+              style={{
+                appearance: 'none', cursor: 'pointer', fontFamily: nm.fonts.body, fontWeight: 700, fontSize: 14,
+                padding: '12px 22px', borderRadius: nm.radius.pill, color: nm.color.ink, background: 'transparent',
+                border: `1px solid ${nm.color.goldDeep}`,
+              }}
+            >
+              🔍 Analyser
             </button>
           )}
           <button
