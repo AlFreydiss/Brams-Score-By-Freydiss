@@ -82,7 +82,7 @@ export default function DamesGame3D() {
   const drawMarkers = useCallback(() => {
     const g = G.current, rdr = rdrRef.current; if (!rdr) return
     const aiTurn = g.mode === 'ai' && g.turn === g.aiSide
-    rdr.setMarkers({ selected: g.selected, legalMoves: g.legalMoves, movableKeys: g.movableKeys, interactive: !g.inputLocked && !aiTurn && !g.gameOver, gameOver: g.gameOver, last: g.last })
+    rdr.setMarkers({ selected: g.selected, legalMoves: g.legalMoves, movableKeys: g.movableKeys, interactive: !g.inputLocked && !aiTurn && !g.gameOver, gameOver: g.gameOver, last: g.last, surbrillancePrises: g.surbrillancePrises !== false, coordonnees: g.coordonnees !== false })
   }, [])
 
   const endGame = useCallback((winner, drawReason) => {
@@ -262,6 +262,10 @@ export default function DamesGame3D() {
   useEffect(() => { if (R.embarque) { setView2D(R.vue2D); rdrRef.current?.setView2D(R.vue2D) } }, [R.embarque, R.vue2D])
   useEffect(() => { if (R.embarque) { setMuted(!R.sons); rdrRef.current?.setMuted(!R.sons) } }, [R.embarque, R.sons])
   useEffect(() => { if (R.embarque) { G.current.diff = R.diff; setHud(h => ({ ...h, diff: R.diff })) } }, [R.embarque, R.diff])
+  // Surbrillance des prises possibles (pastilles) — pilotée par le réglage, redessine.
+  useEffect(() => { G.current.surbrillancePrises = R.surbrillancePrises; drawMarkers() }, [R.surbrillancePrises, drawMarkers])
+  // Coordonnées (numérotation internationale, vue 2D) — pilotée par le réglage.
+  useEffect(() => { G.current.coordonnees = R.coordonnees; drawMarkers() }, [R.coordonnees, drawMarkers])
 
   // Ouvre l'analyse post-partie à partir de l'historique (plateau AVANT chaque coup + le coup).
   const openAnalyse = useCallback(() => {

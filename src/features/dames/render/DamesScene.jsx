@@ -632,7 +632,9 @@ function Markers({ store }) {
       const pts = [s.selected, ...path].map(([r, c]) => { const w = worldPos(r, c, size); return [w.x, MARK_Y + 0.05, w.z] })
       rings.push(<PathLine key="cppath" points={pts} color="#ff8a5a" />)
     }
-  } else if (s.interactive && !s.gameOver) {
+  } else if (s.interactive && !s.gameOver && s.surbrillancePrises !== false) {
+    // surbrillancePrises (réglage) : pastilles sur les pièces jouables (= les pièces
+    // qui capturent quand la prise est forcée). Désactivé → plateau plus épuré.
     s.movableKeys.forEach(k => { const [r, c] = k.split('_').map(Number); rings.push(<Ring key={'d' + k} r={r} c={c} kind="dot" size={size} />) })
   }
   if (s.hint) {

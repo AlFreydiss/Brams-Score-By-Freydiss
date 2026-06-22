@@ -56,6 +56,9 @@ export default function DamesView2D({ store, onSquareClick }) {
   const hasCaptures = (s.legalMoves || []).some(mv => mv.isCapture)
   const interactive = s.interactive && !s.gameOver
   const movable = s.movableKeys || new Set()
+  // Coordonnées (réglage) : numérotation internationale des cases jouables (sombres),
+  // 1..N en row-major. (0,0) étant claire, les sombres tombent sur les index impairs.
+  const coordsOn = s.coordonnees !== false
 
   return (
     <div aria-hidden={false} role="grid" aria-label="Plateau de dames — vue 2D"
@@ -96,6 +99,8 @@ export default function DamesView2D({ store, onSquareClick }) {
               {/* cible de coup légal */}
               {kind === 'move' && !cell && <div style={{ width: '34%', height: '34%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(217,184,112,.85), rgba(217,184,112,.35))', boxShadow: '0 0 10px rgba(217,184,112,.6)', pointerEvents: 'none' }} />}
               {kind === 'cap' && <div style={{ position: 'absolute', inset: '14%', borderRadius: '50%', boxShadow: 'inset 0 0 0 3px #ff7a52, 0 0 12px rgba(255,122,82,.6)', pointerEvents: 'none' }} />}
+              {/* coordonnée (case sombre uniquement) */}
+              {coordsOn && dark && <span style={{ position: 'absolute', top: 2, left: 4, fontSize: 'clamp(7px,1.1vmin,11px)', fontWeight: 700, color: 'rgba(243,234,216,.4)', pointerEvents: 'none', fontFamily: "'Inter',sans-serif" }}>{Math.floor((r * SIZE + c) / 2) + 1}</span>}
               {/* case intermédiaire de rafle */}
               {isHop && <div style={{ width: '18%', height: '18%', borderRadius: '50%', background: '#ff8a5a', opacity: .8, pointerEvents: 'none' }} />}
               {/* pièce */}
