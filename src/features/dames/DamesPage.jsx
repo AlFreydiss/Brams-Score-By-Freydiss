@@ -5,24 +5,31 @@ import { useState } from 'react'
 import DamesGame3D from './DamesGame3D.jsx'
 import DamesOnline3D from './DamesOnline3D.jsx'
 import BarreJeu from '../../components/BarreJeu.jsx'
+import { useGameShell } from '../nouveau-monde/game/GameShell.jsx'
 
 const GOLD = '#d4a017'
 
 export default function DamesPage() {
   const [tab, setTab] = useState('play')
+  // Embarqué dans Le Nouveau Monde : la topbar + le ⚙ du GameShell fournissent déjà
+  // le contexte d'île, le retour et les réglages → on retire le double-chrome
+  // (BarreJeu + hero) pour garder un plateau épuré (principe directeur du brief).
+  const embarque = !!useGameShell().jeu
 
   return (
-    <div style={{ minHeight: '100vh', background: 'radial-gradient(1000px 520px at 50% -6%, rgba(212,160,23,0.10), transparent 60%), linear-gradient(180deg,#0b0a0e,#0c0b10 60%,#08090d)', color: '#f3ead8' }}>
-      <BarreJeu titre="Dames Brams" />
-      <div style={{ padding: '0 16px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <h1 style={{ margin: 0, fontFamily: "'Pirata One','OnePiece',cursive", fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, letterSpacing: '-.01em', color: '#fff' }}>
-            Dames <span style={{ color: GOLD }}>Brams</span> <span style={{ fontSize: '.5em', color: 'rgba(243,234,216,.5)', fontWeight: 600, verticalAlign: 'middle' }}>· 3D</span>
-          </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(243,234,216,.55)' }}>
-            Internationales 10×10 · rafle maximale · dames volantes · Pirates ☠️ vs Marine ⚓
-          </p>
-        </div>
+    <div style={{ minHeight: embarque ? 0 : '100vh', background: embarque ? 'transparent' : 'radial-gradient(1000px 520px at 50% -6%, rgba(212,160,23,0.10), transparent 60%), linear-gradient(180deg,#0b0a0e,#0c0b10 60%,#08090d)', color: '#f3ead8' }}>
+      {!embarque && <BarreJeu titre="Dames Brams" />}
+      <div style={{ padding: embarque ? '12px 16px 24px' : '0 16px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        {!embarque && (
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <h1 style={{ margin: 0, fontFamily: "'Pirata One','OnePiece',cursive", fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 700, letterSpacing: '-.01em', color: '#fff' }}>
+              Dames <span style={{ color: GOLD }}>Brams</span> <span style={{ fontSize: '.5em', color: 'rgba(243,234,216,.5)', fontWeight: 600, verticalAlign: 'middle' }}>· 3D</span>
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(243,234,216,.55)' }}>
+              Internationales 10×10 · rafle maximale · dames volantes · Pirates ☠️ vs Marine ⚓
+            </p>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
           {[['play', '🎲 Solo & Ami'], ['online', '🌐 Classé (primes ฿)']].map(([id, lbl]) => (

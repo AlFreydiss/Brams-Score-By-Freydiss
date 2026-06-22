@@ -41,7 +41,7 @@ function DeltaElo({ delta }) {
   )
 }
 
-export default function DamesPoster({ result, myColor = null, reason, stats = [], prime = null, eloDelta = null, promoted = false, onRematch, onQuit, rematchLabel = '⚔️ Revanche' }) {
+export default function DamesPoster({ result, myColor = null, reason, stats = [], prime = null, eloDelta = null, promoted = false, onRematch, onQuit, onAnalyse = null, rematchLabel = '⚔️ Revanche' }) {
   const cardRef = useRef(null)
   const draw = result === 'draw'
   const won = !draw && myColor && result === myColor
@@ -117,6 +117,7 @@ export default function DamesPoster({ result, myColor = null, reason, stats = []
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginTop: stats.length ? 0 : 22 }}>
           <button onClick={onRematch} style={{ appearance: 'none', border: 0, cursor: 'pointer', fontFamily: nm.fonts.body, fontWeight: 800, fontSize: 15, padding: '12px 26px', borderRadius: nm.radius.pill, color: '#1a1304', background: `linear-gradient(180deg, ${nm.color.goldHi}, ${nm.color.gold})`, boxShadow: nm.shadow.goldGlow }}>{rematchLabel}</button>
+          {onAnalyse && <button onClick={onAnalyse} style={{ appearance: 'none', cursor: 'pointer', fontFamily: nm.fonts.body, fontWeight: 700, fontSize: 14, padding: '12px 22px', borderRadius: nm.radius.pill, color: nm.color.ink, background: 'transparent', border: `1px solid ${nm.color.goldDeep}` }}>🔍 Analyser</button>}
           <button onClick={onQuit} style={{ appearance: 'none', cursor: 'pointer', fontFamily: nm.fonts.body, fontWeight: 700, fontSize: 14, padding: '12px 22px', borderRadius: nm.radius.pill, color: nm.color.ink, background: 'transparent', border: `1px solid ${nm.color.goldDeep}` }}>Quitter</button>
         </div>
       </div>

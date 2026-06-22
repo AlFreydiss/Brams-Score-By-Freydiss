@@ -11,6 +11,8 @@ import { moveToNotation } from './engine/notation.js'
 import DamesEvalBar from './DamesEvalBar.jsx'
 import DamesFxOverlay from './DamesFxOverlay.jsx'
 import DamesPoster from './DamesPoster.jsx'
+import DamesAnalyse from './DamesAnalyse.jsx'
+import { useReglagesDames } from './hooks/useReglagesDames.js'
 
 const QUALITY = [['high', 'Élevé'], ['medium', 'Moyen'], ['low', 'Basique']]
 
@@ -22,11 +24,17 @@ const segWrap = { display: 'flex', background: 'rgba(18,13,8,.72)', border: '1px
 const iconBtn = (dis) => ({ appearance: 'none', border: '1px solid rgba(217,184,112,.16)', background: 'rgba(18,13,8,.72)', color: MUTED, width: 40, height: 40, borderRadius: '50%', cursor: dis ? 'not-allowed' : 'pointer', display: 'grid', placeItems: 'center', fontSize: 16, backdropFilter: 'blur(10px)', opacity: dis ? 0.32 : 1 })
 
 export default function DamesGame3D() {
+  // Réglages live (drawer ⚙ du Nouveau Monde si embarqué, sinon défauts/standalone).
+  const R = useReglagesDames()
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const rdrRef = useRef(null)
   const workerRef = useRef(null)
-  const G = useRef({ board: null, turn: P, mode: 'local', diff: 'marin', humanSide: P, aiSide: M, legalMoves: [], movableKeys: new Set(), selected: null, inputLocked: false, gameOver: false, history: [], last: null, seq: 0, pendingMove: null, pendingHint: null, halfmoveClock: 0, reps: new Map(), pendingEval: null })
+  // `rules` = snapshot figé au début de partie (on ne change pas de variante en cours
+  // de jeu). newGame() le re-capture depuis R quand un réglage de règle change.
+  const G = useRef({ board: null, turn: P, mode: 'local', diff: 'marin', humanSide: P, aiSide: M, legalMoves: [], movableKeys: new Set(), selected: null, inputLocked: false, gameOver: false, history: [], last: null, seq: 0, pendingMove: null, pendingHint: null, halfmoveClock: 0, reps: new Map(), pendingEval: null, rules: R.rules })
+  const [showAnalyse, setShowAnalyse] = useState(false)
+  const [finalPositions, setFinalPositions] = useState(null)
   const [hud, setHud] = useState({ turn: P, pir: 20, mar: 20, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, mode: 'local', diff: 'marin', canUndo: false, ready: false, hinting: false })
   const [evalState, setEvalState] = useState(null)
   const evalTimer = useRef(0)
@@ -93,7 +101,7 @@ export default function DamesGame3D() {
     evalTimer.current = setTimeout(() => {
       const g2 = G.current; if (g2.gameOver || !workerRef.current) return
       const id = 'e' + (++g2.seq); g2.pendingEval = id
-      workerRef.current.postMessage({ id, type: 'analyse', board: g2.board, side: g2.turn, depth: 6 })
+      workerRef.current.postMessage({ id, type: 'analyse', board: g2.board, side: g2.turn, depth: 6, rules: g2.rules })
     }, 260)
   }, [])
 
@@ -101,20 +109,20 @@ export default function DamesGame3D() {
     const g = G.current
     const id = (type === 'hint' ? 'h' : 'm') + (++g.seq)
     if (type === 'hint') g.pendingHint = id; else g.pendingMove = id
-    const payload = { id, type, board: g.board, side: type === 'hint' ? g.humanSide : g.turn, diff: g.diff }
+    const payload = { id, type, board: g.board, side: type === 'hint' ? g.humanSide : g.turn, diff: g.diff, rules: g.rules }
     if (workerRef.current) workerRef.current.postMessage(payload)
     else { // repli thread principal
-      const mv = type === 'hint' ? aiMove(g.board, g.humanSide, 'amiral') : aiMove(g.board, g.turn, g.diff)
+      const mv = type === 'hint' ? aiMove(g.board, g.humanSide, 'amiral', g.rules) : aiMove(g.board, g.turn, g.diff, g.rules)
       setTimeout(() => onAIResult(id, mv), 20)
     }
   }, [])
 
   const refreshTurn = useCallback(() => {
     const g = G.current
-    g.legalMoves = generateMoves(g.board, g.turn)
+    g.legalMoves = generateMoves(g.board, g.turn, g.rules)
     g.movableKeys = new Set(g.legalMoves.map(m => m.from[0] + '_' + m.from[1]))
     g.selected = null; drawMarkers(); syncHUD()
-    const st = gameStatus(g.board, g.turn, { halfmoveClock: g.halfmoveClock, repetitions: g.reps })
+    const st = gameStatus(g.board, g.turn, { halfmoveClock: g.halfmoveClock, repetitions: g.reps }, g.rules)
     if (st.over) { endGame(st.winner, st.draw ? (st.reason || 'Partie nulle.') : null); return }
     requestEval()
     if (g.mode === 'ai' && g.turn === g.aiSide) { setHud(h => ({ ...h, thinking: true })); askAI('move') }
@@ -122,11 +130,12 @@ export default function DamesGame3D() {
 
   const doMove = useCallback((mv) => {
     const g = G.current, rdr = rdrRef.current; if (!rdr) return
-    g.history.push({ board: g.board.map(row => row.map(c => c ? { ...c } : null)), turn: g.turn, last: g.last, halfmoveClock: g.halfmoveClock })
+    // On garde `mv` dans l'historique pour reconstruire la partie côté analyse post-partie.
+    g.history.push({ board: g.board.map(row => row.map(c => c ? { ...c } : null)), turn: g.turn, last: g.last, halfmoveClock: g.halfmoveClock, mv })
     g.inputLocked = true; g.selected = null
     const notation = moveToNotation(mv); const mover = g.turn
     const before = g.board; const newClock = nextHalfmoveClock(g.halfmoveClock, g.board, mv)
-    const { board: nb, promoted } = applyMove(g.board, mv)
+    const { board: nb, promoted } = applyMove(g.board, mv, g.rules)
     rdr.setHint(null); setHud(h => ({ ...h, hinting: false }))
     rdr.playMove(mv, before, { promoted, ai: g.mode === 'ai' && mover === g.aiSide }).then(() => {
       g.board = nb; g.turn = opp(g.turn); g.last = mv; g.inputLocked = false; g.halfmoveClock = newClock
@@ -175,12 +184,14 @@ export default function DamesGame3D() {
 
   const newGame = useCallback(() => {
     const g = G.current; g.seq++; g.pendingMove = null; g.pendingHint = null; g.pendingEval = null; clearTimeout(hintTimer.current); clearTimeout(evalTimer.current)
-    g.board = initBoard(); g.turn = P; g.gameOver = false; g.history = []; g.selected = null; g.inputLocked = false; g.last = null
+    g.rules = R.rules                          // re-capture la variante active à chaque nouvelle partie
+    setShowAnalyse(false); setFinalPositions(null)
+    g.board = initBoard(g.rules); g.turn = P; g.gameOver = false; g.history = []; g.selected = null; g.inputLocked = false; g.last = null
     g.halfmoveClock = 0; g.reps = new Map(); g.reps.set(positionKey(g.board, g.turn), 1); setEvalState(null)
     startedAt.current = 0; setElapsed(0)
     setMoves([]); setHud(h => ({ ...h, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, hinting: false }))
     rdrRef.current?.setHint(null); rdrRef.current?.setBoard(g.board); rdrRef.current?.resetView(); refreshTurn()
-  }, [refreshTurn])
+  }, [refreshTurn, R.rules])
 
   const undo = useCallback(() => {
     const g = G.current; if (g.inputLocked || !g.history.length) return
@@ -197,7 +208,7 @@ export default function DamesGame3D() {
     setMoves(ms => ms.slice(0, Math.max(0, ms.length - pop)))
     setHud(h => ({ ...h, gameOver: false, winner: null, draw: false, drawReason: null, thinking: false, hinting: false }))
     rdrRef.current?.setHint(null); rdrRef.current?.setBoard(g.board)
-    g.legalMoves = generateMoves(g.board, g.turn); g.movableKeys = new Set(g.legalMoves.map(m => m.from[0] + '_' + m.from[1]))
+    g.legalMoves = generateMoves(g.board, g.turn, g.rules); g.movableKeys = new Set(g.legalMoves.map(m => m.from[0] + '_' + m.from[1]))
     drawMarkers(); syncHUD(); requestEval()
   }, [drawMarkers, syncHUD])
 
@@ -230,11 +241,33 @@ export default function DamesGame3D() {
       renderer.onCombo = (n) => fxRef.current?.combo(n)        // bandeau « RAFLE ×N » 2D
       renderer.onPromote = (side) => fxRef.current?.promote(side)  // couronnement Dame 2D
       renderer.mount(canvasRef.current, { reducedMotion: reduced })
-      G.current.board = initBoard(); renderer.setBoard(G.current.board)
+      G.current.rules = R.rules
+      G.current.board = initBoard(G.current.rules); renderer.setBoard(G.current.board)
       setHud(h => ({ ...h, ready: true })); refreshTurn()
     }).catch(e => console.error('[dames3d] renderer load', e))
     return () => { alive = false; clearTimeout(hintTimer.current); if (worker) worker.terminate(); workerRef.current = null; if (renderer) renderer.dispose(); rdrRef.current = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Réglages live (drawer ⚙ du Nouveau Monde) → plateau / moteur / renderer ───
+  // Changer de variante ou de règle relance une partie propre (on ne mute pas un
+  // jeu en cours). On compare une clé sérialisée pour ne réagir qu'aux vrais changements.
+  const rulesKey = JSON.stringify(R.rules)
+  const lastRulesKey = useRef(rulesKey)
+  useEffect(() => {
+    if (!hud.ready || lastRulesKey.current === rulesKey) return
+    lastRulesKey.current = rulesKey; newGame()
+  }, [rulesKey, hud.ready, newGame])
+  // Embarqué : vue 2D/3D, sons et niveau IA sont pilotés par le drawer (sinon boutons locaux).
+  useEffect(() => { if (R.embarque) { setView2D(R.vue2D); rdrRef.current?.setView2D(R.vue2D) } }, [R.embarque, R.vue2D])
+  useEffect(() => { if (R.embarque) { setMuted(!R.sons); rdrRef.current?.setMuted(!R.sons) } }, [R.embarque, R.sons])
+  useEffect(() => { if (R.embarque) { G.current.diff = R.diff; setHud(h => ({ ...h, diff: R.diff })) } }, [R.embarque, R.diff])
+
+  // Ouvre l'analyse post-partie à partir de l'historique (plateau AVANT chaque coup + le coup).
+  const openAnalyse = useCallback(() => {
+    const positions = G.current.history.filter(h => h.mv).map(h => ({ board: h.board, side: h.turn, mv: h.mv }))
+    if (!positions.length) return
+    setFinalPositions(positions); setShowAnalyse(true)
   }, [])
 
   const setMode = (m) => { G.current.mode = m; setHud(h => ({ ...h, mode: m })); newGame() }
@@ -284,15 +317,15 @@ export default function DamesGame3D() {
             <button style={seg(hud.mode === 'ai')} onClick={() => setMode('ai')}>⚔️ Solo (IA)</button>
             <button style={seg(hud.mode === 'local')} onClick={() => setMode('local')}>👥 Ami (2 J)</button>
           </div>
-          {hud.mode === 'ai' && (<div style={segWrap}>{DIFFS.map(([id, lbl]) => <button key={id} style={{ ...seg(hud.diff === id), fontSize: 12, padding: '7px 11px' }} onClick={() => setDiff(id)}>{lbl}</button>)}</div>)}
+          {hud.mode === 'ai' && !R.embarque && (<div style={segWrap}>{DIFFS.map(([id, lbl]) => <button key={id} style={{ ...seg(hud.diff === id), fontSize: 12, padding: '7px 11px' }} onClick={() => setDiff(id)}>{lbl}</button>)}</div>)}
           <button style={iconBtn(false)} title="Nouvelle partie" onClick={newGame}>↻</button>
           <button style={iconBtn(!hud.canUndo)} title="Annuler" onClick={undo} disabled={!hud.canUndo}>↶</button>
           <button style={iconBtn(!myTurn || hud.hinting)} title={hud.thinking ? "Indice indisponible — l'IA joue" : hud.hinting ? 'Recherche du meilleur coup…' : 'Indice (meilleur coup)'} onClick={hint} disabled={!myTurn || hud.hinting}>💡</button>
           <button style={iconBtn(false)} title="Recentrer" onClick={() => rdrRef.current?.resetView()}>⌖</button>
-          <button style={{ ...iconBtn(false), ...(view2D ? { background: `linear-gradient(180deg,${GOLD},#b8924a)`, color: '#231703', borderColor: GOLD } : {}) }} title={view2D ? 'Vue 3D' : 'Vue 2D (de dessus)'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} onClick={toggle2D}>{view2D ? '🧊' : '🗺️'}</button>
+          {!R.embarque && <button style={{ ...iconBtn(false), ...(view2D ? { background: `linear-gradient(180deg,${GOLD},#b8924a)`, color: '#231703', borderColor: GOLD } : {}) }} title={view2D ? 'Vue 3D' : 'Vue 2D (de dessus)'} aria-label="Basculer vue 2D / 3D" aria-pressed={view2D} onClick={toggle2D}>{view2D ? '🧊' : '🗺️'}</button>}
           <button style={iconBtn(false)} title={`Effets : ${QUALITY.find(q => q[0] === quality)?.[1] || ''}`} aria-label="Qualité des effets" onClick={cycleQuality}>{quality === 'high' ? '✨' : quality === 'medium' ? '◐' : '○'}</button>
           <button style={iconBtn(false)} title={fs ? 'Quitter le plein écran' : 'Plein écran'} aria-label="Plein écran" onClick={toggleFs}>{fs ? '🗗' : '⛶'}</button>
-          <button style={iconBtn(false)} title="Son" onClick={toggleMute}>{muted ? '🔇' : '🔊'}</button>
+          {!R.embarque && <button style={iconBtn(false)} title="Son" onClick={toggleMute}>{muted ? '🔇' : '🔊'}</button>}
           <button style={{ ...iconBtn(false), opacity: music ? 1 : 0.45 }} title={music ? 'Musique : on' : 'Musique : off'} aria-label="Musique" onClick={toggleMusic}>🎵</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, background: 'rgba(14,10,7,.82)', border: '1px solid rgba(217,184,112,.22)', borderRadius: 999, padding: '7px 20px 7px 8px', backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px rgba(0,0,0,.5)' }}>
@@ -344,7 +377,18 @@ export default function DamesGame3D() {
           stats={[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]]}
           onRematch={newGame}
           onQuit={() => navigate('/jeux')}
+          onAnalyse={G.current.history.some(h => h.mv) ? openAnalyse : null}
           rematchLabel="⚔️ Revanche"
+        />
+      )}
+
+      {showAnalyse && finalPositions && (
+        <DamesAnalyse
+          positions={finalPositions}
+          result={hud.draw ? 'draw' : hud.winner}
+          finalBoard={G.current.board}
+          rules={G.current.rules}
+          onClose={() => setShowAnalyse(false)}
         />
       )}
     </div>
