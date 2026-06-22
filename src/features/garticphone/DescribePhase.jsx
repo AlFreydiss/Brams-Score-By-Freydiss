@@ -119,10 +119,13 @@ export default function DescribePhase({ remaining, total, mySubmitted, prevPage,
           onChange={(e) => setText(e.target.value)}
           placeholder="Décris la scène…"
           onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) doSubmit(false) }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = alpha(C.gold, 0.55); e.currentTarget.style.boxShadow = `0 0 0 3px ${alpha(C.gold, 0.14)}` }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = C.hair; e.currentTarget.style.boxShadow = 'none' }}
           style={{
-            width: '100%', minHeight: 88, resize: 'vertical', boxSizing: 'border-box',
+            width: '100%', minHeight: 90, resize: 'vertical', boxSizing: 'border-box',
             padding: '14px 16px', borderRadius: 14, fontFamily: fonts.body, fontSize: 16, lineHeight: 1.5,
             color: C.text, background: alpha(C.gold, 0.05), border: `1px solid ${C.hair}`, outline: 'none',
+            transition: 'border-color .2s, box-shadow .2s',
           }}
         />
         <div style={{ ...type.small, color: C.textFaint, marginTop: 8, textAlign: 'right' }}>{text.length}/140</div>

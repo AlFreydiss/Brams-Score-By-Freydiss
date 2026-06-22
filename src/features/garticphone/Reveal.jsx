@@ -3,8 +3,9 @@
 // tout le monde voit la même page ; autoplay réglable. Réactions emojis flottantes
 // broadcastées à tous (canal room). Carte récap finale partageable (canvas → PNG).
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { type, fonts } from '../../styles/typography.js'
-import { C, GRAD, alpha, panel, KEYFRAMES } from './theme.js'
+import { C, GRAD, alpha, panel, foilEdge, KEYFRAMES, SPRING_POP } from './theme.js'
 import { Btn, Waiting } from './ui.jsx'
 import { buildAlbums } from './logic/rotation.js'
 import { playSound } from './sound.js'
@@ -386,12 +387,16 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       `}</style>
 
       {/* Header album */}
-      <div style={{ ...panel, padding: '16px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 6 }}>Le grand dévoilement</div>
-          <div style={{ ...type.h2, color: C.parchment }}>Carnet de {startAuthor}</div>
+      <div style={{ ...panel, padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+        <span aria-hidden style={foilEdge} />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(420px 160px at 0% 50%, ${alpha(C.gold, 0.1)}, transparent 70%)` }} />
+        <div style={{ position: 'relative' }}>
+          <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 6, display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 16, height: 1, background: alpha(C.gold, 0.5) }} />Le grand dévoilement</div>
+          <AnimatePresence mode="wait">
+            <motion.div key={startAuthor} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.3 }} style={{ ...type.h2, color: C.parchment }}>Carnet de {startAuthor}</motion.div>
+          </AnimatePresence>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', gap: 8, alignItems: 'center' }}>
           {(reactCounts[albumIdx] || 0) > 0 && (
             <span data-bp-anim title="Réactions sur ce carnet" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 999,
@@ -409,7 +414,8 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
 
       {/* Scène */}
       <div style={{ ...panel, padding: 'clamp(18px,3vw,28px)', minHeight: 320 }}>
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(540px 220px at 50% 0%, ${alpha(C.sea, 0.12)}, transparent 64%)` }} />
+        <span aria-hidden style={foilEdge} />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(540px 220px at 50% 0%, ${alpha(C.sea, 0.14)}, transparent 64%)` }} />
         {/* flash doré façon flashback à chaque page */}
         <div key={`flash-${albumIdx}-${pageIdx}`} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: lastPageOfAlbum ? `radial-gradient(70% 70% at 50% 45%, ${alpha(C.goldSoft, 1)}, transparent 72%)` : `radial-gradient(60% 60% at 50% 45%, ${alpha(C.goldSoft, 0.9)}, transparent 70%)`, mixBlendMode: 'screen', animation: lastPageOfAlbum ? 'bpGoldFlash .8s ease-out forwards' : 'bpGoldFlash .5s ease-out forwards' }} />
         {/* Build-up "PUNCHLINE" : court mot doré qui surgit juste avant la page finale du carnet */}
@@ -441,14 +447,16 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       {/* Barre de réactions (tout le monde) */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
         {REACTIONS.map((e) => (
-          <button key={e} onClick={() => react(e)} aria-label={`Réagir ${e}`} style={{
-            width: 46, height: 46, borderRadius: 13, fontSize: 22, cursor: 'pointer',
-            border: `1px solid ${C.hairSoft}`, background: 'rgba(255,255,255,0.04)',
-            transition: 'transform .12s ease, border-color .12s ease',
-          }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.transform = 'translateY(-3px) scale(1.08)'; ev.currentTarget.style.borderColor = alpha(C.gold, 0.5) }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.transform = 'none'; ev.currentTarget.style.borderColor = C.hairSoft }}
-          >{e}</button>
+          <motion.button key={e} onClick={() => react(e)} aria-label={`Réagir ${e}`}
+            whileHover={{ y: -4, scale: 1.12, borderColor: alpha(C.gold, 0.6) }}
+            whileTap={{ scale: 0.85, y: 0 }}
+            transition={SPRING_POP}
+            style={{
+              width: 48, height: 48, borderRadius: 14, fontSize: 23, cursor: 'pointer',
+              border: `1px solid ${C.hairSoft}`, background: 'rgba(255,255,255,0.045)',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >{e}</motion.button>
         ))}
       </div>
 
@@ -594,12 +602,14 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       )}
 
       {finished && (
-        <div style={{ ...panel, padding: 22, textAlign: 'center', background: GRAD.sea, color: '#eafaff', border: 'none' }}>
-          <div style={{ fontSize: 34, marginBottom: 6 }}>🏴‍☠️</div>
-          <div style={{ ...type.h2, color: '#fff' }}>Fin de l'aventure !</div>
-          <div style={{ ...type.body, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>Partage tes albums préférés sur le Discord.</div>
-          {guided && <div style={{ ...type.small, color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>Le capitaine peut relancer une partie.</div>}
-        </div>
+        <motion.div initial={{ opacity: 0, scale: 0.94, y: 18 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ ...SPRING_POP, delay: 0.1 }} style={{ position: 'relative', overflow: 'hidden', ...panel, padding: 'clamp(22px,4vw,32px)', textAlign: 'center', background: `linear-gradient(150deg, ${C.seaDeep}, ${alpha(C.sea, 0.45)} 60%, ${alpha(C.ember, 0.35)})`, color: '#eafaff', border: 'none' }}>
+          {/* balayage foil traversant le bandeau final */}
+          <span aria-hidden className="bp-foil" style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', left: 0, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)', animation: 'bp-foilsweep 4s ease-in-out infinite', pointerEvents: 'none' }} />
+          <motion.div animate={{ y: [0, -6, 0], rotate: [-4, 4, -4] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} style={{ fontSize: 40, marginBottom: 8, filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.4))', display: 'inline-block' }}>🏴‍☠️</motion.div>
+          <div style={{ ...type.h1, color: '#fff', fontFamily: fonts.display }}>Fin de l'aventure !</div>
+          <div style={{ ...type.body, color: 'rgba(255,255,255,0.82)', marginTop: 6 }}>Partage tes albums préférés sur le Discord.</div>
+          {guided && <div style={{ ...type.small, color: 'rgba(255,255,255,0.72)', marginTop: 10 }}>Le capitaine peut relancer une partie.</div>}
+        </motion.div>
       )}
     </div>
   )

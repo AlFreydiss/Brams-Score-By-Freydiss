@@ -1,8 +1,9 @@
 // Freydiss Phone — salle d'attente (pont du navire). Code partageable, joueurs autour
 // d'une table de capitaine, réglages hôte, bouton Démarrer. Join tardif = spectateur.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { type, fonts } from '../../styles/typography.js'
-import { C, GRAD, alpha, panel, KEYFRAMES } from './theme.js'
+import { C, GRAD, alpha, panel, foilEdge, KEYFRAMES, SPRING_POP } from './theme.js'
 import { Btn } from './ui.jsx'
 import { playSound } from './sound.js'
 
@@ -120,16 +121,24 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
       `}</style>
 
       {/* Header code + partage */}
-      <div style={{ ...panel, padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 6 }}>Salle d'embarquement</div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ ...type.body, color: C.textMut }}>Code</span>
-            <span style={{ ...type.h1, color: C.parchment, letterSpacing: '0.22em', fontFamily: fonts.display }}>{room.code}</span>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} style={{ ...panel, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+        <span aria-hidden style={foilEdge} />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(420px 160px at 0% 50%, ${alpha(C.gold, 0.12)}, transparent 70%)` }} />
+        <div style={{ position: 'relative' }}>
+          <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 8, display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 16, height: 1, background: alpha(C.gold, 0.5) }} />Salle d'embarquement</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ ...type.small, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.14em' }}>Code</span>
+            {/* chaque caractère du code dans sa "tuile" foil, comme un coffre */}
+            <span style={{ display: 'inline-flex', gap: 6 }}>
+              {String(room.code).split('').map((ch, i) => (
+                <motion.span key={i} initial={{ opacity: 0, y: 8, rotateX: -40 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ ...SPRING_POP, delay: 0.08 * i }}
+                  style={{ display: 'grid', placeItems: 'center', minWidth: 34, height: 44, padding: '0 6px', borderRadius: 10, background: `linear-gradient(165deg, ${alpha(C.gold, 0.18)}, ${alpha(C.goldDeep, 0.1)})`, border: `1px solid ${alpha(C.gold, 0.34)}`, ...type.h2, color: C.parchment, fontFamily: fonts.display, letterSpacing: 0, boxShadow: `inset 0 1px 0 ${alpha(C.goldHot, 0.3)}` }}>{ch}</motion.span>
+              ))}
+            </span>
           </div>
         </div>
-        <Btn variant="ghost" onClick={onCopy}>{copied ? '✓ Lien copié' : 'Copier le lien'}</Btn>
-      </div>
+        <Btn variant={copied ? 'sea' : 'ghost'} onClick={onCopy} style={{ position: 'relative' }}>{copied ? '✓ Lien copié' : '🔗 Copier le lien'}</Btn>
+      </motion.div>
 
       {spectator && (
         <div role="status" style={{ ...panel, padding: '14px 18px', borderColor: alpha(C.warn, 0.3), background: alpha(C.warn, 0.08), color: C.parchment }}>
@@ -140,12 +149,15 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
       <div className="bp-lobby-grid" style={{ display: 'grid', gap: 18, alignItems: 'start' }}>
         {/* Table du capitaine */}
         <div style={{ ...panel, padding: 24, minHeight: 360, position: 'relative' }}>
-          <div style={{ ...type.eyebrow, color: C.textMut, marginBottom: 12 }}>Équipage · {sortedPlayers.length}</div>
+          <span aria-hidden style={foilEdge} />
+          <div style={{ position: 'relative', ...type.eyebrow, color: C.textMut, marginBottom: 12 }}>Équipage · {sortedPlayers.length}</div>
           <div style={{ position: 'relative', height: Math.max(320, Math.min(460, radius * 2 + 90)), margin: '0 auto' }}>
-            {/* Table centrale (pont) */}
-            <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: radius * 1.1, height: radius * 1.1, borderRadius: '50%', border: `1px dashed ${C.hair}`, background: `radial-gradient(circle, ${alpha(C.sea, 0.12)}, transparent 70%)`, display: 'grid', placeItems: 'center' }}>
+            {/* anneau orbital décoratif derrière la table */}
+            <div aria-hidden data-bp-anim style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: radius * 2 + 14, height: radius * 2 + 14, borderRadius: '50%', border: `1px dashed ${alpha(C.gold, 0.18)}`, animation: 'bp-orbit 44s linear infinite', maskImage: 'linear-gradient(#000,transparent)' }} />
+            {/* Table centrale (pont) — léger bob */}
+            <div data-bp-anim style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: radius * 1.12, height: radius * 1.12, borderRadius: '50%', border: `1px dashed ${C.hair}`, background: `radial-gradient(circle, ${alpha(C.sea, 0.16)}, ${alpha(C.gold, 0.05)} 55%, transparent 72%)`, boxShadow: `inset 0 0 40px ${alpha(C.sea, 0.14)}`, display: 'grid', placeItems: 'center', animation: 'bp-tablebob 5s ease-in-out infinite' }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 30 }} data-bp-anim>🏴‍☠️</div>
+                <div style={{ fontSize: 32, filter: `drop-shadow(0 4px 16px ${alpha(C.gold, 0.4)})` }} data-bp-anim>🏴‍☠️</div>
                 <div style={{ ...type.eyebrow, color: C.gold, marginTop: 4 }}>Freydiss Phone</div>
               </div>
             </div>
@@ -160,8 +172,9 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
 
         {/* Réglages + actions */}
         <div style={{ ...panel, padding: 22, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          <div>
-            <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 10 }}>Réglages</div>
+          <span aria-hidden style={foilEdge} />
+          <div style={{ position: 'relative' }}>
+            <div style={{ ...type.eyebrow, color: C.gold, marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 16, height: 1, background: alpha(C.gold, 0.5) }} />Réglages</div>
             <div style={{ ...type.small, color: C.textMut, marginBottom: 12 }}>
               {players.length} carnets · {players.length} manches · mode {teamMode ? 'équipes ⚔️' : 'classique'}
             </div>
@@ -229,9 +242,9 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
           )}
 
           {everyoneReady && (
-            <div data-bp-anim style={{ ...type.small, fontWeight: 800, color: C.ok, textAlign: 'center', padding: '8px 12px', borderRadius: 10, background: alpha(C.ok, 0.12), border: `1px solid ${alpha(C.ok, 0.3)}`, animation: 'bp-ready-pop .4s cubic-bezier(.2,1.2,.3,1)' }}>
+            <motion.div initial={{ opacity: 0, scale: 0.8, y: 6 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={SPRING_POP} style={{ position: 'relative', ...type.small, fontWeight: 800, color: C.ok, textAlign: 'center', padding: '9px 12px', borderRadius: 12, background: `linear-gradient(135deg, ${alpha(C.ok, 0.16)}, ${alpha(C.sea, 0.08)})`, border: `1px solid ${alpha(C.ok, 0.34)}`, boxShadow: `0 8px 24px ${alpha(C.ok, 0.14)}` }}>
               🏴‍☠️ Équipage au complet — larguez les amarres !
-            </div>
+            </motion.div>
           )}
           <div style={{ ...type.small, color: everyoneReady ? C.ok : C.textMut, textAlign: 'center', marginBottom: -6 }}>{readyCount}/{sortedPlayers.length} prêts {everyoneReady ? '✓' : ''}</div>
 

@@ -453,7 +453,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   return (
     <div className="bpc-root" style={{ display: 'grid', gap: 14, opacity: disabled ? 0.7 : 1 }}>
       {/* Toile */}
-      <div ref={wrapRef} className="bpc-wrap" style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', border: `1px solid ${C.hairTop}`, boxShadow: '0 20px 50px rgba(0,0,0,0.4)', background: '#fff', touchAction: 'none' }}>
+      <div ref={wrapRef} className="bpc-wrap" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: `1px solid ${alpha(C.gold, 0.28)}`, boxShadow: `0 24px 60px rgba(0,0,0,0.46), 0 0 0 1px ${alpha(C.goldHot, 0.12)} inset`, background: '#fff', touchAction: 'none' }}>
         <canvas
           ref={localRef}
           onPointerDown={onDown}
