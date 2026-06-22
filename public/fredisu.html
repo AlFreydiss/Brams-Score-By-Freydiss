@@ -753,6 +753,10 @@ body.playing{cursor:none}
 #sMenu::before{background:linear-gradient(180deg,rgba(4,3,11,.34) 0%,transparent 22%,transparent 58%,rgba(4,3,11,.6) 100%)}
 
 /* ── Toolbar : wordmark mini sans or ── */
+/* le bouton fixe ← Brams (top-left) recouvrait le début du wordmark → on décale
+   la toolbar du menu vers la droite pour libérer "FRED'ISU" en entier. */
+#sMenu .m2-top{padding-left:120px}
+@media (max-width:560px){ #sMenu .m2-top{padding-left:104px} }
 #sMenu .m2-dot{background:radial-gradient(circle at 35% 30%,#ffd2e6,var(--nk) 60%,var(--nk-deep));
   box-shadow:0 0 16px rgba(255,46,136,.7)}
 #sMenu .m2-wordmark{color:#f4eefb;text-shadow:0 1px 12px #000a}
@@ -881,7 +885,7 @@ body.playing{cursor:none}
 </style>
 </head>
 <body>
-<a href="/" id="bramsBack" style="position:fixed;top:12px;left:12px;z-index:99999;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;background:rgba(8,9,13,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(212,160,23,.45);color:#f0d27a;font:700 13px 'Varela Round',system-ui,sans-serif;text-decoration:none">← Brams</a>
+<a href="/" id="bramsBack" style="position:fixed;top:12px;left:12px;z-index:99999;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;background:rgba(8,9,13,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,46,136,.5);color:#ffd2e6;box-shadow:0 0 16px rgba(255,46,136,.25);font:700 13px 'Varela Round',system-ui,sans-serif;text-decoration:none">← Brams</a>
 <canvas id="cv"></canvas>
 <canvas id="curTop" style="position:fixed;inset:0;z-index:70;pointer-events:none"></canvas>
 <div id="ui">
