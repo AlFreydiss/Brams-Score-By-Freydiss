@@ -1024,14 +1024,16 @@ body.playing{cursor:none}
     <button class="btn chip" id="oK2" style="min-width:46px">X</button>
     <span class="val" style="width:auto;font-size:10.5px;color:#ffffff55">clique puis presse une touche</span></div>
   <div class="orow"><label>Aide à la visée</label><input type="range" id="oAim" min="0" max="100" value="35"><span class="val" id="vAim">35%</span></div>
-  <div class="orow"><label>Décalage audio (ms)</label><input type="range" id="oOff" min="-80" max="80" step="5" value="0"><span class="val" id="vOff">0</span></div>
+  <div class="orow"><label>Décalage audio (ms)</label><input type="range" id="oOff" min="-200" max="200" step="1" value="0"><span class="val" id="vOff">0</span></div>
   <div class="orow"><label>Taille du curseur</label><input type="range" id="oCur" min="70" max="180" step="5" value="125"><span class="val" id="vCur">125%</span></div>
   <div class="orow"><label>Souris brute (raw input)</label><input type="checkbox" id="oRaw"><span class="val" style="width:auto;font-size:10.5px;color:#ffffff55">curseur relatif, verrouille la souris pendant le jeu</span></div>
   <div class="orow"><label>Sensibilité souris</label><input type="range" id="oSens" min="10" max="300" step="5" value="100"><span class="val" id="vSens">100%</span></div>
+  <div class="orow"><label>Lissage du curseur</label><input type="range" id="oCurSmooth" min="0" max="100" step="5" value="0"><span class="val" id="vCurSmooth">0%</span></div>
   <p class="ogrp">✨ Visuel</p>
   <div class="orow"><label>Rendu HD (écrans 1440p/4K)</label><input type="checkbox" id="oHd" checked><span class="val"></span></div>
   <div class="orow"><label>Assombrissement fond</label><input type="range" id="oDim" min="0" max="100" value="40"><span class="val" id="vDim">40%</span></div>
   <div class="orow"><label>Effets réactifs au son</label><input type="checkbox" id="oFx" checked><span class="val"></span></div>
+  <div class="orow"><label>Couleurs de jugement classiques (300 bleu)</label><input type="checkbox" id="oJudge"><span class="val" style="width:auto;font-size:10.5px;color:#ffffff55">style osu! stable au lieu de lazer</span></div>
   <div class="orow"><label>Traînée du curseur</label><input type="checkbox" id="oTrail" checked><span class="val"></span></div>  <div class="orow"><label>Couleur du curseur</label><select id="oCurColor" style="flex:1;background:#1a1320;color:#fff;border:1px solid #ffffff20;border-radius:7px;padding:5px 8px;min-height:24px;accent-color:var(--pk);font-family:inherit;cursor:pointer"><option value="rose">Rose</option><option value="cyan">Cyan</option><option value="violet">Violet</option><option value="vert">Vert</option><option value="or">Or</option><option value="blanc">Blanc</option></select><span class="val"></span></div>
   <div class="orow"><label>Traînée néon (additive)</label><input type="checkbox" id="oTrailNeon"><span class="val"></span></div>
   <div class="orow"><label>Son de touche (clic satisfaisant)</label><input type="checkbox" id="oKeySfx" checked><span class="val"></span></div>
@@ -1236,7 +1238,7 @@ const h2r=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.sli
 const fmtT=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 
 /* ════ OPTIONS & MODS ════ */
-const opt={volM:.8,volS:.9,ar:8,cs:4,od:7,dim:.25,aim:35,offset:0,k1:'z',k2:'x',curSize:1.25,trail:true,fx:true,snake:true,skinBeige:false,skinNeon:false,skinVapor:false,skinMono:false,hd2x:true,diff:1,sens:1,rawInput:false,curColor:'rose',trailNeon:false,keySfx:true};
+const opt={volM:.8,volS:.9,ar:8,cs:4,od:7,dim:.25,aim:35,offset:0,k1:'z',k2:'x',curSize:1.25,trail:true,fx:true,snake:true,skinBeige:false,skinNeon:false,skinVapor:false,skinMono:false,hd2x:true,diff:1,sens:1,rawInput:false,curColor:'rose',trailNeon:false,keySfx:true,curSmooth:0,judgeClassic:false};
 /* Palette curseur/trail personnalisable (additif, ne touche pas comboCLR/skins).
    Chaque preset : core (disque clair), edge (bord saturé), trail (ruban), trailHi (ruban au clic), dot (point lumineux). */
 const CUR_PRESETS={
@@ -1996,7 +1998,10 @@ class HitFX{
     this.x=x;this.y=y;this.q=q;this.c=c;this.age=0;this.gone=false;
     // jugements lazer Argon en TEXTE : GREAT. / OK / MEH / MISS (cf. capture du vrai client)
     this.lbl=txt!==undefined?txt:(q===300?'GREAT.':q===100?'OK':q===50?'MEH':'MISS');
-    this.lc=txt!==undefined?c:q===300?'#FFE34A':q===100?'#7CE87C':q===50?'#8FB3E8':SKIN.MISS_RED;
+    // couleurs de jugement : lazer par défaut, ou stable osu! (300 bleu/blanc, 100 vert, 50 orange) si activé
+    this.lc=txt!==undefined?c:(opt.judgeClassic
+      ?(q===300?'#7FD8FF':q===100?'#7CE87C':q===50?'#FFB347':SKIN.MISS_RED)
+      :(q===300?'#FFE34A':q===100?'#7CE87C':q===50?'#8FB3E8':SKIN.MISS_RED));
     this.ptc=[];this.spk=null;
     if(q>0&&txt===undefined){const n=q===300?18:q===100?9:5;
       for(let i=0;i<n;i++){const a=PI2*i/n+Math.random()*.5,s=1.5+Math.random()*(q===300?4.5:3.5);
@@ -2778,8 +2783,15 @@ function drawSpinnerObj(o,el){
 /* Curseur lazer : sprite disque rose dégradé + anneau blanc, qui S'ÉTEND au clic
    (lerp doux), traînée en sprites — zéro path, zéro shadowBlur par frame. */
 let cursorSc=1;
+// Position VISUELLE du curseur. curSmooth=0 → suit mx/my au pixel près (raw 1:1, zéro latence).
+// >0 → lissage optionnel (lerp framerate-indépendant). N'affecte JAMAIS la visée/jugement (tryHit lit mx/my brut).
+let cmx=mx,cmy=my;
 function drawCursor(g=cx){
   const now=performance.now();
+  const sm=opt.curSmooth||0;
+  if(sm<=0){cmx=mx;cmy=my;}
+  else{const a=lerpF(1-sm*.82);cmx+=(mx-cmx)*a;cmy+=(my-cmy)*a;} // .82 max → reste réactif même à fond
+  const mx=cmx,my=cmy; // le rendu du curseur+traînée utilise la position lissée (ombre locale volontaire)
   if(opt.trail&&SPRITES.dot){
     // interpolation : la traînée reste continue même en mouvement rapide
     const lt=trail[trail.length-1];
@@ -2951,7 +2963,9 @@ function drawErrBar(){
     const fade=clamp(1-age/3000,0,1);
     cx.globalAlpha=fade*.9;
     const px=cx0+clamp(e.d/W50,-1,1)*cw;
-    cx.fillStyle=Math.abs(e.d)<=W3?'#ffee44':Math.abs(e.d)<=W1?'#88ff88':'#aaaaff';
+    cx.fillStyle=opt.judgeClassic
+      ?(Math.abs(e.d)<=W3?'#7FD8FF':Math.abs(e.d)<=W1?'#88ff88':'#FFB347')
+      :(Math.abs(e.d)<=W3?'#ffee44':Math.abs(e.d)<=W1?'#88ff88':'#aaaaff');
     // tick plus visible quand il est frais
     cx.fillRect(px-1,y-fade*2,2,h+fade*4);
     sum+=e.d;cnt++;
@@ -4300,6 +4314,8 @@ $('oHd').onchange=e=>{opt.hd2x=e.target.checked;saveOpt();applyDPR();computePara
 bindR('oOff','vOff',v=>{opt.offset=v;},v=>(v>0?'+':'')+v);
 bindR('oCur','vCur',v=>{opt.curSize=v/100;},v=>v+'%');
 bindR('oSens','vSens',v=>{opt.sens=v/100;},v=>v+'%');
+bindR('oCurSmooth','vCurSmooth',v=>{opt.curSmooth=v/100;},v=>v+'%');
+$('oJudge').onchange=e=>{opt.judgeClassic=e.target.checked;saveOpt();};
 $('oRaw').onchange=e=>{opt.rawInput=e.target.checked;saveOpt();if(!opt.rawInput&&document.pointerLockElement)document.exitPointerLock?.();else if(opt.rawInput&&state==='playing')lockMouse();};
 $('bOpt3').onclick=()=>{optRet='sReady';show('sOpt');};
 $('bRandDiff').onclick=()=>{
@@ -4322,6 +4338,8 @@ $('bGo').onkeydown=e=>{if(e.key==='Enter')$('bGo').click();};
   $('oOff').value=opt.offset||0;$('vOff').textContent=(opt.offset>0?'+':'')+(opt.offset||0);
   $('oCur').value=Math.round((opt.curSize||1.25)*100);$('vCur').textContent=Math.round((opt.curSize||1.25)*100)+'%';
   $('oSens').value=Math.round((opt.sens||1)*100);$('vSens').textContent=Math.round((opt.sens||1)*100)+'%';
+  $('oCurSmooth').value=Math.round((opt.curSmooth||0)*100);$('vCurSmooth').textContent=Math.round((opt.curSmooth||0)*100)+'%';
+  $('oJudge').checked=!!opt.judgeClassic;
   $('oRaw').checked=!!opt.rawInput;
   document.querySelectorAll('#diffRow .chip').forEach(x=>x.classList.toggle('sel',+x.dataset.d===opt.diff));
   document.querySelectorAll('#modRow .chip').forEach(x=>x.classList.toggle('sel',!!mods[x.dataset.m]));
