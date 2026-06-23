@@ -324,6 +324,26 @@ export const ANIMES = [
     badgeColor: '#ff6f9c',
   },
   {
+    id: 'fgo-babylonia',
+    title: 'Fate/Grand Order Babylonia',
+    subtitle: 'Absolute Demonic Front: Babylonia',
+    emoji: '🏛️',
+    color: '#d8a93a',
+    colorDark: '#4a3a14',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/fgo-babylonia/thumbnails/S01E10.jpg',
+    coverPosition: 'center center',
+    genres: ['Action', 'Fantasy', 'Aventure'],
+    description: "Uruk, dernière cité humaine face à l'Âge des Dieux. Ritsuka et Mash affrontent Tiamat et les démons primordiaux pour sauver l'humanité. Épopée mythologique signée CloverWorks.",
+    stats: [
+      { label: 'Épisodes', value: '21' },
+      { label: 'Studio', value: 'CloverWorks' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#d8a93a',
+  },
+  {
     id: 'quintuplets',
     title: 'The Quintessential Quintuplets',
     subtitle: 'Gotoubun no Hanayome',
@@ -655,6 +675,7 @@ export const SEARCH_ALIASES = {
   'violet-evergarden': ['violet', 'violet evergarden', 'vostfr', 'vf', 'auto memory doll', 'doll'],
   'your-name': ['your name', 'kimi no na wa', 'makoto shinkai', 'shinkai', 'mitsuha', 'taki', 'comète', 'comete', 'film'],
   'your-lie': ['your lie in april', 'shigatsu wa kimi no uso', 'kimi no uso', 'kaori', 'kousei', 'arima', 'piano', 'violon', 'musique'],
+  'fgo-babylonia': ['fate grand order', 'fate/grand order', 'babylonia', 'fgo', 'absolute demonic front', 'uruk', 'gilgamesh', 'mash', 'ritsuka', 'tiamat', 'fate'],
   quintuplets: ['quintessential quintuplets', 'gotoubun no hanayome', 'gotoubun', '5-toubun', 'quintuplees', 'cinq soeurs', 'ichika', 'nino', 'miku', 'yotsuba', 'itsuki', 'futaro', 'nakano'],
   kaguya: ['kaguya', 'kaguya-sama', 'kaguya sama', 'love is war', 'kokurasetai', 'shinomiya', 'shirogane', 'chika', 'fujiwara', 'ultra romantic', 'first kiss'],
   vivy: ['vivy', 'fluorite', "fluorite eye's song", 'ia', 'matsumoto', 'wit studio'],
@@ -1566,7 +1587,7 @@ function HubAiChat({ animes, onOpen }) {
   )
 }
 
-export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenKaiju, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenKaguya, onOpenHxh, onOpenMonUnivers }) {
+export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrstone, onOpenJjk, onOpenKingdom, onOpenAot, onOpenKny, onOpenNnt, onOpenSl, onOpenDbs, onOpenViolet, onOpenVivy, onOpenLovePrism, onOpenCaroleTuesday, onOpenBunnyGirl, onOpenRentGirlfriend, onOpenBc, onOpenMha, onOpenFireforce, onOpenBleach, onOpenBluelock, onOpenKaiju, onOpenFateZero, onOpenYourName, onOpenYourLie, onOpenFgoBabylonia, onOpenDomestic, onOpenKoi, onOpenBubble, onOpenReze, onOpenKaguya, onOpenHxh, onOpenMonUnivers }) {
   const [query, setQuery] = useState('')
   const [selectedGenres, setSelectedGenres] = useState(new Set())
   const [genreMenuOpen, setGenreMenuOpen] = useState(false)
@@ -1739,6 +1760,7 @@ export default function AnimeHub({ onClose, onOpenOnepiece, onOpenTpn, onOpenDrs
       'fate-zero': onOpenFateZero,
       'your-name': onOpenYourName,
       'your-lie': onOpenYourLie,
+      'fgo-babylonia': onOpenFgoBabylonia,
       'domestic-na-kanojo': onOpenDomestic,
       'koi-ameagari': onOpenKoi,
       bubble: onOpenBubble, reze: onOpenReze,
