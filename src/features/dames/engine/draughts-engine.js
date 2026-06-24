@@ -246,9 +246,16 @@ export function movesEqual(a, b) {
 
 // ── IA : minimax + alpha-beta + garde-temps (porté verbatim) ──────────────────
 let searchDeadline = 0
+// Évaluation positionnelle (centipions, 1 pion = 100). POV blanc (P positif).
+// Termes (pondérés petits devant le matériel pour que les seuils d'analyse en
+// pions — 200cp = 2 pions — gardent leur sens) :
+//   matériel (dame >> pion), avancement vers la promotion, contrôle du centre,
+//   pions de bord, défense de la dernière rangée, soutien/exposition diagonale
+//   (pion isolé = pénalité, pion soutenu = bonus), mobilité de la dame, tempo.
 export function evaluate(board, rules) {
   const { size } = R(rules)
   const center = (size - 1) / 2   // 4.5 en 10×10, 3.5 en 8×8
+  const inB = (rr, cc) => inBounds(rr, cc, size)
   let s = 0
   for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
     const p = board[r][c]; if (!p) continue
@@ -260,8 +267,24 @@ export function evaluate(board, rules) {
       if ((p.side === P && r === size - 1) || (p.side === M && r === 0)) v += 8
       // contrôle du centre (colonnes centrales = plus de mobilité)
       v += (center - 0.5 - Math.abs(c - center)) * 1.5
+      // soutien arrière : un pion ami derrière sur une diagonale le protège d'une prise → bonus ;
+      // aucun soutien ET un ennemi adjacent devant = pion exposé/isolé → pénalité.
+      const back = -fwd(p.side)   // case "derrière" le pion (vers son propre camp)
+      let supported = false, threatened = false
+      for (const dc of [-1, 1]) {
+        const br = r + back, bc = c + dc
+        if (inB(br, bc)) { const bp = board[br][bc]; if (bp && bp.side === p.side) supported = true }
+        const fr = r + fwd(p.side), fc = c + dc
+        if (inB(fr, fc)) { const fp = board[fr][fc]; if (fp && fp.side !== p.side) threatened = true }
+      }
+      if (supported) v += 6
+      if (threatened && !supported) v -= 9   // exposé à une prise diagonale sans backup
     } else {
       const cd = Math.abs(c - center) + Math.abs(r - center); v += (size - cd) * 2
+      // mobilité approximative de la dame volante : nombre de cases vides en diagonale.
+      let mob = 0
+      for (const [dr, dc] of DIAG) { let k = 1; while (true) { const nr = r + dr * k, nc = c + dc * k; if (!inB(nr, nc) || board[nr][nc]) break; mob++; k++ } }
+      v += Math.min(mob, 12) * 1.5
     }
     s += p.side === P ? v : -v
   }
@@ -299,18 +322,30 @@ function orderMoves(board, side, moves, ttMove, depth, size) {
     .sort((a, b) => b.s - a.s).map(x => x.m)
 }
 let _tt, _killers
-// Negamax + alpha-bêta + table de transposition (ordering) + killer moves + quiescence sur les rafles.
+// Bornes de la table de transposition (fenêtre alpha-bêta).
+const TT_EXACT = 0, TT_LOWER = 1, TT_UPPER = 2
+const TT_MAX = 200000   // plafond d'entrées : évite que la Map enfle sans fin sur une longue partie
+// Negamax + alpha-bêta + table de transposition (coupures réelles {depth,score,flag,move}
+// + move ordering) + killer moves + quiescence sur les rafles.
 function negamax(board, side, depth, alpha, beta, rules) {
   const { size } = rules
   if (Date.now() > searchDeadline) return evalSide(board, side, rules)
+  const key = hashBoard(board) + side
+  const alphaOrig = alpha
+  // Sonde TT : une entrée recherchée AU MOINS aussi profond peut couper directement.
+  const tt = _tt.get(key)
+  if (tt && tt.depth >= depth) {
+    if (tt.flag === TT_EXACT) return tt.score
+    if (tt.flag === TT_LOWER && tt.score > alpha) alpha = tt.score
+    else if (tt.flag === TT_UPPER && tt.score < beta) beta = tt.score
+    if (alpha >= beta) return tt.score
+  }
   const moves = generateMoves(board, side, rules)
   if (moves.length === 0) return -(100000 + depth)            // camp au trait sans coup = perd
   // Quiescence : à profondeur épuisée on s'arrête, SAUF si des rafles sont forcées
   // (sinon effet d'horizon : on couperait au milieu d'une prise).
   if (depth <= 0 && !moves[0].isCapture) return evalSide(board, side, rules)
-  const key = hashBoard(board) + side
-  const ttMove = _tt.get(key)
-  const ordered = orderMoves(board, side, moves, ttMove, depth, size)
+  const ordered = orderMoves(board, side, moves, tt && tt.move, depth, size)
   let best = -Infinity, bestMove = null
   for (const m of ordered) {
     const nd = m.isCapture ? Math.max(depth - 1, 0) : depth - 1   // les rafles prolongent (quiescence)
@@ -322,7 +357,14 @@ function negamax(board, side, depth, alpha, beta, rules) {
       break
     }
   }
-  if (bestMove) _tt.set(key, bestMove)
+  // Stocke l'entrée avec sa borne : EXACT (dans la fenêtre), LOWER (coupure beta = score
+  // minoré), UPPER (aucun coup n'a dépassé alpha = score majoré). On ne remplace que si la
+  // nouvelle recherche est plus profonde (entrée plus fiable) — schéma "depth-preferred".
+  const flag = best <= alphaOrig ? TT_UPPER : (best >= beta ? TT_LOWER : TT_EXACT)
+  if (!tt || tt.depth <= depth) {
+    if (_tt.size >= TT_MAX && !_tt.has(key)) _tt.clear()
+    _tt.set(key, { depth, score: best, flag, move: bestMove })
+  }
   return best
 }
 // Iterative deepening avec budget temps : on garde le meilleur coup de la dernière
@@ -349,8 +391,10 @@ export function chooseAIMove(board, side, maxDepth, budgetMs, rules) {
   }
   return best
 }
-export const AI_DEPTH = { mousse: 1, marin: 3, capitaine: 6, amiral: 9, legende: 14 }
-export const AI_BUDGET = { mousse: 180, marin: 450, capitaine: 950, amiral: 1600, legende: 2800 }
+// Profondeurs relevées : la table de transposition (coupures réelles) approfondit la
+// recherche dans le même budget. amiral (niveau exposé le plus fort) vise < ~1.5 s/coup.
+export const AI_DEPTH = { mousse: 1, marin: 4, capitaine: 8, amiral: 12, legende: 18 }
+export const AI_BUDGET = { mousse: 180, marin: 500, capitaine: 1050, amiral: 1500, legende: 2800 }
 export function aiMove(board, side, diff, rules) {
   const rr = R(rules)
   const moves = generateMoves(board, side, rr)
