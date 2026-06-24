@@ -139,20 +139,31 @@ export default function EpisodeWatch({
         .ew-nav-btn:not(:disabled):hover { transform:translateY(-1px); }
         .ew-nav-btn:not(:disabled):active { transform:scale(.98); }
 
-        /* ===== Tablette (≤1024px) : lecteur plus grand, détail empilé dessous ===== */
+        /* ===== Tablette (≤1024px) : lecteur plus grand, détail empilé dessous =====
+           Sticky SOLIDE : fond #000 opaque garanti (rien ne transparaît derrière),
+           ombre nette de séparation. isolation:isolate → le contexte d'empilement
+           du lecteur est étanche (aucun contenu de la page ne passe au travers). */
         @media (max-width:1024px){
           .ew-grid{ grid-template-columns:1fr; gap:18px; }
-          .ew-player{ position:sticky; top:0; z-index:30; border-radius:14px; box-shadow:0 14px 44px rgba(0,0,0,.6); }
+          .ew-player{
+            position:sticky; top:0; z-index:30; border-radius:14px;
+            background:#000; isolation:isolate;
+            box-shadow:0 10px 28px rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.05);
+          }
         }
 
-        /* ===== Mobile (≤768px) : lecteur edge-to-edge proéminent, collant en haut ===== */
+        /* ===== Mobile (≤768px) : lecteur edge-to-edge proéminent, collant en haut =====
+           Même principe : opaque + ombre franche pour une coupure nette avec le
+           contenu qui défile dessous (fini l'effet « lecteur qui flotte »). */
         @media (max-width:768px){
           /* casse le padding latéral du conteneur parent pour un lecteur pleine largeur */
           .ew-root{ margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); width:100vw; }
           .ew-grid{ gap:0; }
           .ew-player{
             position:sticky; top:0; z-index:40; width:100vw; border-radius:0;
-            border-left:0; border-right:0; border-top:0; box-shadow:0 10px 30px rgba(0,0,0,.7);
+            border-left:0; border-right:0; border-top:0;
+            background:#000; isolation:isolate;
+            box-shadow:0 8px 22px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.06);
           }
           /* tout le reste du contenu reprend une marge confortable */
           .ew-detail, .ew-about, .ew-epswrap, .ew-navbar{ margin-left:14px; margin-right:14px; }

@@ -159,6 +159,30 @@ function cleanCueText(text) {
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
+// ── Icônes SVG inline (remplacent les emoji/glyphes : moche + rendu incohérent
+// entre OS). stroke=currentColor → héritent de la couleur du bouton. viewBox 24,
+// 1.9px de trait. Compactes, sans dépendance. ──────────────────────────────────
+function Ic({ children, size = 22, fill = 'none', viewBox = '0 0 24 24', style }) {
+  return (
+    <svg width={size} height={size} viewBox={viewBox} fill={fill} stroke="currentColor"
+      strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden
+      style={{ display: 'block', ...style }}>{children}</svg>
+  )
+}
+const IcPlay     = (p) => <Ic {...p} fill="currentColor" ><path stroke="none" d="M8 5.2v13.6a.7.7 0 0 0 1.06.6l11-6.8a.7.7 0 0 0 0-1.2l-11-6.8A.7.7 0 0 0 8 5.2Z" /></Ic>
+const IcPause    = (p) => <Ic {...p} fill="currentColor"><rect stroke="none" x="6" y="5" width="4" height="14" rx="1" /><rect stroke="none" x="14" y="5" width="4" height="14" rx="1" /></Ic>
+const IcPrev     = (p) => <Ic {...p}><path d="M18 6 9 12l9 6V6Z" fill="currentColor" stroke="none" /><rect x="5" y="5.5" width="2.2" height="13" rx="1" fill="currentColor" stroke="none" /></Ic>
+const IcNext     = (p) => <Ic {...p}><path d="M6 6l9 6-9 6V6Z" fill="currentColor" stroke="none" /><rect x="16.8" y="5.5" width="2.2" height="13" rx="1" fill="currentColor" stroke="none" /></Ic>
+// Replay/Forward 10s : flèche circulaire + « 10 » centré
+const IcReplay10 = (p) => <Ic {...p}><path d="M11.5 6a6.5 6.5 0 1 1-5.8 3.6" /><path d="M5 4.2 5.3 9l4.6-.7" /><text x="12" y="15.4" fontSize="7.2" fontWeight="800" textAnchor="middle" fill="currentColor" stroke="none" fontFamily="Inter, system-ui, sans-serif">10</text></Ic>
+const IcForward10= (p) => <Ic {...p}><path d="M12.5 6a6.5 6.5 0 1 0 5.8 3.6" /><path d="M19 4.2 18.7 9l-4.6-.7" /><text x="12" y="15.4" fontSize="7.2" fontWeight="800" textAnchor="middle" fill="currentColor" stroke="none" fontFamily="Inter, system-ui, sans-serif">10</text></Ic>
+const IcVolume   = (p) => <Ic {...p}><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" fill="currentColor" stroke="none" /><path d="M15.5 8.8a4.2 4.2 0 0 1 0 6.4" /><path d="M18 6.5a7.6 7.6 0 0 1 0 11" /></Ic>
+const IcMute     = (p) => <Ic {...p}><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" fill="currentColor" stroke="none" /><path d="m16 9.5 5 5M21 9.5l-5 5" /></Ic>
+const IcSettings = (p) => <Ic {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V20a2 2 0 1 1-4 0v-.07a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 13.5a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.07A1.7 1.7 0 0 0 4.6 7.43a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.56V1a2 2 0 1 1 4 0v.07a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V7a1.7 1.7 0 0 0 1.56 1H23a2 2 0 1 1 0 4h-.07a1.7 1.7 0 0 0-1.53 1.5Z" /></Ic>
+const IcFull     = (p) => <Ic {...p}><path d="M8 4H4v4M16 4h4v4M16 20h4v-4M8 20H4v-4" /></Ic>
+const IcFullExit = (p) => <Ic {...p}><path d="M4 8h4V4M20 8h-4V4M20 16h-4v4M4 16h4v4" /></Ic>
+const IcPip      = (p) => <Ic {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><rect x="11.5" y="11" width="7.5" height="6" rx="1.2" fill="currentColor" stroke="none" /></Ic>
+
 // ── Styles bottom-sheet « Réglages » (tactile uniquement) ──
 const vpSheetSection = { padding: '12px 4px 5px', color: 'rgba(255,255,255,0.42)', fontSize: 12, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase' }
 const vpSheetRow = (active, color) => ({
@@ -878,20 +902,73 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     return () => document.removeEventListener('fullscreenchange', fn)
   }, [])
 
+  // En pseudo-plein-écran CSS (iOS/tablette) le <div> lecteur passe en fixed
+  // inset:0, mais la page DERRIÈRE reste scrollable → « on peut scroller derrière,
+  // le lecteur flotte ». On verrouille le scroll du body pendant le cssFs et on
+  // restaure exactement l'état précédent à la sortie (overflow + touch-action).
+  useEffect(() => {
+    if (!cssFs) return
+    const body = document.body
+    const html = document.documentElement
+    const prev = { bodyOverflow: body.style.overflow, htmlOverflow: html.style.overflow, touch: body.style.touchAction }
+    body.style.overflow = 'hidden'
+    html.style.overflow = 'hidden'
+    body.style.touchAction = 'none'
+    return () => {
+      body.style.overflow = prev.bodyOverflow
+      html.style.overflow = prev.htmlOverflow
+      body.style.touchAction = prev.touch
+    }
+  }, [cssFs])
+
+  // Auto-plein-écran en PAYSAGE sur téléphone : quand on tourne l'appareil pendant
+  // la lecture, on entre en cssFs (geste attendu YouTube/Netflix) ; retour portrait
+  // → on sort. userFsRef = override manuel : si l'utilisateur ouvre/ferme le plein
+  // écran lui-même, on ne le re-force/re-ferme pas en boucle au prochain pivot.
+  const userFsRef = useRef(false)
+  useEffect(() => {
+    // Téléphone seulement (tactile + petit côté court) — pas les tablettes/desktop.
+    if (!IS_COARSE || typeof window === 'undefined') return
+    const isPhone = () => Math.min(window.innerWidth, window.innerHeight) <= 540
+    const isLandscape = () => window.matchMedia?.('(orientation: landscape)').matches
+    const onOrient = () => {
+      if (!isPhone() || document.fullscreenElement || userFsRef.current) return
+      if (isLandscape() && started && !cssFs) {
+        setCssFs(true)
+        try { screen.orientation?.lock?.('landscape') } catch {}
+      } else if (!isLandscape() && cssFs) {
+        setCssFs(false)
+        try { screen.orientation?.unlock?.() } catch {}
+      }
+    }
+    const mq = window.matchMedia?.('(orientation: landscape)')
+    mq?.addEventListener?.('change', onOrient)
+    window.addEventListener('orientationchange', onOrient)
+    window.addEventListener('resize', onOrient)
+    return () => {
+      mq?.removeEventListener?.('change', onOrient)
+      window.removeEventListener('orientationchange', onOrient)
+      window.removeEventListener('resize', onOrient)
+    }
+  }, [started, cssFs])
+
   const toggleFullscreen = () => {
     const el = containerRef.current
     // Sortie
-    if (document.fullscreenElement) { document.exitFullscreen?.(); return }
+    if (document.fullscreenElement) { document.exitFullscreen?.(); userFsRef.current = false; return }
     if (cssFs) {
       setCssFs(false)
+      userFsRef.current = false   // fermeture manuelle : le pivot paysage peut re-proposer ensuite
       try { screen.orientation?.unlock?.() } catch {}
       return
     }
     // Entrée : fullscreen natif d'élément si dispo (desktop/Android), SINON
     // pseudo-plein-écran CSS — indispensable sur iOS où requestFullscreen
     // d'un <div> n'existe pas : le fullscreen natif <video> masquerait le
-    // canvas des sous-titres (« on voit rien »).
-    if (el && el.requestFullscreen) {
+    // canvas des sous-titres (« on voit rien »). Sur tactile on PRIVILÉGIE le
+    // cssFs (fiable partout + garde le canvas ST) plutôt que le fullscreen natif.
+    userFsRef.current = true
+    if (!IS_COARSE && el && el.requestFullscreen) {
       el.requestFullscreen()
         .then(() => { try { screen.orientation?.lock?.('landscape') } catch {} })
         .catch(() => setCssFs(true))
@@ -1020,7 +1097,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     if (videoRef.current) videoRef.current.currentTime = nextTime
   }, [duration])
 
-  const volIcon = muted || volume === 0 ? '🔇' : volume < 0.5 ? '🔉' : '🔊'
+  const isMutedIcon = muted || volume === 0
+  const VolIcon = isMutedIcon ? IcMute : IcVolume
   const audioLabel = hasAudioChoices ? (audioOptions[audioIdx]?.label ?? 'Audio') : 'AUTO'
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
@@ -1061,7 +1139,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         onMouseLeave={() => { if (playing) hideTimer.current = setTimeout(() => setShowCtrl(false), 1500) }}
         style={{
           flex: 1, position: 'relative', background: '#000', cursor: 'default', overflow: 'hidden',
-          ...(cssFs ? { position: 'fixed', inset: 0, zIndex: 2147483647, width: '100vw', height: '100dvh', flex: 'none' } : null),
+          // En cssFs : on borne explicitement (top/left/right/bottom:0) ET on centre la
+          // vidéo en flexbox → la <video object-fit:contain> est letterboxée DANS le
+          // viewport, sans offset haut ni débordement bas (le height:100% d'origine se
+          // résolvait contre le wrapper 16:9 parent → vidéo poussée + débordante).
+          ...(cssFs ? {
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, inset: 0,
+            zIndex: 2147483647, width: '100vw', height: '100dvh', flex: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          } : null),
         }}
       >
         {isLocal ? (
@@ -1076,7 +1162,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               // → notre UI + canvas ST fonctionnent. webkit-playsinline pour vieux iOS.
               playsInline
               {...{ 'webkit-playsinline': 'true', 'x5-playsinline': 'true' }}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              // cssFs : on laisse la <video> prendre sa taille intrinsèque bornée au
+              // viewport (max 100vw/100dvh) → l'élément lui-même est aux dimensions
+              // letterboxées 16:9 et centré par le flex du conteneur (rect dans
+              // [0..viewport], pas de y:152/débordement). Sinon width/height:100%.
+              style={cssFs
+                ? { width: 'auto', height: 'auto', maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain', display: 'block' }
+                : { width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               preload={started ? 'metadata' : 'none'}
               onPlay={onPlay}
               onPause={onPause}
@@ -1162,15 +1254,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
                     width: 78, height: 78, borderRadius: '50%', display: 'grid', placeItems: 'center',
                     background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.25)',
-                    color: '#fff', fontSize: 30, paddingLeft: 6, pointerEvents: 'none',
-                  }}>▶</span>
+                    color: '#fff', pointerEvents: 'none',
+                  }}><IcPlay size={34} /></span>
                 )}
                 {skipFlash && (
                   <span aria-hidden style={{
                     position: 'absolute', top: '50%', [skipFlash.side === 'L' ? 'left' : 'right']: '12%',
-                    transform: 'translateY(-50%)', padding: '10px 16px', borderRadius: 999,
+                    transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '10px 16px', borderRadius: 999,
                     background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 15, fontWeight: 800, pointerEvents: 'none',
-                  }}>{skipFlash.side === 'L' ? '« −10s' : '+10s »'}</span>
+                  }}>{skipFlash.side === 'L' ? <><IcReplay10 size={20} /> 10s</> : <>10s <IcForward10 size={20} /></>}</span>
                 )}
               </div>
             )}
@@ -1276,7 +1369,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {/* ── Toast « Reprise à MM:SS » ── */}
             {resumeToast && !endOverlay && (
               <div style={{ position:'absolute', top:18, left:'50%', transform:'translateX(-50%)', zIndex:20, display:'flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:999, background:'rgba(10,8,16,0.86)', backdropFilter:'blur(10px)', border:`1px solid ${color}55`, color:'#fff', fontSize:12.5, fontWeight:700, boxShadow:'0 8px 28px rgba(0,0,0,0.4)', animation:'fadeIn .25s ease' }}>
-                <span style={{ color }}>⏮</span> Reprise à <span style={{ color, fontWeight:800 }}>{resumeToast}</span>
+                <span style={{ color, display:'inline-flex' }}><IcPrev size={16} /></span> Reprise à <span style={{ color, fontWeight:800 }}>{resumeToast}</span>
               </div>
             )}
 
@@ -1290,7 +1383,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   style={{ position:'absolute', right:'calc(24px + env(safe-area-inset-right, 0px))', bottom: showCtrl ? 118 : 40, zIndex:20, display:'flex', alignItems:'center', gap:8, padding: IS_COARSE ? '13px 20px' : '10px 18px', minHeight: IS_COARSE ? 44 : undefined, borderRadius:12, cursor:'pointer', fontFamily:'var(--body)', fontSize: IS_COARSE ? 14 : 13, fontWeight:800, color:'#fff', background:'rgba(10,8,16,0.82)', backdropFilter:'blur(10px)', border:`1px solid ${color}66`, boxShadow:'0 8px 28px rgba(0,0,0,0.45)', transition:'transform .15s, background .15s' }}
                   onMouseEnter={e => { e.currentTarget.style.background = `${color}cc`; e.currentTarget.style.transform = 'scale(1.04)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(10,8,16,0.82)'; e.currentTarget.style.transform = 'none' }}>
-                  {skip.label} <span style={{ fontSize:15 }}>⏭</span>
+                  {skip.label} <IcNext size={16} />
                 </button>
               )
             })()}
@@ -1311,8 +1404,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 )}
                 <div style={{ display:'flex', gap:8 }}>
                   <button onClick={(e) => { e.stopPropagation(); goNext() }}
-                    style={{ flex:1, padding: IS_COARSE ? '12px 0' : '9px 0', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
-                    ▶ Lire {countdown != null ? 'maintenant' : ''}
+                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding: IS_COARSE ? '12px 0' : '9px 0', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
+                    <IcPlay size={16} /> Lire {countdown != null ? 'maintenant' : ''}
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); setEndOverlay(false); setCountdown(null) }}
                     style={{ padding: IS_COARSE ? '12px 16px' : '9px 14px', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
@@ -1367,6 +1460,28 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               </div>
             </div>
 
+            {/* ── Quitter le plein écran (cssFs) : bouton TOUJOURS accessible en haut à
+                 gauche, même quand les contrôles du bas sont masqués. Surtout utile en
+                 paysage téléphone où la barre haute n'existe pas. ── */}
+            {cssFs && (
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleFullscreen() }}
+                title="Quitter le plein écran"
+                aria-label="Quitter le plein écran"
+                style={{
+                  position: 'absolute',
+                  top: 'calc(12px + env(safe-area-inset-top, 0px))',
+                  left: 'calc(12px + env(safe-area-inset-left, 0px))',
+                  zIndex: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 44, height: 44, borderRadius: 12,
+                  background: 'rgba(8,9,12,0.7)', backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(255,255,255,0.2)', color: '#fff', cursor: 'pointer',
+                  opacity: showCtrl ? 1 : 0, transition: 'opacity .25s ease',
+                  pointerEvents: showCtrl ? 'auto' : 'none', WebkitTapHighlightColor: 'transparent',
+                }}
+              ><IcFullExit size={22} /></button>
+            )}
+
             {/* ── Interface "détail épisode" (pré-lecture) : titre + note + synopsis IA + trailer ── */}
             {!started && !hideDetail && video && (() => {
               const meta = getAnimeMeta(storageKey)
@@ -1387,7 +1502,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                  (en pré-lecture, c'est la carte centrale qui porte le bouton Lecture) */}
             {started && !playing && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
-                <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${color}e6`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, color: '#fff', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.22)', boxShadow: `0 10px 40px rgba(0,0,0,.5)` }}>▶</div>
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${color}e6`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.22)', boxShadow: `0 10px 40px rgba(0,0,0,.5)` }}><IcPlay size={36} /></div>
               </div>
             )}
 
@@ -1423,22 +1538,22 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     masquée en plein écran → on remet la navigation d'épisode à portée de pouce) */}
                 {IS_COARSE && (
                   <>
-                    <Btn onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0} title="Épisode précédent" color={color}>⏮</Btn>
-                    <Btn onClick={() => setIdx(i => Math.min(videos.length - 1, i + 1))} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}>⏭</Btn>
+                    <Btn onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0} title="Épisode précédent" color={color}><IcPrev /></Btn>
+                    <Btn onClick={() => setIdx(i => Math.min(videos.length - 1, i + 1))} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}><IcNext /></Btn>
                   </>
                 )}
 
                 {/* Play/Pause */}
                 <Btn onClick={togglePlay} title={playing ? 'Pause (Espace)' : 'Lecture (Espace)'} color={color}>
-                  {playing ? '⏸' : '▶'}
+                  {playing ? <IcPause /> : <IcPlay />}
                 </Btn>
 
                 {/* Skip ±10s */}
                 <Btn onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.max(0, v.currentTime - 10) }} title="Reculer de 10s">
-                  <span style={{ fontSize: IS_COARSE ? 15 : 13, fontWeight: 700 }}>−10</span>
+                  <IcReplay10 />
                 </Btn>
                 <Btn onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.min(v.duration || 0, v.currentTime + 10) }} title="Avancer de 10s">
-                  <span style={{ fontSize: IS_COARSE ? 15 : 13, fontWeight: 700 }}>+10</span>
+                  <IcForward10 />
                 </Btn>
 
                 {/* Volume — bouton muet : sur tactile il part dans la bottom-sheet Réglages
@@ -1456,7 +1571,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     v.muted = nextMuted
                   }
                 }} title="Muet (M)">
-                  {volIcon}
+                  <VolIcon />
                 </Btn>
                 )}
                 {/* Slider volume : caché au doigt (un slider de 70px est inutilisable au
@@ -1649,7 +1764,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 {/* Picture-in-Picture */}
                 {'pictureInPictureEnabled' in document && (
-                  <Btn onClick={() => videoRef.current?.requestPictureInPicture?.()} title="Picture in Picture">⧉</Btn>
+                  <Btn onClick={() => videoRef.current?.requestPictureInPicture?.()} title="Picture in Picture"><IcPip /></Btn>
                 )}
                 </>)}
 
@@ -1667,7 +1782,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                       color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
                       WebkitTapHighlightColor: 'transparent', transition: 'background .15s',
                     }}
-                  ><span style={{ fontSize: 20, lineHeight: 1 }}>⚙</span><span>Réglages</span></button>
+                  ><IcSettings size={20} /><span>Réglages</span></button>
                 )}
 
                 {/* Plein écran — c'est LE mode de visionnage principal au téléphone, donc
@@ -1684,10 +1799,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                       border: `1px solid ${color}77`, color: '#fff', fontSize: 24, cursor: 'pointer',
                       WebkitTapHighlightColor: 'transparent', transition: 'background .15s',
                     }}
-                  >{(fullscreen || cssFs) ? '⊡' : '⛶'}</button>
+                  >{(fullscreen || cssFs) ? <IcFullExit size={24} /> : <IcFull size={24} />}</button>
                 ) : (
                   <Btn onClick={toggleFullscreen} title={(fullscreen || cssFs) ? 'Quitter plein écran (F)' : 'Plein écran (F)'}>
-                    {(fullscreen || cssFs) ? '⊡' : '⛶'}
+                    {(fullscreen || cssFs) ? <IcFullExit /> : <IcFull />}
                   </Btn>
                 )}
               </div>
@@ -1754,7 +1869,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                         else if (v) { v.muted = nextMuted }
                       }}
                       style={vpSheetRow(false, color)}
-                    ><span>{volIcon} {muted ? 'Activer le son' : 'Couper le son'}</span></button>
+                    ><span style={{ display:'inline-flex', alignItems:'center', gap:8 }}><VolIcon size={18} /> {muted ? 'Activer le son' : 'Couper le son'}</span></button>
 
                     {/* Sous-titres */}
                     <div style={vpSheetSection}>Sous-titres</div>
