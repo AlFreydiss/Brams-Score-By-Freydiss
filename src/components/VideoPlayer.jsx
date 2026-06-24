@@ -1485,6 +1485,29 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               ><IcFullExit size={22} /></button>
             )}
 
+            {/* ── Plein écran : bouton TOUJOURS VISIBLE sur tactile (le lecteur n'est plus
+                 sticky → c'est le plein écran qui sert à vraiment regarder). Indépendant de
+                 l'auto-masquage des contrôles. Se relève au-dessus de la barre quand elle
+                 est affichée pour ne jamais la recouvrir. ── */}
+            {IS_COARSE && started && !cssFs && (
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleFullscreen() }}
+                title="Plein écran"
+                aria-label="Mettre en plein écran"
+                style={{
+                  position: 'absolute', zIndex: 9,
+                  right: 'calc(12px + env(safe-area-inset-right, 0px))',
+                  bottom: showCtrl ? 92 : 14, transition: 'bottom .25s ease, transform .15s',
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  height: 44, padding: '0 15px', borderRadius: 12, cursor: 'pointer',
+                  background: `${color}e6`, border: `1px solid ${color}`, color: '#fff',
+                  fontFamily: 'var(--body)', fontSize: 13.5, fontWeight: 800, letterSpacing: '.02em',
+                  boxShadow: `0 8px 24px ${color}55, 0 2px 8px rgba(0,0,0,0.4)`,
+                  WebkitTapHighlightColor: 'transparent',
+                }}
+              ><IcFull size={20} /> Plein écran</button>
+            )}
+
             {/* ── Interface "détail épisode" (pré-lecture) : titre + note + synopsis IA + trailer ── */}
             {!started && !hideDetail && video && (() => {
               const meta = getAnimeMeta(storageKey)
