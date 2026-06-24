@@ -1166,8 +1166,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               // viewport (max 100vw/100dvh) → l'élément lui-même est aux dimensions
               // letterboxées 16:9 et centré par le flex du conteneur (rect dans
               // [0..viewport], pas de y:152/débordement). Sinon width/height:100%.
+              // cssFs : centrage ABSOLU bulletproof (translate -50%) → la vidéo est
+              // exactement au centre du viewport, letterboxée, peu importe les autres
+              // enfants en flux (le flex laissait un push ~152px → vidéo basse/débordante).
               style={cssFs
-                ? { width: 'auto', height: 'auto', maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain', display: 'block' }
+                ? { position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'auto', height: 'auto', maxWidth: '100vw', maxHeight: '100dvh', objectFit: 'contain', display: 'block' }
                 : { width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
               preload={started ? 'metadata' : 'none'}
               onPlay={onPlay}

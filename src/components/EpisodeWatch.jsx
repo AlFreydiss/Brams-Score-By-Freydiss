@@ -127,7 +127,10 @@ export default function EpisodeWatch({
     // Plein cadre, pas de "carte flottante" : le contenu vit dans la page et prend tout l'espace.
     <div className="ew-root" style={{ position: 'relative', marginBottom: 10, animation: 'ewFade .3s ease-out both' }}>
       <style>{`
-        @keyframes ewFade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+        /* opacity SEULE (zéro transform) : un transform résiduel (même identité, via
+           fill:both) sur .ew-root créait un bloc englobant qui piégeait le position:fixed
+           du plein écran → vidéo décalée de 152px / débordante. */
+        @keyframes ewFade { from{opacity:0} to{opacity:1} }
         /* align-items:start (et pas stretch) : sinon un panneau de détail plus haut que le
            lecteur étire la ligne, et aspect-ratio:16/9 élargit le lecteur → débordement. */
         .ew-grid { display:grid; grid-template-columns:minmax(0,2.4fr) minmax(0,1fr); gap:22px; align-items:start; }
