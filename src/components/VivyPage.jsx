@@ -114,7 +114,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   const nextVideo = VIDEOS[lastWatchedIdx] || VIDEOS[0]
 
   return (
-    <aside style={{
+    <aside className="anime-infopanel" style={{
       position: 'sticky', top: 0, alignSelf: 'start',
       display: 'flex', flexDirection: 'column', gap: 0,
       borderRadius: 22, overflow: 'hidden',
@@ -331,6 +331,7 @@ export default function VivyPage({ onClose }) {
               @media (max-width: 900px) {
                 .vy-layout { grid-template-columns: 1fr; }
               }
+              @media (max-width: 900px) { .anime-infopanel { position: static !important; } }
             `}</style>
 
             <div className="vy-layout">

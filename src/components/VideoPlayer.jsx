@@ -159,6 +159,18 @@ function cleanCueText(text) {
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 
+// ── Styles bottom-sheet « Réglages » (tactile uniquement) ──
+const vpSheetSection = { padding: '12px 4px 5px', color: 'rgba(255,255,255,0.42)', fontSize: 12, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase' }
+const vpSheetRow = (active, color) => ({
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  width: '100%', minHeight: 48, padding: '0 12px', marginBottom: 2,
+  background: active ? `${color}22` : 'rgba(255,255,255,0.05)',
+  border: `1px solid ${active ? color + '55' : 'rgba(255,255,255,0.1)'}`,
+  borderRadius: 10, color: active ? color : '#fff',
+  fontSize: 15, fontWeight: active ? 800 : 600, textAlign: 'left',
+  cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+})
+
 // ── Bouton icône ─────────────────────────────────────────────────────────────
 // Sur écran tactile (IS_COARSE) les boutons passent à ≥44px (cible WCAG 2.5.8) avec
 // icônes plus grandes — au doigt les versions 32px/fontSize:16 étaient imprécises.
@@ -359,6 +371,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [showAudioMenu, setShowAudioMenu] = useState(false)
   const [showSpdMenu,  setShowSpdMenu] = useState(false)
   const [showQualityMenu, setShowQualityMenu] = useState(false)
+  const [showSettingsSheet, setShowSettingsSheet] = useState(false)  // tactile : panneau réglages unifié (bottom-sheet)
   const [qualityLabel, setQualityLabel] = useState('AUTO')
   const [audioIdx,     setAudioIdx]    = useState(0)
   const [audioTrackState, setAudioTrackState] = useState('pending')
@@ -1214,8 +1227,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 /* Titre central rétractable : ne doit jamais évincer les boutons préc/suiv */
                 .vp-topbar .vp-title { min-width: 0; }
                 .vp-topbar .vp-title-sub { display: none; }
-                /* La rangée de boutons peut passer à la ligne sans rogner aucune cible */
-                .vp-control-row { flex-wrap: wrap !important; row-gap: 8px !important; }
+                /* Barre épurée tactile : une seule ligne, jamais de wrap (les menus partent
+                   dans la bottom-sheet Réglages → plus assez de boutons pour déborder) */
+                .vp-control-row { flex-wrap: nowrap !important; row-gap: 0 !important; }
                 /* Menus déroulants (CC / audio / vitesse) : jamais hors écran à droite,
                    largeur contrainte à la fenêtre, scroll interne si trop long */
                 .vp-menu {
@@ -1230,6 +1244,16 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               @media (max-width: 420px) {
                 .vp-control-row { gap: 8px !important; }
                 .vp-time { margin-left: 2px !important; }
+              }
+              /* ── Bottom-sheet Réglages (tactile) ── */
+              @keyframes vpSheetIn { from { transform: translateY(100%) } to { transform: translateY(0) } }
+              @keyframes vpSheetFade { from { opacity: 0 } to { opacity: 1 } }
+              .vp-sheet-backdrop { animation: vpSheetFade .2s ease; }
+              .vp-sheet { animation: vpSheetIn .26s cubic-bezier(.22,.61,.36,1); }
+              .vp-sheet button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+              .vp-control-row button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+              @media (prefers-reduced-motion: reduce) {
+                .vp-sheet, .vp-sheet-backdrop { animation: none !important; }
               }`}</style>
 
             {/* ── Fond cinématique en pré-lecture (au lieu d'un grand vide noir) ── */}
@@ -1393,7 +1417,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
               {/* Ligne de contrôles — espacement plus large au doigt (tactile) ; wrap
                   autorisé sur tactile pour qu'aucun bouton agrandi ne soit rogné. */}
-              <div className="vp-control-row" style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, marginTop: IS_COARSE ? 8 : 4, flexWrap: IS_COARSE ? 'wrap' : 'nowrap', rowGap: IS_COARSE ? 6 : 0 }}>
+              <div className="vp-control-row" style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, marginTop: IS_COARSE ? 8 : 4, flexWrap: 'nowrap', rowGap: 0 }}>
 
                 {/* Préc / Suiv (tactile uniquement : sur mobile la barre haute est souvent
                     masquée en plein écran → on remet la navigation d'épisode à portée de pouce) */}
@@ -1417,7 +1441,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   <span style={{ fontSize: IS_COARSE ? 15 : 13, fontWeight: 700 }}>+10</span>
                 </Btn>
 
-                {/* Volume */}
+                {/* Volume — bouton muet : sur tactile il part dans la bottom-sheet Réglages
+                    (l'utilisateur a déjà ses boutons physiques) → barre épurée une seule ligne. */}
+                {!IS_COARSE && (
                 <Btn onClick={() => {
                   const v = videoRef.current
                   const a = audioRef.current
@@ -1432,6 +1458,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 }} title="Muet (M)">
                   {volIcon}
                 </Btn>
+                )}
                 {/* Slider volume : caché au doigt (un slider de 70px est inutilisable au
                     pouce) → le bouton muet suffit ; sur le volume mobile, l'utilisateur
                     a déjà les boutons physiques de l'appareil. */}
@@ -1453,6 +1480,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
 
                 <div style={{ flex: 1 }} />
 
+                {/* DESKTOP : les 4 menus déroulants séparés (inchangés). Sur tactile ils
+                    sont remplacés par la bottom-sheet « Réglages » plus bas. */}
+                {!IS_COARSE && (<>
                 {/* Sous-titres */}
                 <div style={{ position: 'relative' }}>
                   <button
@@ -1621,6 +1651,24 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 {'pictureInPictureEnabled' in document && (
                   <Btn onClick={() => videoRef.current?.requestPictureInPicture?.()} title="Picture in Picture">⧉</Btn>
                 )}
+                </>)}
+
+                {/* TACTILE : un seul bouton « Réglages » ouvre la bottom-sheet unifiée
+                    (sous-titres + apparence, audio, vitesse). Grosse cible ≥48px. */}
+                {IS_COARSE && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setShowSettingsSheet(true) }}
+                    title="Réglages"
+                    aria-label="Réglages : sous-titres, audio, vitesse"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                      height: 48, minWidth: 48, padding: '0 16px', borderRadius: 12, flexShrink: 0,
+                      background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)',
+                      color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent', transition: 'background .15s',
+                    }}
+                  ><span style={{ fontSize: 20, lineHeight: 1 }}>⚙</span><span>Réglages</span></button>
+                )}
 
                 {/* Plein écran — c'est LE mode de visionnage principal au téléphone, donc
                     sur tactile on le rend gros et bien visible (pastille accent ≥44px). */}
@@ -1657,6 +1705,142 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 </div>
               )}
             </div>
+
+            {/* ── TACTILE : bottom-sheet « Réglages » unifiée ──
+                 Regroupe sous-titres (on/off + langue + apparence), audio, vitesse, qualité.
+                 Réutilise EXACTEMENT les handlers existants (chooseSubtitle / chooseAudio /
+                 setSpeed / updateSubtitleStyle). z-index > contrôles → marche aussi en plein
+                 écran paysage. Ferme au tap hors panneau ou via ✕. */}
+            {IS_COARSE && showSettingsSheet && (
+              <div
+                className="vp-sheet-backdrop"
+                onClick={() => setShowSettingsSheet(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 2147483000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-end', WebkitTapHighlightColor: 'transparent' }}
+              >
+                <div
+                  className="vp-sheet"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Réglages du lecteur"
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    width: '100%', maxHeight: '78vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch',
+                    background: 'rgba(12,13,16,0.96)', backdropFilter: 'blur(20px)',
+                    borderTopLeftRadius: 18, borderTopRightRadius: 18,
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 -16px 50px rgba(0,0,0,0.6)',
+                    paddingBottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+                  }}
+                >
+                  {/* En-tête : poignée + titre + fermer */}
+                  <div style={{ position: 'sticky', top: 0, zIndex: 1, background: 'rgba(12,13,16,0.96)', backdropFilter: 'blur(20px)', padding: '10px 16px 8px' }}>
+                    <div style={{ width: 38, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.2)', margin: '0 auto 10px' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>Réglages</span>
+                      <button onClick={() => setShowSettingsSheet(false)} aria-label="Fermer les réglages"
+                        style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', color: '#fff', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '4px 12px 8px' }}>
+                    {/* Son */}
+                    <div style={vpSheetSection}>Son</div>
+                    <button
+                      onClick={() => {
+                        const v = videoRef.current
+                        const a = audioRef.current
+                        const nextMuted = !muted
+                        if (usesExternalAudio) { if (a) a.muted = nextMuted; if (v) v.muted = true; setMuted(nextMuted) }
+                        else if (v) { v.muted = nextMuted }
+                      }}
+                      style={vpSheetRow(false, color)}
+                    ><span>{volIcon} {muted ? 'Activer le son' : 'Couper le son'}</span></button>
+
+                    {/* Sous-titres */}
+                    <div style={vpSheetSection}>Sous-titres</div>
+                    {hasSubs ? (
+                      <>
+                        <button onClick={() => chooseSubtitle(subIdx, true)} style={vpSheetRow(subsOff, color)}>
+                          <span>🚫 Désactivés</span>{subsOff && <span>✓</span>}
+                        </button>
+                        {video.subtitles.map((sub, i) => (
+                          <button key={i} onClick={() => chooseSubtitle(i, false)} style={vpSheetRow(!subsOff && i === subIdx, color)}>
+                            <span>{sub.label}</span>{!subsOff && i === subIdx && <span>✓</span>}
+                          </button>
+                        ))}
+                        {/* Apparence des sous-titres */}
+                        <div style={{ ...vpSheetSection, fontSize: 11 }}>Apparence</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 4px 8px' }}>
+                          {[
+                            ['A−', () => updateSubtitleStyle({ size: Math.max(14, subtitleStyle.size - 4) })],
+                            ['A+', () => updateSubtitleStyle({ size: Math.min(64, subtitleStyle.size + 4) })],
+                            ['↑ Monter', () => updateSubtitleStyle({ bottom: Math.min(180, (Number(subtitleStyle.bottom) || 110) + 24) })],
+                            ['↓ Baisser', () => updateSubtitleStyle({ bottom: Math.max(40, (Number(subtitleStyle.bottom) || 110) - 24) })],
+                            ['Fond −', () => updateSubtitleStyle({ background: Math.max(0, Number((subtitleStyle.background - 0.15).toFixed(2))) })],
+                            ['Fond +', () => updateSubtitleStyle({ background: Math.min(0.95, Number((subtitleStyle.background + 0.15).toFixed(2))) })],
+                            [subtitleStyle.outline ? 'Contour ON' : 'Contour OFF', () => updateSubtitleStyle({ outline: !subtitleStyle.outline })],
+                            [subtitleStyle.shadow ? 'Ombre ON' : 'Ombre OFF', () => updateSubtitleStyle({ shadow: !subtitleStyle.shadow })],
+                            [subtitleStyle.weight >= 800 ? 'Texte normal' : 'Texte gras', () => updateSubtitleStyle({ weight: subtitleStyle.weight >= 800 ? 600 : 800 })],
+                          ].map(([label, action]) => (
+                            <button key={label} onClick={action}
+                              style={{ flex: '1 1 30%', minHeight: 48, borderRadius: 10, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{label}</button>
+                          ))}
+                        </div>
+                        <div style={{ ...vpSheetSection, fontSize: 11 }}>Couleur du texte</div>
+                        <div style={{ display: 'flex', gap: 8, padding: '4px 4px 8px' }}>
+                          {['#ffffff', '#ffe66d', '#8be9ff', '#ff8fab', '#9dff8f'].map(c => (
+                            <button key={c} onClick={() => updateSubtitleStyle({ color: c })} title={c} aria-label={`Couleur texte ${c}`}
+                              style={{ flex: 1, height: 40, borderRadius: 8, border: `2px solid ${subtitleStyle.color === c ? color : 'rgba(255,255,255,0.2)'}`, background: c, cursor: 'pointer' }} />
+                          ))}
+                        </div>
+                        <div style={{ ...vpSheetSection, fontSize: 11 }}>Couleur du contour</div>
+                        <div style={{ display: 'flex', gap: 8, padding: '4px 4px 8px' }}>
+                          {['#000000', '#3a2d6d', '#7a1020', '#0a3a2a', '#ffffff'].map(c => (
+                            <button key={c} onClick={() => updateSubtitleStyle({ outline: true, outlineColor: c })} title={c} aria-label={`Couleur contour ${c}`}
+                              style={{ flex: 1, height: 40, borderRadius: 8, border: `2px solid ${(subtitleStyle.outlineColor || '#000000') === c ? color : 'rgba(255,255,255,0.2)'}`, background: c, cursor: 'pointer' }} />
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ padding: '10px 8px', color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>Aucun sous-titre disponible.</div>
+                    )}
+
+                    {/* Audio */}
+                    {hasAudioChoices && (
+                      <>
+                        <div style={vpSheetSection}>Audio</div>
+                        {audioTrackState === 'unsupported' && !selectedAudio?.mediaSrc && (
+                          <div style={{ padding: '8px', color: 'rgba(255,255,255,0.45)', fontSize: 12, lineHeight: 1.4 }}>
+                            Changement audio non supporté par ce navigateur.
+                          </div>
+                        )}
+                        {audioOptions.map((track, i) => (
+                          <button key={`${track.label || 'audio'}-${i}`} onClick={() => chooseAudio(i)} style={vpSheetRow(i === audioIdx, color)}>
+                            <span>{track.label || `Audio ${i + 1}`}</span>{i === audioIdx && <span>✓</span>}
+                          </button>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Vitesse */}
+                    <div style={vpSheetSection}>Vitesse de lecture</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 4px 8px' }}>
+                      {SPEEDS.map(s => (
+                        <button key={s} onClick={() => { setSpeed(s); if (videoRef.current) videoRef.current.playbackRate = s }}
+                          style={{ flex: '1 1 28%', minHeight: 48, borderRadius: 10, background: s === speed ? `${color}22` : 'rgba(255,255,255,0.07)', border: `1px solid ${s === speed ? color + '66' : 'rgba(255,255,255,0.14)'}`, color: s === speed ? color : '#fff', fontSize: 14, fontWeight: s === speed ? 800 : 700, cursor: 'pointer' }}>{s}×</button>
+                      ))}
+                    </div>
+
+                    {/* Qualité (info) */}
+                    <div style={vpSheetSection}>Qualité</div>
+                    <div style={{ ...vpSheetRow(false, color), cursor: 'default' }}>
+                      <span>{isLocal ? 'Source locale' : 'Lecture externe'}</span>
+                      <span style={{ color: '#64d98b', fontWeight: 800 }}>{qualityHint}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* YouTube embed */

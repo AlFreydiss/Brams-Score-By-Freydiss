@@ -280,7 +280,7 @@ function TpnInfoPanel({ color, tab, readCount, chapterCount, watchedCount, episo
     ? `${watchedCount}/${episodeCount} episodes termines`
     : `${readCount}/${chapterCount} chapitres lus`
   return (
-    <aside className="tpn-info-panel" style={{
+    <aside className="tpn-info-panel anime-infopanel" style={{
       position: 'sticky',
       top: 18,
       alignSelf: 'start',
@@ -343,7 +343,7 @@ function SeriesInfoPanel({ color, title, headerEmoji, videos, watchedCount, vide
     : latest ? `Regarder — Ép. ${latest.episode}` : 'Regarder'
 
   return (
-    <aside className="tpn-info-panel" style={{
+    <aside className="tpn-info-panel anime-infopanel" style={{
       position: 'sticky',
       top: 18,
       alignSelf: 'start',
@@ -685,6 +685,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           @media (max-width: 980px) {
             .tpn-content-grid { grid-template-columns: 1fr; }
             .tpn-info-panel { position: relative !important; top: auto !important; }
+            .anime-infopanel { position: static !important; }
           }
           @media (max-width: 700px) {
             .tpn-content-grid { gap: 12px; }

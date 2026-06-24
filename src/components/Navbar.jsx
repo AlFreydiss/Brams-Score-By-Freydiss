@@ -412,8 +412,8 @@ export default function Navbar({ forceScrolled = false }) {
             {/* Boutique + Soutenir : accessibles sur mobile MÊME sans être connecté
                 (la nav-zone-status desktop est cachée en mobile). */}
             {isAuthenticated && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start', padding: '12px 16px 0' }}>
-                <DailyWheel discordId={discordId} />
+              <div style={{ padding: '12px 16px 0' }}>
+                <DailyWheel discordId={discordId} variant="drawer" />
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, padding: '12px 16px 0' }}>

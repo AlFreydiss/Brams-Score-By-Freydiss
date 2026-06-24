@@ -132,7 +132,7 @@ function InfoPanel({ watchedCount, total, seasonKey, onResume, resumeEp }) {
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
 
   return (
-    <aside style={{
+    <aside className="anime-infopanel" style={{
       position: 'sticky', top: 0, alignSelf: 'start',
       display: 'flex', flexDirection: 'column', gap: 0,
       borderRadius: 22, overflow: 'hidden',
@@ -363,6 +363,7 @@ export default function MhaPage({ onClose }) {
                 align-items: start;
               }
               @media (max-width: 900px) { .mh-layout { grid-template-columns: 1fr; } }
+              @media (max-width: 900px) { .anime-infopanel { position: static !important; } }
             `}</style>
 
             <div className="mh-layout">

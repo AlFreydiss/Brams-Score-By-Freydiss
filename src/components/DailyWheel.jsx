@@ -73,7 +73,8 @@ function WheelLabels() {
   )
 }
 
-export default function DailyWheel({ discordId }) {
+export default function DailyWheel({ discordId, variant }) {
+  const inDrawer = variant === 'drawer'
   const [state, setState] = useState({ ok: false, can_claim: false, streak: 0 })
   const [open, setOpen] = useState(false)
   const [spinning, setSpinning] = useState(false)
@@ -155,7 +156,17 @@ export default function DailyWheel({ discordId }) {
         onClick={() => setOpen(true)}
         aria-label="Roue de la fortune quotidienne"
         title={canClaim ? 'Roue du jour disponible !' : 'Roue de la fortune'}
-        style={{
+        style={inDrawer ? {
+          // Pleine largeur dans le drawer mobile : cible tactile confortable + label clair.
+          position: 'relative', width: '100%', minHeight: 48, borderRadius: 12, cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', gap: 10, padding: '0 14px',
+          fontFamily: 'inherit', fontSize: 14.5, fontWeight: 800, letterSpacing: '.01em',
+          color: canClaim ? '#ffe9a8' : 'rgba(255,255,255,0.82)',
+          background: canClaim
+            ? 'linear-gradient(135deg, rgba(191,164,106,0.20), rgba(191,164,106,0.05))'
+            : 'rgba(255,255,255,0.04)',
+          border: canClaim ? '1px solid rgba(191,164,106,0.45)' : '1px solid rgba(255,255,255,0.08)',
+        } : {
           position: 'relative', width: 38, height: 38, borderRadius: 10, cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
           color: canClaim ? '#ffe9a8' : 'rgba(255,255,255,0.75)',
@@ -165,11 +176,21 @@ export default function DailyWheel({ discordId }) {
           border: canClaim ? '1px solid rgba(191,164,106,0.5)' : '1px solid rgba(255,255,255,0.08)',
           transition: 'transform .15s, box-shadow .2s, background .2s, border-color .2s',
         }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; if (canClaim) e.currentTarget.style.boxShadow = '0 6px 22px rgba(191,164,106,0.28)' }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
+        onMouseEnter={e => { if (inDrawer) return; e.currentTarget.style.transform = 'translateY(-1px)'; if (canClaim) e.currentTarget.style.boxShadow = '0 6px 22px rgba(191,164,106,0.28)' }}
+        onMouseLeave={e => { if (inDrawer) return; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
       >
-        🎰
-        {canClaim && (
+        <span style={{ fontSize: inDrawer ? 18 : 16, lineHeight: 1 }}>🎰</span>
+        {inDrawer && <span>Roue du jour</span>}
+        {inDrawer && canClaim && (
+          <span style={{
+            marginLeft: 'auto', minWidth: 16, height: 18, padding: '0 8px',
+            borderRadius: 9, background: '#e0413a', color: '#fff', fontSize: 11, fontWeight: 900,
+            letterSpacing: '.04em', textTransform: 'uppercase',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+            boxShadow: '0 0 10px rgba(224,65,58,0.5)', animation: 'dwPulse 1.6s ease-in-out infinite',
+          }}>Dispo</span>
+        )}
+        {!inDrawer && canClaim && (
           <span style={{
             position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, padding: '0 4px',
             borderRadius: 8, background: '#e0413a', color: '#fff', fontSize: 11, fontWeight: 900,
@@ -191,7 +212,8 @@ export default function DailyWheel({ discordId }) {
           }}
         >
           <div style={{
-            position: 'relative', width: 'min(420px, 94vw)', borderRadius: 18, padding: '26px 24px 28px',
+            position: 'relative', width: 'min(420px, 94vw)', maxHeight: '92vh', overflowY: 'auto',
+            borderRadius: 18, padding: 'clamp(18px, 5vw, 26px) clamp(16px, 5vw, 24px) clamp(20px, 5vw, 28px)',
             background: `radial-gradient(120% 90% at 50% 0%, rgba(191,164,106,0.10), ${BG} 60%)`,
             border: '1px solid rgba(191,164,106,0.28)', boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
             textAlign: 'center',
@@ -217,8 +239,8 @@ export default function DailyWheel({ discordId }) {
               <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 500, fontSize: 12 }}>· +10%/jour consécutif</span>
             </div>
 
-            {/* Roue */}
-            <div style={{ position: 'relative', width: 260, height: 260, margin: '20px auto 8px' }}>
+            {/* Roue — taille fluide pour tenir dans 360px sans déborder. */}
+            <div style={{ position: 'relative', width: 'min(260px, 72vw)', aspectRatio: '1 / 1', margin: '20px auto 8px' }}>
               {/* Pointeur (fixe, en haut) */}
               <div style={{
                 position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', zIndex: 3,

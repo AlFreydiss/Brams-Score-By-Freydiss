@@ -78,6 +78,7 @@ const CSS = `
 
   .op-layout { display: grid; grid-template-columns: 310px minmax(0,1fr); gap: 28px; max-width: 1480px; margin: 0 auto; align-items: start; }
   @media (max-width: 900px) { .op-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .anime-infopanel { position: static !important; } }
   @media (max-width: 600px) { .op-layout { gap: 16px; } }
 
   @media (max-width: 600px) {
@@ -134,7 +135,7 @@ function InfoPanel({ watchedCount, availableCount, resumeIdx, onResume }) {
   const pct = availableCount > 0 ? Math.round((watchedCount / availableCount) * 100) : 0
   const nextVideo = VIDEOS[resumeIdx] || VIDEOS[0]
   return (
-    <aside style={{
+    <aside className="anime-infopanel" style={{
       position:'sticky', top:0, alignSelf:'start',
       borderRadius:22, overflow:'hidden',
       background:'linear-gradient(180deg,rgba(20,8,6,.97),rgba(12,4,2,.99))',

@@ -115,7 +115,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
   const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
   const nextVideo = VIDEOS[lastWatchedIdx] || VIDEOS[0]
   return (
-    <aside style={{ position: 'sticky', top: 0, alignSelf: 'start', display: 'flex', flexDirection: 'column', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(180deg,rgba(16,12,30,.96),rgba(10,8,20,.99))', border: '1px solid rgba(21,101,192,.18)', boxShadow: '0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter: 'blur(20px)' }}>
+    <aside className="anime-infopanel" style={{ position: 'sticky', top: 0, alignSelf: 'start', display: 'flex', flexDirection: 'column', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(180deg,rgba(16,12,30,.96),rgba(10,8,20,.99))', border: '1px solid rgba(21,101,192,.18)', boxShadow: '0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter: 'blur(20px)' }}>
       <div style={{ position:'relative', height:260, overflow:'hidden', flexShrink:0 }}>
         <img loading="lazy" decoding="async" src={COVER} alt="Blue Lock" style={{ width:'100%',height:'100%',objectFit:'cover',objectPosition:'center 15%',opacity:.72,filter:'saturate(1.1) brightness(.9)' }} />
         <div style={{ position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(0,0,0,.1) 0%,rgba(16,12,30,.98) 100%)' }} />
@@ -285,6 +285,7 @@ export default function BlueLockPage({ onClose }) {
             <style>{`
               .bl-layout { display: grid; grid-template-columns: 310px minmax(0,1fr); gap: 28px; max-width: 1480px; margin: 0 auto; align-items: start; }
               @media (max-width: 900px) { .bl-layout { grid-template-columns: 1fr; } }
+              @media (max-width:900px) { .anime-infopanel { position:static !important; } }
             `}</style>
             <div className="bl-layout">
               <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount} readCount={readCount} />
