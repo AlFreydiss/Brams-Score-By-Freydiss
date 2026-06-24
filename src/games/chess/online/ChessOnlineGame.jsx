@@ -24,6 +24,7 @@ import EndOverlay from '../ui/EndOverlay.jsx'
 import { boardParId } from '../logic/boards.js'
 import { useChessSettings } from '../logic/useChessSettings.js'
 import { formaterTemps } from '../ui/format.js'
+import EmoteBar from '../../_shell/arena/EmoteBar.jsx'
 
 const BRASS = '#b09467'
 const SEUIL_CRITIQUE = 10000
@@ -531,6 +532,8 @@ export default function ChessOnlineGame({ partieId, monUid, onQuitter, onRejoind
           ms={tempsMoi}
           capturees={mesCaptures} couleurCapturees={maCouleur === 'w' ? 'b' : 'w'}
         />
+
+        {enCours && <EmoteBar partieId={partieId} monUid={monUid} accent={BRASS} />}
 
         <button onClick={onQuitter} style={{
           padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',

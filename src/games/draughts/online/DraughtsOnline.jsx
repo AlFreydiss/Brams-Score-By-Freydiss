@@ -31,6 +31,8 @@ import { useDraughtsSettings, SPEED_MULT } from '../logic/useDraughtsSettings.js
 import { sfx } from '../logic/sfx.js'
 import { Segment, Btn } from '../ui/controls.jsx'
 import DraughtsBoard from '../board/DraughtsBoard.jsx'
+import EmoteBar from '../../_shell/arena/EmoteBar.jsx'
+import SpectatorList from '../../_shell/arena/SpectatorList.jsx'
 
 const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
 const SIDE_PC = { [P]: damesPieces.fonce, [M]: damesPieces.clair }
@@ -121,6 +123,7 @@ export default function DraughtsOnline({ accent = ui.accent }) {
   const [confirmResign, setConfirmResign] = useState(false)
   const [result, setResult] = useState(null)           // { winner, myDelta }
   const [elapsed, setElapsed] = useState(0)            // durée du match (s)
+  const [spectate, setSpectate] = useState(false)      // vue « Regarder en direct » (lecture seule)
 
   // Miroir React pour le rendu du plateau.
   const [view, setView] = useState({ board: null, turn: P, selected: null, legalMoves: [], movableKeys: new Set(), last: null, status: 'active' })
@@ -332,6 +335,16 @@ export default function DraughtsOnline({ accent = ui.accent }) {
     )
   }
 
+  // ── SPECTATEUR (lecture seule) ────────────────────────────────────────────────
+  if (spectate) {
+    return (
+      <div className="dames-online" style={{ minHeight: '100%' }}>
+        <FocusStyle />
+        <SpectatorList game="draughts" accent={accent} onRetour={() => setSpectate(false)} />
+      </div>
+    )
+  }
+
   // ── MENU / RECHERCHE ──────────────────────────────────────────────────────────
   if (phase === 'menu' || phase === 'searching') {
     const tier = rating ? eloToTier(rating.rating) : null
@@ -369,6 +382,12 @@ export default function DraughtsOnline({ accent = ui.accent }) {
                 </div>
               )
               : <Btn variant="primary" accent={accent} full onClick={search}>Trouver une partie</Btn>}
+
+            {phase === 'menu' && (
+              <div style={{ marginTop: 12 }}>
+                <Btn accent={accent} full onClick={() => setSpectate(true)}>Regarder en direct</Btn>
+              </div>
+            )}
           </div>
 
           {/* ── Classement ELO (miroir RankingTab : tabular-nums, palier texte, top-3 accent) ── */}
@@ -501,6 +520,10 @@ export default function DraughtsOnline({ accent = ui.accent }) {
               : <Btn accent={accent} full danger disabled={view.status !== 'active'} onClick={() => setConfirmResign(true)}>Abandonner</Btn>}
             <Btn accent={accent} full onClick={leaveToMenu}>← Menu</Btn>
           </div>
+          {view.status === 'active' && g.matchId && (
+            <EmoteBar partieId={g.matchId} monUid={discordId} accent={accent} />
+          )}
+
           <p style={{ margin: 0, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 1.5, color: ui.textMute }}>
             Classé · serveur autoritaire · prise maximale obligatoire · dames volantes.
           </p>

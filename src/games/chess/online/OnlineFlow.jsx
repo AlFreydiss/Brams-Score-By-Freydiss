@@ -7,6 +7,7 @@ import { assurerProfil, getProfil, getPartieEnCours } from '../../../features/ec
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import ChessMatchmaking from './ChessMatchmaking.jsx'
 import ChessOnlineGame from './ChessOnlineGame.jsx'
+import SpectatorList from '../../_shell/arena/SpectatorList.jsx'
 
 export default function OnlineFlow({ accent = '#b09467' }) {
   const { userId, displayName, avatarUrl, isAuthenticated, signInWithDiscord } = useAuth()
@@ -93,6 +94,11 @@ export default function OnlineFlow({ accent = '#b09467' }) {
     )
   }
 
+  // ── Mode spectateur (lecture seule des parties classées en cours) ──
+  if (vue === 'spectate') {
+    return <SpectatorList game="chess" accent={accent} onRetour={() => setVue('menu')} />
+  }
+
   // ── Menu : reprise éventuelle + matchmaking ──
   return (
     <div style={{ height: '100%', overflowY: 'auto' }}>
@@ -125,6 +131,17 @@ export default function OnlineFlow({ accent = '#b09467' }) {
         onPartieTrouvee={ouvrirPartie}
         onQuitter={() => { /* dans l'univers, le menu mode est géré par PlayTab — no-op */ }}
       />
+      <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 4px 40px' }}>
+        <button onClick={() => setVue('spectate')} style={{
+          width: '100%', padding: '11px', borderRadius: ui.radius.sm, cursor: 'pointer',
+          font: `700 13px ${fonts.body}`, color: ui.textDim,
+          background: ui.surface, border: `1px solid ${ui.line}`, transition: 'color .15s, border-color .15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = ui.text; e.currentTarget.style.borderColor = ui.lineHi }}
+          onMouseLeave={e => { e.currentTarget.style.color = ui.textDim; e.currentTarget.style.borderColor = ui.line }}>
+          Regarder une partie en direct
+        </button>
+      </div>
     </div>
   )
 }

@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ui, fonts, damesPieces } from '../../../features/games/neutralTheme.js'
-import { DEFAULT_RULES, P, M } from '../../../features/dames/engine/draughts-engine.js'
+import { DEFAULT_RULES, P, M, initBoard, applyMove } from '../../../features/dames/engine/draughts-engine.js'
 import DraughtsBoard from '../board/DraughtsBoard.jsx'
 import { useDraughtsGame, LEVELS } from '../logic/useDraughtsGame.js'
 import { useDraughtsSettings, SPEED_MULT } from '../logic/useDraughtsSettings.js'
@@ -25,7 +25,9 @@ import { Segment, Btn } from '../ui/controls.jsx'
 import DraughtsOnline from '../online/DraughtsOnline.jsx'
 import ArenaLayout from '../../_shell/arena/ArenaLayout.jsx'
 import Particles from '../../_shell/arena/Particles.jsx'
+import ReplayScrubber from '../../_shell/arena/ReplayScrubber.jsx'
 import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
+import { genererNotation, copierPresse, telecharger } from '../logic/exportNotation.js'
 
 const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
 const SIDE_PC = { [P]: damesPieces.fonce, [M]: damesPieces.clair }
@@ -69,6 +71,15 @@ export default function PlayTab({ accent = ui.accent }) {
   const [elapsed, setElapsed] = useState(0)
   const tickRef = useRef(0)
 
+  // ── Revue / Replay : journal local des mouvements moteur (le hook n'expose pas
+  //    son history). On capture chaque `mv` dans onMove pour pouvoir rejouer les
+  //    positions passées via le moteur (initBoard + applyMove), sans toucher au hook.
+  const [mvLog, setMvLog] = useState([])           // [mv, mv, …] dans l'ordre joué
+  const [revueIdx, setRevueIdx] = useState(null)   // null = suit le live ; sinon nb de plies affichés (0..total)
+  const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState(1)
+  const [copie, setCopie] = useState(false)
+
   const boardSize = useBoardSize()
   const mobile = typeof window !== 'undefined' && window.innerWidth < 880
 
@@ -94,6 +105,8 @@ export default function PlayTab({ accent = ui.accent }) {
       playSfx(capture ? 'capture' : 'move')
       // rafle multiple (≥2 prises) → micro-secousse ; sinon le burst de poussière suffit.
       if (capture && mv?.caps && mv.caps.length >= 2) arena.shake(4)
+      // journal local pour la revue/replay (positions rejouables côté UI).
+      if (mv) setMvLog(prev => [...prev, mv])
     },
     onPromote: () => {
       playSfx('promote')
@@ -125,8 +138,16 @@ export default function PlayTab({ accent = ui.accent }) {
   const restartWith = useCallback((opts) => {
     startedRef.current = false; setElapsed(0); clearInterval(tickRef.current)
     setConfirmResign(false); setPromoGlow(false)
+    setMvLog([]); setRevueIdx(null); setPlaying(false)
     game.newGame(opts)
   }, [game])
+
+  // Garde le journal local synchronisé avec le moteur en cas d'annulation (undo) :
+  // si le nb de coups officiel diminue, on tronque d'autant.
+  useEffect(() => {
+    setMvLog(prev => (prev.length > game.moves.length ? prev.slice(0, game.moves.length) : prev))
+    if (revueIdx != null) setRevueIdx(r => Math.min(r, game.moves.length))
+  }, [game.moves.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const changeMode = (m) => { setMode(m); restartWith({ mode: m, diff }) }
   const changeDiff = (d) => { setDiffState(d); game.setDiff(d) }
@@ -152,6 +173,52 @@ export default function PlayTab({ accent = ui.accent }) {
   // lumière d'arène : warm = camp Clair au trait, cool = camp Foncé, null si terminé.
   const turnLight = game.gameOver ? null : (game.turn === M ? 'warm' : 'cool')
 
+  // ── Revue / Replay (Dames) ──────────────────────────────────────────────────
+  // La revue n'est disponible qu'en partie terminée (jamais pendant le jeu live).
+  const totalPlies = mvLog.length
+  const enRevue = revueIdx != null && revueIdx < totalPlies
+  // Reconstruit le plateau après `revueIdx` demi-coups en rejouant le journal via le moteur.
+  const revuePos = useMemo(() => {
+    if (revueIdx == null) return null
+    const r = Math.max(0, Math.min(totalPlies, revueIdx))
+    let b = initBoard(rules)
+    let last = null
+    for (let i = 0; i < r; i++) {
+      const mv = mvLog[i]; if (!mv) break
+      const res = applyMove(b, mv, rules)
+      b = res.board; last = mv
+    }
+    return { board: b, last }
+  }, [revueIdx, totalPlies, mvLog, rules])
+
+  // Auto-play : avance la revue à intervalle dépendant de la vitesse ; stoppe à la fin.
+  useEffect(() => {
+    if (!playing || revueIdx == null) return
+    if (revueIdx >= totalPlies) { setPlaying(false); return }
+    const delai = Math.max(200, 950 / (speed || 1))
+    const id = setTimeout(() => setRevueIdx(r => Math.min(totalPlies, (r ?? 0) + 1)), delai)
+    return () => clearTimeout(id)
+  }, [playing, revueIdx, totalPlies, speed])
+
+  // Sécurité : couper le replay si la partie redevient live (nouvelle partie).
+  useEffect(() => { if (!game.gameOver) { setPlaying(false); setRevueIdx(null) } }, [game.gameOver])
+
+  const seekRevue = useCallback((plies) => {
+    const p = Math.max(0, Math.min(totalPlies, plies))
+    setRevueIdx(p)
+  }, [totalPlies])
+
+  // Export notation internationale (copie presse-papier + repli/téléchargement .txt).
+  const exporter = useCallback(async (kind = 'copie') => {
+    const res = game.status?.draw ? 'Nulle'
+      : game.status ? `${SIDE_LBL[game.status.winner]} gagne` : null
+    const txt = genererNotation(game.moves, { result: res })
+    if (kind === 'fichier') { telecharger(txt, 'partie-dames.txt'); return }
+    const ok = await copierPresse(txt)
+    if (ok) { setCopie(true); setTimeout(() => setCopie(false), 1600) }
+    else telecharger(txt, 'partie-dames.txt')
+  }, [game.moves, game.status])
+
   // ── En ligne classé : flux autonome (auth + matchmaking + match live) sur le
   // plateau 2D de l'univers. On garde le sélecteur de mode visible en haut.
   if (mode === 'online') {
@@ -166,18 +233,22 @@ export default function PlayTab({ accent = ui.accent }) {
   }
 
   // ── Plateau central (overlay particules + halo de promotion en dame) ──
+  // En revue : on affiche la position reconstruite (lecture seule), pas le live.
+  const enLecture = revueIdx != null
   const boardNode = (
     <div style={{ position: 'relative', width: boardSize, height: boardSize }}>
       <Particles ref={particlesRef} />
       <DraughtsBoard
-        board={game.board} accent={accent}
+        board={enLecture ? revuePos.board : game.board} accent={accent}
         boardTheme={settings.boardTheme}
-        selected={game.selected} legalMoves={game.legalMoves} last={game.last} hint={game.hint}
-        movableKeys={movableKeys} interactive={myTurn} gameOver={game.gameOver}
+        selected={enLecture ? null : game.selected} legalMoves={enLecture ? [] : game.legalMoves}
+        last={enLecture ? revuePos.last : game.last} hint={enLecture ? null : game.hint}
+        movableKeys={enLecture ? new Set() : movableKeys}
+        interactive={enLecture ? false : myTurn} gameOver={enLecture ? true : game.gameOver}
         coordsOn={settings.coords} highlightsOn={settings.highlights}
         animOn={settings.animations} animMult={animMult}
-        maxSize={boardSize} onCaptureFx={onCaptureFx}
-        onSquareClick={game.handleSquare}
+        maxSize={boardSize} onCaptureFx={enLecture ? undefined : onCaptureFx}
+        onSquareClick={enLecture ? undefined : game.handleSquare}
       />
       {/* halo or de promotion en dame (sobre, transitoire) */}
       <div aria-hidden style={{
@@ -185,10 +256,19 @@ export default function PlayTab({ accent = ui.accent }) {
         boxShadow: promoGlow && !game.gameOver ? eventGlow('promotion') : 'none',
         transition: 'box-shadow 280ms ease',
       }} />
-      {game.gameOver && game.status && (
+      {/* badge de revue */}
+      {enLecture && (
+        <div style={{
+          position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 9,
+          padding: '4px 12px', borderRadius: ui.radius.pill, background: 'rgba(8,9,12,0.82)',
+          border: `1px solid ${accent}`, fontFamily: fonts.body, fontWeight: 700, fontSize: 11, color: accent, whiteSpace: 'nowrap',
+        }}>Revue · {revueIdx === 0 ? 'position initiale' : `coup ${revueIdx}/${totalPlies}`}</div>
+      )}
+      {game.gameOver && game.status && !enLecture && (
         <EndOverlay
           status={game.status} mode={mode} humanSide={game.humanSide} accent={accent}
           moves={game.moves.length} captures={lostFonce + lostClair}
+          onReview={totalPlies > 0 ? () => { seekRevue(0); setPlaying(true) } : undefined}
           onRematch={() => restartWith({ mode, diff })}
         />
       )}
@@ -250,6 +330,36 @@ export default function PlayTab({ accent = ui.accent }) {
         {mode === 'ai' && <Btn accent={accent} full disabled={!game.canUndo || aiThinking} onClick={game.undo}>Annuler</Btn>}
         <Btn accent={accent} full danger disabled={game.gameOver} onClick={() => setConfirmResign(true)}>Abandonner</Btn>
       </div>
+
+      {/* Replay : disponible une fois la partie terminée (jamais pendant le jeu live). */}
+      {game.gameOver && totalPlies > 0 && (
+        <ReplayScrubber
+          index={revueIdx == null ? totalPlies : revueIdx}
+          total={totalPlies}
+          onSeek={seekRevue}
+          playing={playing}
+          onTogglePlay={() => {
+            if (playing) { setPlaying(false); return }
+            // (re)lance depuis le début si on est en bout de partie (live/final).
+            if (revueIdx == null || revueIdx >= totalPlies) seekRevue(0)
+            setPlaying(true)
+          }}
+          speed={speed}
+          onSpeed={setSpeed}
+          accent={accent}
+        />
+      )}
+
+      {/* Export notation internationale. */}
+      {game.moves.length > 0 && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn accent={accent} full onClick={() => exporter('copie')} title="Copier la notation">
+            {copie ? 'Copié ✓' : 'Exporter'}
+          </Btn>
+          <Btn accent={accent} onClick={() => exporter('fichier')} title="Télécharger .txt" aria-label="Télécharger">↓ .txt</Btn>
+        </div>
+      )}
+
       <p style={{ margin: 0, fontFamily: fonts.body, fontSize: 11, lineHeight: 1.5, color: ui.textMute }}>
         Dames internationales 10×10 · prise maximale obligatoire · dames volantes.
       </p>
@@ -321,7 +431,7 @@ function ThinkDot({ accent }) {
 }
 
 // ── overlay de fin de partie ──
-function EndOverlay({ status, mode, humanSide, accent, moves, captures, onRematch }) {
+function EndOverlay({ status, mode, humanSide, accent, moves, captures, onRematch, onReview }) {
   const ref = useRef(null)
   useEffect(() => { ref.current?.focus() }, [])
   let title, tone
@@ -348,7 +458,10 @@ function EndOverlay({ status, mode, humanSide, accent, moves, captures, onRematc
             </div>
           ))}
         </div>
-        <Btn variant="primary" accent={accent} full onClick={onRematch}>Rejouer</Btn>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {onReview && <Btn accent={accent} full onClick={onReview}>Revoir</Btn>}
+          <Btn variant="primary" accent={accent} full onClick={onRematch}>Rejouer</Btn>
+        </div>
       </div>
     </div>
   )

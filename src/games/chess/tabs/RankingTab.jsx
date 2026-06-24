@@ -8,6 +8,9 @@ import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { getLeaderboard } from '../../../features/echecs/lib/api.js'
 import { rangPourElo } from '../../../features/echecs/lib/elo.js'
+import { saisonActive, classementSaison, countdownFinSaison } from '../../_shell/arena/seasons.js'
+import { badgesPourJoueurs } from '../../_shell/arena/badges.js'
+import BadgeChip from '../../_shell/arena/BadgeChip.jsx'
 
 const BRASS = '#b09467'
 
@@ -38,11 +41,29 @@ function Avatar({ url, pseudo, rang }) {
   )
 }
 
+// Normalise un row d'agrégat de saison (game_season_standings) vers la forme
+// d'affichage des profils échecs, en conservant discord_id pour les badges.
+function fromSaison(r) {
+  return {
+    user_id: r.discord_id ? `dc:${r.discord_id}` : undefined,   // clé d'affichage stable
+    discord_id: r.discord_id,
+    pseudo: r.username,
+    avatar: r.avatar,
+    elo: r.rating,
+    parties: r.games ?? ((r.wins ?? 0) + (r.losses ?? 0) + (r.draws ?? 0)),
+    victoires: r.wins ?? 0,
+  }
+}
+
 export default function RankingTab() {
   const { userId } = useAuth()
   const [profils, setProfils] = useState(null)
   const [erreur, setErreur] = useState(false)
   const [filtre, setFiltre] = useState('tous')   // 'tous' | 'actifs' (≥1 partie jouée)
+  const [saison, setSaison] = useState(null)      // saison active échecs (ou null)
+  const [seasonRows, setSeasonRows] = useState(null)
+  const [vue, setVue] = useState('saison')        // 'saison' | 'alltime' (dégrade vers all-time si pas de saison)
+  const [badges, setBadges] = useState(new Map())
 
   useEffect(() => {
     let actif = true
@@ -51,10 +72,33 @@ export default function RankingTab() {
       if (!Array.isArray(data)) { setErreur(true); setProfils([]); return }
       setProfils(data)
     }).catch(() => { if (actif) { setErreur(true); setProfils([]) } })
+    // Saison active (REST direct, dégrade en silence si table absente)
+    saisonActive('echecs').then(s => {
+      if (!actif) return
+      setSaison(s)
+      if (s) classementSaison(s.id, 50).then(rows => { if (actif) setSeasonRows(Array.isArray(rows) ? rows.map(fromSaison) : []) }).catch(() => { if (actif) setSeasonRows([]) })
+      else setSeasonRows([])
+    }).catch(() => { if (actif) { setSaison(null); setSeasonRows([]) } })
     return () => { actif = false }
   }, [])
 
-  const liste = (profils || []).filter(p => filtre === 'tous' ? true : (p.parties ?? 0) > 0)   // 'actifs' = a joué au moins une partie
+  // Pas de saison active → vue all-time forcée (dégradation gracieuse).
+  const aSaison = !!saison
+  const vueEffective = aSaison ? vue : 'alltime'
+  const source = vueEffective === 'saison' ? seasonRows : profils
+  const countdown = aSaison ? countdownFinSaison(saison) : null
+
+  // Badges (un seul appel). Les profils all-time échecs n'ont pas de discord_id
+  // → la Map reste vide pour eux (dégradation gracieuse) ; en vue saison, oui.
+  useEffect(() => {
+    let actif = true
+    const ids = (source || []).map(p => p.discord_id).filter(Boolean)
+    if (!ids.length) { setBadges(new Map()); return }
+    badgesPourJoueurs(ids, 'echecs').then(m => { if (actif) setBadges(m) }).catch(() => { if (actif) setBadges(new Map()) })
+    return () => { actif = false }
+  }, [source])
+
+  const liste = (source || []).filter(p => filtre === 'tous' ? true : (p.parties ?? 0) > 0)   // 'actifs' = a joué au moins une partie
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', padding: '22px 18px 40px' }}>
@@ -74,11 +118,33 @@ export default function RankingTab() {
           </div>
         </div>
 
-        {profils === null && (
+        {aSaison && (
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
+            <div role="tablist" aria-label="Période du classement" style={{ display: 'flex', gap: 6 }}>
+              {[{ id: 'saison', l: saison.label || 'Saison en cours' }, { id: 'alltime', l: 'Tout temps' }].map(t => {
+                const on = vueEffective === t.id
+                return (
+                  <button key={t.id} role="tab" aria-selected={on} onClick={() => setVue(t.id)} style={{
+                    padding: '6px 13px', borderRadius: ui.radius.pill, cursor: 'pointer',
+                    font: `600 12px ${fonts.body}`,
+                    color: on ? '#e7d8b8' : ui.textDim,
+                    background: on ? 'rgba(176,148,103,0.14)' : ui.surface,
+                    border: `1px solid ${on ? 'rgba(176,148,103,0.5)' : ui.line}`,
+                  }}>{t.l}</button>
+                )
+              })}
+            </div>
+            {vueEffective === 'saison' && countdown && (
+              <span style={{ font: `600 11.5px ${fonts.body}`, color: ui.textMute, letterSpacing: '.2px' }}>· {countdown}</span>
+            )}
+          </div>
+        )}
+
+        {source === null && (
           <div style={{ padding: '40px 0', textAlign: 'center', color: ui.textMute, font: `500 13px ${fonts.body}` }}>Chargement…</div>
         )}
 
-        {profils !== null && liste.length === 0 && (
+        {source !== null && liste.length === 0 && (
           <div style={{
             padding: '34px 20px', textAlign: 'center', borderRadius: ui.radius.md,
             background: ui.surface, border: `1px solid ${ui.line}`, color: ui.textDim, font: `500 13.5px ${fonts.body}`, lineHeight: 1.6,
@@ -117,8 +183,11 @@ export default function RankingTab() {
                   <span style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                     <Avatar url={p.avatar} pseudo={p.pseudo} rang={rang} />
                     <span style={{ minWidth: 0 }}>
-                      <span style={{ display: 'block', font: `700 13.5px ${fonts.body}`, color: moi ? '#e7d8b8' : ui.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {p.pseudo || 'Joueur'}{moi ? ' · vous' : ''}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                        <span style={{ font: `700 13.5px ${fonts.body}`, color: moi ? '#e7d8b8' : ui.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {p.pseudo || 'Joueur'}{moi ? ' · vous' : ''}
+                        </span>
+                        {(badges.get(String(p.discord_id)) || []).map(b => <BadgeChip key={b} badgeId={b} compact />)}
                       </span>
                       <span style={{ display: 'block', font: `600 10.5px ${fonts.body}`, color: rang.couleur, marginTop: 1 }}>{rang.label}</span>
                     </span>

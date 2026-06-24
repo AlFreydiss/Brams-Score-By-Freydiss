@@ -31,7 +31,9 @@ import AnalysisPanel from '../analysis/AnalysisPanel.jsx'
 import OnlineFlow from '../online/OnlineFlow.jsx'
 import ArenaLayout from '../../_shell/arena/ArenaLayout.jsx'
 import Particles from '../../_shell/arena/Particles.jsx'
+import ReplayScrubber from '../../_shell/arena/ReplayScrubber.jsx'
 import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
+import { genererPGN, copierPresse, telecharger } from '../logic/exportPGN.js'
 
 const BRASS = '#b09467'
 
@@ -210,10 +212,16 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const [resultatForce, setResultatForce] = useState(null)   // { resultat, cause }
   const [finVisible, setFinVisible] = useState(false)
   const [curseur, setCurseur] = useState(-1)                 // demi-coup affiché (-1 → suit le live)
+  const [posInitiale, setPosInitiale] = useState(false)      // revue figée sur la position de départ (avant le 1er coup)
   const [evalPos, setEvalPos] = useState(null)
   const [nulleProposee, setNulleProposee] = useState(false)
   const [flip, setFlip] = useState(false)
   const rechercheRef = useRef(false)
+
+  // ── Replay (auto-play) ──
+  const [lecture, setLecture] = useState(false)              // play/pause de l'auto-advance
+  const [vitesse, setVitesse] = useState(1)                  // 0.5× / 1× / 2×
+  const [copiePGN, setCopiePGN] = useState(false)            // feedback transitoire "Copié ✓"
 
   // ── Analyse post-partie (à la demande uniquement, coûteuse) ──
   const [analyse, setAnalyse] = useState(null)        // résultat analyzeGame
@@ -247,7 +255,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   }, [orientationBase, autoFlip, trait, flip])
 
   const termine = fin.terminee || abandonnee || !!resultatForce
-  const enRevue = curseur >= 0 && curseur < historique.length - 1
+  // En revue = on regarde une position passée (position initiale OU un demi-coup antérieur au dernier).
+  const enRevue = posInitiale || (curseur >= 0 && curseur < historique.length - 1)
 
   // ── Démarrage horloge ──
   useEffect(() => { sons.debut(); if (cadence) horloge.demarrer('w') }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -325,8 +334,31 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
 
   const aller = useCallback((idx) => {
     const clamp = Math.max(-1, Math.min(historique.length - 1, idx))
+    setPosInitiale(false)
     setCurseur(clamp === historique.length - 1 ? -1 : clamp)
   }, [historique.length])
+
+  // ── Replay : seek par nombre de demi-coups affichés (0 = position initiale … total = finale). ──
+  const totalPlies = historique.length
+  const indexLecture = posInitiale ? 0 : (curseur === -1 ? totalPlies : curseur + 1)
+  const seekLecture = useCallback((plies) => {
+    const p = Math.max(0, Math.min(totalPlies, plies))
+    if (p === 0) { setPosInitiale(true); setCurseur(-1) }    // avant le 1er coup
+    else { setPosInitiale(false); setCurseur(p >= totalPlies ? -1 : p - 1) }
+  }, [totalPlies])
+
+  // Auto-play : avance le curseur à intervalle dépendant de la vitesse ; stoppe en fin de partie.
+  useEffect(() => {
+    if (!lecture) return
+    if (indexLecture >= totalPlies) { setLecture(false); return }
+    const base = 900
+    const delai = Math.max(180, base / (vitesse || 1))
+    const id = setTimeout(() => seekLecture(indexLecture + 1), delai)
+    return () => clearTimeout(id)
+  }, [lecture, indexLecture, totalPlies, vitesse, seekLecture])
+
+  // Sécurité : ne jamais auto-jouer pendant une partie live au trait du joueur.
+  useEffect(() => { if (!termine && !enRevue) setLecture(false) }, [termine, enRevue])
 
   // ── Annuler (vs IA : paire ; local : 1) ──
   const annuler = useCallback(() => {
@@ -350,6 +382,23 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   }, [cadence, horloge])
 
   const rejouer = useCallback(() => { nouvellePartie?.(); onRejouer() }, [nouvellePartie, onRejouer])
+
+  // ── Export PGN : meta dérivée du contexte (couleurs/résultat/ouverture) ──
+  const exporterPGN = useCallback(async (mode = 'copie') => {
+    const resultat = resultatForce?.resultat ?? (abandonnee ? (maCouleur === 'w' ? 'noir' : 'blanc') : fin.resultat)
+    const blanc = isIA ? (maCouleur === 'w' ? 'Vous' : `IA · ${niveau.label}`) : 'Blancs'
+    const noir = isIA ? (maCouleur === 'b' ? 'Vous' : `IA · ${niveau.label}`) : 'Noirs'
+    const pgn = genererPGN(historique, {
+      event: isIA ? `Brams · vs IA (${niveau.label})` : 'Brams · 2 joueurs',
+      white: blanc, black: noir, result: resultat,
+      eco: ouverture?.eco, opening: ouverture?.nom,
+      timeControl: cadenceId || undefined,
+    })
+    if (mode === 'fichier') { telecharger(pgn, 'partie-brams.pgn'); return }
+    const ok = await copierPresse(pgn)
+    if (ok) { setCopiePGN(true); setTimeout(() => setCopiePGN(false), 1600) }
+    else telecharger(pgn, 'partie-brams.pgn')   // repli : si le presse-papier échoue, on télécharge
+  }, [historique, resultatForce, abandonnee, maCouleur, fin.resultat, isIA, niveau, ouverture, cadenceId])
 
   // Lance l'analyse Stockfish séquentielle sur tous les coups (réutilise `analyser`).
   const lancerAnalyse = useCallback(async () => {
@@ -392,8 +441,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
     return c === trait   // local : chacun son tour
   }, [termine, enRevue, isIA, maCouleur, reflechit, trait])
 
-  // FEN affichée : live ou position en revue
-  const fenAffichee = enRevue ? fenAuCoup(historique, curseur) : fen
+  // FEN affichée : position initiale (revue au départ) · live · ou demi-coup en revue.
+  const fenAffichee = posInitiale ? fenAuCoup(historique, -1) : (enRevue ? fenAuCoup(historique, curseur) : fen)
   const boardId = reglages.board
   const tema = useMemo(() => boardParId(boardId), [boardId])
 
@@ -479,7 +528,7 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
             position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
             padding: '4px 12px', borderRadius: ui.radius.pill, background: 'rgba(8,9,12,0.82)',
             border: `1px solid ${BRASS}`, font: `700 11px ${fonts.body}`, color: BRASS, whiteSpace: 'nowrap',
-          }}>Revue · coup {curseur + 1}/{historique.length}</div>
+          }}>Revue · {posInitiale ? 'position initiale' : `coup ${curseur + 1}/${historique.length}`}</div>
         )}
       </div>
     </div>
@@ -530,6 +579,48 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
         nbCoups={historique.length}
         onAller={aller}
       />
+
+      {/* Replay + export : seulement en revue ou partie terminée (jamais pendant le jeu live). */}
+      {(termine || enRevue) && historique.length > 0 && (
+        <ReplayScrubber
+          index={indexLecture}
+          total={totalPlies}
+          onSeek={seekLecture}
+          playing={lecture}
+          onTogglePlay={() => {
+            if (lecture) { setLecture(false); return }
+            if (indexLecture >= totalPlies) seekLecture(0)   // au bout : relance depuis le début
+            setLecture(true)
+          }}
+          speed={vitesse}
+          onSpeed={setVitesse}
+          accent={BRASS}
+        />
+      )}
+      {historique.length > 0 && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => exporterPGN('copie')}
+            title="Copier le PGN dans le presse-papier"
+            style={{
+              flex: 1, padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',
+              font: `600 12px ${fonts.body}`, color: copiePGN ? '#cdeac0' : ui.text,
+              background: ui.surface, border: `1px solid ${copiePGN ? 'rgba(127,184,106,0.5)' : ui.line}`,
+              transition: 'color .15s, border-color .15s',
+            }}
+          >{copiePGN ? 'PGN copié ✓' : 'Exporter PGN'}</button>
+          <button
+            onClick={() => exporterPGN('fichier')}
+            title="Télécharger le fichier .pgn"
+            aria-label="Télécharger le PGN"
+            style={{
+              flex: '0 0 auto', padding: '8px 11px', borderRadius: ui.radius.sm, cursor: 'pointer',
+              font: `600 12px ${fonts.body}`, color: ui.textDim,
+              background: ui.surface, border: `1px solid ${ui.line}`,
+            }}
+          >↓ .pgn</button>
+        </div>
+      )}
       <button onClick={onQuitter} style={{
         padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',
         font: `600 12px ${fonts.body}`, color: ui.textMute, background: 'transparent',
@@ -548,7 +639,7 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
           resultat={resultatFinal} cause={causeFinale} maCouleur={isIA ? maCouleur : null}
           deltaElo={null}
           onRejouer={rejouer}
-          onRevoir={historique.length ? () => { setFinVisible(false); setCurseur(0) } : undefined}
+          onRevoir={historique.length ? () => { setFinVisible(false); seekLecture(0); setLecture(true) } : undefined}
           onRetour={onQuitter}
           onFermer={() => setFinVisible(false)}
           onAnalyser={historique.length ? lancerAnalyse : undefined}

@@ -9,6 +9,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { useAuth } from '../../../contexts/AuthContext.jsx'
 import { leaderboard, ensureRating } from '../../../features/dames/online/damesRanked.js'
+import { saisonActive, classementSaison, countdownFinSaison } from '../../_shell/arena/seasons.js'
+import { badgesPourJoueurs } from '../../_shell/arena/badges.js'
+import BadgeChip from '../../_shell/arena/BadgeChip.jsx'
 
 // Palier neutre (sans thème One Piece) dérivé de l'ELO — pour une étiquette discrète.
 function neutralTier(elo) {
@@ -27,16 +30,42 @@ const Th = ({ children, align = 'left', w }) => (
 
 export default function RankingTab({ accent = ui.accent }) {
   const { discordId, isAuthenticated } = useAuth()
-  const [rows, setRows] = useState(null)   // null = chargement
+  const [allTime, setAllTime] = useState(null)   // null = chargement (classement all-time)
   const [me, setMe] = useState(null)
   const [err, setErr] = useState(false)
+  const [saison, setSaison] = useState(null)     // saison active (ou null si aucune)
+  const [seasonRows, setSeasonRows] = useState(null) // classement de la saison active
+  const [vue, setVue] = useState('saison')       // 'saison' | 'alltime' — l'onglet « saison » dégrade vers all-time si pas de saison
+  const [badges, setBadges] = useState(new Map())
 
   useEffect(() => {
     let alive = true
-    leaderboard(50).then(r => { if (alive) setRows(Array.isArray(r) ? r : []) }).catch(() => { if (alive) { setRows([]); setErr(true) } })
+    leaderboard(50).then(r => { if (alive) setAllTime(Array.isArray(r) ? r : []) }).catch(() => { if (alive) { setAllTime([]); setErr(true) } })
     if (isAuthenticated) ensureRating().then(r => { if (alive) setMe(r) }).catch(() => {})
+    // Saison active (REST direct, dégrade en silence si table absente)
+    saisonActive('dames').then(s => {
+      if (!alive) return
+      setSaison(s)
+      if (s) classementSaison(s.id, 50).then(rows => { if (alive) setSeasonRows(Array.isArray(rows) ? rows : []) }).catch(() => { if (alive) setSeasonRows([]) })
+      else setSeasonRows([])
+    }).catch(() => { if (alive) { setSaison(null); setSeasonRows([]) } })
     return () => { alive = false }
   }, [isAuthenticated])
+
+  // Pas de saison active en DB → on force la vue all-time (dégradation gracieuse).
+  const aSaison = !!saison
+  const vueEffective = aSaison ? vue : 'alltime'
+  const rows = vueEffective === 'saison' ? seasonRows : allTime
+  const countdown = aSaison ? countdownFinSaison(saison) : null
+
+  // Badges des joueurs affichés (un seul appel, dégrade en Map vide si table absente).
+  useEffect(() => {
+    let alive = true
+    const ids = (rows || []).map(r => r.discord_id).filter(Boolean)
+    if (!ids.length) { setBadges(new Map()); return }
+    badgesPourJoueurs(ids, 'dames').then(m => { if (alive) setBadges(m) }).catch(() => { if (alive) setBadges(new Map()) })
+    return () => { alive = false }
+  }, [rows])
 
   const myId = discordId ? String(discordId) : null
   const myRank = useMemo(() => {
@@ -52,6 +81,27 @@ export default function RankingTab({ accent = ui.accent }) {
           <div>
             <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: accent, fontWeight: 700 }}>Dames internationales</div>
             <h1 style={{ margin: '8px 0 0', fontFamily: fonts.display, fontWeight: 800, fontSize: 'clamp(26px, 4.4vw, 36px)', color: ui.text, letterSpacing: '-.5px' }}>Classement</h1>
+            {aSaison && (
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
+                <div role="tablist" aria-label="Période du classement" style={{ display: 'flex', gap: 6 }}>
+                  {[{ id: 'saison', l: saison.label || 'Saison en cours' }, { id: 'alltime', l: 'Tout temps' }].map(t => {
+                    const on = vueEffective === t.id
+                    return (
+                      <button key={t.id} role="tab" aria-selected={on} onClick={() => setVue(t.id)} style={{
+                        padding: '6px 13px', borderRadius: ui.radius.pill, cursor: 'pointer',
+                        font: `600 12px ${fonts.body}`,
+                        color: on ? ui.text : ui.textDim,
+                        background: on ? `${accent}22` : ui.surface,
+                        border: `1px solid ${on ? accent : ui.line}`,
+                      }}>{t.l}</button>
+                    )
+                  })}
+                </div>
+                {vueEffective === 'saison' && countdown && (
+                  <span style={{ font: `600 11.5px ${fonts.body}`, color: ui.textMute, letterSpacing: '.2px' }}>· {countdown}</span>
+                )}
+              </div>
+            )}
           </div>
           {me && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: '10px 18px' }}>
@@ -93,8 +143,12 @@ export default function RankingTab({ accent = ui.accent }) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                             <Avatar src={r.avatar} name={r.username} mine={mine} accent={accent} />
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontWeight: 600, fontSize: 14, color: ui.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
-                                {r.username || 'Joueur'}{mine && <span style={{ marginLeft: 8, fontSize: 10.5, fontWeight: 700, color: accent, letterSpacing: '.4px' }}>VOUS</span>}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+                                <span style={{ fontWeight: 600, fontSize: 14, color: ui.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                                  {r.username || 'Joueur'}
+                                </span>
+                                {mine && <span style={{ fontSize: 10.5, fontWeight: 700, color: accent, letterSpacing: '.4px', flexShrink: 0 }}>VOUS</span>}
+                                {(badges.get(String(r.discord_id)) || []).map(b => <BadgeChip key={b} badgeId={b} compact />)}
                               </div>
                               <div style={{ fontSize: 11.5, color: ui.textMute }}>{neutralTier(r.rating)}</div>
                             </div>
