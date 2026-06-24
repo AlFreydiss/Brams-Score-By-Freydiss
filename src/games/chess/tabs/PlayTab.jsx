@@ -26,6 +26,9 @@ import MiniBoard from '../ui/MiniBoard.jsx'
 import Controls from '../ui/Controls.jsx'
 import EndOverlay from '../ui/EndOverlay.jsx'
 import OnlineFlow from '../online/OnlineFlow.jsx'
+import ArenaLayout from '../../_shell/arena/ArenaLayout.jsx'
+import Particles from '../../_shell/arena/Particles.jsx'
+import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
 
 const BRASS = '#b09467'
 
@@ -53,8 +56,8 @@ function useTaillePlateau(refConteneur) {
     const calc = () => {
       const vw = window.innerWidth, vh = window.innerHeight
       const mobile = vw < 880
-      // desktop : on laisse la place au panneau droit (~320) + eval (~40) + gaps
-      const dispoLargeur = mobile ? vw - 28 : vw - 320 - 64 - 40
+      // desktop : place pour les 2 rails arène (gauche 248 + droite 312) + gaps/padding
+      const dispoLargeur = mobile ? vw - 28 : vw - 248 - 312 - 110
       const dispoHauteur = vh - (mobile ? 320 : 150)
       const t = Math.max(260, Math.min(640, dispoLargeur, dispoHauteur))
       setTaille(Math.floor(t))
@@ -209,6 +212,17 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const [flip, setFlip] = useState(false)
   const rechercheRef = useRef(false)
 
+  // ── Juice arène : particules de capture + micro-shake sur échec ──
+  const particlesRef = useRef(null)
+  const arena = useScreenShake()
+  const fireFx = useCallback((mv, enEchecApres) => {
+    if (mv?.captured && particlesRef.current) {
+      const t = taille
+      particlesRef.current.burst(t / 2, t / 2)
+    }
+    if (enEchecApres) arena.shake(5)
+  }, [taille, arena])
+
   // orientation : MES pièces en bas (IA) ; en local on suit le trait si auto-flip.
   const orientationBase = isIA ? (maCouleur === 'w' ? 'white' : 'black') : 'white'
   const autoFlip = mode === 'local' && reglages.autoFlipLocal
@@ -249,18 +263,20 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
         const legaux = partie.chess.moves({ verbose: true })
         if (legaux.length) { const a = legaux[(Math.random() * legaux.length) | 0]; mv = partie.jouer({ from: a.from, to: a.to, promotion: a.promotion }) }
       }
-      if (mv) { sonDuCoup(mv, partie.chess.isCheck()); if (cadence) horloge.basculer(partie.trait) }
+      if (mv) { const ch = partie.chess.isCheck(); sonDuCoup(mv, ch); fireFx(mv, ch); if (cadence) horloge.basculer(partie.trait) }
     })
     return () => { annule = true }
   }, [fen, trait, couleurIA, pret, termine, isIA]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Coup joué (humain) → son + horloge + suit le live ──
   const onCoup = useCallback((mv) => {
-    sonDuCoup(mv, partie.chess.isCheck())
+    const ch = partie.chess.isCheck()
+    sonDuCoup(mv, ch)
+    fireFx(mv, ch)
     setNulleProposee(false)
     setCurseur(-1)
     if (cadence) horloge.basculer(partie.trait)
-  }, [partie, cadence, horloge])
+  }, [partie, cadence, horloge, fireFx])
 
   // ── Fin de partie (mat/pat/nulle/abandon/temps) ──
   useEffect(() => {
@@ -380,86 +396,96 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const sesCaptures = campHaut === 'w' ? captures.parBlanc : captures.parNoir
   const mesCaptures = campBas === 'w' ? captures.parBlanc : captures.parNoir
 
-  // ── Layout ──
+  // ── Plateau central (avec overlay particules + glow d'échec) ──
+  const boardNode = (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      {!mobile && (
+        <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={taille} />
+      )}
+      <div ref={refConteneur} style={{ position: 'relative', width: taille, height: taille }}>
+        <Particles ref={particlesRef} />
+        {enRevue ? (
+          <MiniBoard fen={fenAffichee} taille={taille} boardId={boardId} orientation={orientation} coords={reglages.coords} />
+        ) : (
+          <Plateau
+            partie={partie}
+            orientation={orientation}
+            peutJouer={peutJouer}
+            onCoup={onCoup}
+            taille={taille}
+            interactif={!termine}
+            maCouleur={isIA ? maCouleur : null}
+            theme={tema}
+            animationMs={reglages.animations ? reglages.vitesseAnim : 0}
+            afficherCoupsLegaux={reglages.surbrillanceLegale}
+            afficherDernierCoup
+            afficherEchec
+            premoveActif={isIA && reglages.premoves}
+            autoPromo={reglages.autoQueen}
+            coordonnees={reglages.coords ? 'exterieur' : 'masque'}
+          />
+        )}
+        {/* anneau d'échec : glow or/rouge sobre autour du plateau */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: -2, borderRadius: 6, pointerEvents: 'none', zIndex: 4,
+          boxShadow: enEchec && !termine && !enRevue ? eventGlow('echec') : 'none',
+          transition: 'box-shadow 240ms ease',
+        }} />
+        {enRevue && (
+          <div style={{
+            position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 5,
+            padding: '4px 12px', borderRadius: ui.radius.pill, background: 'rgba(8,9,12,0.82)',
+            border: `1px solid ${BRASS}`, font: `700 11px ${fonts.body}`, color: BRASS, whiteSpace: 'nowrap',
+          }}>Revue · coup {curseur + 1}/{historique.length}</div>
+        )}
+      </div>
+    </div>
+  )
+
+  // ── Rail gauche : adversaire · trait · (eval mobile) · vous ──
+  const leftRail = (
+    <>
+      <Joueur label={labelHaut} camp={campHaut} capturees={sesCaptures} />
+      <Indicateur />
+      {mobile && (
+        <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={110} />
+      )}
+      <Joueur label={labelBas} camp={campBas} capturees={mesCaptures} />
+    </>
+  )
+
+  // ── Rail droit : liste de coups (scroll) · contrôles · menu ──
+  const rightRail = (
+    <>
+      <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
+        <MoveList historique={historique} curseur={curseur === -1 ? historique.length - 1 : curseur} onAller={aller} />
+      </div>
+      <Controls
+        onNouvelle={rejouer}
+        onAbandonner={abandonner}
+        onNulle={termine ? null : proposerNulle}
+        onAnnuler={annuler}
+        onFlip={() => setFlip(f => !f)}
+        peutAnnuler={!termine && historique.length > 0 && !reflechit}
+        peutAbandonner={!termine && historique.length > 0}
+        nulleProposee={nulleProposee}
+        curseur={curseur === -1 ? historique.length - 1 : curseur}
+        nbCoups={historique.length}
+        onAller={aller}
+      />
+      <button onClick={onQuitter} style={{
+        padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',
+        font: `600 12px ${fonts.body}`, color: ui.textMute, background: 'transparent',
+        border: `1px solid ${ui.line}`,
+      }}>← Menu</button>
+    </>
+  )
+
+  const turnLight = termine ? null : (trait === 'w' ? 'warm' : 'cool')
+
   return (
-    <div ref={refConteneur} style={{
-      display: 'flex', flexDirection: mobile ? 'column' : 'row',
-      gap: mobile ? 14 : 24, alignItems: mobile ? 'stretch' : 'flex-start',
-      justifyContent: 'center', padding: mobile ? '12px 10px 30px' : '18px 22px 24px',
-      minHeight: 0,
-    }}>
-      {/* EvalBar + board */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        {!mobile && (
-          <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={taille} />
-        )}
-        <div style={{ position: 'relative', width: taille, height: taille }}>
-          {enRevue ? (
-            <MiniBoard fen={fenAffichee} taille={taille} boardId={boardId} orientation={orientation} coords={reglages.coords} />
-          ) : (
-            <Plateau
-              partie={partie}
-              orientation={orientation}
-              peutJouer={peutJouer}
-              onCoup={onCoup}
-              taille={taille}
-              interactif={!termine}
-              maCouleur={isIA ? maCouleur : null}
-              theme={tema}
-              animationMs={reglages.animations ? reglages.vitesseAnim : 0}
-              afficherCoupsLegaux={reglages.surbrillanceLegale}
-              afficherDernierCoup
-              afficherEchec
-              premoveActif={isIA && reglages.premoves}
-              autoPromo={reglages.autoQueen}
-              coordonnees={reglages.coords ? 'exterieur' : 'masque'}
-            />
-          )}
-          {enRevue && (
-            <div style={{
-              position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
-              padding: '4px 12px', borderRadius: ui.radius.pill, background: 'rgba(8,9,12,0.82)',
-              border: `1px solid ${BRASS}`, font: `700 11px ${fonts.body}`, color: BRASS, whiteSpace: 'nowrap',
-            }}>Revue · coup {curseur + 1}/{historique.length}</div>
-          )}
-        </div>
-      </div>
-
-      {/* Panneau droit */}
-      <div style={{
-        width: mobile ? '100%' : 320, flexShrink: 0,
-        display: 'flex', flexDirection: 'column', gap: 10,
-        maxHeight: mobile ? 'none' : taille + 20, minHeight: 0,
-      }}>
-        <Joueur label={labelHaut} camp={campHaut} capturees={sesCaptures} />
-        <Indicateur />
-        {mobile && (
-          <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={120} />
-        )}
-        <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
-          <MoveList historique={historique} curseur={curseur === -1 ? historique.length - 1 : curseur} onAller={aller} />
-        </div>
-        <Controls
-          onNouvelle={rejouer}
-          onAbandonner={abandonner}
-          onNulle={termine ? null : proposerNulle}
-          onAnnuler={annuler}
-          onFlip={() => setFlip(f => !f)}
-          peutAnnuler={!termine && historique.length > 0 && !reflechit}
-          peutAbandonner={!termine && historique.length > 0}
-          nulleProposee={nulleProposee}
-          curseur={curseur === -1 ? historique.length - 1 : curseur}
-          nbCoups={historique.length}
-          onAller={aller}
-        />
-        <Joueur label={labelBas} camp={campBas} capturees={mesCaptures} />
-        <button onClick={onQuitter} style={{
-          padding: '8px', borderRadius: ui.radius.sm, cursor: 'pointer',
-          font: `600 12px ${fonts.body}`, color: ui.textMute, background: 'transparent',
-          border: `1px solid ${ui.line}`,
-        }}>← Menu</button>
-      </div>
-
+    <div style={{ position: 'absolute', inset: 0, ...arena.style }}>
+      <ArenaLayout turn={turnLight} mobile={mobile} left={leftRail} board={boardNode} right={rightRail} />
       {finVisible && (
         <EndOverlay
           resultat={resultatFinal} cause={causeFinale} maCouleur={isIA ? maCouleur : null}
@@ -492,7 +518,7 @@ export default function PlayTab() {
     )
   }
   return (
-    <div style={{ height: '100%', overflowY: 'auto' }}>
+    <div style={{ position: 'relative', height: '100%' }}>
       <PartieEnCours
         key={cle}
         config={config}
