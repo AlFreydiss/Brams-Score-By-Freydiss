@@ -239,8 +239,9 @@ export default function DailyWheel({ discordId, variant }) {
               <span style={{ color: 'rgba(255,255,255,0.45)', fontWeight: 500, fontSize: 12 }}>· +10%/jour consécutif</span>
             </div>
 
-            {/* Roue — taille fluide pour tenir dans 360px sans déborder. */}
-            <div style={{ position: 'relative', width: 'min(260px, 72vw)', aspectRatio: '1 / 1', margin: '20px auto 8px' }}>
+            {/* Roue — taille fluide bornée en largeur ET hauteur (fenêtres courtes :
+                sinon le disque dépassait en haut sous la navbar et se faisait rogner). */}
+            <div style={{ position: 'relative', width: 'min(248px, 70vw, 38vh)', aspectRatio: '1 / 1', margin: '16px auto 6px' }}>
               {/* Pointeur (fixe, en haut) */}
               <div style={{
                 position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', zIndex: 3,
