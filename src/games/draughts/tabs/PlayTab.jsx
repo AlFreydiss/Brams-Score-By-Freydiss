@@ -1,12 +1,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// PlayTab (Dames) — expérience de jeu complète, 2D STRICTE (zéro R3F).
+// PlayTab (Dames) — expérience de jeu plein écran, 2D STRICTE (zéro R3F).
+//   • Arène partagée (ArenaLayout) : rails verre dépoli gauche/droite + plateau
+//     central, lumière d'ambiance qui bascule selon le trait. Parité visuelle
+//     avec l'univers Échecs.
 //   • Plateau centré (DraughtsBoard), drag+clic, rafle max forcée, dames volantes
 //   • Hook useDraughtsGame (moteur + Worker IA → l'UI ne bloque jamais)
-//   • Panneau : indicateur de trait, captures par camp, liste de coups (notation
-//     internationale, scrollable, retour-arrière), contrôles
-//   • Modes : vs IA (4 niveaux) · 2 joueurs local. (En ligne classé = onglet à part.)
-//   • Fin de partie : overlay sobre (résultat + Rejouer / Retour)
-// Tokens = neutralTheme. Accent univers = bleu-acier (props.accent). Inline only.
+//   • Rail gauche : trait + horloge + captures par camp
+//     Rail droit : liste de coups (scroll) + contrôles + menu
+//   • Modes : vs IA (4 niveaux) · 2 joueurs local. (En ligne classé = flux à part.)
+//   • Juice arène : poussière d'or sur capture, micro-shake sur rafle/promotion,
+//     halo or sur promotion en dame. Tout dégrade sous prefers-reduced-motion.
+// Tokens = neutralTheme + arenaTokens. Accent univers = bleu-acier (props.accent).
+// Styles inline only.
 // ─────────────────────────────────────────────────────────────────────────────
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -18,6 +23,9 @@ import { useDraughtsSettings, SPEED_MULT } from '../logic/useDraughtsSettings.js
 import { sfx } from '../logic/sfx.js'
 import { Segment, Btn } from '../ui/controls.jsx'
 import DraughtsOnline from '../online/DraughtsOnline.jsx'
+import ArenaLayout from '../../_shell/arena/ArenaLayout.jsx'
+import Particles from '../../_shell/arena/Particles.jsx'
+import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
 
 const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
 const SIDE_PC = { [P]: damesPieces.fonce, [M]: damesPieces.clair }
@@ -28,6 +36,26 @@ const ISLAND_MODE = { solo: 'ai', ami: 'local', classe: 'online' }
 function Dot({ side, size = 14 }) {
   const pc = SIDE_PC[side]
   return <span aria-hidden style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: `radial-gradient(circle at 36% 30%, ${pc.haut}, ${pc.base})`, boxShadow: `0 0 0 1px ${ui.lineHi}, inset 0 -2px 3px rgba(0,0,0,.4)` }} />
+}
+
+// ── Taille responsive du plateau : carré borné par l'espace de l'arène.
+//    Desktop : retire les 2 rails (248 gauche + 312 droite) + gaps/padding.
+function useBoardSize() {
+  const [taille, setTaille] = useState(480)
+  useEffect(() => {
+    const calc = () => {
+      const vw = window.innerWidth, vh = window.innerHeight
+      const mobile = vw < 880
+      const dispoLargeur = mobile ? vw - 24 : vw - 248 - 312 - 100
+      const dispoHauteur = vh - (mobile ? 280 : 120)
+      const t = Math.max(280, Math.min(640, dispoLargeur, dispoHauteur))
+      setTaille(Math.floor(t))
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [])
+  return taille
 }
 
 export default function PlayTab({ accent = ui.accent }) {
@@ -41,15 +69,39 @@ export default function PlayTab({ accent = ui.accent }) {
   const [elapsed, setElapsed] = useState(0)
   const tickRef = useRef(0)
 
+  const boardSize = useBoardSize()
+  const mobile = typeof window !== 'undefined' && window.innerWidth < 880
+
+  // ── Juice arène : particules de capture + micro-shake (rafle / promotion) + halo promotion ──
+  const particlesRef = useRef(null)
+  const arena = useScreenShake()
+  const [promoGlow, setPromoGlow] = useState(false)
+  const promoTimer = useRef(0)
+
   const playSfx = useCallback((kind) => {
     if (!settings.sounds) return
     sfx[kind]?.(settings.volume ?? 0.7)
   }, [settings.sounds, settings.volume])
 
+  // éclats de capture : coords pixel précises remontées par le board (1re case prise).
+  const onCaptureFx = useCallback((x, y) => {
+    particlesRef.current?.burst(x, y)
+  }, [])
+
   const game = useDraughtsGame({
     rules, initialMode: mode, initialDiff: diff,
-    onMove: ({ capture }) => playSfx(capture ? 'capture' : 'move'),
-    onPromote: () => playSfx('promote'),
+    onMove: ({ capture, mv }) => {
+      playSfx(capture ? 'capture' : 'move')
+      // rafle multiple (≥2 prises) → micro-secousse ; sinon le burst de poussière suffit.
+      if (capture && mv?.caps && mv.caps.length >= 2) arena.shake(4)
+    },
+    onPromote: () => {
+      playSfx('promote')
+      arena.shake(5)
+      setPromoGlow(true)
+      clearTimeout(promoTimer.current)
+      promoTimer.current = setTimeout(() => setPromoGlow(false), 620)
+    },
     onEnd: (st) => {
       // En solo, l'humain joue toujours le camp Foncé (P).
       if (st.draw) playSfx('lose')
@@ -57,6 +109,8 @@ export default function PlayTab({ accent = ui.accent }) {
       else playSfx('win')
     },
   })
+
+  useEffect(() => () => clearTimeout(promoTimer.current), [])
 
   // horloge informative : démarre au 1er coup, gèle à la fin.
   useEffect(() => {
@@ -70,7 +124,7 @@ export default function PlayTab({ accent = ui.accent }) {
 
   const restartWith = useCallback((opts) => {
     startedRef.current = false; setElapsed(0); clearInterval(tickRef.current)
-    setConfirmResign(false)
+    setConfirmResign(false); setPromoGlow(false)
     game.newGame(opts)
   }, [game])
 
@@ -95,6 +149,9 @@ export default function PlayTab({ accent = ui.accent }) {
   const mm = String((elapsed / 60) | 0).padStart(2, '0')
   const ss = String(elapsed % 60).padStart(2, '0')
 
+  // lumière d'arène : warm = camp Clair au trait, cool = camp Foncé, null si terminé.
+  const turnLight = game.gameOver ? null : (game.turn === M ? 'warm' : 'cool')
+
   // ── En ligne classé : flux autonome (auth + matchmaking + match live) sur le
   // plateau 2D de l'univers. On garde le sélecteur de mode visible en haut.
   if (mode === 'online') {
@@ -108,89 +165,100 @@ export default function PlayTab({ accent = ui.accent }) {
     )
   }
 
-  return (
-    <div style={{ minHeight: '100%', padding: 'clamp(14px, 2.4vw, 30px)', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 1180, display: 'flex', flexWrap: 'wrap', gap: 'clamp(16px, 2vw, 26px)', alignItems: 'flex-start' }}>
+  // ── Plateau central (overlay particules + halo de promotion en dame) ──
+  const boardNode = (
+    <div style={{ position: 'relative', width: boardSize, height: boardSize }}>
+      <Particles ref={particlesRef} />
+      <DraughtsBoard
+        board={game.board} accent={accent}
+        boardTheme={settings.boardTheme}
+        selected={game.selected} legalMoves={game.legalMoves} last={game.last} hint={game.hint}
+        movableKeys={movableKeys} interactive={myTurn} gameOver={game.gameOver}
+        coordsOn={settings.coords} highlightsOn={settings.highlights}
+        animOn={settings.animations} animMult={animMult}
+        maxSize={boardSize} onCaptureFx={onCaptureFx}
+        onSquareClick={game.handleSquare}
+      />
+      {/* halo or de promotion en dame (sobre, transitoire) */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: -2, borderRadius: 10, pointerEvents: 'none', zIndex: 4,
+        boxShadow: promoGlow && !game.gameOver ? eventGlow('promotion') : 'none',
+        transition: 'box-shadow 280ms ease',
+      }} />
+      {game.gameOver && game.status && (
+        <EndOverlay
+          status={game.status} mode={mode} humanSide={game.humanSide} accent={accent}
+          moves={game.moves.length} captures={lostFonce + lostClair}
+          onRematch={() => restartWith({ mode, diff })}
+        />
+      )}
+    </div>
+  )
 
-        {/* ── colonne plateau ── */}
-        <div style={{ flex: '1 1 460px', minWidth: 300, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* bandeau modes */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-            <Segment items={MODES} value={mode} onChange={changeMode} accent={accent} />
-            {mode === 'ai' && <Segment items={LEVELS} value={diff} onChange={changeDiff} accent={accent} size="sm" />}
-          </div>
+  // ── Rail gauche : modes · trait + horloge · captures par camp ──
+  const leftRail = (
+    <>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        <Segment items={MODES} value={mode} onChange={changeMode} accent={accent} size="sm" />
+        {mode === 'ai' && <Segment items={LEVELS} value={diff} onChange={changeDiff} accent={accent} size="sm" />}
+      </div>
 
-          {/* plateau (carré, borné) */}
-          <div style={{ position: 'relative', width: '100%' }}>
-            <DraughtsBoard
-              board={game.board} accent={accent}
-              boardTheme={settings.boardTheme}
-              selected={game.selected} legalMoves={game.legalMoves} last={game.last} hint={game.hint}
-              movableKeys={movableKeys} interactive={myTurn} gameOver={game.gameOver}
-              coordsOn={settings.coords} highlightsOn={settings.highlights}
-              animOn={settings.animations} animMult={animMult}
-              onSquareClick={game.handleSquare}
-            />
-            {game.gameOver && game.status && (
-              <EndOverlay
-                status={game.status} mode={mode} humanSide={game.humanSide} accent={accent}
-                moves={game.moves.length} captures={lostFonce + lostClair}
-                onRematch={() => restartWith({ mode, diff })}
-              />
-            )}
+      {/* indicateur de trait + horloge */}
+      <div style={{ background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Dot side={game.turn} size={24} />
+        {aiThinking && <ThinkDot accent={accent} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 15, color: ui.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{turnText}</div>
+          <div style={{ fontFamily: fonts.body, fontSize: 11, color: ui.textMute, letterSpacing: '.3px', marginTop: 1 }}>
+            {mode === 'ai' ? `Solo · ${LEVELS.find(l => l[0] === diff)?.[1] || ''}` : '2 joueurs'}
           </div>
         </div>
-
-        {/* ── panneau latéral ── */}
-        <aside style={{ flex: '1 1 280px', minWidth: 260, maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-          {/* indicateur de trait + horloge */}
-          <div style={{ background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Dot side={game.turn} size={26} />
-            {aiThinking && <ThinkDot accent={accent} />}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: fonts.display, fontWeight: 700, fontSize: 16, color: ui.text }}>{turnText}</div>
-              <div style={{ fontFamily: fonts.body, fontSize: 11.5, color: ui.textMute, letterSpacing: '.3px', marginTop: 1 }}>
-                {mode === 'ai' ? `Solo · ${LEVELS.find(l => l[0] === diff)?.[1] || ''}` : '2 joueurs'}
-              </div>
-            </div>
-            <span title="Durée de la partie" style={{ fontFamily: fonts.mono, fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 14, color: ui.textDim, paddingLeft: 12, borderLeft: `1px solid ${ui.line}` }}>{mm}:{ss}</span>
-          </div>
-
-          {/* captures par camp */}
-          <div style={{ display: 'flex', gap: 12 }}>
-            {[[P, game.counts[P], lostFonce], [M, game.counts[M], lostClair]].map(([side, alive, lost]) => (
-              <div key={side} style={{ flex: 1, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '11px 13px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Dot side={side} size={18} />
-                  <span style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: ui.textMute, fontWeight: 700 }}>{SIDE_LBL[side]}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 7 }}>
-                  <span style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 24, lineHeight: 1, color: ui.text, fontVariantNumeric: 'tabular-nums' }}>{alive}</span>
-                  <span style={{ fontFamily: fonts.body, fontSize: 11.5, color: ui.textMute }}>en jeu</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 9, minHeight: 9 }}>
-                  {Array.from({ length: lost }).map((_, i) => <span key={i} aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: `radial-gradient(circle at 36% 30%, ${SIDE_PC[side].haut}, ${SIDE_PC[side].base})`, opacity: 0.85 }} />)}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* liste de coups */}
-          <MoveList moves={game.moves} accent={accent} />
-
-          {/* contrôles */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-            <Btn variant="primary" accent={accent} full onClick={() => restartWith({ mode, diff })}>Nouvelle partie</Btn>
-            <Btn accent={accent} full disabled={!myTurn} onClick={game.hint} title={game.hinting ? 'Recherche…' : 'Meilleur coup'}>{game.hinting ? 'Recherche…' : 'Indice'}</Btn>
-            {mode === 'ai' && <Btn accent={accent} full disabled={!game.canUndo || aiThinking} onClick={game.undo}>Annuler</Btn>}
-            <Btn accent={accent} full danger disabled={game.gameOver} onClick={() => setConfirmResign(true)}>Abandonner</Btn>
-          </div>
-          <p style={{ margin: 0, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 1.5, color: ui.textMute }}>
-            Dames internationales 10×10 · prise maximale obligatoire · dames volantes.
-          </p>
-        </aside>
+        <span title="Durée de la partie" style={{ fontFamily: fonts.mono, fontVariantNumeric: 'tabular-nums', fontWeight: 600, fontSize: 13.5, color: ui.textDim, paddingLeft: 11, borderLeft: `1px solid ${ui.line}` }}>{mm}:{ss}</span>
       </div>
+
+      {/* captures par camp */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        {[[P, game.counts[P], lostFonce], [M, game.counts[M], lostClair]].map(([side, alive, lost]) => (
+          <div key={side} style={{ flex: 1, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, padding: '10px 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Dot side={side} size={16} />
+              <span style={{ fontSize: 9.5, letterSpacing: 1.3, textTransform: 'uppercase', color: ui.textMute, fontWeight: 700 }}>{SIDE_LBL[side]}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 6 }}>
+              <span style={{ fontFamily: fonts.display, fontWeight: 800, fontSize: 22, lineHeight: 1, color: ui.text, fontVariantNumeric: 'tabular-nums' }}>{alive}</span>
+              <span style={{ fontFamily: fonts.body, fontSize: 11, color: ui.textMute }}>en jeu</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginTop: 8, minHeight: 8 }}>
+              {Array.from({ length: lost }).map((_, i) => <span key={i} aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: `radial-gradient(circle at 36% 30%, ${SIDE_PC[side].haut}, ${SIDE_PC[side].base})`, opacity: 0.85 }} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+
+  // ── Rail droit : liste de coups (scroll) · contrôles · menu ──
+  const rightRail = (
+    <>
+      <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
+        <MoveList moves={game.moves} accent={accent} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+        <Btn variant="primary" accent={accent} full onClick={() => restartWith({ mode, diff })}>Nouvelle partie</Btn>
+        <Btn accent={accent} full disabled={!myTurn} onClick={game.hint} title={game.hinting ? 'Recherche…' : 'Meilleur coup'}>{game.hinting ? 'Recherche…' : 'Indice'}</Btn>
+        {mode === 'ai' && <Btn accent={accent} full disabled={!game.canUndo || aiThinking} onClick={game.undo}>Annuler</Btn>}
+        <Btn accent={accent} full danger disabled={game.gameOver} onClick={() => setConfirmResign(true)}>Abandonner</Btn>
+      </div>
+      <p style={{ margin: 0, fontFamily: fonts.body, fontSize: 11, lineHeight: 1.5, color: ui.textMute }}>
+        Dames internationales 10×10 · prise maximale obligatoire · dames volantes.
+      </p>
+    </>
+  )
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, ...arena.style }}>
+      <ArenaLayout turn={turnLight} mobile={mobile} left={leftRail} board={boardNode} right={rightRail} />
 
       {/* confirmation d'abandon */}
       {confirmResign && (
@@ -214,12 +282,12 @@ function MoveList({ moves, accent }) {
   const pairs = []
   for (let i = 0; i < moves.length; i += 2) pairs.push([moves[i], moves[i + 1]])
   return (
-    <div style={{ background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.lg, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderBottom: `1px solid ${ui.line}` }}>
-        <span style={{ fontSize: 10.5, letterSpacing: 1.4, textTransform: 'uppercase', color: ui.textDim, fontWeight: 700 }}>Coups</span>
-        <span style={{ fontFamily: fonts.mono, fontVariantNumeric: 'tabular-nums', fontSize: 11.5, color: ui.textMute }}>{moves.length}</span>
+    <div style={{ flex: 1, minHeight: 0, background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.md, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 13px', borderBottom: `1px solid ${ui.line}`, flexShrink: 0 }}>
+        <span style={{ fontSize: 10, letterSpacing: 1.4, textTransform: 'uppercase', color: ui.textDim, fontWeight: 700 }}>Coups</span>
+        <span style={{ fontFamily: fonts.mono, fontVariantNumeric: 'tabular-nums', fontSize: 11, color: ui.textMute }}>{moves.length}</span>
       </div>
-      <div ref={ref} style={{ maxHeight: 230, minHeight: 74, overflowY: 'auto', padding: '6px 6px 8px' }}>
+      <div ref={ref} style={{ flex: 1, minHeight: 74, overflowY: 'auto', padding: '6px 6px 8px' }}>
         {pairs.length === 0
           ? <div style={{ padding: '20px 12px', textAlign: 'center', fontFamily: fonts.body, fontSize: 12.5, color: ui.textMute }}>La partie commence — au camp Foncé de jouer.</div>
           : pairs.map(([a, b], i) => (

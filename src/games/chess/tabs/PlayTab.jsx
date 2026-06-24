@@ -25,6 +25,9 @@ import MoveList from '../ui/MoveList.jsx'
 import MiniBoard from '../ui/MiniBoard.jsx'
 import Controls from '../ui/Controls.jsx'
 import EndOverlay from '../ui/EndOverlay.jsx'
+import { detecterOuverture } from '../logic/openings.js'
+import { analyzeGame } from '../analysis/analyzeGame.js'
+import AnalysisPanel from '../analysis/AnalysisPanel.jsx'
 import OnlineFlow from '../online/OnlineFlow.jsx'
 import ArenaLayout from '../../_shell/arena/ArenaLayout.jsx'
 import Particles from '../../_shell/arena/Particles.jsx'
@@ -212,6 +215,16 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const [flip, setFlip] = useState(false)
   const rechercheRef = useRef(false)
 
+  // ── Analyse post-partie (à la demande uniquement, coûteuse) ──
+  const [analyse, setAnalyse] = useState(null)        // résultat analyzeGame
+  const [analyseEnCours, setAnalyseEnCours] = useState(false)
+  const [analyseProgres, setAnalyseProgres] = useState(null)  // 0..100
+  const [analysePanneau, setAnalysePanneau] = useState(false)
+  const analyseSignalRef = useRef(null)
+
+  // ── Détection d'ouverture ECO (préfixe SAN) — recalcul léger sur l'historique ──
+  const ouverture = useMemo(() => detecterOuverture(historique), [historique])
+
   // ── Juice arène : particules de capture + micro-shake sur échec ──
   const particlesRef = useRef(null)
   const arena = useScreenShake()
@@ -338,6 +351,36 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
 
   const rejouer = useCallback(() => { nouvellePartie?.(); onRejouer() }, [nouvellePartie, onRejouer])
 
+  // Lance l'analyse Stockfish séquentielle sur tous les coups (réutilise `analyser`).
+  const lancerAnalyse = useCallback(async () => {
+    if (analyseEnCours || !historique.length) return
+    if (analyse) { setAnalysePanneau(true); return }   // déjà calculée → réouvre
+    const signal = { annule: false }
+    analyseSignalRef.current = signal
+    setAnalyseEnCours(true)
+    setAnalyseProgres(0)
+    try {
+      const res = await analyzeGame(historique, analyser, {
+        movetime: 220,
+        signal,
+        onProgress: (fait, total) => { if (!signal.annule) setAnalyseProgres(total ? Math.round((fait / total) * 100) : 100) },
+      })
+      if (signal.annule) return
+      if (res) { setAnalyse(res); setAnalysePanneau(true) }
+    } finally {
+      if (!signal.annule) { setAnalyseEnCours(false); setAnalyseProgres(null) }
+    }
+  }, [analyseEnCours, analyse, historique, analyser])
+
+  // Sauter à une position depuis le panneau d'analyse (réutilise le curseur de revue).
+  const allerDepuisAnalyse = useCallback((ply) => {
+    setFinVisible(false)
+    aller(ply)
+  }, [aller])
+
+  // Coupe l'analyse en vol si le composant disparaît (rejoue / quitte).
+  useEffect(() => () => { if (analyseSignalRef.current) analyseSignalRef.current.annule = true }, [])
+
   // ── Résultat final + delta ELO (prévision, vs IA classé seulement → ici non classé) ──
   const resultatFinal = resultatForce?.resultat ?? (abandonnee ? (maCouleur === 'w' ? 'noir' : 'blanc') : fin.resultat)
   const causeFinale = resultatForce?.cause ?? (abandonnee ? 'abandon' : fin.cause)
@@ -457,6 +500,20 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   // ── Rail droit : liste de coups (scroll) · contrôles · menu ──
   const rightRail = (
     <>
+      {ouverture && (
+        <div style={{
+          display: 'flex', alignItems: 'baseline', gap: 8, padding: '6px 10px', borderRadius: ui.radius.sm,
+          background: ui.surface, border: `1px solid ${ui.line}`,
+        }}>
+          <span style={{ font: `700 10px ${fonts.mono}`, letterSpacing: '0.06em', color: ui.textMute, fontVariantNumeric: 'tabular-nums' }}>
+            {ouverture.eco}
+          </span>
+          <span style={{
+            font: `600 12px ${fonts.body}`, color: ui.textDim,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }} title={ouverture.nom}>{ouverture.nom}</span>
+        </div>
+      )}
       <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
         <MoveList historique={historique} curseur={curseur === -1 ? historique.length - 1 : curseur} onAller={aller} />
       </div>
@@ -494,6 +551,17 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
           onRevoir={historique.length ? () => { setFinVisible(false); setCurseur(0) } : undefined}
           onRetour={onQuitter}
           onFermer={() => setFinVisible(false)}
+          onAnalyser={historique.length ? lancerAnalyse : undefined}
+          analyseEnCours={analyseEnCours}
+          analyseProgres={analyseProgres}
+        />
+      )}
+      {analysePanneau && (
+        <AnalysisPanel
+          resultat={analyse}
+          curseur={curseur === -1 ? historique.length - 1 : curseur}
+          onAller={allerDepuisAnalyse}
+          onFermer={() => setAnalysePanneau(false)}
         />
       )}
     </div>

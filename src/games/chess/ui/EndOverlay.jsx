@@ -33,7 +33,7 @@ function Bouton({ children, onClick, primaire, disabled }) {
   )
 }
 
-export default function EndOverlay({ resultat, cause, maCouleur, deltaElo, eloFinal, revancheEnvoyee, onRejouer, onRevoir, onRetour, onFermer }) {
+export default function EndOverlay({ resultat, cause, maCouleur, deltaElo, eloFinal, revancheEnvoyee, onRejouer, onRevoir, onRetour, onFermer, onAnalyser, analyseEnCours, analyseProgres }) {
   // resultat : 'blanc' | 'noir' | 'nulle'. maCouleur : 'w' | 'b' | null (local).
   let titre, accent
   if (resultat === 'nulle') { titre = 'Partie nulle'; accent = ui.textDim }
@@ -98,7 +98,16 @@ export default function EndOverlay({ resultat, cause, maCouleur, deltaElo, eloFi
             </div>
           )
         })()}
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 24, flexWrap: 'wrap' }}>
+        {onAnalyser && (
+          <div style={{ marginTop: 18 }}>
+            <Bouton onClick={analyseEnCours ? undefined : onAnalyser} disabled={analyseEnCours}>
+              {analyseEnCours
+                ? (analyseProgres != null ? `Analyse… ${analyseProgres}%` : 'Analyse…')
+                : 'Analyser la partie'}
+            </Bouton>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: onAnalyser ? 12 : 24, flexWrap: 'wrap' }}>
           <Bouton onClick={onRejouer} primaire disabled={revancheEnvoyee}>
             {revancheEnvoyee ? 'Revanche demandée…' : 'Rejouer'}
           </Bouton>
