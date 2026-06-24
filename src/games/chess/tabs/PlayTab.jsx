@@ -16,7 +16,7 @@ import { CADENCES, parseCadence } from '../../../features/echecs/constants.js'
 import { construireEval } from '../../../features/echecs/lib/analyse.js'
 import { previsionElo } from '../../../features/echecs/lib/elo.js'
 import { sons } from '../../../features/echecs/lib/sons.js'
-import { boardParId } from '../logic/boards.js'
+import { boardParId, BOARD_DEFAUT } from '../logic/boards.js'
 import { useChessSettings } from '../logic/useChessSettings.js'
 import { useLocalClock } from '../logic/useLocalClock.js'
 import Clock from '../ui/Clock.jsx'
@@ -30,6 +30,9 @@ import { analyzeGame } from '../analysis/analyzeGame.js'
 import AnalysisPanel from '../analysis/AnalysisPanel.jsx'
 import OnlineFlow from '../online/OnlineFlow.jsx'
 import ArenaLayout from '../../_shell/arena/ArenaLayout.jsx'
+import ArenaLight from '../../_shell/arena/ArenaLight.jsx'
+import { glass } from '../../_shell/arena/arenaTokens.js'
+import { FEN_INITIALE } from '../ui/MiniBoard.jsx'
 import Particles from '../../_shell/arena/Particles.jsx'
 import ReplayScrubber from '../../_shell/arena/ReplayScrubber.jsx'
 import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
@@ -98,16 +101,35 @@ function SectionLabel({ children }) {
 // Mode pré-sélectionné depuis une île du Nouveau Monde (solo/ami/classe → ia/local/online).
 const ISLAND_MODE = { solo: 'ia', ami: 'local', classe: 'online' }
 
-function ConfigJeu({ onLancer, niveauDefaut }) {
+// ── Mobile flag réactif (aligné sur le seuil 880 de l'arène en jeu).
+function useMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 980)
+  useEffect(() => {
+    const calc = () => setMobile(window.innerWidth < 980)
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [])
+  return mobile
+}
+
+function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
   const loc = useLocation()
   const [mode, setMode] = useState(() => ISLAND_MODE[loc.state?.playMode] || 'ia')  // 'ia' | 'local' | 'online'
   const [cadenceId, setCadenceId] = useState('5+0')
   const [illimite, setIllimite] = useState(false)
   const [niveauId, setNiveauId] = useState(niveauDefaut)
   const [couleur, setCouleur] = useState('w')      // 'w' | 'b' | 'alea'
+  const mobile = useMobile()
 
   // 4–6 niveaux exposés (spec). On retient Mousse → Yonkou (6 paliers).
   const niveaux = NIVEAUX_IA
+
+  // lumière d'ambiance de l'aperçu : suit la couleur choisie (chaud=blancs, froid=noirs).
+  const previewTurn = mode === 'ia' ? (couleur === 'b' ? 'cool' : 'warm') : 'warm'
+  // orientation de l'aperçu : si je joue Noirs, on retourne pour MES pièces en bas.
+  const previewOrient = mode === 'ia' && couleur === 'b' ? 'black' : 'white'
+  const previewTaille = mobile ? Math.min(380, (typeof window !== 'undefined' ? window.innerWidth : 360) - 56) : 0
 
   const lancer = () => {
     sons.debloquer()
@@ -120,11 +142,18 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
     })
   }
 
-  return (
-    <div style={{ maxWidth: 620, margin: '0 auto', padding: '8px 4px 40px' }}>
-      <h2 style={{ margin: '4px 0 22px', font: `800 24px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>
-        Nouvelle partie
-      </h2>
+  // ── Panneau réglages (verre dépoli) — partagé desktop/mobile ──
+  const reglages = (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ font: `700 11px ${fonts.body}`, letterSpacing: '0.16em', textTransform: 'uppercase', color: BRASS, marginBottom: 7 }}>Échecs</div>
+        <h2 style={{ margin: 0, font: `800 26px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text, lineHeight: 1.05 }}>
+          Nouvelle partie
+        </h2>
+        <p style={{ margin: '8px 0 0', font: `400 13px ${fonts.body}`, color: ui.textDim, lineHeight: 1.5 }}>
+          Choisis ton adversaire, ta cadence et lance la rencontre.
+        </p>
+      </div>
 
       <SectionLabel>Mode</SectionLabel>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 22 }}>
@@ -138,7 +167,7 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
       ) : (
         <>
           <SectionLabel>Cadence</SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px,1fr))', gap: 8, marginBottom: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(92px,1fr))', gap: 8, marginBottom: 22 }}>
             {CADENCES.map(c => (
               <Chip key={c.id} actif={!illimite && cadenceId === c.id} onClick={() => { setCadenceId(c.id); setIllimite(false) }} sub={c.label}>
                 {c.id}
@@ -150,7 +179,7 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
           {mode === 'ia' && (
             <>
               <SectionLabel>Niveau de l'IA</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))', gap: 8, marginBottom: 22 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px,1fr))', gap: 8, marginBottom: 22 }}>
                 {niveaux.map(n => (
                   <Chip key={n.id} actif={niveauId === n.id} onClick={() => setNiveauId(n.id)}
                     sub={n.limitStrength ? `~${n.elo} ELO` : 'Pleine force'}>
@@ -167,6 +196,7 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
                     font: `700 13px ${fonts.body}`, color: couleur === c.id ? '#e7d8b8' : ui.text,
                     background: couleur === c.id ? 'rgba(176,148,103,0.14)' : ui.surface,
                     border: `1px solid ${couleur === c.id ? 'rgba(176,148,103,0.5)' : ui.line}`,
+                    transition: 'background .15s, border-color .15s',
                   }}>{c.l}</button>
                 ))}
               </div>
@@ -174,9 +204,10 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
           )}
 
           <button onClick={lancer} style={{
-            width: '100%', marginTop: 24, padding: '14px', borderRadius: ui.radius.md, cursor: 'pointer',
+            width: '100%', marginTop: 26, padding: '15px', borderRadius: ui.radius.md, cursor: 'pointer',
             font: `800 15px ${fonts.display}`, letterSpacing: '0.01em', color: '#15110a',
-            background: BRASS, border: 'none', transition: 'filter .15s',
+            background: BRASS, border: 'none', transition: 'filter .15s, transform .12s',
+            boxShadow: '0 14px 34px -16px rgba(176,148,103,0.7)',
           }}
             onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.08)' }}
             onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
@@ -186,6 +217,104 @@ function ConfigJeu({ onLancer, niveauDefaut }) {
       )}
     </div>
   )
+
+  // panneau verre dépoli (réglages), réutilisé dans les 2 layouts.
+  const panel = (
+    <div style={{
+      ...railStyleConfig(),
+      width: '100%', maxWidth: mobile ? 540 : 460,
+      padding: mobile ? '22px 20px' : '28px 26px',
+    }}>
+      {reglages}
+    </div>
+  )
+
+  // aperçu décoratif du plateau (position de départ, lecture seule).
+  const apercu = (sz) => (
+    <div style={{ position: 'relative', width: sz, height: sz }}>
+      <div aria-hidden style={{
+        position: 'absolute', inset: -26, borderRadius: 32, pointerEvents: 'none',
+        background: previewTurn === 'cool'
+          ? 'radial-gradient(60% 55% at 50% 50%, rgba(120,150,190,0.16), transparent 72%)'
+          : 'radial-gradient(60% 55% at 50% 50%, rgba(200,164,92,0.18), transparent 72%)',
+        transition: 'background 700ms cubic-bezier(.4,0,.2,1)',
+      }} />
+      <div style={{ position: 'relative', borderRadius: 12, boxShadow: '0 36px 90px -34px rgba(0,0,0,0.9)' }}>
+        <MiniBoard fen={FEN_INITIALE} taille={sz} boardId={boardId} orientation={previewOrient} coords={false} />
+      </div>
+    </div>
+  )
+
+  // ── MOBILE : empilé, aperçu réduit en tête, réglages pleine largeur ──
+  if (mobile) {
+    return (
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <ArenaLight turn={previewTurn} />
+        <div style={{
+          position: 'relative', zIndex: 1, height: '100%', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+          padding: '20px 14px 36px', boxSizing: 'border-box',
+        }}>
+          {mode !== 'online' && previewTaille > 200 && (
+            <div style={{ flexShrink: 0, marginTop: 4 }}>{apercu(previewTaille)}</div>
+          )}
+          {panel}
+        </div>
+      </div>
+    )
+  }
+
+  // ── DESKTOP : 2 colonnes pleine largeur (aperçu | réglages), lumière derrière ──
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      <ArenaLight turn={previewTurn} />
+      <div style={{
+        position: 'relative', zIndex: 1, height: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(36px, 6vw, 90px)',
+        padding: '32px clamp(28px, 5vw, 80px)', boxSizing: 'border-box',
+      }}>
+        {mode !== 'online' && (
+          <div style={{ flex: '0 1 auto', display: 'flex', justifyContent: 'center', minWidth: 0 }}>
+            <ApercuResponsive render={apercu} />
+          </div>
+        )}
+        <div style={{ flex: mode === 'online' ? '1 1 auto' : '0 0 auto', display: 'flex', justifyContent: mode === 'online' ? 'center' : 'flex-start', minWidth: 0 }}>
+          {panel}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Aperçu plateau dimensionné par l'espace dispo (≈ moitié gauche, borné).
+function ApercuResponsive({ render }) {
+  const [sz, setSz] = useState(440)
+  useEffect(() => {
+    const calc = () => {
+      const vw = window.innerWidth, vh = window.innerHeight
+      // ~moitié de la largeur dispo une fois le panneau (≈500) et les gaps retirés.
+      const dispoLargeur = (vw - 500 - 200) * 0.62
+      const dispoHauteur = vh - 150
+      setSz(Math.floor(Math.max(300, Math.min(560, dispoLargeur, dispoHauteur))))
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [])
+  return render(sz)
+}
+
+// rail verre dépoli pour le panneau de config (variante de railStyle, sans flex column gap auto).
+function railStyleConfig() {
+  return {
+    background: glass.bg,
+    backdropFilter: glass.blur,
+    WebkitBackdropFilter: glass.blur,
+    border: `1px solid ${glass.border}`,
+    borderRadius: glass.radius,
+    boxShadow: glass.shadow,
+    boxSizing: 'border-box',
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -671,8 +800,12 @@ export default function PlayTab() {
 
   if (!config) {
     return (
-      <div style={{ height: '100%', overflowY: 'auto', display: 'grid', placeItems: 'start center', padding: '24px 16px' }}>
-        <ConfigJeu onLancer={setConfig} niveauDefaut={reglagesCtx.reglages.niveauIa} />
+      <div style={{ position: 'relative', height: '100%' }}>
+        <ConfigJeu
+          onLancer={setConfig}
+          niveauDefaut={reglagesCtx.reglages.niveauIa}
+          boardId={reglagesCtx.reglages.board}
+        />
       </div>
     )
   }

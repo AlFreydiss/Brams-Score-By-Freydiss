@@ -45,32 +45,49 @@ const CONCEPTS = [
     texte: "Un pion qui atteint la dernière rangée se transforme en la pièce de son choix : presque toujours une Dame. On peut donc avoir plusieurs Dames." },
 ]
 
-function Bloc({ titre, ouvertParDefaut = false, children, anchorId }) {
+// Carte de section dépliable. Diagramme à gauche (auto), texte à droite (1fr).
+// Densité resserrée : padding raisonnable, plus de void interne.
+function Bloc({ titre, ouvertParDefaut = false, children, anchorId, large = false }) {
   const [ouvert, setOuvert] = useState(ouvertParDefaut)
   return (
-    <section id={anchorId} style={{ scrollMarginTop: 16, borderRadius: ui.radius.md, background: ui.surface, border: `1px solid ${ui.line}`, overflow: 'hidden' }}>
-      <button onClick={() => setOuvert(o => !o)} style={{
+    <section id={anchorId} style={{
+      scrollMarginTop: 16, borderRadius: ui.radius.md, background: ui.surface,
+      border: `1px solid ${ui.line}`, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      gridColumn: large ? '1 / -1' : 'auto', alignSelf: 'start',
+    }}>
+      <button className="rulesAcc" onClick={() => setOuvert(o => !o)} aria-expanded={ouvert} style={{
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-        padding: '15px 18px', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left',
+        padding: '13px 16px', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left',
       }}>
-        <span style={{ font: `800 16px ${fonts.display}`, letterSpacing: '-0.01em', color: ui.text }}>{titre}</span>
+        <span style={{ font: `800 15px ${fonts.display}`, letterSpacing: '-0.01em', color: ui.text }}>{titre}</span>
         <span aria-hidden style={{ font: `400 14px ${fonts.body}`, color: ui.textMute, transform: ouvert ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
       </button>
-      {ouvert && <div style={{ padding: '0 18px 18px' }}>{children}</div>}
+      {ouvert && <div style={{ padding: '0 16px 14px' }}>{children}</div>}
     </section>
+  )
+}
+
+// Ligne diagramme + texte resserrée (grille auto | 1fr, pas de centrage vide).
+function Schema({ children, texte }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0,1fr)', gap: 14, alignItems: 'center' }}>
+      {children}
+      <div style={{ minWidth: 0 }}>{texte}</div>
+    </div>
   )
 }
 
 function CartePiece({ p }) {
   const { reglages } = useChessSettings()
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-      <MiniBoard fen={p.fen} taille={168} boardId={reglages.board} surbrillances={diag(p.id, p.cible)} />
-      <div style={{ flex: '1 1 220px', minWidth: 220 }}>
-        <h4 style={{ margin: '0 0 6px', font: `700 15px ${fonts.body}`, color: ui.text }}>{p.nom}</h4>
-        <p style={{ margin: 0, font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6 }}>{p.texte}</p>
-      </div>
-    </div>
+    <Schema texte={
+      <>
+        <h4 style={{ margin: '0 0 4px', font: `700 14px ${fonts.body}`, color: ui.text }}>{p.nom}</h4>
+        <p style={{ margin: 0, font: `400 13px ${fonts.body}`, color: ui.textDim, lineHeight: 1.55 }}>{p.texte}</p>
+      </>
+    }>
+      <MiniBoard fen={p.fen} taille={132} boardId={reglages.board} surbrillances={diag(p.id, p.cible)} />
+    </Schema>
   )
 }
 
@@ -84,53 +101,62 @@ export default function RulesTab() {
   ]
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', padding: '22px 18px 50px' }}>
-      <div style={{ maxWidth: 760, margin: '0 auto' }}>
-        <h2 style={{ margin: '0 0 6px', font: `800 24px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>Règles du jeu</h2>
-        <p style={{ margin: '0 0 18px', font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6 }}>
-          L'essentiel pour jouer, avec des diagrammes. Cliquez une section pour la déplier.
-        </p>
+    <div style={{ height: '100%', overflowY: 'auto', padding: 'clamp(20px,2.5vw,32px) clamp(16px,3vw,40px) 56px' }}>
+      <style>{`
+        .rulesGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,540px),1fr)); gap:14px; align-items:start; }
+        .rulesAcc:focus-visible, .rulesChip:focus-visible { outline:2px solid ${ui.accent}; outline-offset:2px; border-radius:8px; }
+        @media (prefers-reduced-motion: reduce){ .rulesAcc span[aria-hidden]{ transition:none !important; } }
+      `}</style>
+      <div style={{ maxWidth: 1320, margin: '0 auto' }}>
+        <header style={{ marginBottom: 18 }}>
+          <h2 style={{ margin: '0 0 6px', font: `800 26px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>Règles du jeu</h2>
+          <p style={{ margin: 0, font: `400 14px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6, maxWidth: 680 }}>
+            L'essentiel pour jouer, avec des diagrammes. Cliquez une section pour la déplier.
+          </p>
+        </header>
 
         {/* Navigation par ancres */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 22 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 18 }}>
           {ancres.map(a => (
-            <a key={a.id} href={`#${a.id}`} style={{
+            <a key={a.id} href={`#${a.id}`} className="rulesChip" style={{
               padding: '5px 12px', borderRadius: ui.radius.pill, textDecoration: 'none',
               font: `600 12px ${fonts.body}`, color: ui.textDim, background: ui.surface, border: `1px solid ${ui.line}`,
             }}>{a.l}</a>
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="rulesGrid">
           <Bloc anchorId="but" titre="Objectif du jeu" ouvertParDefaut>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-              <MiniBoard taille={180} boardId={reglages.board} />
-              <p style={{ flex: '1 1 220px', minWidth: 220, margin: 0, font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6 }}>
+            <Schema texte={
+              <p style={{ margin: 0, font: `400 13px ${fonts.body}`, color: ui.textDim, lineHeight: 1.55 }}>
                 Les Blancs commencent. Chacun déplace une pièce à tour de rôle. Le but est de
                 mettre le Roi adverse en <strong style={{ color: ui.text }}>échec et mat</strong> : menacé
                 de capture et sans échappatoire. On peut aussi gagner au temps ou par abandon.
               </p>
-            </div>
+            }>
+              <MiniBoard taille={144} boardId={reglages.board} />
+            </Schema>
           </Bloc>
 
           <Bloc anchorId="pieces" titre="Déplacement des pièces" ouvertParDefaut>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(100%,240px),1fr))', gap: 16 }}>
               {PIECES.map(p => <CartePiece key={p.id} p={p} />)}
             </div>
           </Bloc>
 
           {CONCEPTS.map(c => (
             <Bloc key={c.id} anchorId={c.id} titre={c.nom}>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                <MiniBoard fen={c.fen} taille={180} boardId={reglages.board}
+              <Schema texte={
+                <p style={{ margin: 0, font: `400 13px ${fonts.body}`, color: ui.textDim, lineHeight: 1.55 }}>{c.texte}</p>
+              }>
+                <MiniBoard fen={c.fen} taille={144} boardId={reglages.board}
                   surbrillances={c.cible ? diag(c.id, c.cible) : null} />
-                <p style={{ flex: '1 1 220px', minWidth: 220, margin: 0, font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6 }}>{c.texte}</p>
-              </div>
+              </Schema>
             </Bloc>
           ))}
 
           <Bloc anchorId="nulles" titre="Les parties nulles">
-            <ul style={{ margin: 0, paddingLeft: 18, font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.8 }}>
+            <ul style={{ margin: 0, paddingLeft: 18, font: `400 13px ${fonts.body}`, color: ui.textDim, lineHeight: 1.7 }}>
               <li><strong style={{ color: ui.text }}>Pat</strong> — aucun coup légal sans être en échec.</li>
               <li><strong style={{ color: ui.text }}>Répétition</strong> — la même position survient trois fois.</li>
               <li><strong style={{ color: ui.text }}>Règle des 50 coups</strong> — 50 coups sans prise ni mouvement de pion.</li>

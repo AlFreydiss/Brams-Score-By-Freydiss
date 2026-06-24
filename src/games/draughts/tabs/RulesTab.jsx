@@ -106,34 +106,45 @@ const SECTIONS = [
   },
 ]
 
-export default function RulesTab({ accent = ui.accent }) {
+// Accent univers Dames = bleu-acier (override local, distinct de l'or des échecs).
+const STEEL = '#6f8fb0'
+
+export default function RulesTab({ accent = STEEL }) {
   return (
-    <div style={{ minHeight: '100%', padding: 'clamp(18px, 3vw, 40px) clamp(16px, 4vw, 48px)', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 900 }}>
-        <header style={{ marginBottom: 30 }}>
+    <div style={{ minHeight: '100%', padding: 'clamp(20px,2.5vw,32px) clamp(16px,3vw,40px) 56px', display: 'flex', justifyContent: 'center' }}>
+      <style>{`
+        .dRulesGrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,540px),1fr)); gap:14px; align-items:start; }
+      `}</style>
+      <div style={{ width: '100%', maxWidth: 1320 }}>
+        <header style={{ marginBottom: 18 }}>
           <div style={{ fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', color: accent, fontWeight: 700 }}>Dames internationales</div>
-          <h1 style={{ margin: '8px 0 0', fontFamily: fonts.display, fontWeight: 800, fontSize: 'clamp(28px, 5vw, 40px)', color: ui.text, letterSpacing: '-.5px' }}>Les règles</h1>
-          <p style={{ margin: '12px 0 0', fontFamily: fonts.body, fontSize: 15, lineHeight: 1.6, color: ui.textDim, maxWidth: 620 }}>
+          <h1 style={{ margin: '8px 0 0', fontFamily: fonts.display, fontWeight: 800, fontSize: 'clamp(26px,4vw,36px)', color: ui.text, letterSpacing: '-.5px' }}>Les règles</h1>
+          <p style={{ margin: '10px 0 0', fontFamily: fonts.body, fontSize: 14, lineHeight: 1.6, color: ui.textDim, maxWidth: 680 }}>
             Le jeu de dames version 10×10 — celle des compétitions. Prise maximale obligatoire et dames volantes, comme dans la partie.
           </p>
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(28px, 4vw, 44px)' }}>
+        <div className="dRulesGrid">
           {SECTIONS.map((s, i) => (
-            <section key={i} style={{ display: 'grid', gridTemplateColumns: s.rows ? 'minmax(0,1fr) auto' : '1fr', gap: 'clamp(18px, 3vw, 36px)', alignItems: 'center' }}>
-              <div>
+            <section key={i} style={{
+              borderRadius: ui.radius.md, background: ui.surface, border: `1px solid ${ui.line}`,
+              padding: '14px 16px', gridColumn: s.rows ? 'auto' : '1 / -1',
+              display: 'grid', gridTemplateColumns: s.rows ? 'auto minmax(0,1fr)' : '1fr',
+              gap: 16, alignItems: 'center',
+            }}>
+              {s.rows && (
+                <div style={{ display: 'grid', placeItems: 'center' }}>
+                  <MiniBoard rows={s.rows} marks={s.marks} accent={accent} size={150} />
+                </div>
+              )}
+              <div style={{ minWidth: 0 }}>
                 <SectionTitle accent={accent}>{s.title}</SectionTitle>
-                <div style={{ marginLeft: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                   {s.body.map((p, j) => (
-                    <p key={j} style={{ margin: 0, fontFamily: fonts.body, fontSize: 14.5, lineHeight: 1.65, color: ui.textDim }}>{p}</p>
+                    <p key={j} style={{ margin: 0, fontFamily: fonts.body, fontSize: 13.5, lineHeight: 1.6, color: ui.textDim }}>{p}</p>
                   ))}
                 </div>
               </div>
-              {s.rows && (
-                <div style={{ display: 'grid', placeItems: 'center' }}>
-                  <MiniBoard rows={s.rows} marks={s.marks} accent={accent} size={216} />
-                </div>
-              )}
             </section>
           ))}
         </div>
