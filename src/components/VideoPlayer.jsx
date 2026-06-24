@@ -968,10 +968,15 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     // canvas des sous-titres (« on voit rien »). Sur tactile on PRIVILÉGIE le
     // cssFs (fiable partout + garde le canvas ST) plutôt que le fullscreen natif.
     userFsRef.current = true
-    if (!IS_COARSE && el && el.requestFullscreen) {
+    // Plein écran natif d'ÉLÉMENT si dispo (desktop + Android Chrome, MÊME tactile :
+    // c'est le vrai plein écran fiable et le canvas des sous-titres reste dedans).
+    // iOS Safari n'expose PAS requestFullscreen sur un <div> → on retombe sur cssFs
+    // (div fixe plein viewport, garde aussi le canvas ST). webkitEnterFullscreen natif
+    // de la <video> est volontairement évité : il masque le canvas ST (sous-titres).
+    if (el && el.requestFullscreen) {
       el.requestFullscreen()
         .then(() => { try { screen.orientation?.lock?.('landscape') } catch {} })
-        .catch(() => setCssFs(true))
+        .catch(() => { setCssFs(true); try { screen.orientation?.lock?.('landscape') } catch {} })
     } else {
       setCssFs(true)
       try { screen.orientation?.lock?.('landscape') } catch {}

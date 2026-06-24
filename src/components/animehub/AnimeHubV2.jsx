@@ -396,6 +396,9 @@ export default function AnimeHubV2(props) {
            lieu de wrap qui empile sur 3 lignes), stats masquées (place), cibles
            tactiles agrandies. Grille de cartes : pas plus serré → 3 par ligne. */
         @media (max-width: 768px) {
+          /* Toolbar NON-sticky sur mobile : reste à sa place, défile avec la page
+             (!important bat le position:sticky inline). Fond opaque pour rester lisible. */
+          .ah2-toolbar { position: static !important; top: auto !important; background: ${C.panel} !important; }
           .ah2-toolbar-inner { padding: 8px 14px !important; gap: 8px !important; }
           .ah2-search { flex: 1 1 100% !important; max-width: none !important; }
           .ah2-seg {
@@ -442,8 +445,8 @@ export default function AnimeHubV2(props) {
 
       {/* ── BLOC CONTENU : chevauche le bas fondu du hero (réf. Netflix) ── */}
       <div className="ah2-enter-2" style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : -120 }}>
-      {/* ── TOOLBAR sticky (sous la navbar) ── */}
-      <div ref={toolbarRef} style={{
+      {/* ── TOOLBAR (sticky desktop ; statique sur mobile : demande Freydiss, ne suit pas le scroll) ── */}
+      <div ref={toolbarRef} className="ah2-toolbar" style={{
         position: 'sticky', top: 64, zIndex: 4,
         // posée sur le hero : voile léger + blur (lisible sur keyart clair)
         // sans la bande sombre pleine ; panel complet une fois sticky.
