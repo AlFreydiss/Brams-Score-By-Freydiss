@@ -350,6 +350,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [speed,        setSpeed]       = useState(1)
   const [fullscreen,   setFullscreen]  = useState(false)
   const [cssFs,        setCssFs]       = useState(false)  // pseudo-plein-écran iOS (garde le canvas ST)
+  const [fsPortrait,   setFsPortrait]  = useState(false)  // en cssFs + appareil portrait → on tourne le lecteur 90° (iOS ne peut pas verrouiller le paysage depuis le web)
   const [showCtrl,     setShowCtrl]    = useState(true)
   const [started,      setStarted]     = useState(autoStart)  // false = interface "détail épisode" (pré-lecture) ; autoStart saute directement en lecture
   const [subIdx,       setSubIdx]      = useState(0)
@@ -865,6 +866,30 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     return () => document.removeEventListener('fullscreenchange', fn)
   }, [])
 
+  // En pseudo-plein-écran (iOS/tablette), suit l'orientation : si l'appareil est
+  // tenu en portrait, on tourne le lecteur 90° pour une vraie vidéo paysage qui
+  // remplit l'écran (impossible de verrouiller l'orientation depuis le web iOS).
+  useEffect(() => {
+    if (!cssFs) return
+    // Le conteneur (z-index max) est piégé dans un stacking context sous la
+    // navbar du site (.navbar-premium, z-index 900) → elle resterait visible
+    // par-dessus le plein écran. On réutilise le mode cinéma existant
+    // (html[data-cinema="1"] → navbar opacity 0) le temps du plein écran.
+    const root = document.documentElement
+    const prevCinema = root.dataset.cinema
+    root.dataset.cinema = '1'
+    const update = () => setFsPortrait(window.innerHeight > window.innerWidth)
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
+    return () => {
+      if (prevCinema === undefined) delete root.dataset.cinema
+      else root.dataset.cinema = prevCinema
+      window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
+    }
+  }, [cssFs])
+
   const toggleFullscreen = () => {
     const el = containerRef.current
     // Sortie
@@ -1048,7 +1073,17 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         onMouseLeave={() => { if (playing) hideTimer.current = setTimeout(() => setShowCtrl(false), 1500) }}
         style={{
           flex: 1, position: 'relative', background: '#000', cursor: 'default', overflow: 'hidden',
-          ...(cssFs ? { position: 'fixed', inset: 0, zIndex: 2147483647, width: '100vw', height: '100dvh', flex: 'none' } : null),
+          ...(cssFs ? (fsPortrait ? {
+            // appareil tenu en portrait → lecteur tourné 90° = vraie vidéo paysage
+            // qui remplit tout l'écran (dimensions échangées, recette éprouvée).
+            position: 'fixed', top: 0, left: 0, zIndex: 2147483647, flex: 'none',
+            width: '100vh', height: '100vw',
+            transformOrigin: 'top left',
+            transform: 'rotate(90deg) translateY(-100%)',
+          } : {
+            // appareil déjà en paysage → simple remplissage plein écran
+            position: 'fixed', inset: 0, zIndex: 2147483647, width: '100vw', height: '100dvh', flex: 'none',
+          }) : null),
         }}
       >
         {isLocal ? (
