@@ -72,6 +72,7 @@ export default function AcquisitionModal({ discordId, authReady = true }) {
       <div
         onClick={(e) => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-label="Comment nous avez-vous connus"
+        className="acq-modal"
         style={{
           position: 'relative', width: 'min(460px, 100%)',
           background: `linear-gradient(165deg, #14161c, ${BG})`,
@@ -155,6 +156,10 @@ export default function AcquisitionModal({ discordId, authReady = true }) {
       </div>
 
       <style>{`
+        /* Paysage / petits écrans : le modal ne dépasse jamais le viewport et
+           scrolle en interne → croix et "Passer" toujours atteignables.
+           Fallback vh pour iOS < 15.4 (dvh non supporté). */
+        .acq-modal { max-height: calc(100vh - 36px); max-height: calc(100dvh - 36px); overflow-y: auto; }
         @keyframes acqfade { from { opacity: 0 } to { opacity: 1 } }
         @keyframes acqpop  { from { opacity: 0; transform: translateY(14px) scale(.97) } to { opacity: 1; transform: none } }
         @media (prefers-reduced-motion: reduce) { [aria-modal="true"], [aria-label="Comment nous avez-vous connus"] { animation: none !important } }
