@@ -233,6 +233,13 @@ const MODES = {
       message: String(message || '').slice(0, 300),
     }),
   },
+  coach: {
+    json: false, maxTokens: 340, temperature: 0.45,
+    build: ({ message }) => ({
+      system: "Tu es un coach d'échecs francophone, pédagogue, clair et bienveillant — pas un robot froid. On te donne une position (FEN), le camp au trait, l'évaluation du moteur (côté blancs), le meilleur coup et la ligne principale en notation algébrique, et parfois le dernier coup joué. Explique SIMPLEMENT, pour un joueur amateur, en français et au tutoiement : 1) en une phrase, qui est mieux et pourquoi (matériel, sécurité du roi, pièces actives, centre) ; 2) le meilleur coup recommandé et SURTOUT l'idée derrière (le plan, ce qu'il prépare) ; 3) la menace ou l'erreur à éviter au prochain coup. Parle des cases et des pièces concrètement (ex : « ton cavalier en f3 », « la case d5 »). N'invente jamais un coup illégal : appuie-toi uniquement sur la ligne fournie. 60-110 mots, texte brut sans markdown ni listes à puces.",
+      message: String(message || '').slice(0, 1600),
+    }),
+  },
   journal: {
     json: true, maxTokens: 520, temperature: 0.95,
     build: ({ context }) => {

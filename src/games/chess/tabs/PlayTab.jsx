@@ -13,7 +13,7 @@ import { useStockfish } from '../../../features/echecs/hooks/useStockfish.js'
 import Plateau from '../../../features/echecs/components/Plateau.jsx'
 import { NIVEAUX_IA, niveauParId } from '../../../features/echecs/lib/niveauxIA.js'
 import { CADENCES, parseCadence } from '../../../features/echecs/constants.js'
-import { construireEval } from '../../../features/echecs/lib/analyse.js'
+import { construireEval, construireIndice } from '../../../features/echecs/lib/analyse.js'
 import { previsionElo } from '../../../features/echecs/lib/elo.js'
 import { sons } from '../../../features/echecs/lib/sons.js'
 import { boardParId, BOARD_DEFAUT } from '../logic/boards.js'
@@ -25,6 +25,9 @@ import MoveList from '../ui/MoveList.jsx'
 import MiniBoard from '../ui/MiniBoard.jsx'
 import Controls from '../ui/Controls.jsx'
 import EndOverlay from '../ui/EndOverlay.jsx'
+import Arrows from '../ui/Arrows.jsx'
+import CoachPanel from '../coach/CoachPanel.jsx'
+import { useCoach } from '../coach/useCoach.js'
 import { detecterOuverture } from '../logic/openings.js'
 import { analyzeGame } from '../analysis/analyzeGame.js'
 import AnalysisPanel from '../analysis/AnalysisPanel.jsx'
@@ -345,6 +348,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const [evalPos, setEvalPos] = useState(null)
   const [nulleProposee, setNulleProposee] = useState(false)
   const [flip, setFlip] = useState(false)
+  const [indice, setIndice] = useState(null)        // flèche meilleur coup (overlay coach)
+  const coach = useCoach()
   const rechercheRef = useRef(false)
 
   // ── Replay (auto-play) ──
@@ -512,6 +517,29 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
 
   const rejouer = useCallback(() => { nouvellePartie?.(); onRejouer() }, [nouvellePartie, onRejouer])
 
+  // ── Coach : flèche du meilleur coup + explication FR (à la demande). ──
+  const peutAider = !termine && !enRevue && pret && (isIA ? estMonTour : true)
+
+  const demanderIndice = useCallback(async () => {
+    if (!peutAider) return
+    const r = await analyser(fen, { movetime: 600 })
+    if (r) setIndice(construireIndice(r, trait))
+  }, [peutAider, analyser, fen, trait])
+
+  const demanderConseil = useCallback(async () => {
+    if (!peutAider) return
+    const r = await analyser(fen, { movetime: 800 })
+    if (r) setIndice(construireIndice(r, trait))
+    await coach.demander({
+      fen, trait, resultat: r,
+      dernierSan: historique[historique.length - 1]?.san || null,
+      niveauLabel: isIA ? niveau.label : null,
+    })
+  }, [peutAider, analyser, fen, trait, coach, historique, isIA, niveau])
+
+  // La flèche + le conseil ne valent que pour la position courante : on les efface au coup suivant.
+  useEffect(() => { setIndice(null); coach.reset() }, [fen]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Export PGN : meta dérivée du contexte (couleurs/résultat/ouverture) ──
   const exporterPGN = useCallback(async (mode = 'copie') => {
     const resultat = resultatForce?.resultat ?? (abandonnee ? (maCouleur === 'w' ? 'noir' : 'blanc') : fin.resultat)
@@ -646,6 +674,9 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
             coordonnees={reglages.coords ? 'exterieur' : 'masque'}
           />
         )}
+        {indice && !enRevue && (
+          <Arrows cases={indice.cases} orientation={orientation} taille={taille} accent={BRASS} />
+        )}
         {/* anneau d'échec : glow or/rouge sobre autour du plateau */}
         <div aria-hidden style={{
           position: 'absolute', inset: -2, borderRadius: 6, pointerEvents: 'none', zIndex: 4,
@@ -691,6 +722,14 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }} title={ouverture.nom}>{ouverture.nom}</span>
         </div>
+      )}
+      {(isIA || mode === 'local') && (
+        <CoachPanel
+          accent={BRASS}
+          texte={coach.texte} loading={coach.loading} erreur={coach.erreur}
+          onIndice={demanderIndice} onConseil={demanderConseil}
+          peutAider={peutAider} indiceTexte={indice?.texte}
+        />
       )}
       <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
         <MoveList historique={historique} curseur={curseur === -1 ? historique.length - 1 : curseur} onAller={aller} />
