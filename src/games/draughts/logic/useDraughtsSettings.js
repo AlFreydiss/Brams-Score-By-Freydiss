@@ -5,8 +5,10 @@
 // trivial réutilisable côté front (le drawer Nouveau Monde a sa propre voie), donc
 // on reste sur localStorage — robuste, instantané, hors-ligne.
 // ─────────────────────────────────────────────────────────────────────────────
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DAMES_BOARD_DEFAUT } from '../../../features/games/neutralTheme.js'
+import { useAuth } from '../../../contexts/AuthContext.jsx'
+import { loadRemoteSettings, saveRemoteSettings } from '../../_shell/settingsSync.js'
 
 const KEY = 'draughts_settings_v1'
 export const DEFAULTS = {
@@ -31,8 +33,16 @@ function read() {
 const listeners = new Set()
 function broadcast(s) { listeners.forEach(fn => { try { fn(s) } catch { /* */ } }) }
 
+// écrit le localStorage + diffuse, SANS pousser vers Supabase (utilisé au load distant).
+function persistLocal(next) {
+  try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* */ }
+  broadcast(next)
+}
+
 export function useDraughtsSettings() {
   const [settings, setSettings] = useState(read)
+  const { userId } = useAuth()
+  const uidRef = useRef(userId); uidRef.current = userId
 
   useEffect(() => {
     const onLocal = (s) => setSettings(s)
@@ -42,19 +52,32 @@ export function useDraughtsSettings() {
     return () => { listeners.delete(onLocal); window.removeEventListener('storage', onStorage) }
   }, [])
 
+  // Au login : tire les réglages du compte (cross-device). Le distant gagne au 1er
+  // chargement ; best-effort, dégrade en localStorage si la RPC n'existe pas.
+  useEffect(() => {
+    if (!userId) return
+    let mort = false
+    loadRemoteSettings('draughts').then(remote => {
+      if (mort || !remote) return
+      const merged = { ...DEFAULTS, ...remote }
+      persistLocal(merged); setSettings(merged)
+    })
+    return () => { mort = true }
+  }, [userId])
+
   const update = useCallback((patch) => {
     setSettings(prev => {
       const next = { ...prev, ...patch }
-      try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* */ }
-      broadcast(next)
+      persistLocal(next)
+      if (uidRef.current) saveRemoteSettings('draughts', next)
       return next
     })
   }, [])
 
   const reset = useCallback(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(DEFAULTS)) } catch { /* */ }
-    broadcast({ ...DEFAULTS })
+    persistLocal({ ...DEFAULTS })
     setSettings({ ...DEFAULTS })
+    if (uidRef.current) saveRemoteSettings('draughts', { ...DEFAULTS })
   }, [])
 
   return { settings, update, reset }

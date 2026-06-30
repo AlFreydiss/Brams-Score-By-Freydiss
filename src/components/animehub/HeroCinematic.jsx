@@ -79,8 +79,8 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
   })
 
   return (
-    <section aria-label={`À la une : ${anime.title}`} style={{
-      position: 'relative', width: '100%', height: '100vh', minHeight: 480,
+    <section aria-label={`À la une : ${anime.title}`} className="ah2-hero" style={{
+      position: 'relative', width: '100%',
       padding: 0, fontFamily: FONT_BODY, overflow: 'hidden',
     }}>
       {/* Keyart plein cadre — fichier R2 servi tel quel (aucun resize/compression

@@ -13,14 +13,16 @@ export default function UniverseHeader({ title, accent, tabs, active, onSelect, 
       boxShadow: `0 1px 0 ${ui.line}, 0 8px 24px -16px rgba(0,0,0,.6)`, zIndex: 5,
     }}>
       <button type="button" onClick={() => navigate('/jeux')}
+        className="gu-back" aria-label="Retour aux jeux Brams"
         style={{
           appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '7px 12px', borderRadius: ui.radius.pill, border: `1px solid ${ui.line}`,
           background: ui.surface, color: ui.textDim, font: `600 12.5px ${fonts.body}`, transition: '.16s',
+          flexShrink: 0,
         }}
         onMouseEnter={(e) => { e.currentTarget.style.color = ui.text; e.currentTarget.style.borderColor = ui.lineHi }}
         onMouseLeave={(e) => { e.currentTarget.style.color = ui.textDim; e.currentTarget.style.borderColor = ui.line }}>
-        ← Brams
+        <span aria-hidden>←</span><span className="gu-back-label">Brams</span>
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -43,7 +45,11 @@ export default function UniverseHeader({ title, accent, tabs, active, onSelect, 
         </div>
       )}
 
-      <style>{`@media (max-width:760px){ header h1{font-size:15px} }`}</style>
+      <style>{`
+        @media (max-width:760px){ header h1{font-size:15px} }
+        @media (max-width:480px){ .gu-back-label{ display:none } .gu-back{ padding:7px 10px } }
+        .gu-back:focus-visible{ outline:2px solid ${accent}; outline-offset:2px; }
+      `}</style>
     </header>
   )
 }

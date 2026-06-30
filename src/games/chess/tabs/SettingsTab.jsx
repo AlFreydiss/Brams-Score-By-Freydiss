@@ -9,7 +9,7 @@ import { BOARD_IDS, boardParId } from '../logic/boards.js'
 import { NIVEAUX_IA } from '../../../features/echecs/lib/niveauxIA.js'
 import MiniBoard from '../ui/MiniBoard.jsx'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 const FEN_APERCU = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1'
 
 function Section({ titre, children }) {
@@ -85,9 +85,12 @@ export default function SettingsTab() {
               <Segments value={reglages.board} onChange={v => set({ board: v })}
                 options={BOARD_IDS.map(id => ({ id, l: boardParId(id).label }))} />
             </Ligne>
-            <Ligne label="Jeu de pièces" hint="cburnett (par défaut)">
-              <Segments value={reglages.pieceSet} onChange={v => set({ pieceSet: v })}
-                options={[{ id: 'cburnett', l: 'cburnett' }]} />
+            <Ligne label="Jeu de pièces" hint="D'autres jeux de pièces arriveront prochainement.">
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', padding: '6px 13px', borderRadius: ui.radius.sm,
+                background: ui.surfaceHi, border: `1px solid ${ui.line}`,
+                font: `600 12.5px ${fonts.body}`, color: ui.textDim,
+              }}>cburnett</span>
             </Ligne>
             <Ligne label="Coordonnées" hint="a–h / 1–8 autour du plateau">
               <Toggle on={reglages.coords} onChange={v => set({ coords: v })} />

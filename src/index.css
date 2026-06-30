@@ -1670,6 +1670,11 @@ html[data-cinema="1"] .navbar-premium {
 /* En mode cinéma, les voiles sombres sur l'opening s'effacent → AMV en plein. */
 .cinema-veil { transition: opacity 1.3s cubic-bezier(.22,1,.36,1); }
 html[data-cinema="1"] .cinema-veil { opacity: 0 !important; }
+/* Plein écran du lecteur vidéo (réutilise data-cinema) : le wrapper .ew-player
+   est sticky+z-index:40 → il crée un stacking context qui PIÈGE le plein écran
+   (z-index max) sous la navbar et la barre épisodes. On retire le z-index le
+   temps du plein écran pour que le lecteur passe vraiment au-dessus de tout. */
+html[data-cinema="1"] .ew-player { z-index: auto !important; }
 /* Chat IA ouvert → on masque les contrôles son ambiants (anti-superposition). */
 html[data-chatopen="1"] .ambient-sound-ctl { opacity: 0 !important; pointer-events: none !important; }
 /* La vidéo AMV (dimmée à 0.35) passe en plein éclat en mode AFK. */

@@ -1,11 +1,11 @@
 // ── EvalBar : barre d'évaluation verticale (winPct sigmoïde du spec) ────────
 // 2D strict. Remplissage = part blanche selon winPct(cp) (ou mat → extrême).
-// Accent laiton désaturé de l'univers (#b09467). Label lisible +1.2 / M3.
+// Accent laiton désaturé de l'univers (#81b64c). Label lisible +1.2 / M3.
 import { useEffect, useState } from 'react'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { winPct, texteEval } from './format.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 const IVOIRE = '#ece3cc'
 const FOND = '#0b0c0f'
 
@@ -37,7 +37,7 @@ export default function EvalBar({ evaluation, enCours = false, orientation = 'wh
       style={{
         position: 'relative', width: 24, height: hauteur, borderRadius: 8,
         overflow: 'hidden', background: FOND,
-        border: `1px solid rgba(176,148,103,0.30)`,
+        border: `1px solid rgba(129,182,76,0.30)`,
         boxShadow: 'inset 0 0 14px rgba(0,0,0,.55)',
         flex: '0 0 auto', opacity: enCours ? 0.92 : 1,
         transition: 'opacity .2s',
@@ -50,7 +50,7 @@ export default function EvalBar({ evaluation, enCours = false, orientation = 'wh
       }} />
       <div style={{
         position: 'absolute', left: 0, right: 0, top: '50%', height: 1,
-        background: 'rgba(176,148,103,0.5)',
+        background: 'rgba(129,182,76,0.5)',
       }} />
       <div style={{
         position: 'absolute', left: 0, right: 0,

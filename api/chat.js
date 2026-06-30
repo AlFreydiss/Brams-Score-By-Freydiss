@@ -1,4 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { generateText } from 'ai'
+
+// Coach d'échecs = Claude via Vercel AI Gateway (auth OIDC auto sur Vercel, keyless).
+// Modèle léger/rapide, suffisant car on lui fournit la ligne moteur Stockfish vérifiée.
+const COACH_MODEL = process.env.COACH_MODEL || 'anthropic/claude-haiku-4.5'
 
 // ── LE FOND : la personnalité de l'IA du site ────────────────────────────────
 const FOND = `Tu es « Brams IA », l'esprit de l'équipage de brams.community — le site de la Brams Community (anime / One Piece, francophone).
@@ -233,6 +238,13 @@ const MODES = {
       message: String(message || '').slice(0, 300),
     }),
   },
+  coach: {
+    json: false, maxTokens: 340, temperature: 0.45,
+    build: ({ message }) => ({
+      system: "Tu es un coach d'échecs francophone, pédagogue, clair et bienveillant — pas un robot froid. On te donne une position (FEN), le camp au trait, l'évaluation du moteur (côté blancs), le meilleur coup et la ligne principale en notation algébrique, et parfois le dernier coup joué. Explique SIMPLEMENT, pour un joueur amateur, en français et au tutoiement : 1) en une phrase, qui est mieux et pourquoi (matériel, sécurité du roi, pièces actives, centre) ; 2) le meilleur coup recommandé et SURTOUT l'idée derrière (le plan, ce qu'il prépare) ; 3) la menace ou l'erreur à éviter au prochain coup. Parle des cases et des pièces concrètement (ex : « ton cavalier en f3 », « la case d5 »). N'invente jamais un coup illégal : appuie-toi uniquement sur la ligne fournie. 60-110 mots, texte brut sans markdown ni listes à puces.",
+      message: String(message || '').slice(0, 1600),
+    }),
+  },
   journal: {
     json: true, maxTokens: 520, temperature: 0.95,
     build: ({ context }) => {
@@ -293,6 +305,31 @@ export default async function handler(req, res) {
       return res.status(429).json({ error: 'Je reçois trop de messages en ce moment, réessaie dans quelques secondes !', code: 'ai_rate_limited' })
     }
     return res.status(503).json({ error: "L'IA est temporairement indisponible. Réessaie dans un instant.", code: 'ai_unavailable' })
+  }
+
+  // ── Coach échecs : Claude via AI Gateway (OIDC keyless), fallback chaîne Gemini ──
+  if (mode === 'coach') {
+    const { system, message: userMsg } = MODES.coach.build({ message })
+    try {
+      const { text } = await generateText({
+        model: COACH_MODEL,
+        system,
+        prompt: userMsg,
+        maxOutputTokens: 360,
+        temperature: 0.45,
+      })
+      const reply = String(text || '').trim()
+      if (reply) return res.status(200).json({ reply, provider: 'claude' })
+      throw new Error('empty_completion')
+    } catch (err) {
+      console.error('[coach] AI Gateway/Claude indisponible, fallback Gemini:', err?.message || err)
+      try {
+        const { text, provider } = await callProviders(system, [], userMsg, { json: false, maxTokens: 340, temperature: 0.45 })
+        return res.status(200).json({ reply: String(text).trim(), provider })
+      } catch (e2) {
+        return errorsOut(e2?.providerErrors)
+      }
+    }
   }
 
   // ── Modes spéciaux (cartes riches côté widget) ──

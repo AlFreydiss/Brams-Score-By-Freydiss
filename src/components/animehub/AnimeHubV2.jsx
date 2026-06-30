@@ -362,6 +362,9 @@ export default function AnimeHubV2(props) {
       }}
       style={{
         position: 'fixed', inset: 0, zIndex: 60, overflowY: 'auto', overflowX: 'hidden',
+        // iOS : momentum scrolling + on empêche le scroll de "fuir" vers le body
+        // (chaînage) qui rendait le défilement chaotique, surtout en paysage.
+        WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain',
         background: LEGACY_BG, fontFamily: FONT_BODY, color: C.text,
         // Entrée cinématique : fondu + zoom-out très léger (annulé si reduced-motion via CSS)
         opacity: entered ? 1 : 0,
@@ -384,6 +387,10 @@ export default function AnimeHubV2(props) {
            au lieu de rester à leur largeur fixe — sinon elles débordent les
            cellules plus étroites du mobile et créent un scroll horizontal. */
         .ah2-grid .ah2-card { width: 100% !important; }
+        /* Hero plein écran : 100dvh suit le viewport VISIBLE (barre d'URL mobile
+           qui apparaît/disparaît) → plus de hero trop haut ni de scroll qui se
+           bat avec le toolbar en paysage. Fallback 100vh pour vieux navigateurs. */
+        .ah2-hero { height: 100vh; height: 100dvh; }
         @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } .ah2-root { transition: none !important; transform: none !important; opacity: 1 !important } .ah2-enter-1, .ah2-enter-2 { animation: none !important } }
         /* Scrollbar sombre (la scrollbar Windows par défaut faisait une barre blanche) */
         .ah2-root { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }

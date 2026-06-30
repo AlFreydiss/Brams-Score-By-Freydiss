@@ -56,17 +56,22 @@ function Disc({ side, king, scale = 1, dragging = false }) {
 //   movableKeys (Set), interactive (bool), gameOver (bool)
 //   coordsOn, highlightsOn, animOn, animMult
 //   onSquareClick(r,c)
+//   maxSize (px) — borne de côté pour l'arène plein écran (sinon min(78vmin,620px))
+//   onCaptureFx(x,y) — coords pixel (relatives au conteneur du board) de la 1re case
+//     capturée du dernier coup, pour brancher les particules de capture de l'arène.
 export default function DraughtsBoard({
   board, size = 10, boardTheme = DAMES_BOARD_DEFAUT, accent = ui.accent,
   selected = null, legalMoves = [], last = null, hint = null, cursor = null,
   movableKeys, interactive = true, gameOver = false,
   coordsOn = true, highlightsOn = true, animOn = true, animMult = 1,
+  maxSize = null, onCaptureFx,
   onSquareClick,
 }) {
   const boardRef = useRef(null)
   const animRef = useRef(null)
   const [anim, setAnim] = useState(null)
   const prevLast = useRef(null)
+  const [hover, setHover] = useState(null)       // [r,c] de la pièce survolée (aperçu de rafle)
   const [drag, setDragState] = useState(null)   // miroir visuel du glisser
   const dragRef = useRef(null)                   // source de vérité (handlers pointeur)
   const movedRef = useRef(false)                 // un vrai glisser a-t-il eu lieu ?
@@ -75,6 +80,10 @@ export default function DraughtsBoard({
   const SIZE = board?.length || size
   const theme = damesBoard[boardTheme] || damesBoard[DAMES_BOARD_DEFAUT]
   const movable = movableKeys || new Set()
+  const noMotion = reduced()
+
+  // Numérotation des cases sombres : 1–50 en 10×10, 1–32 en 8×8 (variante).
+  const squareNo = (r, c) => Math.floor((r * SIZE + c) / 2) + 1
 
   // ── animation FLIP du dernier coup (déplacement + rafle) ──
   useLayoutEffect(() => {
@@ -82,7 +91,6 @@ export default function DraughtsBoard({
     const sig = JSON.stringify(last)
     if (prevLast.current === sig) return
     prevLast.current = sig
-    if (reduced()) return
     const grid = boardRef.current
     const cellOf = (r, c) => {
       const el = grid.querySelector(`[data-cell="${r}_${c}"]`)
@@ -90,6 +98,20 @@ export default function DraughtsBoard({
       const gr = grid.getBoundingClientRect(), cr = el.getBoundingClientRect()
       return { x: cr.left - gr.left + cr.width / 2, y: cr.top - gr.top + cr.height / 2, w: cr.width }
     }
+    // éclats de capture de l'arène : centre de la 1re case capturée (px / conteneur board).
+    // Le conteneur du board est le parent positionné du grid → on translate via gr ↔ parent.
+    if (onCaptureFx && last.caps && last.caps.length) {
+      const [cr0, cc0] = last.caps[0]
+      const capPt = cellOf(cr0, cc0)
+      if (capPt) {
+        const gr = grid.getBoundingClientRect()
+        const host = grid.parentElement?.getBoundingClientRect()
+        const ox = host ? gr.left - host.left : 0
+        const oy = host ? gr.top - host.top : 0
+        onCaptureFx(capPt.x + ox, capPt.y + oy)
+      }
+    }
+    if (reduced()) return
     const fromPt = cellOf(last.from[0], last.from[1])
     const pathCells = last.path || [last.to]
     const path = pathCells.map(([r, c]) => cellOf(r, c)).filter(Boolean)
@@ -101,7 +123,7 @@ export default function DraughtsBoard({
       from: fromPt, path, side: piece?.side || last.side, king: piece?.king, w: fromPt.w,
       capCells: new Set((last.caps || []).map(([r, c]) => r + '_' + c)),
     })
-  }, [last, board, animOn])
+  }, [last, board, animOn, onCaptureFx])
 
   // joue l'animation WAAPI une fois `anim` posé, puis nettoie.
   useLayoutEffect(() => {
@@ -132,6 +154,28 @@ export default function DraughtsBoard({
   const raids = own.filter(mv => mv.isCapture && mv.path && mv.path.length >= 2)
   const hopKeys = new Set()
   if (raids.length === 1) raids[0].path.slice(0, -1).forEach(([r, c]) => hopKeys.add(r + '_' + c))
+
+  // ── aperçu de rafle au survol ── (sobre, désactivé pendant un glisser / sur la pièce
+  // sélectionnée — elle a déjà ses propres cibles). On dérive le chemin des captures
+  // directement des coups légaux (déjà = rafles MAXIMALES côté moteur) → moteur pur,
+  // pas d'import UI. `previewHops` = cases d'atterrissage intermédiaires, `previewCaps`
+  // = pions qui tomberont, `previewTargets` = cases finales possibles de la rafle.
+  const previewHops = new Set(), previewCaps = new Set(), previewTargets = new Set()
+  let previewActive = false
+  if (highlightsOn && hover && !drag && canPlay) {
+    const hk = hover[0] + '_' + hover[1]
+    if (hk !== selKey && movable.has(hk)) {
+      const hovRaids = (legalMoves || []).filter(mv => mv.isCapture && mv.from[0] === hover[0] && mv.from[1] === hover[1])
+      for (const mv of hovRaids) {
+        previewActive = true
+        ;(mv.caps || []).forEach(([r, c]) => previewCaps.add(r + '_' + c))
+        const path = mv.path || (mv.to ? [mv.to] : [])
+        path.slice(0, -1).forEach(([r, c]) => previewHops.add(r + '_' + c))
+        const end = path[path.length - 1]
+        if (end) previewTargets.add(end[0] + '_' + end[1])
+      }
+    }
+  }
   const lastKeys = new Set()
   if (last?.from && last?.to) { lastKeys.add(last.from[0] + '_' + last.from[1]); (last.path || [last.to]).forEach(([r, c]) => lastKeys.add(r + '_' + c)) }
   const lastDest = last?.to ? (last.path || [last.to]).slice(-1)[0] : null
@@ -198,7 +242,7 @@ export default function DraughtsBoard({
         onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={() => setDrag(null)}
         role="grid" aria-label="Plateau de dames internationales"
         style={{
-          position: 'relative', width: 'min(78vmin, 620px)', maxWidth: '100%', aspectRatio: '1',
+          position: 'relative', width: maxSize ? Math.round(maxSize) : 'min(78vmin, 620px)', maxWidth: '100%', aspectRatio: '1',
           display: 'grid', gridTemplateColumns: `repeat(${SIZE}, 1fr)`, gridTemplateRows: `repeat(${SIZE}, 1fr)`,
           borderRadius: 8, overflow: 'hidden', touchAction: 'none',
           boxShadow: [
@@ -223,10 +267,16 @@ export default function DraughtsBoard({
           const clickable = canPlay && (isMovablePiece || kind)
           const hideForAnim = key === animDestKey
           const hideForDrag = drag && drag.r === r && drag.c === c
+          // aperçu de rafle (survol) : ne double pas les marques déjà présentes pour la pièce sélectionnée.
+          const isPrevCap = previewActive && previewCaps.has(key)
+          const isPrevHop = previewActive && previewHops.has(key) && !kind && !isHop
+          const isPrevTarget = previewActive && previewTargets.has(key) && !kind && !isHop && !previewCaps.has(key)
           return (
             <div key={key} role="gridcell" data-cell={key}
-              aria-label={dark ? `Case ${Math.floor((r * SIZE + c) / 2) + 1}${cell ? `, pion ${cell.side === P ? 'foncé' : 'clair'}${cell.king ? ' dame' : ''}` : ''}` : undefined}
+              aria-label={dark ? `Case ${squareNo(r, c)}${cell ? `, pion ${cell.side === P ? 'foncé' : 'clair'}${cell.king ? ' dame' : ''}` : ''}` : undefined}
               onClick={() => { if (canPlay && !dragRef.current && !movedRef.current) onSquareClick?.(r, c) }}
+              onPointerEnter={() => { if (cell && canPlay && !dragRef.current) setHover([r, c]) }}
+              onPointerLeave={() => { setHover(h => (h && h[0] === r && h[1] === c ? null : h)) }}
               onPointerDown={(e) => { if (cell) onPointerDownPiece(e, r, c) }}
               style={{
                 position: 'relative', display: 'grid', placeItems: 'center',
@@ -243,14 +293,18 @@ export default function DraughtsBoard({
               {kind === 'move' && !cell && <div aria-hidden style={{ width: '30%', height: '30%', borderRadius: '50%', background: `${accent}8c`, boxShadow: `0 0 0 2px ${accent}38`, pointerEvents: 'none' }} />}
               {kind === 'cap' && <div aria-hidden style={{ position: 'absolute', inset: '15%', borderRadius: '50%', boxShadow: `inset 0 0 0 3px ${marks.capture}`, pointerEvents: 'none' }} />}
               {isHop && <div aria-hidden style={{ width: '16%', height: '16%', borderRadius: '50%', background: marks.capture, opacity: .85, pointerEvents: 'none' }} />}
+              {/* aperçu de rafle au survol — sobre, opacité réduite pour ne pas voler la vedette aux marques actives */}
+              {isPrevCap && <div aria-hidden style={{ position: 'absolute', inset: '15%', borderRadius: '50%', boxShadow: `inset 0 0 0 2px ${marks.capture}`, opacity: .55, pointerEvents: 'none' }} />}
+              {isPrevHop && <div aria-hidden style={{ width: '12%', height: '12%', borderRadius: '50%', background: marks.capture, opacity: .4, pointerEvents: 'none' }} />}
+              {isPrevTarget && <div aria-hidden style={{ position: 'absolute', inset: '24%', borderRadius: '50%', boxShadow: `inset 0 0 0 2px ${marks.capture}`, opacity: .4, pointerEvents: 'none' }} />}
               {coordsOn && dark && (
-                <span aria-hidden style={{ position: 'absolute', top: 2, left: 4, fontSize: 'clamp(7px,1.05vmin,11px)', fontWeight: 700, color: 'rgba(236,238,242,.34)', pointerEvents: 'none', fontFamily: fonts.mono }}>
-                  {Math.floor((r * SIZE + c) / 2) + 1}
+                <span aria-hidden style={{ position: 'absolute', top: 2, left: 4, fontSize: 'clamp(7px,1.05vmin,11px)', fontWeight: 700, color: 'rgba(236,238,242,.34)', pointerEvents: 'none', fontFamily: fonts.mono, fontVariantNumeric: 'tabular-nums' }}>
+                  {squareNo(r, c)}
                 </span>
               )}
               {cell && !hideForAnim && !hideForDrag && (
                 <div style={{ width: '88%', height: '88%', display: 'grid', placeItems: 'center', position: 'relative' }}>
-                  {mandatory && <span aria-hidden style={{ position: 'absolute', inset: '4%', borderRadius: '50%', boxShadow: `0 0 0 2.5px ${marks.capture}`, animation: 'draughtsPulse 1.15s ease-in-out infinite', pointerEvents: 'none' }} />}
+                  {mandatory && <span aria-hidden style={{ position: 'absolute', inset: '4%', borderRadius: '50%', boxShadow: `inset 0 0 0 1px ${marks.capture}`, animation: noMotion ? 'none' : 'draughtsPulse 1.15s ease-in-out infinite', pointerEvents: 'none' }} />}
                   <Disc side={cell.side} king={cell.king} scale={isSel ? 1.05 : 1} />
                 </div>
               )}
@@ -294,7 +348,7 @@ export default function DraughtsBoard({
           fontFamily: fonts.body, fontWeight: 700, fontSize: 12.5, letterSpacing: '.3px',
           boxShadow: ui.shadow, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 8, zIndex: 8,
         }}>
-          <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: ui.bad, boxShadow: `0 0 8px ${ui.bad}` }} />
+          <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: ui.bad, boxShadow: `0 0 0 1px ${ui.bad}66` }} />
           Prise obligatoire — rafle maximale
         </div>
       )}

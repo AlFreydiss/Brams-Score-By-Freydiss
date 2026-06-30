@@ -10,10 +10,12 @@ export function Segment({ items, value, onChange, accent = ui.accent, size = 'md
   const fs = size === 'sm' ? 12 : 13
   return (
     <div role="tablist" style={{ display: 'inline-flex', background: ui.surface, border: `1px solid ${ui.line}`, borderRadius: ui.radius.pill, padding: 4, gap: 3 }}>
+      <style>{`.dc-seg:focus-visible{ outline:2px solid ${accent}; outline-offset:2px; border-radius:${ui.radius.pill}px; }`}</style>
       {items.map(([id, label]) => {
         const on = value === id
         return (
           <button key={id} role="tab" aria-selected={on} onClick={() => onChange(id)}
+            className="dc-seg"
             style={{
               appearance: 'none', border: 0, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
               fontSize: fs, letterSpacing: '.2px', padding: pad, borderRadius: ui.radius.pill,
@@ -41,11 +43,15 @@ export function Btn({ children, onClick, accent = ui.accent, variant = 'ghost', 
   else if (danger) style = { ...base, border: `1px solid ${h && !disabled ? ui.bad : ui.line}`, background: h && !disabled ? `${ui.bad}1f` : ui.surface, color: h && !disabled ? '#f0a99e' : ui.textDim }
   else style = { ...base, border: `1px solid ${h && !disabled ? ui.lineHi : ui.line}`, background: h && !disabled ? ui.surfaceHi : ui.surface, color: ui.text }
   return (
-    <button type={type} onClick={disabled ? undefined : onClick} disabled={disabled} title={title}
-      onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      onMouseDown={(e) => { if (!disabled) e.currentTarget.style.transform = 'translateY(1px)' }}
-      onMouseUp={(e) => { e.currentTarget.style.transform = 'none' }}
-      style={style}>{children}</button>
+    <>
+      <style>{`.dc-btn:focus-visible{ outline:2px solid ${accent}; outline-offset:2px; }`}</style>
+      <button type={type} onClick={disabled ? undefined : onClick} disabled={disabled} title={title}
+        className="dc-btn"
+        onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+        onMouseDown={(e) => { if (!disabled) e.currentTarget.style.transform = 'translateY(1px)' }}
+        onMouseUp={(e) => { e.currentTarget.style.transform = 'none' }}
+        style={style}>{children}</button>
+    </>
   )
 }
 
@@ -70,10 +76,14 @@ export function SectionTitle({ children, hint, accent = ui.accent }) {
 // Interrupteur (toggle) accessible.
 export function Toggle({ checked, onChange, accent = ui.accent, label, id }) {
   return (
-    <button role="switch" aria-checked={checked} aria-label={label} id={id} onClick={() => onChange(!checked)}
-      style={{ appearance: 'none', cursor: 'pointer', border: 0, padding: 0, width: 44, height: 26, borderRadius: 999, position: 'relative', background: checked ? accent : ui.surfaceHi, transition: 'background .18s', flexShrink: 0 }}>
-      <span aria-hidden style={{ position: 'absolute', top: 3, left: checked ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: checked ? '#0c1115' : ui.textDim, transition: 'left .18s', boxShadow: '0 1px 3px rgba(0,0,0,.4)' }} />
-    </button>
+    <>
+      <style>{`.dc-toggle:focus-visible{ outline:2px solid ${accent}; outline-offset:2px; }`}</style>
+      <button role="switch" aria-checked={checked} aria-label={label} id={id} onClick={() => onChange(!checked)}
+        className="dc-toggle"
+        style={{ appearance: 'none', cursor: 'pointer', border: 0, padding: 0, width: 44, height: 26, borderRadius: 999, position: 'relative', background: checked ? accent : ui.surfaceHi, transition: 'background .18s', flexShrink: 0 }}>
+        <span aria-hidden style={{ position: 'absolute', top: 3, left: checked ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: checked ? '#0c1115' : ui.textDim, transition: 'left .18s', boxShadow: '0 1px 3px rgba(0,0,0,.4)' }} />
+      </button>
+    </>
   )
 }
 

@@ -4,7 +4,7 @@
 import { useEffect, useRef } from 'react'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 
 export default function MoveList({ historique, curseur, onAller }) {
   const refActif = useRef(null)
@@ -38,7 +38,7 @@ export default function MoveList({ historique, curseur, onAller }) {
         style={{
           flex: 1, textAlign: 'left', padding: '3px 7px', borderRadius: 5,
           cursor: 'pointer', border: 'none',
-          background: actif ? 'rgba(176,148,103,0.18)' : 'transparent',
+          background: actif ? 'rgba(129,182,76,0.18)' : 'transparent',
           color: actif ? '#e7d8b8' : ui.text,
           font: `${actif ? 700 : 600} 13px ${fonts.mono}`,
           fontVariantNumeric: 'tabular-nums',
