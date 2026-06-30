@@ -12,7 +12,7 @@ import { rangPourElo } from '../../../features/echecs/lib/elo.js'
 import { sons } from '../../../features/echecs/lib/sons.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 
 export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPartieTrouvee, onQuitter }) {
   const [cadence, setCadence] = useState(() => { try { return localStorage.getItem(CLE_CADENCE) || CADENCE_DEFAUT } catch { return CADENCE_DEFAUT } })
@@ -87,7 +87,7 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
         <div style={{
           width: 110, height: 110, margin: '30px auto 22px', borderRadius: '50%', position: 'relative',
           border: `1px solid ${ui.lineHi}`,
-          background: 'radial-gradient(circle, rgba(176,148,103,0.08), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(129,182,76,0.08), transparent 70%)',
         }}>
           <div style={{
             position: 'absolute', inset: -1, borderRadius: '50%',
@@ -147,8 +147,8 @@ export default function ChessMatchmaking({ profil, pseudo, avatar, monUid, onPar
                     font: `700 14px ${fonts.mono}`, fontVariantNumeric: 'tabular-nums',
                     padding: '8px 14px', borderRadius: ui.radius.pill, cursor: 'pointer', minHeight: 34,
                     color: actif ? '#e7d8b8' : ui.text,
-                    background: actif ? 'rgba(176,148,103,0.14)' : ui.surface,
-                    border: `1px solid ${actif ? 'rgba(176,148,103,0.5)' : ui.line}`,
+                    background: actif ? 'rgba(129,182,76,0.14)' : ui.surface,
+                    border: `1px solid ${actif ? 'rgba(129,182,76,0.5)' : ui.line}`,
                     transition: 'background .15s, color .15s, border-color .15s',
                   }}
                     onMouseEnter={e => { if (!actif) { e.currentTarget.style.background = ui.surfaceHi; e.currentTarget.style.borderColor = ui.lineHi } }}

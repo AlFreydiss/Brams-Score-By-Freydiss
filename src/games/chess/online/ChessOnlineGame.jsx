@@ -26,7 +26,7 @@ import { useChessSettings } from '../logic/useChessSettings.js'
 import { formaterTemps } from '../ui/format.js'
 import EmoteBar from '../../_shell/arena/EmoteBar.jsx'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 const SEUIL_CRITIQUE = 10000
 
 function sonDuCoup(mv, enEchec) {

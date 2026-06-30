@@ -2,9 +2,22 @@
 // Affiche : précision par camp (barre), compteurs gaffes/imprécisions, et la
 // liste annotée des coups. Cliquer un coup → onAller(ply) (réutilise le curseur
 // de revue de PlayTab, comme MoveList). respecte prefers-reduced-motion.
+import { useState, useCallback } from 'react'
+import { Chess } from 'chess.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
+import { useCoach } from '../coach/useCoach.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'   // accent chess.com (vert)
+
+// FEN de la position AVANT le demi-coup d'index `ply` (rejoue les SAN précédents).
+function fenAvant(historique, ply) {
+  const c = new Chess()
+  for (let i = 0; i < ply; i++) {
+    const s = typeof historique[i] === 'string' ? historique[i] : historique[i]?.san
+    try { c.move(s) } catch { break }
+  }
+  return c.fen()
+}
 
 // Couleur de précision : du rouge (faible) au vert (élevée), accent neutre au milieu.
 function couleurPrecision(p) {
@@ -49,13 +62,27 @@ function BarrePrecision({ label, data, reduit }) {
   )
 }
 
-export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFermer }) {
-  if (!resultat) return null
+export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFermer, historique = [], analyser }) {
   const reduit = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
+  const [selPly, setSelPly] = useState(null)   // coup sélectionné pour l'explication coach
+  const coach = useCoach()
+
+  const coups = resultat?.coups || []
+
+  // Reconstruit la position avant le coup choisi, l'analyse, et demande l'explication FR.
+  const expliquer = useCallback(async (ply) => {
+    const c = coups[ply]
+    if (!c) return
+    const fen = fenAvant(historique, ply)
+    const r = typeof analyser === 'function' ? await analyser(fen, { movetime: 500 }) : null
+    await coach.demander({ fen, trait: c.color, resultat: r, dernierSan: c.san })
+  }, [coups, historique, analyser, coach])
+
+  if (!resultat) return null
+
   // regroupe en paires (blanc/noir) par numéro de coup pour l'affichage liste.
-  const { coups } = resultat
   const paires = []
   for (let i = 0; i < coups.length; i += 2) {
     paires.push({ n: i / 2 + 1, blanc: coups[i], noir: coups[i + 1] })
@@ -67,12 +94,12 @@ export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFerme
     const info = c.glyphe ? GLYPHE_INFO[c.glyphe] : null
     return (
       <button
-        onClick={() => onAller?.(c.ply)}
+        onClick={() => { onAller?.(c.ply); setSelPly(c.ply); coach.reset() }}
         title={info ? info.label : undefined}
         style={{
           flex: 1, display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-start',
           padding: '3px 7px', borderRadius: 5, cursor: 'pointer', border: 'none',
-          background: actif ? 'rgba(176,148,103,0.18)' : 'transparent',
+          background: actif ? 'rgba(129,182,76,0.18)' : 'transparent',
           color: actif ? '#e7d8b8' : ui.text,
           font: `${actif ? 700 : 600} 13px ${fonts.mono}`, fontVariantNumeric: 'tabular-nums',
           transition: reduit ? 'none' : 'background .12s',
@@ -141,6 +168,41 @@ export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFerme
             </div>
           ))}
         </div>
+
+        {/* ── Coach : explique le coup sélectionné en français ── */}
+        {selPly != null && coups[selPly] && (
+          <div style={{ marginTop: 14, padding: '11px 12px', borderRadius: ui.radius.sm, background: ui.surface, border: `1px solid ${ui.line}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: coach.texte || coach.loading || coach.erreur ? 8 : 0 }}>
+              <span style={{ font: `700 13px ${fonts.mono}`, color: ui.text, fontVariantNumeric: 'tabular-nums' }}>
+                {Math.floor(selPly / 2) + 1}.{coups[selPly].color === 'b' ? '..' : ''} {coups[selPly].san}
+                {coups[selPly].glyphe && (
+                  <span style={{ color: (GLYPHE_INFO[coups[selPly].glyphe] || {}).couleur, marginLeft: 5, font: `800 12px ${fonts.mono}` }}>
+                    {coups[selPly].glyphe}
+                  </span>
+                )}
+              </span>
+              <button onClick={() => expliquer(selPly)} disabled={coach.loading} style={{
+                flexShrink: 0, padding: '7px 11px', borderRadius: ui.radius.sm,
+                cursor: coach.loading ? 'default' : 'pointer', whiteSpace: 'nowrap',
+                font: `700 12px ${fonts.body}`, color: coach.loading ? ui.textMute : '#15110a',
+                background: coach.loading ? ui.surface : BRASS, border: `1px solid ${coach.loading ? ui.line : BRASS}`,
+              }}>
+                {coach.loading ? 'Le coach réfléchit…' : '🎓 Pourquoi ce coup ?'}
+              </button>
+            </div>
+            {(coach.texte || coach.erreur || coach.loading) && (
+              <div style={{
+                maxHeight: 180, overflowY: 'auto', padding: '9px 11px', borderRadius: ui.radius.sm,
+                background: ui.bg, border: `1px solid ${ui.line}`,
+                font: `400 12.5px/1.55 ${fonts.body}`, color: ui.textDim, whiteSpace: 'pre-wrap',
+              }}>
+                {coach.erreur
+                  ? <span style={{ color: '#e0a3a3' }}>{coach.erreur}</span>
+                  : (coach.texte || 'Analyse de la position…')}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

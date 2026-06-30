@@ -9,7 +9,7 @@ import ChessMatchmaking from './ChessMatchmaking.jsx'
 import ChessOnlineGame from './ChessOnlineGame.jsx'
 import SpectatorList from '../../_shell/arena/SpectatorList.jsx'
 
-export default function OnlineFlow({ accent = '#b09467' }) {
+export default function OnlineFlow({ accent = '#81b64c' }) {
   const { userId, displayName, avatarUrl, isAuthenticated, signInWithDiscord } = useAuth()
   const [profil, setProfil] = useState(null)
   const [partieEnCours, setPartieEnCours] = useState(null)   // partie à reprendre (banner)

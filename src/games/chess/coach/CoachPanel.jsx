@@ -22,7 +22,7 @@ function Btn({ onClick, disabled, accent, primaire, children, title }) {
 }
 
 export default function CoachPanel({
-  accent = '#b09467', texte, loading, erreur,
+  accent = '#81b64c', texte, loading, erreur,
   onIndice, onConseil, peutAider, indiceTexte,
 }) {
   return (

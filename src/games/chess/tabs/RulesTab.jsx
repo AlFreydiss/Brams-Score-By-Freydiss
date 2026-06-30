@@ -7,12 +7,12 @@ import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import MiniBoard from '../ui/MiniBoard.jsx'
 import { useChessSettings } from '../logic/useChessSettings.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 
 // Pièce isolée + cases de déplacement surlignées (pastilles laiton).
 function diag(piece, cible) {
   const surbrillances = {}
-  for (const sq of cible) surbrillances[sq] = { background: 'radial-gradient(circle, rgba(176,148,103,0.55) 26%, transparent 30%)' }
+  for (const sq of cible) surbrillances[sq] = { background: 'radial-gradient(circle, rgba(129,182,76,0.55) 26%, transparent 30%)' }
   return surbrillances
 }
 

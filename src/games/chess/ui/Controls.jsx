@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 
 function Btn({ children, onClick, disabled, danger, title, large }) {
   return (

@@ -3,7 +3,7 @@
 // Revoir / Retour. Overlay neutre, accent laiton, zéro confetti criard.
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 
 const LIBELLE_CAUSE = {
   mat: 'Échec et mat', pat: 'Pat', repetition: 'Nulle par répétition',

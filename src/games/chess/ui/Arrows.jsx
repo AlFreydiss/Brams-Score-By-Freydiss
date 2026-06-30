@@ -10,7 +10,7 @@ function centre(square, orientation, sq) {
   return { x: (col + 0.5) * sq, y: (row + 0.5) * sq }
 }
 
-export default function Arrows({ cases, orientation = 'white', taille = 440, accent = '#b09467' }) {
+export default function Arrows({ cases, orientation = 'white', taille = 440, accent = '#81b64c' }) {
   if (!cases || cases.length < 2) return null
   const sq = taille / 8
   const a = centre(cases[0], orientation, sq)

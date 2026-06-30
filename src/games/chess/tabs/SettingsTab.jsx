@@ -9,7 +9,7 @@ import { BOARD_IDS, boardParId } from '../logic/boards.js'
 import { NIVEAUX_IA } from '../../../features/echecs/lib/niveauxIA.js'
 import MiniBoard from '../ui/MiniBoard.jsx'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'
 const FEN_APERCU = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1'
 
 function Section({ titre, children }) {

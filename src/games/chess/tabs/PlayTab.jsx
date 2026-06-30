@@ -28,6 +28,7 @@ import EndOverlay from '../ui/EndOverlay.jsx'
 import Arrows from '../ui/Arrows.jsx'
 import CoachPanel from '../coach/CoachPanel.jsx'
 import { useCoach } from '../coach/useCoach.js'
+import { cc, CHESSCOM_BOARD } from '../ui/chesscom.js'
 import { detecterOuverture } from '../logic/openings.js'
 import { analyzeGame } from '../analysis/analyzeGame.js'
 import AnalysisPanel from '../analysis/AnalysisPanel.jsx'
@@ -41,7 +42,7 @@ import ReplayScrubber from '../../_shell/arena/ReplayScrubber.jsx'
 import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
 import { genererPGN, copierPresse, telecharger } from '../logic/exportPGN.js'
 
-const BRASS = '#b09467'
+const BRASS = '#81b64c'   // accent chess.com (vert) — remplace l'or laiton
 
 function sonDuCoup(mv, enEchec) {
   if (mv.promotion || mv.flags?.includes('p')) sons.promotion()
@@ -87,8 +88,8 @@ function Chip({ actif, onClick, children, sub }) {
   return (
     <button onClick={onClick} style={{
       padding: '9px 13px', borderRadius: ui.radius.sm, cursor: 'pointer', textAlign: 'left',
-      background: actif ? 'rgba(176,148,103,0.14)' : ui.surface,
-      border: `1px solid ${actif ? 'rgba(176,148,103,0.5)' : ui.line}`,
+      background: actif ? 'rgba(129,182,76,0.14)' : ui.surface,
+      border: `1px solid ${actif ? 'rgba(129,182,76,0.5)' : ui.line}`,
       transition: 'background .15s, border-color .15s', minWidth: 0,
     }}>
       <span style={{ display: 'block', font: `700 13px ${fonts.body}`, color: actif ? '#e7d8b8' : ui.text }}>{children}</span>
@@ -197,8 +198,8 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
                   <button key={c.id} onClick={() => setCouleur(c.id)} style={{
                     flex: 1, padding: '10px', borderRadius: ui.radius.sm, cursor: 'pointer',
                     font: `700 13px ${fonts.body}`, color: couleur === c.id ? '#e7d8b8' : ui.text,
-                    background: couleur === c.id ? 'rgba(176,148,103,0.14)' : ui.surface,
-                    border: `1px solid ${couleur === c.id ? 'rgba(176,148,103,0.5)' : ui.line}`,
+                    background: couleur === c.id ? 'rgba(129,182,76,0.14)' : ui.surface,
+                    border: `1px solid ${couleur === c.id ? 'rgba(129,182,76,0.5)' : ui.line}`,
                     transition: 'background .15s, border-color .15s',
                   }}>{c.l}</button>
                 ))}
@@ -210,7 +211,7 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
             width: '100%', marginTop: 26, padding: '15px', borderRadius: ui.radius.md, cursor: 'pointer',
             font: `800 15px ${fonts.display}`, letterSpacing: '0.01em', color: '#15110a',
             background: BRASS, border: 'none', transition: 'filter .15s, transform .12s',
-            boxShadow: '0 14px 34px -16px rgba(176,148,103,0.7)',
+            boxShadow: '0 14px 34px -16px rgba(129,182,76,0.7)',
           }}
             onMouseEnter={e => { e.currentTarget.style.filter = 'brightness(1.08)' }}
             onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
@@ -252,7 +253,7 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
   if (mobile) {
     return (
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-        <ArenaLight turn={previewTurn} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: cc.bg }} />
         <div style={{
           position: 'relative', zIndex: 1, height: '100%', overflowY: 'auto',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
@@ -270,7 +271,7 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
   // ── DESKTOP : 2 colonnes pleine largeur (aperçu | réglages), lumière derrière ──
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-      <ArenaLight turn={previewTurn} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: cc.bg }} />
       <div style={{
         position: 'relative', zIndex: 1, height: '100%',
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(36px, 6vw, 90px)',
@@ -307,15 +308,13 @@ function ApercuResponsive({ render }) {
   return render(sz)
 }
 
-// rail verre dépoli pour le panneau de config (variante de railStyle, sans flex column gap auto).
+// panneau de config chess.com : surface solide (plus de verre dépoli arène).
 function railStyleConfig() {
   return {
-    background: glass.bg,
-    backdropFilter: glass.blur,
-    WebkitBackdropFilter: glass.blur,
-    border: `1px solid ${glass.border}`,
-    borderRadius: glass.radius,
-    boxShadow: glass.shadow,
+    background: cc.panel,
+    border: `1px solid ${cc.line}`,
+    borderRadius: cc.radius.lg,
+    boxShadow: cc.shadow,
     boxSizing: 'border-box',
   }
 }
@@ -600,8 +599,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
 
   // FEN affichée : position initiale (revue au départ) · live · ou demi-coup en revue.
   const fenAffichee = posInitiale ? fenAuCoup(historique, -1) : (enRevue ? fenAuCoup(historique, curseur) : fen)
-  const boardId = reglages.board
-  const tema = useMemo(() => boardParId(boardId), [boardId])
+  const boardId = 'chesscom'        // interface chess.com : board vert/crème forcé
+  const tema = CHESSCOM_BOARD
 
   // labels des deux camps (haut = adversaire, bas = moi en IA)
   const labelHaut = isIA ? `IA · ${niveau.label}` : 'Noirs'
@@ -652,7 +651,6 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
         <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={taille} />
       )}
       <div ref={refConteneur} style={{ position: 'relative', width: taille, height: taille }}>
-        <Particles ref={particlesRef} />
         {enRevue ? (
           <MiniBoard fen={fenAffichee} taille={taille} boardId={boardId} orientation={orientation} coords={reglages.coords} />
         ) : (
@@ -694,19 +692,14 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
     </div>
   )
 
-  // ── Rail gauche : adversaire · trait · (eval mobile) · vous ──
-  const leftRail = (
-    <>
-      <Joueur label={labelHaut} camp={campHaut} capturees={sesCaptures} />
-      <Indicateur />
-      {mobile && (
-        <EvalBar evaluation={isIA ? evalPos : null} enCours={reflechit} orientation={orientation} hauteur={110} />
-      )}
-      <Joueur label={labelBas} camp={campBas} capturees={mesCaptures} />
-    </>
-  )
+  // ── Panneau latéral chess.com : surface solide (fini les rails verre dépoli de l'arène) ──
+  const panneauStyle = {
+    display: 'flex', flexDirection: 'column', gap: 10,
+    background: cc.panel, border: `1px solid ${cc.line}`, borderRadius: cc.radius.lg,
+    padding: '12px', boxSizing: 'border-box', overflowY: 'auto',
+  }
 
-  // ── Rail droit : liste de coups (scroll) · contrôles · menu ──
+  // ── Contenu du panneau droit : liste de coups (scroll) · coach · contrôles · menu ──
   const rightRail = (
     <>
       {ouverture && (
@@ -797,11 +790,40 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
     </>
   )
 
-  const turnLight = termine ? null : (trait === 'w' ? 'warm' : 'cool')
+  // ── Colonne board chess.com : barre adversaire (haut) · plateau · barre joueur (bas) ──
+  const colonneBoard = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7, alignItems: mobile ? 'stretch' : 'flex-start' }}>
+      <Joueur label={labelHaut} camp={campHaut} capturees={sesCaptures} />
+      <div style={{ alignSelf: mobile ? 'center' : 'flex-start' }}>{boardNode}</div>
+      <Joueur label={labelBas} camp={campBas} capturees={mesCaptures} />
+    </div>
+  )
 
   return (
-    <div style={{ position: 'absolute', inset: 0, ...arena.style }}>
-      <ArenaLayout turn={turnLight} mobile={mobile} left={leftRail} board={boardNode} right={rightRail} />
+    <div style={{ position: 'absolute', inset: 0, background: cc.bg }}>
+      {mobile ? (
+        <div style={{
+          height: '100%', overflowY: 'auto', boxSizing: 'border-box',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: '12px 10px 30px',
+        }}>
+          <div style={{ width: '100%', maxWidth: taille }}>{colonneBoard}</div>
+          <div style={{ ...panneauStyle, width: '100%', maxWidth: 480 }}>
+            <Indicateur />
+            {rightRail}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          height: '100%', boxSizing: 'border-box',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '18px 26px',
+        }}>
+          {colonneBoard}
+          <div style={{ ...panneauStyle, width: 350, maxHeight: '94%' }}>
+            <Indicateur />
+            {rightRail}
+          </div>
+        </div>
+      )}
       {finVisible && (
         <EndOverlay
           resultat={resultatFinal} cause={causeFinale} maCouleur={isIA ? maCouleur : null}
@@ -821,6 +843,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
           curseur={curseur === -1 ? historique.length - 1 : curseur}
           onAller={allerDepuisAnalyse}
           onFermer={() => setAnalysePanneau(false)}
+          historique={historique}
+          analyser={analyser}
         />
       )}
     </div>
@@ -843,7 +867,7 @@ export default function PlayTab() {
         <ConfigJeu
           onLancer={setConfig}
           niveauDefaut={reglagesCtx.reglages.niveauIa}
-          boardId={reglagesCtx.reglages.board}
+          boardId="chesscom"
         />
       </div>
     )

@@ -5,6 +5,7 @@
 // `marks`) → compatible direct avec le prop `theme` de Plateau.jsx.
 import { THEMES_PLATEAU, THEME_PLATEAU_DEFAUT } from '../../../features/echecs/constants.js'
 import { marks } from '../../../features/games/neutralTheme.js'
+import { CHESSCOM_BOARD } from '../ui/chesscom.js'
 
 // helpers hex → notation lisible (contraste auto), repris de constants.js.
 function mix(hex, vers, k) {
@@ -32,9 +33,9 @@ const NUIT = {
 }
 
 // Catalogue complet exposé à l'univers (ordre d'affichage stable).
-export const BOARDS = { ...THEMES_PLATEAU, nuit: NUIT }
-export const BOARD_IDS = ['bois', 'vert', 'marbre', 'ardoise', 'glace', 'nuit']
-export const BOARD_DEFAUT = THEME_PLATEAU_DEFAUT
+export const BOARDS = { ...THEMES_PLATEAU, nuit: NUIT, chesscom: CHESSCOM_BOARD }
+export const BOARD_IDS = ['chesscom', 'bois', 'vert', 'marbre', 'ardoise', 'glace', 'nuit']
+export const BOARD_DEFAUT = 'chesscom'
 
 export function boardParId(id) {
   return BOARDS[id] || BOARDS[BOARD_DEFAUT]
