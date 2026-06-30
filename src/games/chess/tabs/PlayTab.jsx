@@ -61,23 +61,52 @@ function fenAuCoup(historique, idx) {
   return c.fen()
 }
 
-// ── Taille responsive de l'échiquier : carré borné par min(largeur dispo, hauteur).
-function useTaillePlateau(refConteneur) {
-  const [taille, setTaille] = useState(440)
+// ── Breakpoints du layout chess.com (réactifs) : empilé < 880, sinon 2 colonnes.
+// Largeur du panneau droit : 300 sur tablette/petit desktop, 348 en grand.
+function calcViewportJeu() {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1280
+  return { vw, mobile: vw < 880, panneauW: vw < 1180 ? 300 : 348 }
+}
+function useViewportJeu() {
+  const [v, setV] = useState(calcViewportJeu)
+  useEffect(() => {
+    const on = () => setV(calcViewportJeu())
+    window.addEventListener('resize', on)
+    window.addEventListener('orientationchange', on)
+    return () => { window.removeEventListener('resize', on); window.removeEventListener('orientationchange', on) }
+  }, [])
+  return v
+}
+
+// ── Taille responsive de l'échiquier (chess.com) : aussi grand que possible,
+// borné par la largeur restante (après le panneau) ET la hauteur (header + 2 barres joueur).
+function useTaillePlateau() {
+  const [taille, setTaille] = useState(520)
   useEffect(() => {
     const calc = () => {
       const vw = window.innerWidth, vh = window.innerHeight
       const mobile = vw < 880
-      // desktop : place pour les 2 rails arène (gauche 248 + droite 312) + gaps/padding
-      const dispoLargeur = mobile ? vw - 28 : vw - 248 - 312 - 110
-      const dispoHauteur = vh - (mobile ? 320 : 150)
-      const t = Math.max(260, Math.min(640, dispoLargeur, dispoHauteur))
+      let dispoLargeur, dispoHauteur, plafond
+      if (mobile) {
+        // empilé : board quasi pleine largeur ; on réserve header + 2 barres joueur.
+        dispoLargeur = vw - 20
+        dispoHauteur = vh - 196
+        plafond = 760
+      } else {
+        const panneau = vw < 1180 ? 300 : 348
+        // largeur = vw − panneau − barre d'éval (~22) − gap (~18) − paddings (~56)
+        dispoLargeur = vw - panneau - 96
+        dispoHauteur = vh - 172     // header (~56) + 2 barres joueur (~88) + marges
+        plafond = 860
+      }
+      const t = Math.max(280, Math.min(plafond, dispoLargeur, dispoHauteur))
       setTaille(Math.floor(t))
     }
     calc()
     window.addEventListener('resize', calc)
-    return () => window.removeEventListener('resize', calc)
-  }, [refConteneur])
+    window.addEventListener('orientationchange', calc)
+    return () => { window.removeEventListener('resize', calc); window.removeEventListener('orientationchange', calc) }
+  }, [])
   return taille
 }
 
@@ -333,8 +362,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const couleurIA = maCouleur === 'w' ? 'b' : 'w'
 
   const refConteneur = useRef(null)
-  const taille = useTaillePlateau(refConteneur)
-  const mobile = typeof window !== 'undefined' && window.innerWidth < 880
+  const taille = useTaillePlateau()
+  const { mobile, panneauW } = useViewportJeu()
 
   const sf = useStockfish(isIA ? niveau : null)
   const { pret, reflechit, chercherCoup, analyser, nouvellePartie } = sf
@@ -818,7 +847,7 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '18px 26px',
         }}>
           {colonneBoard}
-          <div style={{ ...panneauStyle, width: 350, maxHeight: '94%' }}>
+          <div style={{ ...panneauStyle, width: panneauW, maxHeight: '94%' }}>
             <Indicateur />
             {rightRail}
           </div>
