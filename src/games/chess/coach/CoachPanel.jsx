@@ -21,9 +21,36 @@ function Btn({ onClick, disabled, accent, primaire, children, title }) {
   )
 }
 
+// Petit interrupteur « Coach auto » (accent vert), aligné à droite de l'en-tête.
+function ToggleAuto({ on, onToggle, accent }) {
+  return (
+    <button onClick={onToggle} role="switch" aria-checked={on}
+      title="Le coach commente automatiquement tes coups et explique tes gaffes"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+        background: 'transparent', border: 'none', padding: 0,
+      }}>
+      <span style={{ font: `700 10px ${fonts.body}`, letterSpacing: '0.07em', textTransform: 'uppercase', color: on ? accent : ui.textMute }}>
+        Auto
+      </span>
+      <span aria-hidden style={{
+        position: 'relative', width: 30, height: 17, borderRadius: 999, flexShrink: 0,
+        background: on ? accent : ui.line, border: `1px solid ${on ? accent : ui.lineHi}`,
+        transition: 'background .15s, border-color .15s',
+      }}>
+        <span style={{
+          position: 'absolute', top: 1, left: on ? 14 : 1, width: 13, height: 13, borderRadius: 999,
+          background: '#fff', transition: 'left .15s',
+        }} />
+      </span>
+    </button>
+  )
+}
+
 export default function CoachPanel({
   accent = '#81b64c', texte, loading, erreur,
   onIndice, onConseil, peutAider, indiceTexte,
+  coachAuto, onToggleCoachAuto,
 }) {
   return (
     <div style={{
@@ -39,6 +66,12 @@ export default function CoachPanel({
         <span style={{ font: `800 12px ${fonts.body}`, letterSpacing: '0.08em', textTransform: 'uppercase', color: accent }}>
           Coach IA
         </span>
+        {onToggleCoachAuto && (
+          <>
+            <span style={{ flex: 1 }} />
+            <ToggleAuto on={!!coachAuto} onToggle={onToggleCoachAuto} accent={accent} />
+          </>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 6 }}>

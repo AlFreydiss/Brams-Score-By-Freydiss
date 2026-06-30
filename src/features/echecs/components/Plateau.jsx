@@ -17,6 +17,7 @@ import { Chessboard } from 'react-chessboard'
 import SelecteurPromotion from './SelecteurPromotion.jsx'
 import { useInteractionEchecs } from '../hooks/useInteractionEchecs.js'
 import { THEME, ANIM_PIECE_MS, themePlateau, THEMES_PLATEAU } from '../constants.js'
+import { PIECES } from '../../../games/chess/ui/pieces.jsx'
 
 // piece v5 = objet { pieceType: 'wP' } (couleur MAJ + type MAJ). couleur = 'w'|'b'.
 const couleurDe = (piece) => {
@@ -132,6 +133,7 @@ export default function Plateau({
 
   const options = useMemo(() => ({
     id: 'plateau-brams',
+    pieces: PIECES,
     position: fen,
     boardOrientation: orientationEff,
     onPieceDrop,

@@ -13,7 +13,7 @@ import { Chess } from 'chess.js'
 
 // Centipions (côté du camp au trait) → probabilité de gain 0..100 (sigmoïde lichess).
 // Référence lichess : winPct = 50 + 50 * (2/(1+exp(-0.00368208*cp)) - 1).
-function cpVersWin(cp) {
+export function cpVersWin(cp) {
   if (cp == null) return 50
   const c = Math.max(-1000, Math.min(1000, cp))
   return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * c)) - 1)
@@ -32,7 +32,7 @@ function cpCoteBlanc(res, traitAuTrait) {
 }
 
 // Seuils de classement (en perte de win% causée par le coup, point de vue du joueur).
-const SEUIL = {
+export const SEUIL = {
   blunder: 18,    // perte ≥ 18% de win → ?? (gaffe)
   imprecision: 9, // perte ≥ 9%  → ? (imprécision)
   excellent: 1.5, // perte ≤ 1.5% → ! (coup quasi parfait)

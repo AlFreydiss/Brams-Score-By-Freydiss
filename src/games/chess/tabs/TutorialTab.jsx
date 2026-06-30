@@ -19,6 +19,8 @@ import { Chess } from 'chess.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { glass } from '../../_shell/arena/arenaTokens.js'
 import MiniBoard from '../ui/MiniBoard.jsx'
+import { PIECES } from '../ui/pieces.jsx'
+import PuzzleTrainer from '../puzzles/PuzzleTrainer.jsx'
 import { boardParId, BOARD_DEFAUT } from '../logic/boards.js'
 import { useChessSettings } from '../logic/useChessSettings.js'
 import { sons } from '../../../features/echecs/lib/sons.js'
@@ -133,8 +135,12 @@ function PlateauLecon({ lecon, taille, boardId, coords, autoQueen, onReussite, e
   const [erreurCase, setErreurCase] = useState(null)
 
   // (Ré)initialise l'instance chess.js quand la leçon change ou sur « réessayer ».
+  // Leçons mono-pièce = FEN sans roi → chess.js 1.4 valide et throw « missing king ».
+  // On charge donc en skipValidation (move/isCheck/isCheckmate marchent quand même).
   useEffect(() => {
-    chessRef.current = new Chess(lecon.fen)
+    const c = new Chess()
+    try { c.load(lecon.fen, { skipValidation: true }) } catch { /* FEN vraiment cassée : board vide */ }
+    chessRef.current = c
     setFen(lecon.fen); setSelection(null); setPromo(null); setErreurCase(null)
   }, [lecon.id, etat.cle])
 
@@ -246,6 +252,7 @@ function PlateauLecon({ lecon, taille, boardId, coords, autoQueen, onReussite, e
   const notationTaille = Math.max(9, taille * 0.024)
   const options = useMemo(() => ({
     id: `tuto-${lecon.id}`,
+    pieces: PIECES,
     position: fen,
     boardOrientation: lecon.orient,
     onPieceDrop,
@@ -588,6 +595,18 @@ export default function TutorialTab({ accent = BRASS } = {}) {
         <Didacticiel taille={taille} boardId={boardId} coords={reglages?.coords ?? true} autoQueen={reglages?.autoQueen ?? false} />
 
         <ReglesIllustrees boardId={boardId} />
+
+        {/* Tactiques — entraînement « mat en 1 » (puzzles auto-validés). */}
+        <section style={{ display: 'grid', gap: 16 }}>
+          <header>
+            <div style={{ font: `700 11px ${fonts.body}`, letterSpacing: '0.16em', textTransform: 'uppercase', color: accent, marginBottom: 7 }}>Tactiques</div>
+            <h2 style={{ margin: '0 0 6px', font: `800 22px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>Tactiques — Mat en 1</h2>
+            <p style={{ margin: 0, font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6, maxWidth: 700 }}>
+              Repère le coup qui mate immédiatement. Bloqué ? Demande un indice ou le coach.
+            </p>
+          </header>
+          <PuzzleTrainer />
+        </section>
       </div>
     </div>
   )

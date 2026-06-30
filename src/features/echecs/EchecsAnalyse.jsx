@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Chess } from 'chess.js'
 import { Chessboard } from 'react-chessboard'
+import { PIECES } from '../../games/chess/ui/pieces.jsx'
 import { type, fonts } from '../../styles/typography.js'
 import { THEME, THEMES_PLATEAU, THEME_PLATEAU_DEFAUT } from './constants.js'
 import { useStockfish } from './hooks/useStockfish.js'
@@ -238,6 +239,7 @@ export default function EchecsAnalyse({ pgn = null, historique = [], resultat = 
   const tema = THEMES_PLATEAU[THEME_PLATEAU_DEFAUT]
   const boardOptions = useMemo(() => ({
     id: 'plateau-analyse',
+    pieces: PIECES,
     position: view.fen,
     boardOrientation: orientation,
     arrows: view.arrows,

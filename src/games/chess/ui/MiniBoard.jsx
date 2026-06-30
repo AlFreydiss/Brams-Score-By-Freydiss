@@ -5,6 +5,7 @@ import { useMemo } from 'react'
 import { Chessboard } from 'react-chessboard'
 import { fonts } from '../../../features/games/neutralTheme.js'
 import { boardParId, BOARD_DEFAUT } from '../logic/boards.js'
+import { PIECES } from './pieces.jsx'
 
 export const FEN_INITIALE = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -19,6 +20,7 @@ export default function MiniBoard({
   const tema = boardParId(boardId)
   const options = useMemo(() => ({
     id: `mini-${boardId}-${taille}`,
+    pieces: PIECES,
     position: fen,
     boardOrientation: orientation,
     allowDragging: false,

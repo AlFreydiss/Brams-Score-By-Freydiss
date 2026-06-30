@@ -2,12 +2,22 @@
 // Affiche : précision par camp (barre), compteurs gaffes/imprécisions, et la
 // liste annotée des coups. Cliquer un coup → onAller(ply) (réutilise le curseur
 // de revue de PlayTab, comme MoveList). respecte prefers-reduced-motion.
-import { useState, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Chess } from 'chess.js'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
+import { cc } from '../ui/chesscom.js'
 import { useCoach } from '../coach/useCoach.js'
+import { compteursGlobaux, coupCritique, construireMessageBilan } from './reviewSummary.js'
 
 const BRASS = '#81b64c'   // accent chess.com (vert)
+
+// Couleurs des verdicts (chips récap), façon chess.com.
+const VERDICTS = [
+  { key: 'brillants',    label: 'Brillant',    sym: '!!', color: '#26c2a3' }, // teal « brilliant »
+  { key: 'excellents',   label: 'Excellent',   sym: '!',  color: cc.green },
+  { key: 'imprecisions', label: 'Imprécision', sym: '?',  color: '#e8a13a' },
+  { key: 'gaffes',       label: 'Gaffe',       sym: '??', color: cc.danger },
+]
 
 // FEN de la position AVANT le demi-coup d'index `ply` (rejoue les SAN précédents).
 function fenAvant(historique, ply) {
@@ -69,7 +79,37 @@ export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFerme
   const [selPly, setSelPly] = useState(null)   // coup sélectionné pour l'explication coach
   const coach = useCoach()
 
+  // Bilan global de la partie (coach IA, fetch direct car le message décrit toute la
+  // partie et non une position — donc on ne passe pas par construireMessageCoach).
+  const [bilan, setBilan] = useState({ texte: '', loading: false, erreur: null })
+  const bilanReq = useRef(0)
+  useEffect(() => () => { bilanReq.current++ }, [])  // invalide une requête en vol au démontage
+
+  const demanderBilan = useCallback(async () => {
+    const id = ++bilanReq.current
+    setBilan({ texte: '', loading: true, erreur: null })
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'coach', message: construireMessageBilan(resultat) }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (id !== bilanReq.current) return
+      if (!res.ok) {
+        setBilan({ texte: '', loading: false, erreur: data?.error || 'Le coach est indisponible, réessaie.' })
+        return
+      }
+      setBilan({ texte: String(data?.reply || '').trim(), loading: false, erreur: null })
+    } catch {
+      if (id !== bilanReq.current) return
+      setBilan({ texte: '', loading: false, erreur: 'Connexion au coach impossible.' })
+    }
+  }, [resultat])
+
   const coups = resultat?.coups || []
+  const compteurs = compteursGlobaux(resultat)
+  const critique = coupCritique(resultat)
 
   // Reconstruit la position avant le coup choisi, l'analyse, et demande l'explication FR.
   const expliquer = useCallback(async (ply) => {
@@ -144,10 +184,93 @@ export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFerme
           }}>×</button>
         </div>
 
-        <div style={{ display: 'flex', gap: 18, marginBottom: 18 }}>
+        <div style={{ display: 'flex', gap: 18, marginBottom: 16 }}>
           <BarrePrecision label="Blancs" data={resultat.blancs} reduit={reduit} />
           <div aria-hidden style={{ width: 1, background: ui.line, alignSelf: 'stretch' }} />
           <BarrePrecision label="Noirs" data={resultat.noirs} reduit={reduit} />
+        </div>
+
+        {/* ── Compteurs globaux (verdicts des 2 camps) ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {VERDICTS.map(v => (
+            <div key={v.key} title={v.label} style={{
+              flex: 1, minWidth: 0, padding: '8px 4px', borderRadius: cc.radius.md,
+              background: cc.panel, border: `1px solid ${cc.line}`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ color: v.color, font: `800 13px ${fonts.mono}` }}>{v.sym}</span>
+                <span style={{ font: `800 16px ${fonts.mono}`, color: cc.text, fontVariantNumeric: 'tabular-nums' }}>
+                  {compteurs[v.key]}
+                </span>
+              </div>
+              <span style={{
+                maxWidth: '100%', font: `600 10px ${fonts.body}`, color: cc.textMute,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>{v.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Tournant : le coup le plus coûteux de la partie (cliquable) ── */}
+        {critique && (
+          <button
+            onClick={() => { onAller?.(critique.ply); setSelPly(critique.ply); coach.reset() }}
+            title="Revoir le tournant de la partie"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+              padding: '9px 12px', marginBottom: 12, borderRadius: cc.radius.md, cursor: 'pointer',
+              background: cc.panel, border: `1px solid ${cc.line}`, borderLeft: `3px solid ${cc.danger}`,
+              transition: reduit ? 'none' : 'background .12s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = cc.panelHi }}
+            onMouseLeave={e => { e.currentTarget.style.background = cc.panel }}
+          >
+            <span style={{ flexShrink: 0, font: `700 9px ${fonts.body}`, letterSpacing: '0.08em', textTransform: 'uppercase', color: cc.danger }}>
+              Tournant
+            </span>
+            <span style={{
+              flex: 1, minWidth: 0, font: `700 13px ${fonts.mono}`, color: cc.text,
+              fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {critique.numero} {critique.san}
+            </span>
+            <span style={{ flexShrink: 0, font: `800 13px ${fonts.mono}`, color: cc.danger, fontVariantNumeric: 'tabular-nums' }}>
+              −{Math.round(critique.perte)}%
+            </span>
+            <span aria-hidden style={{ flexShrink: 0, color: cc.textMute, font: `700 16px ${fonts.body}`, lineHeight: 1 }}>›</span>
+          </button>
+        )}
+
+        {/* ── Résumé de la partie par le coach IA ── */}
+        <div style={{ marginBottom: 16 }}>
+          <button
+            onClick={demanderBilan}
+            disabled={bilan.loading}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%',
+              padding: '10px 12px', borderRadius: cc.radius.md, whiteSpace: 'nowrap',
+              cursor: bilan.loading ? 'default' : 'pointer', font: `700 13px ${fonts.body}`,
+              color: bilan.loading ? cc.textMute : '#15110a',
+              background: bilan.loading ? cc.panel : cc.green,
+              border: `1px solid ${bilan.loading ? cc.line : cc.green}`,
+            }}
+          >
+            {bilan.loading
+              ? 'Le coach rédige le bilan…'
+              : (bilan.texte ? '📋 Régénérer le résumé' : '📋 Résumé de la partie')}
+          </button>
+          {(bilan.texte || bilan.erreur || bilan.loading) && (
+            <div style={{
+              marginTop: 10, maxHeight: 170, overflowY: 'auto', padding: '11px 13px', borderRadius: cc.radius.md,
+              background: cc.panel, border: `1px solid ${cc.line}`,
+              font: `400 12.5px/1.6 ${fonts.body}`, color: cc.textDim, whiteSpace: 'pre-wrap',
+            }}>
+              {bilan.erreur
+                ? <span style={{ color: '#e0a3a3' }}>{bilan.erreur}</span>
+                : (bilan.texte || 'Le coach analyse la partie…')}
+            </div>
+          )}
         </div>
 
         <div style={{ font: `700 10px ${fonts.body}`, letterSpacing: '0.09em', textTransform: 'uppercase', color: ui.textMute, marginBottom: 7 }}>

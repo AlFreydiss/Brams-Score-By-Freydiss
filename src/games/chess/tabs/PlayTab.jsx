@@ -28,6 +28,7 @@ import EndOverlay from '../ui/EndOverlay.jsx'
 import Arrows from '../ui/Arrows.jsx'
 import CoachPanel from '../coach/CoachPanel.jsx'
 import { useCoach } from '../coach/useCoach.js'
+import { useCoachProactif } from '../coach/useCoachProactif.js'
 import { cc, CHESSCOM_BOARD } from '../ui/chesscom.js'
 import { detecterOuverture } from '../logic/openings.js'
 import { analyzeGame } from '../analysis/analyzeGame.js'
@@ -348,6 +349,33 @@ function railStyleConfig() {
   }
 }
 
+// ── Badge transitoire du coach proactif (classement du dernier coup humain). ──
+// Overlay absolu, ne bloque jamais les clics, fondu d'entrée/sortie (~2.5 s).
+function CoupBadge({ badge }) {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    if (!badge) { setShown(false); return }
+    const a = requestAnimationFrame(() => setShown(true))
+    const t = setTimeout(() => setShown(false), 2200)
+    return () => { cancelAnimationFrame(a); clearTimeout(t) }
+  }, [badge?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!badge) return null
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', top: 10, left: '50%', zIndex: 6, pointerEvents: 'none',
+      transform: `translateX(-50%) translateY(${shown ? '0px' : '-7px'})`,
+      opacity: shown ? 1 : 0, transition: 'opacity .34s ease, transform .34s ease',
+      display: 'flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap',
+      padding: '6px 13px', borderRadius: 999,
+      background: 'rgba(8,9,12,0.86)', border: `1px solid ${badge.couleur}`,
+      boxShadow: `0 10px 26px -12px ${badge.couleur}`, backdropFilter: 'blur(4px)',
+    }}>
+      <span style={{ font: `800 12.5px ${fonts.mono}`, color: badge.couleur, fontVariantNumeric: 'tabular-nums' }}>{badge.icon}</span>
+      <span style={{ font: `800 12.5px ${fonts.body}`, letterSpacing: '0.02em', color: badge.couleur }}>{badge.label}</span>
+    </div>
+  )
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // Partie en cours
 // ════════════════════════════════════════════════════════════════════════════
@@ -378,6 +406,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const [flip, setFlip] = useState(false)
   const [indice, setIndice] = useState(null)        // flèche meilleur coup (overlay coach)
   const coach = useCoach()
+  const proactif = useCoachProactif({ analyser })
+  const [coachAuto, setCoachAuto] = useState(isIA)   // coach proactif (commente les coups) — ON par défaut vs IA
   const rechercheRef = useRef(false)
 
   // ── Replay (auto-play) ──
@@ -420,6 +450,10 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   // En revue = on regarde une position passée (position initiale OU un demi-coup antérieur au dernier).
   const enRevue = posInitiale || (curseur >= 0 && curseur < historique.length - 1)
 
+  // Valeurs « live » lues dans onCoup (callback) sans alourdir ses deps ni capturer du stale.
+  const proactifLiveRef = useRef({})
+  proactifLiveRef.current = { isIA, coachAuto, termine, enRevue, maCouleur }
+
   // ── Démarrage horloge ──
   useEffect(() => { sons.debut(); if (cadence) horloge.demarrer('w') }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -429,7 +463,11 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
     if (!isIA || termine || !pret || !estMonTour) return
     let annule = false
     const id = setTimeout(() => {
-      analyser(fen, { movetime: 500 }).then(res => { if (!annule && res) setEvalPos(construireEval(res, trait)) })
+      analyser(fen, { movetime: 500 }).then(res => {
+        if (annule || !res) return
+        setEvalPos(construireEval(res, trait))
+        proactif.memoriserAvant(fen, res)   // éval du POV joueur AVANT son coup → coach proactif
+      })
     }, 320)
     return () => { annule = true; clearTimeout(id) }
   }, [fen, estMonTour, pret, termine, isIA]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -460,7 +498,24 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
     setNulleProposee(false)
     setCurseur(-1)
     if (cadence) horloge.basculer(partie.trait)
-  }, [partie, cadence, horloge, fireFx])
+
+    // ── Coach proactif : classe le coup (badge) + explique les gaffes (LLM). ──
+    // Le toggle « Coach auto » gouverne tout le coach proactif (badges + explication).
+    const L = proactifLiveRef.current
+    if (L.isIA && L.coachAuto && !L.termine && !L.enRevue && mv?.before && mv?.after) {
+      proactif.evaluerCoup({
+        fenAvant: mv.before,
+        fenApres: mv.after,
+        joueur: mv.color,
+        traitApres: mv.color === 'w' ? 'b' : 'w',
+        mv,
+        onGaffe: ({ fenAvant, joueur, resAvant, san }) => {
+          if (!proactifLiveRef.current.coachAuto) return     // pas de spam LLM si le toggle est OFF
+          coach.demander({ fen: fenAvant, trait: joueur, resultat: resAvant, dernierSan: san })
+        },
+      })
+    }
+  }, [partie, cadence, horloge, fireFx, proactif, coach])
 
   // ── Fin de partie (mat/pat/nulle/abandon/temps) ──
   useEffect(() => {
@@ -566,7 +621,13 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   }, [peutAider, analyser, fen, trait, coach, historique, isIA, niveau])
 
   // La flèche + le conseil ne valent que pour la position courante : on les efface au coup suivant.
-  useEffect(() => { setIndice(null); coach.reset() }, [fen]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Exception coach proactif : quand le coup de l'IA ramène le trait au joueur, on CONSERVE
+  // l'explication d'une gaffe (le joueur doit pouvoir la lire) ; elle ne sera vidée qu'à son prochain coup.
+  useEffect(() => {
+    setIndice(null)
+    if (isIA && coachAuto && trait === maCouleur) return
+    coach.reset()
+  }, [fen]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Export PGN : meta dérivée du contexte (couleurs/résultat/ouverture) ──
   const exporterPGN = useCallback(async (mode = 'copie') => {
@@ -704,6 +765,7 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
         {indice && !enRevue && (
           <Arrows cases={indice.cases} orientation={orientation} taille={taille} accent={BRASS} />
         )}
+        {!enRevue && <CoupBadge badge={proactif.badge} />}
         {/* anneau d'échec : glow or/rouge sobre autour du plateau */}
         <div aria-hidden style={{
           position: 'absolute', inset: -2, borderRadius: 6, pointerEvents: 'none', zIndex: 4,
@@ -751,6 +813,8 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
           texte={coach.texte} loading={coach.loading} erreur={coach.erreur}
           onIndice={demanderIndice} onConseil={demanderConseil}
           peutAider={peutAider} indiceTexte={indice?.texte}
+          coachAuto={coachAuto}
+          onToggleCoachAuto={isIA ? () => setCoachAuto(v => !v) : null}
         />
       )}
       <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>
