@@ -3,6 +3,7 @@
 // Tournoi, Fred'isu (rhythm game), Dames classées, Échecs, Akinator.
 import { Link, useNavigate } from 'react-router-dom'
 import { useTeleport } from '../features/nouveau-monde/transition/TeleportTransition.jsx'
+import { cc } from '../games/chess/ui/chesscom.js' // vert chess.com partagé avec l'univers Échecs
 
 // Jeux ayant une île dans Le Nouveau Monde : clic carte → téléportation → page d'île.
 const ISLAND_OF = {
@@ -27,15 +28,17 @@ const GAMES = [
     desc: "Reconnais l'opening le plus vite possible. Combo, score, classement — montre que tu connais tes animés par cœur." },
   { to: '/tournoi',    emoji: '⚔️', title: 'Tournoi',    tag: 'Bracket',     accent: '#c9952a',
     desc: "Brackets d'openings, d'OST et d'endings. Vote à chaque duel, élimine, couronne le champion ultime de la communauté." },
-  { to: '/jeux/echecs', emoji: '♟️', title: 'Échecs',    tag: 'Stratégie',   accent: '#b09467',
+  { to: '/jeux/echecs', emoji: '♟️', title: 'Échecs',    tag: 'Stratégie',   accent: cc.green,
     desc: "Le jeu de rois. Stockfish multi-niveaux, eval bar, analyse, classement ELO — un vrai site d'échecs, sobre et complet." },
   { to: '/akinator',   emoji: '🔮', title: 'Akinator',   tag: 'IA',          accent: '#c77dc4',
     desc: "Pense à un personnage (anime, jeu, célébrité…) et laisse l'IA le deviner en quelques questions." },
 ]
 
 const CSS = `
-  .gh-card{transition:transform .22s cubic-bezier(.2,.7,.3,1),border-color .22s,box-shadow .22s,background .22s}
-  .gh-card:hover{transform:translateY(-5px)}
+  /* Accent par jeu piloté via --gh-accent (inline) : hover + focus-visible suivent la couleur de la carte. */
+  .gh-card{transition:transform .22s cubic-bezier(.2,.7,.3,1),border-color .22s,box-shadow .22s,background .22s;outline:none}
+  .gh-card:hover{transform:translateY(-5px);border-color:var(--gh-bd-hover,rgba(255,255,255,.18));box-shadow:0 22px 54px -12px rgba(0,0,0,.55)}
+  .gh-card:focus-visible{outline:2px solid var(--gh-accent,#d4a017);outline-offset:3px;border-color:var(--gh-bd-hover,var(--gh-accent))}
   .gh-card:hover .gh-play{transform:translateX(3px)}
   .gh-play{transition:transform .2s ease}
   .gh-emoji{transition:transform .3s cubic-bezier(.2,.7,.3,1)}
@@ -50,6 +53,9 @@ function GameCard({ g, i }) {
   // span 2 réservé aux écrans où ≥3 colonnes tiennent (sinon la carte vedette
   // déborde en 1 colonne sur mobile). Géré par .gh-featured + media query, pas en inline.
   const cardStyle = {
+    // Variables consommées par .gh-card:hover / :focus-visible (CSS) pour suivre l'accent du jeu.
+    '--gh-accent': g.accent,
+    '--gh-bd-hover': `${g.accent}88`,
     position: 'relative', display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none',
     gridColumn: 'span 1',
     padding: g.featured ? '26px 26px 24px' : '22px 22px 20px', borderRadius: 18,
@@ -125,7 +131,7 @@ export default function GamesHubPage() {
 
       <div style={{ position: 'relative', zIndex: 1, maxWidth: 1180, margin: '0 auto', padding: '0 clamp(16px,3vw,28px) 90px' }}>
         {/* Hero */}
-        <header style={{ textAlign: 'center', margin: '0 0 28px' }}>
+        <header style={{ textAlign: 'center', margin: '0 0 34px' }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.24em', textTransform: 'uppercase', color: GOLD, marginBottom: 12 }}><span aria-hidden="true">🏴‍☠️</span> Brams Arcade</div>
           <h1 style={{ margin: 0, fontFamily: "'Pirata One', serif", fontSize: 'clamp(38px,6vw,68px)', fontWeight: 400, lineHeight: 1.02, color: '#f4ecd8', textShadow: '0 2px 40px rgba(212,160,23,0.2)' }}>
             Les Jeux de la Communauté
@@ -141,7 +147,7 @@ export default function GamesHubPage() {
         </header>
 
         {/* Grille de jeux */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
           {GAMES.map((g, i) => <GameCard key={g.to} g={g} i={i} />)}
         </div>
 
