@@ -620,6 +620,24 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
     })
   }, [peutAider, analyser, fen, trait, coach, historique, isIA, niveau])
 
+  // Chat coach : question libre du joueur (« quel coup ? », « pourquoi ? »…) sur la position affichée.
+  // FEN calculée inline (mêmes règles que fenAffichee, déclaré plus bas → on évite un TDZ).
+  const demanderQuestion = useCallback(async (question) => {
+    if (!question || !pret) return
+    const fenQ = enRevue
+      ? (posInitiale ? fenAuCoup(historique, -1) : fenAuCoup(historique, curseur))
+      : fen
+    const traitQ = fenQ.split(' ')[1] === 'b' ? 'b' : 'w'
+    const r = await analyser(fenQ, { movetime: 700 })
+    if (r && !enRevue) setIndice(construireIndice(r, traitQ))   // bonus : flèche du meilleur coup en live
+    await coach.demander({
+      fen: fenQ, trait: traitQ, resultat: r,
+      dernierSan: historique[historique.length - 1]?.san || null,
+      question,
+      niveauLabel: isIA ? niveau.label : null,
+    })
+  }, [pret, enRevue, posInitiale, curseur, fen, analyser, coach, historique, isIA, niveau])
+
   // La flèche + le conseil ne valent que pour la position courante : on les efface au coup suivant.
   // Exception coach proactif : quand le coup de l'IA ramène le trait au joueur, on CONSERVE
   // l'explication d'une gaffe (le joueur doit pouvoir la lire) ; elle ne sera vidée qu'à son prochain coup.
@@ -815,6 +833,7 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
           peutAider={peutAider} indiceTexte={indice?.texte}
           coachAuto={coachAuto}
           onToggleCoachAuto={isIA ? () => setCoachAuto(v => !v) : null}
+          onQuestion={demanderQuestion} peutQuestion={pret}
         />
       )}
       <div style={{ flex: 1, minHeight: 120, display: 'flex' }}>

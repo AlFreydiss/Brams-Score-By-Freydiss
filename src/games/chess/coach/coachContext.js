@@ -29,8 +29,9 @@ function materiel(fen) {
 }
 
 // Construit le message texte envoyé au mode `coach` de /api/chat.
-// args : { fen, trait:'w'|'b', resultat (retour analyser), dernierSan, niveauLabel }
-export function construireMessageCoach({ fen, trait, resultat, dernierSan, niveauLabel }) {
+// args : { fen, trait:'w'|'b', resultat (retour analyser), dernierSan, niveauLabel, question }
+// `question` = texte libre du joueur (chat). Si présent, le coach répond À CETTE question.
+export function construireMessageCoach({ fen, trait, resultat, dernierSan, niveauLabel, question }) {
   const blanc = normaliserVersBlanc(resultat || {}, trait)
   const evalTxt = formaterEval(blanc)
   const ligne = pvVersSan(fen, resultat?.pv, 6)
@@ -48,9 +49,11 @@ export function construireMessageCoach({ fen, trait, resultat, dernierSan, nivea
     dernierSan ? `Dernier coup joué : ${dernierSan}.` : null,
     `Matériel : ${matTxt}.`,
     niveauLabel ? `Niveau du joueur : ${niveauLabel}.` : null,
-    dernierSan
-      ? `Explique d'abord si ${dernierSan} était un bon coup, puis conseille la suite.`
-      : `Explique la position et conseille le meilleur plan.`,
+    question
+      ? `Question du joueur : « ${String(question).slice(0, 300)} ». Réponds précisément à CETTE question, en t'appuyant sur la position et la ligne moteur ci-dessus. Si on te demande quel coup jouer, recommande le meilleur coup et explique brièvement pourquoi.`
+      : (dernierSan
+        ? `Explique d'abord si ${dernierSan} était un bon coup, puis conseille la suite.`
+        : `Explique la position et conseille le meilleur plan.`),
   ].filter(Boolean)
 
   return lignes.join('\n')

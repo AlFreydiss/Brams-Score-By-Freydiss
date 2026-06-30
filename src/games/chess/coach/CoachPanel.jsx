@@ -2,6 +2,7 @@
 //   • Indice  → flèche du meilleur coup sur le plateau (Stockfish, instantané).
 //   • Conseil → explication en français du plan/menace (LLM via /api/chat).
 // 2D stricte, DA laiton, cohérent avec les rails de PlayTab.
+import { useState } from 'react'
 import { ui, fonts } from '../../../features/games/neutralTheme.js'
 
 function Btn({ onClick, disabled, accent, primaire, children, title }) {
@@ -51,7 +52,19 @@ export default function CoachPanel({
   accent = '#81b64c', texte, loading, erreur,
   onIndice, onConseil, peutAider, indiceTexte,
   coachAuto, onToggleCoachAuto,
+  onQuestion, peutQuestion,
 }) {
+  const [q, setQ] = useState('')
+  const [lastQ, setLastQ] = useState('')
+
+  const envoyer = () => {
+    const t = q.trim()
+    if (!t || !onQuestion || loading) return
+    setLastQ(t)
+    onQuestion(t)
+    setQ('')
+  }
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 9,
@@ -83,23 +96,50 @@ export default function CoachPanel({
         </Btn>
       </div>
 
-      {(texte || erreur || loading) && (
+      {(texte || erreur || loading || lastQ) && (
         <div style={{
-          maxHeight: 220, overflowY: 'auto',
+          maxHeight: 240, overflowY: 'auto',
           padding: '9px 11px', borderRadius: ui.radius.sm,
           background: ui.bg || 'rgba(0,0,0,0.25)', border: `1px solid ${ui.line}`,
           font: `400 13px/1.55 ${fonts.body}`, color: ui.textDim, whiteSpace: 'pre-wrap',
         }}>
+          {lastQ && (
+            <div style={{ marginBottom: 7, paddingBottom: 7, borderBottom: `1px solid ${ui.line}` }}>
+              <span style={{ font: `700 11px ${fonts.body}`, color: accent }}>Toi · </span>
+              <span style={{ color: ui.text }}>{lastQ}</span>
+            </div>
+          )}
           {erreur
             ? <span style={{ color: '#e0a3a3' }}>{erreur}</span>
-            : (texte || (loading ? 'Analyse de la position en cours…' : ''))}
+            : (texte || (loading ? 'Le coach réfléchit…' : ''))}
         </div>
       )}
 
-      {!texte && !erreur && !loading && (
+      {!texte && !erreur && !loading && !lastQ && (
         <p style={{ margin: 0, font: `400 11.5px ${fonts.body}`, color: ui.textMute, lineHeight: 1.45 }}>
-          Bloqué ? Demande la flèche du meilleur coup, ou un conseil expliqué en français.
+          Bloqué ? Demande la flèche du meilleur coup, un conseil, ou pose ta question au coach ci-dessous.
         </p>
+      )}
+
+      {/* Chat coach : question libre (« quel coup jouer ? », « pourquoi ? »…) */}
+      {onQuestion && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') envoyer() }}
+            placeholder="Demande au coach… (quel coup ? pourquoi ?)"
+            disabled={!peutQuestion || loading}
+            style={{
+              flex: 1, minWidth: 0, padding: '8px 10px', borderRadius: ui.radius.sm,
+              background: ui.bg || 'rgba(0,0,0,0.25)', border: `1px solid ${ui.line}`,
+              font: `400 12.5px ${fonts.body}`, color: ui.text, outline: 'none',
+            }}
+          />
+          <Btn onClick={envoyer} disabled={!peutQuestion || loading || !q.trim()} accent={accent} primaire title="Envoyer la question au coach">
+            ↑
+          </Btn>
+        </div>
       )}
     </div>
   )
