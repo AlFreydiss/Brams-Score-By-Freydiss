@@ -7,10 +7,11 @@ import PlayTab from './tabs/PlayTab.jsx'
 import RulesTab from './tabs/RulesTab.jsx'
 import RankingTab from './tabs/RankingTab.jsx'
 import SettingsTab from './tabs/SettingsTab.jsx'
+import TutorialTab from './tabs/TutorialTab.jsx'
 
 export const DRAUGHTS_ACCENT = '#6f8fb0'
 export const DRAUGHTS_BG = '#15171b'
-const ORDER = ['jouer', 'regles', 'classement', 'parametres']
+const ORDER = ['jouer', 'apprendre', 'regles', 'classement', 'parametres']
 
 export default function DraughtsUniverse() {
   const { tab } = useParams()
@@ -20,6 +21,7 @@ export default function DraughtsUniverse() {
   const props = { accent: DRAUGHTS_ACCENT, bg: DRAUGHTS_BG }
   const tabs = [
     { id: 'jouer', label: 'Jouer', element: <PlayTab {...props} /> },
+    { id: 'apprendre', label: 'Apprendre', element: <TutorialTab {...props} /> },
     { id: 'regles', label: 'Règles', element: <RulesTab {...props} /> },
     { id: 'classement', label: 'Classement', element: <RankingTab {...props} /> },
     { id: 'parametres', label: 'Paramètres', element: <SettingsTab {...props} /> },
