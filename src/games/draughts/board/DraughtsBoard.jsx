@@ -160,6 +160,7 @@ export default function DraughtsBoard({
   // directement des coups légaux (déjà = rafles MAXIMALES côté moteur) → moteur pur,
   // pas d'import UI. `previewHops` = cases d'atterrissage intermédiaires, `previewCaps`
   // = pions qui tomberont, `previewTargets` = cases finales possibles de la rafle.
+  const canPlay = interactive && !gameOver
   const previewHops = new Set(), previewCaps = new Set(), previewTargets = new Set()
   let previewActive = false
   if (highlightsOn && hover && !drag && canPlay) {
@@ -185,7 +186,6 @@ export default function DraughtsBoard({
   const hasCaptures = (legalMoves || []).some(mv => mv.isCapture)
   const cursorKey = cursor ? cursor[0] + '_' + cursor[1] : null
   const animDestKey = anim && lastDestKey
-  const canPlay = interactive && !gameOver
 
   // ── drag-and-drop (pointer events) ──
   const pickCellFromPoint = useCallback((clientX, clientY) => {

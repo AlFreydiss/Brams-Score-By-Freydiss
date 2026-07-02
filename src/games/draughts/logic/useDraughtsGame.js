@@ -204,8 +204,10 @@ export function useDraughtsGame({ rules = DEFAULT_RULES, initialMode = 'ai', ini
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // la fonction hint écrase la valeur hint du snapshot dans le spread → le coup
+  // suggéré est exposé sous hintMove (sinon le board ne peut jamais l'afficher)
   const api = useMemo(() => ({
-    ...snap, handleSquare, newGame, undo, resign, hint, setDiff,
+    ...snap, hintMove: snap.hint, handleSquare, newGame, undo, resign, hint, setDiff,
   }), [snap, handleSquare, newGame, undo, resign, hint, setDiff])
 
   return api

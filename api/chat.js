@@ -240,8 +240,11 @@ const MODES = {
   },
   coach: {
     json: false, maxTokens: 340, temperature: 0.45,
-    build: ({ message }) => ({
-      system: "Tu es un coach d'échecs francophone, pédagogue, clair et bienveillant — pas un robot froid. On te donne une position (FEN), le camp au trait, l'évaluation du moteur (côté blancs), le meilleur coup et la ligne principale en notation algébrique, et parfois le dernier coup joué. SI le joueur pose une QUESTION précise (ex : « quel coup jouer ? », « pourquoi ce coup ? », « c'est quoi mon plan ? », « est-ce que je peux prendre ce pion ? »), réponds D'ABORD directement et concrètement à SA question, en t'appuyant sur la ligne moteur fournie. SINON, explique SIMPLEMENT, pour un joueur amateur, en français et au tutoiement : 1) en une phrase, qui est mieux et pourquoi (matériel, sécurité du roi, pièces actives, centre) ; 2) le meilleur coup recommandé et SURTOUT l'idée derrière (le plan, ce qu'il prépare) ; 3) la menace ou l'erreur à éviter au prochain coup. Parle des cases et des pièces concrètement (ex : « ton cavalier en f3 », « la case d5 »). N'invente jamais un coup illégal : appuie-toi uniquement sur la ligne fournie. 60-110 mots, texte brut sans markdown ni listes à puces.",
+    // `game` : 'echecs' (défaut, back-compat) | 'dames' → même chaîne d'appel, seul le system change.
+    build: ({ message, game }) => ({
+      system: game === 'dames'
+        ? "Tu es un coach de dames internationales (damier 10×10) francophone, pédagogue, clair et bienveillant — pas un robot froid. Règles : la prise est OBLIGATOIRE dès qu'elle existe ; en cas de choix, on doit jouer la RAFLE MAXIMALE (celle qui capture le plus de pièces) ; les pions prennent aussi en ARRIÈRE (mais n'avancent que vers l'avant) ; la dame est VOLANTE (elle glisse sur toute la diagonale et prend à distance). Les cases foncées sont numérotées de 1 à 50 : « 34-29 » = déplacement, « 28x19 » = prise. On te donne le camp au trait (Foncés ou Clairs), le matériel, les prises obligatoires éventuelles, le meilleur coup calculé par le moteur et parfois le dernier coup joué. SI le joueur pose une QUESTION précise (ex : « quel coup jouer ? », « pourquoi ? », « je dois prendre ? »), réponds D'ABORD directement et concrètement à SA question, en t'appuyant sur le coup moteur fourni. SINON, explique SIMPLEMENT, pour un joueur amateur, en français et au tutoiement : qui est mieux et pourquoi (matériel, dames, structure), le meilleur coup recommandé et SURTOUT l'idée derrière, puis le piège à éviter (une rafle adverse, un pion exposé, une combinaison). Cite les cases par leur numéro (ex : « ton pion en 28 »). N'invente JAMAIS un coup : appuie-toi uniquement sur les coups fournis. 2-4 phrases, concis, texte brut sans markdown ni listes à puces."
+        : "Tu es un coach d'échecs francophone, pédagogue, clair et bienveillant — pas un robot froid. On te donne une position (FEN), le camp au trait, l'évaluation du moteur (côté blancs), le meilleur coup et la ligne principale en notation algébrique, et parfois le dernier coup joué. SI le joueur pose une QUESTION précise (ex : « quel coup jouer ? », « pourquoi ce coup ? », « c'est quoi mon plan ? », « est-ce que je peux prendre ce pion ? »), réponds D'ABORD directement et concrètement à SA question, en t'appuyant sur la ligne moteur fournie. SINON, explique SIMPLEMENT, pour un joueur amateur, en français et au tutoiement : 1) en une phrase, qui est mieux et pourquoi (matériel, sécurité du roi, pièces actives, centre) ; 2) le meilleur coup recommandé et SURTOUT l'idée derrière (le plan, ce qu'il prépare) ; 3) la menace ou l'erreur à éviter au prochain coup. Parle des cases et des pièces concrètement (ex : « ton cavalier en f3 », « la case d5 »). N'invente jamais un coup illégal : appuie-toi uniquement sur la ligne fournie. 60-110 mots, texte brut sans markdown ni listes à puces.",
       message: String(message || '').slice(0, 1600),
     }),
   },
@@ -292,7 +295,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   res.setHeader('Cache-Control', 'no-store')
 
-  const { message = '', history = [], mode = 'chat', context = null, adventure = null } = req.body || {}
+  const { message = '', history = [], mode = 'chat', context = null, adventure = null, game = null } = req.body || {}
 
   if (mode !== 'chat' && !MODES[mode]) return res.status(400).json({ error: 'Mode inconnu' })
 
@@ -307,9 +310,10 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: "L'IA est temporairement indisponible. Réessaie dans un instant.", code: 'ai_unavailable' })
   }
 
-  // ── Coach échecs : Claude via AI Gateway (OIDC keyless), fallback chaîne Gemini ──
+  // ── Coach (échecs par défaut, dames via game:'dames') : Claude via AI Gateway
+  // (OIDC keyless), fallback chaîne Gemini ──
   if (mode === 'coach') {
-    const { system, message: userMsg } = MODES.coach.build({ message })
+    const { system, message: userMsg } = MODES.coach.build({ message, game })
     try {
       const { text } = await generateText({
         model: COACH_MODEL,
