@@ -21,6 +21,7 @@ import { glass } from '../../_shell/arena/arenaTokens.js'
 import MiniBoard from '../ui/MiniBoard.jsx'
 import { PIECES } from '../ui/pieces.jsx'
 import PuzzleTrainer from '../puzzles/PuzzleTrainer.jsx'
+import OpeningTrainer from '../openings-trainer/OpeningTrainer.jsx'
 import { boardParId, BOARD_DEFAUT } from '../logic/boards.js'
 import { useChessSettings } from '../logic/useChessSettings.js'
 import { sons } from '../../../features/echecs/lib/sons.js'
@@ -606,6 +607,19 @@ export default function TutorialTab({ accent = BRASS } = {}) {
             </p>
           </header>
           <PuzzleTrainer />
+        </section>
+
+        {/* Ouvertures — répertoire interactif (le joueur joue la théorie de son camp). */}
+        <section style={{ display: 'grid', gap: 16 }}>
+          <header>
+            <div style={{ font: `700 11px ${fonts.body}`, letterSpacing: '0.16em', textTransform: 'uppercase', color: accent, marginBottom: 7 }}>Ouvertures</div>
+            <h2 style={{ margin: '0 0 6px', font: `800 22px ${fonts.display}`, letterSpacing: '-0.02em', color: ui.text }}>Ouvertures — le répertoire</h2>
+            <p style={{ margin: 0, font: `400 13.5px ${fonts.body}`, color: ui.textDim, lineHeight: 1.6, maxWidth: 700 }}>
+              Choisis une ouverture, joue les coups de ton camp — l'adversaire répond automatiquement la théorie.
+              Termine la ligne pour la valider et découvrir le plan qui suit.
+            </p>
+          </header>
+          <OpeningTrainer />
         </section>
       </div>
     </div>
