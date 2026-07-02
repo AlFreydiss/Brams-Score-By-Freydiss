@@ -25,6 +25,7 @@ import DraughtsBoard from '../board/DraughtsBoard.jsx'
 import MiniBoard from '../ui/MiniBoard.jsx'
 import { SectionTitle } from '../ui/controls.jsx'
 import { makeBoard } from '../logic/tutorialPositions.js'
+import RafleTrainer from '../puzzles/RafleTrainer.jsx'
 
 const STEEL = '#6f8fb0'
 const reduced = () => { try { return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches } catch { return false } }
@@ -388,6 +389,14 @@ export default function TutorialTab({ accent = STEEL }) {
 
         {/* ── RÈGLES ILLUSTRÉES (référence rapide, mini-diagrammes) ── */}
         <IllustratedRules accent={acc} />
+
+        {/* ── TACTIQUES — entraîneur « rafle maximale » (puzzles validés moteur) ── */}
+        <section style={{ marginTop: 'clamp(26px,4vw,44px)' }}>
+          <SectionTitle accent={acc} hint="Des positions réelles où une seule rafle capture le maximum de pièces : repère-la et joue-la d’un seul coup. Ta progression est sauvegardée.">
+            Tactiques — La rafle maximale
+          </SectionTitle>
+          <RafleTrainer accent={acc} />
+        </section>
       </div>
     </div>
   )

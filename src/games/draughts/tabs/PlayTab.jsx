@@ -32,6 +32,7 @@ import ReplayScrubber from '../../_shell/arena/ReplayScrubber.jsx'
 import { useScreenShake, eventGlow } from '../../_shell/arena/fx.js'
 import { genererNotation, copierPresse, telecharger } from '../logic/exportNotation.js'
 import DraughtsCoachPanel from '../coach/DraughtsCoachPanel.jsx'
+import DraughtsAnalysisPanel from '../analysis/DraughtsAnalysisPanel.jsx'
 
 const SIDE_LBL = { [P]: 'Foncé', [M]: 'Clair' }
 const SIDE_PC = { [P]: damesPieces.fonce, [M]: damesPieces.clair }
@@ -626,6 +627,16 @@ export default function PlayTab({ accent = dcc.accent }) {
         onMouseLeave={e => { e.currentTarget.style.color = dcc.textMute; e.currentTarget.style.borderColor = dcc.line }}>
         ← Menu
       </button>
+
+      {/* Bilan de partie : analyse moteur post-partie (verdicts, tournant, graphe).
+          Monté seulement en fin de partie avec assez de coups ; démonté à la
+          relance (gameOver repasse à false) → l'analyse en vol est annulée. */}
+      {game.gameOver && totalPlies > 3 && (
+        <DraughtsAnalysisPanel
+          mvLog={mvLog} rules={rules} revueIdx={revueIdx}
+          onAller={seekRevue} accent={accent}
+        />
+      )}
 
       <DraughtsCoachPanel
         board={game.board} trait={game.turn} rules={rules} dernierCoup={game.last}
