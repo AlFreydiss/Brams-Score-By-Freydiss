@@ -11,7 +11,9 @@ import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { usePartie } from '../../../features/echecs/hooks/usePartie.js'
 import { useStockfish } from '../../../features/echecs/hooks/useStockfish.js'
 import Plateau from '../../../features/echecs/components/Plateau.jsx'
-import { NIVEAUX_IA, niveauParId } from '../../../features/echecs/lib/niveauxIA.js'
+import { niveauParId } from '../../../features/echecs/lib/niveauxIA.js'
+import { BOTS, botParId, botPourNiveau, reglagesDuBot, lireBotChoisi, memoriserBotChoisi } from '../bots/bots.js'
+import BotPicker from '../bots/BotPicker.jsx'
 import { CADENCES, parseCadence } from '../../../features/echecs/constants.js'
 import { construireEval, construireIndice } from '../../../features/echecs/lib/analyse.js'
 import { previsionElo } from '../../../features/echecs/lib/elo.js'
@@ -152,12 +154,13 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
   const [mode, setMode] = useState(() => ISLAND_MODE[loc.state?.playMode] || 'ia')  // 'ia' | 'local' | 'online'
   const [cadenceId, setCadenceId] = useState('5+0')
   const [illimite, setIllimite] = useState(false)
-  const [niveauId, setNiveauId] = useState(niveauDefaut)
+  // Adversaire IA incarné : bot mémorisé (localStorage) sinon l'équivalent du
+  // niveau par défaut des réglages (fallback → aucun changement de force perçue).
+  const [botId, setBotId] = useState(() => lireBotChoisi()?.id || botPourNiveau(niveauDefaut).id)
   const [couleur, setCouleur] = useState('w')      // 'w' | 'b' | 'alea'
   const mobile = useMobile()
 
-  // 4–6 niveaux exposés (spec). On retient Mousse → Yonkou (6 paliers).
-  const niveaux = NIVEAUX_IA
+  const choisirBot = (id) => { setBotId(id); memoriserBotChoisi(id) }
 
   // lumière d'ambiance de l'aperçu : suit la couleur choisie (chaud=blancs, froid=noirs).
   const previewTurn = mode === 'ia' ? (couleur === 'b' ? 'cool' : 'warm') : 'warm'
@@ -168,10 +171,14 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
   const lancer = () => {
     sons.debloquer()
     const c = couleur === 'alea' ? (Math.random() < 0.5 ? 'w' : 'b') : couleur
+    // Le bot ne change RIEN au moteur : reglagesDuBot renvoie l'entrée NIVEAUX_IA
+    // la plus proche — exactement ce que niveauParId passait déjà à useStockfish.
+    const bot = mode === 'ia' ? (botParId(botId) || botPourNiveau(niveauDefaut)) : null
     onLancer({
       mode,
       cadence: illimite ? null : cadenceId,
-      niveau: niveauParId(niveauId),
+      niveau: bot ? reglagesDuBot(bot) : niveauParId(niveauDefaut),
+      bot,
       maCouleur: mode === 'local' ? 'w' : c,
     })
   }
@@ -212,14 +219,9 @@ function ConfigJeu({ onLancer, niveauDefaut, boardId = BOARD_DEFAUT }) {
 
           {mode === 'ia' && (
             <>
-              <SectionLabel>Niveau de l'IA</SectionLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px,1fr))', gap: 8, marginBottom: 22 }}>
-                {niveaux.map(n => (
-                  <Chip key={n.id} actif={niveauId === n.id} onClick={() => setNiveauId(n.id)}
-                    sub={n.limitStrength ? `~${n.elo} ELO` : 'Pleine force'}>
-                    {n.label}
-                  </Chip>
-                ))}
+              <SectionLabel>Adversaire</SectionLabel>
+              <div style={{ marginBottom: 22 }}>
+                <BotPicker bots={BOTS} selectedId={botId} onSelect={choisirBot} />
               </div>
 
               <SectionLabel>Je joue</SectionLabel>
@@ -379,8 +381,30 @@ function CoupBadge({ badge }) {
 // ════════════════════════════════════════════════════════════════════════════
 // Partie en cours
 // ════════════════════════════════════════════════════════════════════════════
+// ── Étiquette bot (barre joueur haut) : avatar emoji rond + nom + chip ELO ──
+function BotBarLabel({ bot }) {
+  const accent = bot.couleurAccent || cc.green
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, minWidth: 0, maxWidth: '100%' }}>
+      <span aria-hidden style={{
+        flex: '0 0 auto', width: 22, height: 22, borderRadius: '50%',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12.5, lineHeight: 1,
+        background: `linear-gradient(140deg, ${accent}52, ${accent}1A)`,
+        border: `1px solid ${accent}66`,
+      }}>{bot.emoji}</span>
+      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bot.nom}</span>
+      <span style={{
+        flex: '0 0 auto', font: `700 10px ${fonts.mono}`, fontVariantNumeric: 'tabular-nums',
+        color: ui.textMute, padding: '1px 6px', borderRadius: 999,
+        background: ui.surface, border: `1px solid ${ui.line}`,
+      }}>{bot.elo}</span>
+    </span>
+  )
+}
+
 function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
-  const { mode, cadence: cadenceId, niveau, maCouleur } = config
+  const { mode, cadence: cadenceId, niveau, maCouleur, bot } = config
   const { reglages } = reglagesCtx
   const partie = usePartie()
   const { fen, trait, fin, historique, captures, enEchec } = partie
@@ -710,8 +734,9 @@ function PartieEnCours({ config, reglagesCtx, onRejouer, onQuitter }) {
   const boardId = 'chesscom'        // interface chess.com : board vert/crème forcé
   const tema = CHESSCOM_BOARD
 
-  // labels des deux camps (haut = adversaire, bas = moi en IA)
-  const labelHaut = isIA ? `IA · ${niveau.label}` : 'Noirs'
+  // labels des deux camps (haut = adversaire, bas = moi en IA).
+  // Bot choisi → avatar + nom + ELO ; sinon comportement historique (IA · niveau).
+  const labelHaut = isIA ? (bot ? <BotBarLabel bot={bot} /> : `IA · ${niveau.label}`) : 'Noirs'
   const labelBas = isIA ? 'Vous' : 'Blancs'
   const campHaut = orientation === 'white' ? 'b' : 'w'
   const campBas = orientation === 'white' ? 'w' : 'b'
