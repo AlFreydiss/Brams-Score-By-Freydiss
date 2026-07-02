@@ -8,6 +8,7 @@ import { ui, fonts } from '../../../features/games/neutralTheme.js'
 import { cc } from '../ui/chesscom.js'
 import { useCoach } from '../coach/useCoach.js'
 import { compteursGlobaux, coupCritique, construireMessageBilan } from './reviewSummary.js'
+import EvalGraph from './EvalGraph.jsx'
 
 const BRASS = '#81b64c'   // accent chess.com (vert)
 
@@ -272,6 +273,17 @@ export default function AnalysisPanel({ resultat, curseur = -1, onAller, onFerme
             </div>
           )}
         </div>
+
+        {/* ── Graphe d'évaluation (win% blanc par coup, cliquable) ── */}
+        {coups.length > 0 && (
+          <EvalGraph
+            coups={coups}
+            selPly={curseur >= 0 ? curseur : selPly}
+            onSelect={(ply) => { onAller?.(ply); setSelPly(ply); coach.reset() }}
+            reduit={reduit}
+            style={{ marginBottom: 14, flexShrink: 0 }}
+          />
+        )}
 
         <div style={{ font: `700 10px ${fonts.body}`, letterSpacing: '0.09em', textTransform: 'uppercase', color: ui.textMute, marginBottom: 7 }}>
           Coups · cliquez pour revoir
