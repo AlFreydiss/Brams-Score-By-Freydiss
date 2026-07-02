@@ -15,53 +15,77 @@ const GOLD = '#d4a017'
 const GOLD_HI = '#f0d27a'
 const BG = '#08090d'
 
+// `caps` = badges capacités (chips sobres) ; `preview` = mini-aperçu de plateau SVG (échecs/dames).
 const GAMES = [
   { to: '/fredisu.html', external: true, emoji: '🎯', title: "Fred'isu", tag: 'Rythme', accent: '#d4a017',
-    desc: "Rhythm game façon osu! : importe un MP3/MP4, la map se génère par analyse du son calée sur le BPM. Cercles, sliders, spinners, mods HD/HR/DT/FL, leaderboard mondial.", featured: true },
+    desc: "Rhythm game façon osu! : importe un MP3/MP4, la map se génère par analyse du son calée sur le BPM. Cercles, sliders, spinners, mods HD/HR/DT/FL, leaderboard mondial.", featured: true,
+    caps: ['En ligne classé'] },
   { to: '/brams-phone', emoji: '🎨', title: 'Freydiss Phone', tag: 'Multijoueur', accent: '#2f9e8c',
-    desc: "Téléphone arabe version pirate. Une phrase → un dessin → une devinette… la chaîne dérive entre potes, en direct. Canvas complet, reveal cinématique et réactions emojis en live." },
+    desc: "Téléphone arabe version pirate. Une phrase → un dessin → une devinette… la chaîne dérive entre potes, en direct. Canvas complet, reveal cinématique et réactions emojis en live.",
+    caps: ['2 joueurs'] },
   { to: '/jeux/dames', emoji: '🔴', title: 'Dames',      tag: 'Classé · ELO', accent: '#6f8fb0',
-    desc: "Dames internationales 10×10 (rafle maximale, dames volantes). Local, vs IA (4 niveaux) ou en ligne classé avec ELO — un vrai site de dames." },
+    desc: "Dames internationales 10×10 (rafle maximale, dames volantes). Local, vs IA (4 niveaux) ou en ligne classé avec ELO — un vrai site de dames.",
+    caps: ['IA', '2 joueurs', 'En ligne classé'], preview: 'dames' },
   { to: '/undercover', emoji: '🕵️', title: 'Undercover', tag: 'Multijoueur', accent: '#5fb88a',
-    desc: "Le jeu d'imposteur de la communauté. Reçois ton mot secret, bluffe, démasque l'intrus avant qu'il ne gagne." },
+    desc: "Le jeu d'imposteur de la communauté. Reçois ton mot secret, bluffe, démasque l'intrus avant qu'il ne gagne.",
+    caps: ['2 joueurs'] },
   { to: '/blind-test', emoji: '🎧', title: 'Blind Test', tag: 'Musique',     accent: '#74a7c4',
-    desc: "Reconnais l'opening le plus vite possible. Combo, score, classement — montre que tu connais tes animés par cœur." },
+    desc: "Reconnais l'opening le plus vite possible. Combo, score, classement — montre que tu connais tes animés par cœur.",
+    caps: ['En ligne classé'] },
   { to: '/tournoi',    emoji: '⚔️', title: 'Tournoi',    tag: 'Bracket',     accent: '#c9952a',
-    desc: "Brackets d'openings, d'OST et d'endings. Vote à chaque duel, élimine, couronne le champion ultime de la communauté." },
+    desc: "Brackets d'openings, d'OST et d'endings. Vote à chaque duel, élimine, couronne le champion ultime de la communauté.",
+    caps: ['2 joueurs'] },
   { to: '/jeux/echecs', emoji: '♟️', title: 'Échecs',    tag: 'Stratégie',   accent: cc.green,
-    desc: "Le jeu de rois. Stockfish multi-niveaux, eval bar, analyse, classement ELO — un vrai site d'échecs, sobre et complet." },
+    desc: "Le jeu de rois. Stockfish multi-niveaux, eval bar, analyse, classement ELO — un vrai site d'échecs, sobre et complet.",
+    caps: ['IA', '2 joueurs', 'En ligne classé'], preview: 'chess' },
   { to: '/akinator',   emoji: '🔮', title: 'Akinator',   tag: 'IA',          accent: '#c77dc4',
-    desc: "Pense à un personnage (anime, jeu, célébrité…) et laisse l'IA le deviner en quelques questions." },
+    desc: "Pense à un personnage (anime, jeu, célébrité…) et laisse l'IA le deviner en quelques questions.",
+    caps: ['IA'] },
 ]
 
 const CSS = `
-  /* Accent par jeu piloté via --gh-accent (inline) : hover + focus-visible suivent la couleur de la carte. */
-  .gh-card{transition:transform .22s cubic-bezier(.2,.7,.3,1),border-color .22s,box-shadow .22s,background .22s;outline:none}
-  .gh-card:hover{transform:translateY(-5px);border-color:var(--gh-bd-hover,rgba(255,255,255,.18));box-shadow:0 22px 54px -12px rgba(0,0,0,.55)}
-  .gh-card:focus-visible{outline:2px solid var(--gh-accent,#d4a017);outline-offset:3px;border-color:var(--gh-bd-hover,var(--gh-accent))}
-  .gh-card:hover .gh-play{transform:translateX(3px)}
-  .gh-play{transition:transform .2s ease}
+  /* Accent par jeu piloté via --gh-accent/--gh-bd/--gh-glow/--gh-ring (inline) :
+     hover + focus-visible suivent la couleur de la carte. Border/shadow de repos
+     vivent ICI (pas en inline) sinon les règles :hover perdraient contre le style inline. */
+  .gh-card{border:1px solid var(--gh-bd,rgba(255,255,255,.1));box-shadow:0 14px 40px rgba(0,0,0,.4);transition:transform .18s cubic-bezier(.2,.7,.3,1),border-color .18s,box-shadow .18s,background .18s;outline:none}
+  .gh-card:hover,.gh-card:focus-visible{transform:translateY(-4px);border-color:var(--gh-bd-hover,rgba(255,255,255,.18));box-shadow:0 18px 46px -14px rgba(0,0,0,.55),0 10px 32px -16px var(--gh-glow,rgba(255,255,255,.1)),inset 0 0 0 1px var(--gh-ring,transparent)}
+  .gh-card:focus-visible{outline:2px solid var(--gh-accent,#d4a017);outline-offset:3px}
+  .gh-card:hover .gh-play,.gh-card:focus-visible .gh-play{transform:translateX(3px)}
+  .gh-play{transition:transform .18s ease}
   .gh-emoji{transition:transform .3s cubic-bezier(.2,.7,.3,1)}
-  .gh-card:hover .gh-emoji{transform:scale(1.12) rotate(-6deg)}
+  .gh-card:hover .gh-emoji,.gh-card:focus-visible .gh-emoji{transform:scale(1.12) rotate(-6deg)}
+  /* Mini-aperçu de plateau : la pièce .ghp-anim joue un coup au hover/focus,
+     déplacement propre à chaque jeu via --ghp-move (unités = user units du viewBox SVG). */
+  .ghp-anim{transition:transform .45s cubic-bezier(.3,.8,.3,1)}
+  .gh-card:hover .ghp-anim,.gh-card:focus-visible .ghp-anim{transform:var(--ghp-move,none)}
   @keyframes gh-fade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   /* La carte vedette n'occupe 2 colonnes que quand ≥3 colonnes tiennent (sinon elle déborde en 1 colonne mobile). */
   @media (min-width:900px){.gh-featured{grid-column:span 2}}
-  @media (prefers-reduced-motion:reduce){.gh-card,.gh-card:hover,.gh-emoji,.gh-play{transition:none;transform:none;animation:none}}
+  @media (prefers-reduced-motion:reduce){
+    .gh-card{animation:none!important}
+    .gh-card,.gh-play,.gh-emoji,.ghp-anim{transition:none}
+    .gh-card:hover,.gh-card:focus-visible,
+    .gh-card:hover .gh-play,.gh-card:focus-visible .gh-play,
+    .gh-card:hover .gh-emoji,.gh-card:focus-visible .gh-emoji,
+    .gh-card:hover .ghp-anim,.gh-card:focus-visible .ghp-anim{transform:none}
+  }
 `
 
 function GameCard({ g, i }) {
   // span 2 réservé aux écrans où ≥3 colonnes tiennent (sinon la carte vedette
   // déborde en 1 colonne sur mobile). Géré par .gh-featured + media query, pas en inline.
   const cardStyle = {
-    // Variables consommées par .gh-card:hover / :focus-visible (CSS) pour suivre l'accent du jeu.
+    // Variables consommées par .gh-card / :hover / :focus-visible (CSS) pour suivre l'accent du jeu.
+    // border/boxShadow volontairement PAS en inline (voir commentaire du bloc CSS).
     '--gh-accent': g.accent,
+    '--gh-bd': `${g.accent}33`,
     '--gh-bd-hover': `${g.accent}88`,
+    '--gh-glow': `${g.accent}40`,
+    '--gh-ring': `${g.accent}55`,
     position: 'relative', display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none',
     gridColumn: 'span 1',
     padding: g.featured ? '26px 26px 24px' : '22px 22px 20px', borderRadius: 18,
     background: `linear-gradient(165deg, ${g.accent}14, rgba(255,255,255,0.012) 55%)`,
-    border: `1px solid ${g.accent}33`,
-    boxShadow: '0 14px 40px rgba(0,0,0,.4)',
     animation: `gh-fade .5s ease ${0.05 * i}s both`,
     minHeight: g.featured ? 200 : 168,
   }
@@ -72,6 +96,9 @@ function GameCard({ g, i }) {
       <span aria-hidden="true" className="gh-emoji" style={{ fontSize: g.featured ? 52 : 40, lineHeight: 1, filter: `drop-shadow(0 6px 18px ${g.accent}55)` }}>{g.emoji}</span>
       <div style={{ fontSize: g.featured ? 26 : 21, fontWeight: 900, color: '#fff', letterSpacing: '-.01em' }}>{g.title}</div>
       <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: 'rgba(236,232,223,0.62)', flex: 1, maxWidth: g.featured ? 520 : 'none' }}>{g.desc}</p>
+      {g.preview === 'chess' && <ChessPreview />}
+      {g.preview === 'dames' && <DamesPreview />}
+      <Caps caps={g.caps} />
       <span className="gh-play" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 800, color: g.accent }}>
         Jouer <span aria-hidden="true" style={{ fontSize: 16 }}>→</span>
       </span>
@@ -165,5 +192,87 @@ function Stat({ n, label }) {
       <div style={{ fontSize: 26, fontWeight: 900, color: GOLD_HI, lineHeight: 1 }}>{n}</div>
       <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(236,232,223,0.4)', marginTop: 4 }}>{label}</div>
     </div>
+  )
+}
+
+// ── Badges capacités (chips sobres, mêmes libellés partout : IA / 2 joueurs / En ligne classé) ──
+function Caps({ caps }) {
+  if (!caps || !caps.length) return null
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {caps.map(c => (
+        <span key={c} style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: 'rgba(236,232,223,0.62)', background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.12)', padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>{c}</span>
+      ))}
+    </div>
+  )
+}
+
+// ── Mini-aperçus de plateau (SVG pur inline : aucun asset externe, aucun composant de jeu) ────
+// Bande 7×3 de cases de 24 unités ; la pièce marquée .ghp-anim joue un coup au hover/focus
+// de la carte (--ghp-move consommé par le CSS, coupé par prefers-reduced-motion).
+const BOARD_STYLE = { width: '100%', height: 'auto', display: 'block', borderRadius: 10, border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 10px 24px rgba(0,0,0,.35)' }
+
+function Cells({ light, dark }) {
+  const out = []
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 7; c++)
+    out.push(<rect key={`${c}-${r}`} x={c * 24} y={r * 24} width={24} height={24} fill={(c + r) % 2 ? dark : light} />)
+  return out
+}
+
+// Échiquier vert/crème (palette chess.com) — pièces en silhouettes SVG (pas de glyphes Unicode,
+// rendu emoji imprévisible selon l'OS). Le pion blanc avance d'une case au hover.
+function ChessPreview() {
+  const w = { fill: '#f9f9f9', stroke: '#43403a', strokeWidth: 1, strokeLinejoin: 'round' }
+  const b = { fill: '#3f3d3b', stroke: '#211f1d', strokeWidth: 1, strokeLinejoin: 'round' }
+  return (
+    <svg viewBox="0 0 168 72" aria-hidden="true" focusable="false" style={BOARD_STYLE}>
+      <Cells light="#EBECD0" dark="#739552" />
+      {/* Tour noire (a-file) */}
+      <path {...b} d="M8 19v-5.6h1.1V11h2v1.6h1.8V11h2v2.4H16V19z" />
+      {/* Dame noire */}
+      <g transform="translate(96,0)">
+        <path {...b} d="M6.9 18.6 8.1 11.7l2.9 3.3L12 9.7l1 5.3 2.9-3.3 1.2 6.9z" />
+        <circle {...b} cx="8" cy="10.4" r="1.1" /><circle {...b} cx="12" cy="8.4" r="1.1" /><circle {...b} cx="16" cy="10.4" r="1.1" />
+      </g>
+      {/* Pion blanc — g externe = position (attr), g interne = coup joué (CSS, sinon le
+          transform CSS écraserait l'attribut transform de position) */}
+      <g transform="translate(72,48)">
+        <g className="ghp-anim" style={{ '--ghp-move': 'translateY(-24px)' }}>
+          <circle {...w} cx="12" cy="8.8" r="3.2" />
+          <path {...w} d="M8.7 19.2c.2-3.6 1.5-5.7 3.3-6.9 1.8 1.2 3.1 3.3 3.3 6.9z" />
+          <rect {...w} x="7.7" y="18.5" width="8.6" height="1.9" rx=".95" />
+        </g>
+      </g>
+    </svg>
+  )
+}
+
+function Pion({ x, y, dark, anim }) {
+  const s = dark
+    ? { fill: '#3a2f28', stroke: '#201914' }
+    : { fill: '#f2e7cf', stroke: '#b09a6d' }
+  const ring = dark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.18)'
+  const disc = (
+    <>
+      <circle cx="12" cy="12" r="8" strokeWidth="1.2" {...s} />
+      <circle cx="12" cy="12" r="4.6" fill="none" stroke={ring} strokeWidth="1.1" />
+    </>
+  )
+  return (
+    <g transform={`translate(${x * 24},${y * 24})`}>
+      {anim ? <g className="ghp-anim" style={{ '--ghp-move': 'translate(24px,-24px)' }}>{disc}</g> : disc}
+    </g>
+  )
+}
+
+// Damier bois avec pions — le pion clair glisse en diagonale au hover.
+function DamesPreview() {
+  return (
+    <svg viewBox="0 0 168 72" aria-hidden="true" focusable="false" style={BOARD_STYLE}>
+      <Cells light="#e3c193" dark="#9c6b43" />
+      <Pion x={1} y={0} dark /><Pion x={3} y={0} dark /><Pion x={5} y={0} dark />
+      <Pion x={1} y={2} /><Pion x={5} y={2} />
+      <Pion x={3} y={2} anim />
+    </svg>
   )
 }
