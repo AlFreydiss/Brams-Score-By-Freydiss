@@ -355,19 +355,6 @@ _VIOLET_BEST_REPLIES = [
     ),
 ]
 
-# ── VINN ───────────────────────────────────────────────────────────
-_VINN_ID         = 1233882334856614020
-_VINN_PING_CD:   dict[str, float] = {}
-_VINN_PING_DELAY = 45
-
-_VINN_PING_HYPE = [
-    "🔔 VINN a été mentionnée.",
-    "👀 VINN dans le chat.",
-    "✨ Mention de VINN détectée.",
-    "📣 VINN est appelée.",
-    "💬 On parle de VINN ici.",
-]
-
 # Toutes les variantes correctes du nom (insensible à la casse)
 _RE_FREYDISS_NAME = re.compile(
     r'\b(?:al\s*freydis+\d*|alfreydis+\d*|freydis+\d*|frey)\b',
@@ -1671,7 +1658,6 @@ async def flush_dirty_loop():
         (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
         (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
         (_FREYDISS_PING_CD, _FREYDISS_PING_DELAY),
-        (_VINN_PING_CD,     _VINN_PING_DELAY),
     ):
         expired_fr = [k for k, v in cd_dict.items() if _now_f - v > cd_delay * 3]
         for k in expired_fr:
@@ -3281,19 +3267,6 @@ async def on_message(message):
             pass
 
     elif message.author.id != _FREYDISS_ID:
-        # @mention de VINN → mettre Freydiss sur un piédestal
-        _vinn_pinged = (
-            any(m.id == _VINN_ID for m in message.mentions)
-            or f"<@{_VINN_ID}>" in message.content
-            or f"<@!{_VINN_ID}>" in message.content
-        )
-        if _vinn_pinged and now_f - _VINN_PING_CD.get(_cid, 0) >= _VINN_PING_DELAY:
-            _VINN_PING_CD[_cid] = now_f
-            try:
-                await message.channel.send(random.choice(_VINN_PING_HYPE))
-            except Exception:
-                pass
-
         # @mention directe de Freydiss → soumise mode
         if (
             _freydiss_pinged
