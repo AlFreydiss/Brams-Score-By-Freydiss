@@ -3255,9 +3255,10 @@ async def on_message(message):
         or f"<@{_FREYDISS_ID}>" in message.content
         or f"<@!{_FREYDISS_ID}>" in message.content
     )
-    # Freydiss parle lui-même → hommage
+    # Freydiss parle lui-même → hommage (jamais quand il pose une question)
     if (
         message.author.id == _FREYDISS_ID
+        and not message.content.strip().endswith("?")
         and now_f - _FREYDISS_SELF_CD.get(_cid, 0) >= _FREYDISS_SELF_DELAY
     ):
         _FREYDISS_SELF_CD[_cid] = now_f
@@ -3378,7 +3379,8 @@ async def on_message(message):
     # ── Réaction aux questions farfelues ────────────────────────────
     msg_stripped = message.content.strip()
     if (
-        msg_stripped.endswith("?")
+        message.author.id != _FREYDISS_ID
+        and msg_stripped.endswith("?")
         and len(msg_stripped) > 10
         and not msg_stripped.startswith("/")
         and not msg_stripped.startswith("!")
