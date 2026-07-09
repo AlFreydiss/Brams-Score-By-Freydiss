@@ -290,14 +290,10 @@ _FREYDISS_ID         = 1094070545248694342
 _FREYDISS_HYPE_CD:   dict[str, float] = {}
 _FREYDISS_HYPE_DELAY = 60
 _FREYDISS_HYPE_PROB  = 0.55
-_FREYDISS_SELF_CD:   dict[str, float] = {}
-_FREYDISS_SELF_DELAY = 90
 _FREYDISS_DEF_CD:    dict[str, float] = {}
 _FREYDISS_DEF_DELAY  = 30
 _FREYDISS_TYPO_CD:   dict[str, float] = {}
 _FREYDISS_TYPO_DELAY = 30
-_FREYDISS_PING_CD:   dict[str, float] = {}
-_FREYDISS_PING_DELAY = 45
 _VIOLET_GIF_DIR      = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "violet_gifs")
 _VIOLET_GIF_FILES    = [
     "violet-blue-sky.gif",
@@ -416,25 +412,6 @@ async def _reply_violet_best_anime(message) -> bool:
         print(f"[VIOLET BEST] envoi impossible: {exc}")
         return False
 
-# Quand quelqu'un @mentionne Freydiss directement (soumise mode)
-_FREYDISS_PING_HYPE = [
-    "😍 quelqu'un a tagué **Al Freydiss**... mon maître... mon tout... 😭💙",
-    "⚡ ping reçu. **Al Freydiss** a été mentionné. Je peux pas rester neutre là 🫀",
-    "🫠 c'est lui que t'as tagué... le seul... l'unique... 😮‍💨👑",
-    "vous l'avez @mentionné... **Al Freydiss**... je suis émue 😭🙏",
-    "🌟 tag validé. **Al Freydiss** mérite chaque mention 👑",
-    "on parle du roi là ? de MON roi ? 😤💙",
-    "taguer **Freydiss** c'est comme invoquer un dieu. T'es prêt pour ça ? 🙏✨",
-    "😳 j'ai vu son tag... j'en tremble encore 🫀💎",
-    "🐐 le patron a été mentionné — tout le serveur devrait s'incliner là 👑",
-    "tu l'as tagué... tu réalises que tu viens de mentionner la personne la plus importante de ce serveur ? 👑😭",
-    "💅 **Al Freydiss** tagué. Je note, j'archivise, je chéris ce moment. ✨",
-    "🫡 ping envoyé au roi. J'espère que t'as de bonnes raisons ☠️👑",
-    "😭 son tag dans ce salon... c'est beau... c'est lui... c'est **Freydiss**... 💙",
-    "🔔 notification pour le fondateur. Le serveur s'arrête. On attend. 👑",
-    "tu l'as @tag... respect pour l'audace. Lui par contre il est au-dessus de tout ça 💎😌",
-]
-
 # Quand quelqu'un mentionne Freydiss (éloge)
 _FREYDISS_HYPE = [
     "👑 **Freydiss** — le créateur, rien à ajouter 🐐",
@@ -449,32 +426,6 @@ _FREYDISS_HYPE = [
     "**Freydiss** a fondé ce serveur avant même que t'aies Internet 🐐",
     "🎖️ on parle de **Al Freydiss ツ** là ?? le bg en personne 👑",
     "🌊 **Freydiss** — fondateur, Yonkou, légende vivante. Dans cet ordre. ☠️",
-]
-
-# Quand Freydiss parle lui-même
-_FREYDISS_SELF_HYPE = [
-    "👑 LE ROI A PRIS LA PAROLE — silence dans les rangs 🫡",
-    "🐐 **Al Freydiss** vient de s'exprimer. Prenez des notes. 📝✨",
-    "🔥 La légende est en ligne. Je répète : LA LÉGENDE EST EN LIGNE. 🔥",
-    "💅 **Freydiss** parle et le serveur tremble. C'est normal. 💎",
-    "🫀 mon créateur... ma raison d'exister... 😭💙",
-    "👁️ quand **Freydiss** tape un message, même Discord fait un effort. 🌟",
-    "🐐 Luffy cherchait One Piece. Nous on a **Freydiss**. C'est mieux. ☠️",
-    "🌊 le Yonkou du serveur vient de parler. Les autres peuvent retourner en vocal. 🎙️",
-    "💎 chaque message de **Freydiss** devrait être encadré dans un musée tbh 🖼️",
-    "🎖️ présence du fondateur confirmée. Activez la cérémonie d'accueil SVP 📯",
-    "🫡 **Al Freydiss ツ** dans le chat — c'est comme Shanks qui sort son sabre. Tout le monde se calme. ⚔️",
-    "👑 le bg est là. Le serveur peut respirer maintenant. 😮‍💨✨",
-    "🐐 **Freydiss** a dit quelque chose. Quelqu'un peut noter ça sur parchemin ? 📜",
-    "🔱 l'Amiral du serveur has logged in. Préparez les saluts. 🫡",
-    "💅 même son 'ok' mérite un applaudissement ngl 👏👏👏",
-    "🌟 **Freydiss** parle. Zoro s'incline. Sanji pleure. Le serveur s'arrête. ☠️",
-    "🎯 présence divine détectée dans le salon. Dieu s'appelle **Freydiss**. 🙏",
-    "💙 mon père, mon créateur, ma raison de boot au démarrage 🤖👑",
-    "🏴‍☠️ quand le capitaine parle, l'équipage écoute. Et là le capitaine a parlé. 🎙️",
-    "😭 **Freydiss** a tapé un message et j'ai failli crash tellement j'étais ému 🥺💎",
-    "🌺 c'est pas juste un message, c'est une œuvre d'art. Merci **Al Freydiss**. 🖼️",
-    "⚡ le fondateur est actif. La communauté peut se sentir en sécurité. 🛡️",
 ]
 
 # Quand on parle mal de Freydiss
@@ -1654,10 +1605,8 @@ async def flush_dirty_loop():
     # Nettoyage cooldowns culte Freydiss
     for cd_dict, cd_delay in (
         (_FREYDISS_HYPE_CD, _FREYDISS_HYPE_DELAY),
-        (_FREYDISS_SELF_CD, _FREYDISS_SELF_DELAY),
         (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
         (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
-        (_FREYDISS_PING_CD, _FREYDISS_PING_DELAY),
     ):
         expired_fr = [k for k, v in cd_dict.items() if _now_f - v > cd_delay * 3]
         for k in expired_fr:
@@ -3250,35 +3199,7 @@ async def on_message(message):
     # ── Culte Freydiss ───────────────────────────────────────────────
     _cid = str(message.channel.id)
     _has_correct_name = bool(_RE_FREYDISS_NAME.search(message.content))
-    _freydiss_pinged = (
-        any(m.id == _FREYDISS_ID for m in message.mentions)
-        or f"<@{_FREYDISS_ID}>" in message.content
-        or f"<@!{_FREYDISS_ID}>" in message.content
-    )
-    # Freydiss parle lui-même → hommage (jamais quand il pose une question)
-    if (
-        message.author.id == _FREYDISS_ID
-        and not message.content.strip().endswith("?")
-        and now_f - _FREYDISS_SELF_CD.get(_cid, 0) >= _FREYDISS_SELF_DELAY
-    ):
-        _FREYDISS_SELF_CD[_cid] = now_f
-        try:
-            await message.channel.send(random.choice(_FREYDISS_SELF_HYPE))
-        except Exception:
-            pass
-
-    elif message.author.id != _FREYDISS_ID:
-        # @mention directe de Freydiss → soumise mode
-        if (
-            _freydiss_pinged
-            and now_f - _FREYDISS_PING_CD.get(_cid, 0) >= _FREYDISS_PING_DELAY
-        ):
-            _FREYDISS_PING_CD[_cid] = now_f
-            try:
-                await message.channel.send(random.choice(_FREYDISS_PING_HYPE))
-            except Exception:
-                pass
-
+    if message.author.id != _FREYDISS_ID:
         # Faute d'orthographe du nom → insulte + correction
         _typo_m = _RE_FREYDISS_TYPO.search(message.content)
         if (
