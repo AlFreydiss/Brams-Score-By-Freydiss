@@ -287,9 +287,6 @@ _FARFELU_REPLIES = [
 
 # ── Culte Freydiss ────────────────────────────────────────────────
 _FREYDISS_ID         = 1094070545248694342
-_FREYDISS_HYPE_CD:   dict[str, float] = {}
-_FREYDISS_HYPE_DELAY = 60
-_FREYDISS_HYPE_PROB  = 0.55
 _FREYDISS_DEF_CD:    dict[str, float] = {}
 _FREYDISS_DEF_DELAY  = 30
 _FREYDISS_TYPO_CD:   dict[str, float] = {}
@@ -411,22 +408,6 @@ async def _reply_violet_best_anime(message) -> bool:
     except Exception as exc:
         print(f"[VIOLET BEST] envoi impossible: {exc}")
         return False
-
-# Quand quelqu'un mentionne Freydiss (éloge)
-_FREYDISS_HYPE = [
-    "👑 **Freydiss** — le créateur, rien à ajouter 🐐",
-    "**Freydiss** a tout build ce serveur from scratch 🫡",
-    "on parle du boss là 🔥",
-    "**Freydiss** ?? respect au fondateur 👑",
-    "le GOAT du serveur 🐐",
-    "🫡 y'a pas photo c'est **Freydiss**",
-    "trkl bb, c'est le chef 💅",
-    "**Freydiss** c'est le Gol D. Roger du Discord — tout le monde cherche son trésor 💎",
-    "tu parles du seul homme qui peut ban et bless en même temps 😭👑",
-    "**Freydiss** a fondé ce serveur avant même que t'aies Internet 🐐",
-    "🎖️ on parle de **Al Freydiss ツ** là ?? le bg en personne 👑",
-    "🌊 **Freydiss** — fondateur, Yonkou, légende vivante. Dans cet ordre. ☠️",
-]
 
 # Quand on parle mal de Freydiss
 _FREYDISS_DEFENSE = [
@@ -1604,7 +1585,6 @@ async def flush_dirty_loop():
         del _INSULT_CACHE[k]
     # Nettoyage cooldowns culte Freydiss
     for cd_dict, cd_delay in (
-        (_FREYDISS_HYPE_CD, _FREYDISS_HYPE_DELAY),
         (_FREYDISS_DEF_CD,  _FREYDISS_DEF_DELAY),
         (_FREYDISS_TYPO_CD, _FREYDISS_TYPO_DELAY),
     ):
@@ -3227,17 +3207,6 @@ async def on_message(message):
             except Exception:
                 pass
 
-        # Mention correcte → hype
-        elif (
-            _has_correct_name
-            and now_f - _FREYDISS_HYPE_CD.get(_cid, 0) >= _FREYDISS_HYPE_DELAY
-            and random.random() < _FREYDISS_HYPE_PROB
-        ):
-            _FREYDISS_HYPE_CD[_cid] = now_f
-            try:
-                await message.channel.send(random.choice(_FREYDISS_HYPE))
-            except Exception:
-                pass
 
     if _is_violet_best_anime_request(message.content):
         await _reply_violet_best_anime(message)
