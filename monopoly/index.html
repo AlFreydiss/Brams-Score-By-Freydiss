@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRAMSOPOLY — Le Monopoly du serveur de Brams</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Righteous&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏴‍☠️</text></svg>">
+</head>
+<body>
+
+<!-- ═══════════════ ÉCRAN DE SETUP ═══════════════ -->
+<div id="setup-screen" class="setup-screen">
+  <div class="setup-inner">
+    <div class="setup-flag">🏴‍☠️</div>
+    <h1 class="setup-title">BRAMSOPOLY</h1>
+    <p class="setup-sub">Le Monopoly du serveur de Brams — édition Grand Line</p>
+    <div class="setup-rules">
+      <span>⚔️ Freydiss le Bourreau garde le coin maudit</span>
+      <span>⛓️ Carton croupit dans la cellule</span>
+      <span>🤴 Le Prince Charles tient son palais</span>
+      <span>👑 La Reine Amel règne sur son château</span>
+    </div>
+    <div class="setup-players" id="setup-players"></div>
+    <div class="setup-count">
+      <button class="count-btn" data-n="2">2 joueurs</button>
+      <button class="count-btn active" data-n="3">3 joueurs</button>
+      <button class="count-btn" data-n="4">4 joueurs</button>
+    </div>
+    <button id="start-btn" class="start-btn">⚓ Lever l'ancre</button>
+  </div>
+</div>
+
+<!-- ═══════════════ JEU ═══════════════ -->
+<div id="game-root" class="game-root" hidden>
+
+  <div class="board-wrap">
+    <div id="board" class="board">
+      <!-- cases générées en JS -->
+      <div class="board-center" id="board-center">
+        <div class="center-logo">
+          <div class="center-skull">☠️</div>
+          <div class="center-title">BRAMSOPOLY</div>
+          <div class="center-sub">— serveur de Brams —</div>
+        </div>
+        <div id="turn-banner" class="turn-banner"></div>
+        <div id="dice-zone" class="dice-zone">
+          <div class="die" id="die1"><span class="pip"></span></div>
+          <div class="die" id="die2"><span class="pip"></span></div>
+        </div>
+        <div id="card-display" class="card-display" hidden></div>
+        <div id="action-zone" class="action-zone"></div>
+      </div>
+    </div>
+    <div id="tokens-layer" class="tokens-layer"></div>
+  </div>
+
+  <div class="side-panel">
+    <div class="side-head">
+      <span class="side-title">🏴‍☠️ Équipages</span>
+      <button id="mute-btn" class="icon-btn" title="Son">🔊</button>
+    </div>
+    <div id="players-panel" class="players-panel"></div>
+    <div class="log-head">📜 Journal de bord</div>
+    <div id="log" class="log"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ OVERLAYS ═══════════════ -->
+<div id="deed-overlay" class="overlay" hidden>
+  <div class="deed-card" id="deed-card"></div>
+</div>
+
+<div id="manage-overlay" class="overlay" hidden>
+  <div class="manage-panel">
+    <div class="manage-head">
+      <span>🏗️ Gérer ton empire</span>
+      <button class="icon-btn" id="manage-close">✖</button>
+    </div>
+    <div id="manage-list" class="manage-list"></div>
+  </div>
+</div>
+
+<div id="executioner-overlay" class="exec-overlay" hidden>
+  <div class="exec-axe">🪓</div>
+  <div class="exec-title">LE BOURREAU FRAPPE</div>
+  <div class="exec-sub">Freydiss t'envoie au cachot de Carton ⛓️</div>
+</div>
+
+<div id="win-overlay" class="overlay" hidden>
+  <div class="win-panel">
+    <div class="win-crown">👑</div>
+    <div class="win-title" id="win-title"></div>
+    <div class="win-sub">Roi des Pirates du serveur de Brams</div>
+    <button class="start-btn" onclick="location.reload()">🔁 Nouvelle partie</button>
+  </div>
+  <canvas id="confetti-canvas"></canvas>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
