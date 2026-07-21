@@ -717,6 +717,28 @@ function moveNextStation(p) {
   moveDirect(p, d);
 }
 
+/* ─────────── AMBIANCE ─────────── */
+
+const FLAVOR = {
+  3: ["🎭 Ayzeni t'observe depuis la falaise, un rôle secret en tête…"],
+  6: ["🌺 VINN t'accueille : « Touche à rien, tout ici appartient au grand Al Freydiss. »",
+      "🌺 VINN astique le trône portatif d'Al Freydiss. Elle ne te calcule même pas."],
+  10: ["⛓️ Carton, derrière les barreaux : « J'suis innocent, j'te jure. »",
+       "⛓️ Carton grave un 47e bâton sur le mur de sa cellule.",
+       "⛓️ Carton demande des nouvelles de son avocat. Personne n'a jamais vu son avocat."],
+  21: ["🤴 Le Prince Charles te toise depuis son balcon doré.",
+       "🤴 Charles ajuste sa couronne : « Ici, on s'incline. »"],
+  34: ["👑 La Reine Amel ne reçoit que sur rendez-vous.",
+       "👑 Un garde murmure : « Sa Majesté Amel a un château. Toi, non. »"],
+  37: ["🎬 Brams est en plein montage. Silence sur le plateau."],
+  39: ["🏆 Le Trône de Brams brille de mille feux."],
+};
+
+function flavor(pos) {
+  const fl = FLAVOR[pos];
+  if (fl && Math.random() < 0.55) log(fl[Math.floor(Math.random() * fl.length)]);
+}
+
 /* ─────────── ATTERRISSAGE ─────────── */
 
 function land(p, fromCard = false) {
@@ -725,6 +747,7 @@ function land(p, fromCard = false) {
   const c = BOARD[p.pos];
   const el = cellEl(p.pos);
   if (el) { el.classList.remove('landed'); void el.offsetWidth; el.classList.add('landed'); }
+  flavor(p.pos);
 
   switch (c.t) {
     case 'go':
@@ -830,6 +853,10 @@ function drawCard(kind, p) {
 
 function executioner(p) {
   SFX.doom();
+  const root = $('game-root');
+  root.classList.remove('shake');
+  void root.offsetWidth;
+  root.classList.add('shake');
   const ov = $('executioner-overlay');
   ov.hidden = false;
   // relance les animations
@@ -1032,10 +1059,22 @@ $('deed-overlay').onclick = () => { $('deed-overlay').hidden = true; };
 
 function showVictory(w) {
   $('win-title').textContent = `${w.token} ${w.name}`;
+  const sub = document.querySelector('.win-sub');
+  if (sub) sub.textContent = `Roi des Pirates du serveur · ${fmt(w.cash)} · ${w.props.length} territoire${w.props.length > 1 ? 's' : ''}`;
   $('win-overlay').hidden = false;
   SFX.win();
   confetti();
 }
+
+/* ─────────── CLAVIER ─────────── */
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    const b = document.querySelector('.act-btn.primary');
+    if (b && !b.disabled) { e.preventDefault(); b.click(); }
+  }
+  if (e.key === 'm' || e.key === 'M') $('mute-btn').click();
+});
 
 function confetti() {
   const cv = $('confetti-canvas');
