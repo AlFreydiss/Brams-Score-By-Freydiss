@@ -91,16 +91,21 @@ async function fetchToBlob(src, onPct, signal) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const total = Number(res.headers.get('content-length')) || 0
   const reader = res.body.getReader()
-  const chunks = []
-  let received = 0
+  // Repli en Blob tous les ~32 Mo : le stockage blob du navigateur déborde sur
+  // disque, ça évite ~500 Mo de chunks en RAM (crash sur téléphone).
+  const parts = []
+  let chunks = [], chunkBytes = 0, received = 0
   for (;;) {
     const { done, value } = await reader.read()
     if (done) break
     chunks.push(value)
+    chunkBytes += value.byteLength
     received += value.byteLength
+    if (chunkBytes >= 32 * 1024 * 1024) { parts.push(new Blob(chunks)); chunks = []; chunkBytes = 0 }
     if (total) onPct(Math.min(99, Math.round((received / total) * 100)))
   }
-  return new Blob(chunks, { type: 'video/mp4' })
+  if (chunks.length) parts.push(new Blob(chunks))
+  return new Blob(parts, { type: 'video/mp4' })
 }
 
 const CSS = `
@@ -129,6 +134,10 @@ const CSS = `
     background: rgba(244,81,30,.18) !important;
     transform: translateY(-1px);
     box-shadow: 0 8px 28px rgba(244,81,30,.22);
+  }
+
+  @media (max-width:768px){
+    .ff-dl-btn{ min-width:36px !important; height:36px !important; }
   }
 
   .ff-scroll { scrollbar-width: thin; scrollbar-color: rgba(244,81,30,.2) transparent; }
@@ -406,7 +415,8 @@ export default function BleachPage({ onClose }) {
         {detailIdx !== null ? (
           <div ref={scrollRef} style={{ flex:1, overflowY:'auto', padding:'24px 28px 48px' }}>
             <div style={{ maxWidth: 1760, margin: '0 auto' }}>
-              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)} />
+              <EpisodeWatch videos={VIDEOS} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2} onSelect={openDetail} onClose={() => setDetailIdx(null)}
+                onDownload={downloadEpisode} onCancelDownload={v => cancelDownload(keyOf(v))} downloadState={VIDEOS[detailIdx] ? downloads[keyOf(VIDEOS[detailIdx])] : null} />
             </div>
           </div>
         ) : (
@@ -496,6 +506,7 @@ export default function BleachPage({ onClose }) {
                           {watched && <div style={{ position:'absolute',top:8,right:8,width:20,height:20,borderRadius:'50%',background:'rgba(52,211,153,.25)',border:'1px solid rgba(52,211,153,.6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#34d399',fontWeight:800 }}>✓</div>}
                           {isNext && !watched && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:800,background:`${COLOR}`,color:'#fff',borderRadius:100,padding:'2px 8px' }}>REPRENDRE</div>}
                           <div
+                            className="ff-dl-btn"
                             role="button" tabIndex={0}
                             title={dl?.status === 'active' ? 'Annuler le téléchargement' : `Télécharger ${dlFileName(v)} (FHD/UHD)`}
                             onClick={e => { e.stopPropagation(); dl?.status === 'active' ? cancelDownload(dlKey) : downloadEpisode(v) }}

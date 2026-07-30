@@ -32,6 +32,7 @@ function navBtnStyle(disabled, color, color2) {
 
 export default function EpisodeWatch({
   videos, startIdx, ns, storageKey,
+  onDownload, onCancelDownload, downloadState,
   color = '#8b7cff', color2 = '#b8a8ff',
   tags = [], animeSynopsis = '',
   onSelect, onClose,
@@ -332,6 +333,21 @@ export default function EpisodeWatch({
           </a>
           {hasScan && (
             <button className="ew-touchbtn" onClick={() => navigate(`/manga/${mangaSlug}`)} aria-label="Lire le scan du manga" style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', minHeight: 44, padding: '11px 0', borderRadius: 12, cursor: 'pointer', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.14)', color: 'rgba(255,255,255,.85)', fontSize: 13, fontWeight: 800 }}>📖 Lire le scan (manga)</button>
+          )}
+          {onDownload && video && (
+            <button
+              className="ew-touchbtn"
+              onClick={() => downloadState?.status === 'active' ? onCancelDownload?.(video) : onDownload(video)}
+              aria-label={downloadState?.status === 'active' ? 'Annuler le téléchargement' : "Télécharger l'épisode"}
+              style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, width: '100%', minHeight: 44, padding: '11px 0', borderRadius: 12, cursor: 'pointer', fontWeight: 800, fontSize: 13,
+                background: downloadState?.status === 'active' ? 'rgba(248,113,113,.10)' : downloadState?.status === 'done' ? 'rgba(52,211,153,.12)' : 'rgba(52,211,153,.08)',
+                border: `1px solid ${downloadState?.status === 'active' ? 'rgba(248,113,113,.35)' : 'rgba(52,211,153,.32)'}`,
+                color: downloadState?.status === 'active' ? '#f87171' : '#34d399' }}>
+              {downloadState?.status === 'active' ? `■ Annuler — ${downloadState.pct}%`
+                : downloadState?.status === 'done' ? '✓ Épisode téléchargé'
+                : downloadState?.status === 'error' ? '⟳ Réessayer le téléchargement'
+                : "⬇ Télécharger l'épisode (FHD/UHD)"}
+            </button>
           )}
         </div>
       </div>
