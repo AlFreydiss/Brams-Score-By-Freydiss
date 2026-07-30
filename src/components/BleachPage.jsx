@@ -66,6 +66,43 @@ function saveScanProgress(p) {
   try { localStorage.setItem(`${NS}_progress`, JSON.stringify(p)) } catch {}
 }
 
+function dlFileName(v) {
+  const base = v.episodeLabel || (v.kind ? `${v.kind.toUpperCase()}${v.episode}` : `E${String(v.episode).padStart(3, '0')}`)
+  return `Bleach-${base}-VOSTFR.mp4`
+}
+
+async function fetchToWritable(src, writable, onPct, signal) {
+  const res = await fetch(src, { signal })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const total = Number(res.headers.get('content-length')) || 0
+  const reader = res.body.getReader()
+  let received = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    await writable.write(value)
+    received += value.byteLength
+    if (total) onPct(Math.min(99, Math.round((received / total) * 100)))
+  }
+}
+
+async function fetchToBlob(src, onPct, signal) {
+  const res = await fetch(src, { signal })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const total = Number(res.headers.get('content-length')) || 0
+  const reader = res.body.getReader()
+  const chunks = []
+  let received = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    received += value.byteLength
+    if (total) onPct(Math.min(99, Math.round((received / total) * 100)))
+  }
+  return new Blob(chunks, { type: 'video/mp4' })
+}
+
 const CSS = `
   @keyframes ffFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
   @keyframes ffPulse { 0%,100%{opacity:.6} 50%{opacity:1} }
@@ -162,6 +199,11 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
           {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`}
         </button>
 
+        <div style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'9px 0',borderRadius:12,background:'rgba(52,211,153,.08)',border:'1px solid rgba(52,211,153,.28)' }}>
+          <span style={{ fontSize:13 }}>⬇</span>
+          <span style={{ fontSize:11.5,fontWeight:800,color:'#34d399',letterSpacing:'.02em' }}>Téléchargement FHD/UHD dispo</span>
+        </div>
+
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
             { label:'Épisodes', value: String(VIDEOS.length || '—'), dot:COLOR2 },
@@ -237,11 +279,73 @@ export default function BleachPage({ onClose }) {
   }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
+  const [downloads, setDownloads] = useState({})
+  const [seasonDl, setSeasonDl] = useState(null)
+  const dlControllers = useRef({})
+  const seasonDlStop = useRef(false)
+
+  const downloadEpisode = useCallback(async (v, dirHandle = null) => {
+    const key = keyOf(v)
+    if (dlControllers.current[key]) return
+    const ctrl = new AbortController()
+    dlControllers.current[key] = ctrl
+    setDownloads(p => ({ ...p, [key]: { pct: 0, status: 'active' } }))
+    const onPct = pct => setDownloads(p => ({ ...p, [key]: { pct, status: 'active' } }))
+    try {
+      const name = dlFileName(v)
+      if (dirHandle || window.showSaveFilePicker) {
+        const fh = dirHandle
+          ? await dirHandle.getFileHandle(name, { create: true })
+          : await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'Vidéo MP4', accept: { 'video/mp4': ['.mp4'] } }] })
+        const w = await fh.createWritable()
+        try { await fetchToWritable(v.src, w, onPct, ctrl.signal); await w.close() }
+        catch (e) { try { await w.abort() } catch {} ; throw e }
+      } else {
+        const blob = await fetchToBlob(v.src, onPct, ctrl.signal)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = name
+        document.body.appendChild(a); a.click(); a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 30000)
+      }
+      setDownloads(p => ({ ...p, [key]: { pct: 100, status: 'done' } }))
+    } catch (e) {
+      const aborted = ctrl.signal.aborted || e?.name === 'AbortError'
+      setDownloads(p => { const n = { ...p }; if (aborted) delete n[key]; else n[key] = { pct: 0, status: 'error' }; return n })
+    } finally {
+      delete dlControllers.current[key]
+    }
+  }, [])
+
+  const cancelDownload = useCallback((key) => { dlControllers.current[key]?.abort() }, [])
+
   const availableSeasons = useMemo(() => SEASONS.filter(s => VIDEOS.some(v => v.episode >= s.from && v.episode <= s.to)), [])
   const [activeSeason, setActiveSeason] = useState(() => availableSeasons[0]?.key || '1')
   const seasonInfo = SEASONS.find(s => s.key === activeSeason) || SEASONS[0]
   const seasonVideos = useMemo(() => VIDEOS.map((v, gi) => ({ v, gi })).filter(({ v }) => v.episode >= seasonInfo.from && v.episode <= seasonInfo.to), [seasonInfo])
   const seasonWatched = useMemo(() => seasonVideos.filter(({ v }) => progress[keyOf(v)]?.completed).length, [seasonVideos, progress])
+
+  const downloadSeason = useCallback(async () => {
+    if (seasonDl) {
+      seasonDlStop.current = true
+      Object.values(dlControllers.current).forEach(c => c.abort())
+      return
+    }
+    seasonDlStop.current = false
+    let dirHandle = null
+    // Un seul choix de dossier pour toute la saison (sinon 1 popup par épisode)
+    if (window.showDirectoryPicker) {
+      try { dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' }) } catch { return }
+    }
+    const list = seasonVideos
+    setSeasonDl({ done: 0, total: list.length })
+    for (let n = 0; n < list.length; n++) {
+      if (seasonDlStop.current) break
+      await downloadEpisode(list[n].v, dirHandle)
+      if (!seasonDlStop.current) setSeasonDl({ done: n + 1, total: list.length })
+    }
+    setSeasonDl(null)
+  }, [seasonDl, seasonVideos, downloadEpisode])
 
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
@@ -347,11 +451,17 @@ export default function BleachPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Saison {seasonInfo.key} — {seasonInfo.title}</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{seasonVideos.length} épisodes • VOSTFR</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{seasonVideos.length} épisodes • VOSTFR • <span style={{ color:'#34d399',fontWeight:800 }}>⬇ FHD/UHD dispo</span></div>
                   </div>
-                  <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,81,30,.08)',border:'1px solid rgba(244,81,30,.18)' }}>
-                    <div style={{ width:6,height:6,borderRadius:'50%',background: seasonWatched===seasonVideos.length && seasonVideos.length>0 ?'#34d399':'#fbbf24' }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{seasonWatched}/{seasonVideos.length} vus</span>
+                  <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+                    <button className="ff-cta" onClick={downloadSeason}
+                      style={{ display:'flex',alignItems:'center',gap:7,padding:'7px 14px',borderRadius:999, background: seasonDl ? 'rgba(248,113,113,.10)' : 'rgba(52,211,153,.08)', border:`1px solid ${seasonDl ? 'rgba(248,113,113,.35)' : 'rgba(52,211,153,.28)'}`, color: seasonDl ? '#f87171' : '#34d399', cursor:'pointer',fontSize:11,fontWeight:800,fontFamily:'var(--body)' }}>
+                      {seasonDl ? `■ Stop (${seasonDl.done}/${seasonDl.total})` : '⬇ Télécharger la saison'}
+                    </button>
+                    <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(244,81,30,.08)',border:'1px solid rgba(244,81,30,.18)' }}>
+                      <div style={{ width:6,height:6,borderRadius:'50%',background: seasonWatched===seasonVideos.length && seasonVideos.length>0 ?'#34d399':'#fbbf24' }} />
+                      <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>{seasonWatched}/{seasonVideos.length} vus</span>
+                    </div>
                   </div>
                 </div>
 
@@ -361,6 +471,8 @@ export default function BleachPage({ onClose }) {
                     const watched = progress[keyOf(v)]?.completed
                     const isNext = i === resumeIdx
                     const kindLabel = v.kind === 'film' ? 'FILM' : v.kind === 'ova' ? 'OVA' : `ÉP ${v.episode}`
+                    const dlKey = keyOf(v)
+                    const dl = downloads[dlKey]
                     return (
                       <button
                         key={v.progressKey || v.id || i}
@@ -383,6 +495,17 @@ export default function BleachPage({ onClose }) {
                           <div className="ff-play-btn" style={{ position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)', width:40,height:40,borderRadius:'50%', background:`${COLOR}e0`, display:'flex',alignItems:'center',justifyContent:'center', opacity:.85, boxShadow:`0 4px 18px ${COLOR}66`, fontSize:15,color:'#fff' }}>▶</div>
                           {watched && <div style={{ position:'absolute',top:8,right:8,width:20,height:20,borderRadius:'50%',background:'rgba(52,211,153,.25)',border:'1px solid rgba(52,211,153,.6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#34d399',fontWeight:800 }}>✓</div>}
                           {isNext && !watched && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:800,background:`${COLOR}`,color:'#fff',borderRadius:100,padding:'2px 8px' }}>REPRENDRE</div>}
+                          <div
+                            role="button" tabIndex={0}
+                            title={dl?.status === 'active' ? 'Annuler le téléchargement' : `Télécharger ${dlFileName(v)} (FHD/UHD)`}
+                            onClick={e => { e.stopPropagation(); dl?.status === 'active' ? cancelDownload(dlKey) : downloadEpisode(v) }}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); dl?.status === 'active' ? cancelDownload(dlKey) : downloadEpisode(v) } }}
+                            style={{ position:'absolute',top:8,left:8, minWidth:26,height:26,padding:'0 6px', borderRadius:8, display:'flex',alignItems:'center',justifyContent:'center', fontSize: dl?.status === 'active' ? 9.5 : 13, fontWeight:900, cursor:'pointer', backdropFilter:'blur(4px)',
+                              background: dl?.status === 'done' ? 'rgba(52,211,153,.22)' : dl?.status === 'error' ? 'rgba(248,113,113,.22)' : 'rgba(0,0,0,.55)',
+                              border: `1px solid ${dl?.status === 'done' ? 'rgba(52,211,153,.55)' : dl?.status === 'error' ? 'rgba(248,113,113,.5)' : 'rgba(255,255,255,.18)'}`,
+                              color: dl?.status === 'done' ? '#34d399' : dl?.status === 'error' ? '#f87171' : '#fff' }}>
+                            {dl?.status === 'active' ? `${dl.pct}%` : dl?.status === 'done' ? '✓' : dl?.status === 'error' ? '⟳' : '⬇'}
+                          </div>
                           <div style={{ position:'absolute',bottom:8,left:8,fontSize:9.5,fontWeight:900,color:'#fff',letterSpacing:'.06em',padding:'3px 8px',borderRadius:7,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)' }}>{kindLabel}</div>
                           {v.badge && <div style={{ position:'absolute',bottom:8,right:8,fontSize:8.5,fontWeight:900,color:COLOR2,letterSpacing:'.06em',padding:'3px 7px',borderRadius:7,background:'rgba(0,0,0,.55)' }}>{v.badge}</div>}
                         </div>
