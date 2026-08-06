@@ -83,3 +83,35 @@ export const RAP_VS_OST_CONFIG = {
   version:      'v1-rap-vs-ost',
   participants: RAP_VS_OST_CATALOG,
 }
+
+// ── Tournois purs (mêmes participants, camps séparés) ──────────────────────
+export const RAP_FR_CATALOG   = RAP_VS_OST_CATALOG.filter(p => p.camp === 'rap')
+export const OST_ANIME_CATALOG = RAP_VS_OST_CATALOG.filter(p => p.camp === 'ost')
+
+export const RAP_FR_CONFIG = {
+  id:          'rap-fr-2026',
+  title:       'Rap FR Arena',
+  description: '32 classiques et bangers du rap français. Un seul son au sommet.',
+  status:      'active',
+  format:      'single_elimination',
+  edition:     'Edition 1',
+  startDate:   '2026-08-06',
+  categoryLabel:'Rap FR',
+  route:        '/tournoi/rap-fr',
+  version:      'v1-rap-fr',
+  participants: RAP_FR_CATALOG,
+}
+
+export const OST_ANIME_CONFIG = {
+  id:          'ost-anime-2026',
+  title:       'OST Anime Arena',
+  description: '32 openings et OST anime cultes, ids vérifiés. Le meilleur thème gagne.',
+  status:      'active',
+  format:      'single_elimination',
+  edition:     'Edition 1',
+  startDate:   '2026-08-06',
+  categoryLabel:'OST Anime',
+  route:        '/tournoi/ost-anime',
+  version:      'v1-ost-anime',
+  participants: OST_ANIME_CATALOG,
+}

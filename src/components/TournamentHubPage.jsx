@@ -6,7 +6,7 @@ import {
   loadState, getTournamentProgress, getCurrentMatch,
   generateBracket, getWinner,
 } from '../lib/tournament.js'
-import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG, RAP_VS_OST_CONFIG } from '../data/tournament-data.js'
+import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG, RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from '../data/tournament-data.js'
 import {
   TOURNAMENT_CATEGORIES,
   UPCOMING_TOURNAMENTS,
@@ -688,6 +688,8 @@ export default function TournamentHubPage() {
   const opening       = useTournamentState(OPENING_TOURNAMENT_CONFIG)
   const ending        = useTournamentState(ENDING_TOURNAMENT_CONFIG)
   const rapVsOst      = useTournamentState(RAP_VS_OST_CONFIG)
+  const rapFr         = useTournamentState(RAP_FR_CONFIG)
+  const ostAnime      = useTournamentState(OST_ANIME_CONFIG)
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
@@ -737,6 +739,18 @@ export default function TournamentHubPage() {
                 progress={rapVsOst.progress}
                 currentRound={rapVsOst.currentRound}
                 winner={rapVsOst.winner}
+              />
+              <ActiveTournamentCard
+                config={RAP_FR_CONFIG}
+                progress={rapFr.progress}
+                currentRound={rapFr.currentRound}
+                winner={rapFr.winner}
+              />
+              <ActiveTournamentCard
+                config={OST_ANIME_CONFIG}
+                progress={ostAnime.progress}
+                currentRound={ostAnime.currentRound}
+                winner={ostAnime.winner}
               />
               <ActiveTournamentCard
                 config={OPENING_TOURNAMENT_CONFIG}

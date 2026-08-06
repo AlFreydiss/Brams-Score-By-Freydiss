@@ -59,7 +59,6 @@ export default function OSTDuelCard({
   const canPlay  = ytOk || !!participant?.audioUrl
   const thumbUrl = ytOk ? `https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg` : null
   const showThumb = !!thumbUrl && imgState === 'ok'
-  const showInlineYoutube = isPlaying && ytOk && !participant?.audioUrl
   const accent   = participant?.color || GOLD
   const myVote   = voted === side
   // Badge type : camp (rap/ost) prioritaire, sinon ED → ENDING, OP → OPENING, sinon OST.
@@ -152,37 +151,9 @@ export default function OSTDuelCard({
           />
         )}
 
-        {/* Lecteur visuel YouTube dans la carte active.
-            Le son reste gere par le player compact pour garder volume/seek/stop. */}
-        {showInlineYoutube && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            overflow: 'hidden',
-            background: '#05060a',
-          }}>
-            <iframe
-              key={`${participant.ytId}-inline`}
-              src={`https://www.youtube-nocookie.com/embed/${participant.ytId}?autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&rel=0&loop=1&playlist=${participant.ytId}`}
-              title={`${participant.title || 'Opening'} visual`}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: '50%',
-                width: '177.78%',
-                height: '100%',
-                transform: 'translateX(-50%)',
-                border: 'none',
-                pointerEvents: 'none',
-                opacity: isLoser ? 0.16 : 0.86,
-              }}
-            />
-          </div>
-        )}
-
-        {/* Thumbnail YouTube quand pas de audioUrl (toujours visible en mode vivid) */}
-        {!showInlineYoutube && !participant?.audioUrl && showThumb && (
+        {/* Thumbnail YouTube quand pas de audioUrl — en lecture: zoom lent + couleurs
+            poussées (zéro chrome YouTube, l'audio vit dans l'iframe cachée du player). */}
+        {!participant?.audioUrl && showThumb && (
           <img loading="lazy" decoding="async"
             src={`https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg`}
             alt=""
@@ -192,8 +163,11 @@ export default function OSTDuelCard({
               width: '110%', height: '116%',
               maxWidth: 'none', maxHeight: 'none',
               objectFit: 'cover', objectPosition: 'center 30%',
-              opacity: vivid ? (isLoser ? 0.32 : 0.66) : (isLoser ? 0.08 : 0.48),
-              filter: 'saturate(1.3) brightness(0.9)',
+              opacity: isPlaying ? (isLoser ? 0.2 : 0.85)
+                : vivid ? (isLoser ? 0.32 : 0.66) : (isLoser ? 0.08 : 0.48),
+              filter: isPlaying ? 'saturate(1.5) brightness(0.95)' : 'saturate(1.3) brightness(0.9)',
+              animation: isPlaying ? 'arSlowZoom 22s ease-in-out infinite' : 'none',
+              transition: 'opacity .5s, filter .5s',
             }}
           />
         )}
@@ -211,7 +185,7 @@ export default function OSTDuelCard({
         {/* Dégradé sombre : transparent en haut → opaque en bas */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: showInlineYoutube || isPlaying
+          background: isPlaying
             ? 'linear-gradient(180deg, rgba(6,7,12,.02) 0%, rgba(6,7,12,.05) 28%, rgba(6,7,12,.34) 58%, rgba(6,7,12,.86) 100%)'
             : 'linear-gradient(180deg, rgba(6,7,12,.05) 0%, rgba(6,7,12,.08) 25%, rgba(6,7,12,.55) 52%, rgba(6,7,12,.95) 100%)',
         }} />
@@ -285,6 +259,17 @@ export default function OSTDuelCard({
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           paddingBottom: 8,
         }}>
+          {isPlaying && !participant?.audioUrl && (
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 34, pointerEvents: 'none' }}>
+              {Array.from({ length: 9 }, (_, i) => (
+                <div key={i} style={{
+                  width: 5, borderRadius: 3, background: accent,
+                  boxShadow: `0 0 10px ${accent}aa`,
+                  animation: `arWave ${0.7 + (i % 4) * 0.13}s ${(i * 0.09).toFixed(2)}s ease-in-out infinite`,
+                }} />
+              ))}
+            </div>
+          )}
           {!isPlaying && !showThumb && !participant?.audioUrl && participant.emoji && (
             <span style={{
               fontSize: isMobile ? 52 : 68,
