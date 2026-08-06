@@ -62,8 +62,10 @@ export default function OSTDuelCard({
   const showInlineYoutube = isPlaying && ytOk && !participant?.audioUrl
   const accent   = participant?.color || GOLD
   const myVote   = voted === side
-  // Badge type : ED → ENDING, OP → OPENING, sinon OST (catalogue sans type).
-  const typeBadge = participant?.type === 'ED' ? 'ENDING'
+  // Badge type : camp (rap/ost) prioritaire, sinon ED → ENDING, OP → OPENING, sinon OST.
+  const typeBadge = participant?.camp === 'rap' ? 'RAP FR'
+    : participant?.camp === 'ost' ? 'OST'
+    : participant?.type === 'ED' ? 'ENDING'
     : participant?.type === 'OP' ? 'OPENING'
     : participant?.type ? String(participant.type).toUpperCase()
     : 'OST'
@@ -378,7 +380,7 @@ export default function OSTDuelCard({
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,160,23,.2)'; e.currentTarget.style.borderColor = GOLD }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,160,23,.09)'; e.currentTarget.style.borderColor = 'rgba(212,160,23,.38)' }}
             >
-              Voter pour cet opening
+              {participant?.camp === 'rap' ? 'Voter pour ce son' : 'Voter pour cet opening'}
             </button>
           )}
         </div>

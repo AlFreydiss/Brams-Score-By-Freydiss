@@ -15,14 +15,14 @@ export default function DuelAmbient({ left, right }) {
       position: 'absolute', left: 0, width: '100%', height: '52%', objectFit: 'cover',
       maxWidth: 'none', maxHeight: 'none',
       transform: 'scale(1.16)',
-      filter: 'blur(26px) saturate(1.3) brightness(.74)', opacity: 0.62, ...pos,
+      filter: 'blur(26px) saturate(1.35) brightness(.68)', opacity: 0.44, ...pos,
     }} />
   ) : null
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       {tile(left, { top: 0 })}
       {tile(right, { bottom: 0 })}
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(72% 44% at 50% 0%, ${hexA(leftColor, 0.2)}, transparent 70%), radial-gradient(72% 44% at 50% 100%, ${hexA(rightColor, 0.2)}, transparent 70%), radial-gradient(58% 90% at 100% 52%, ${hexA(rightColor, 0.26)}, transparent 74%), radial-gradient(46% 90% at 0% 52%, ${hexA(leftColor, 0.2)}, transparent 72%), linear-gradient(180deg, rgba(8,7,11,.48), rgba(8,7,11,.42) 50%, rgba(8,7,11,.62)), radial-gradient(60% 50% at 50% 50%, rgba(8,7,11,.28), transparent 75%)` }} />
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(72% 44% at 50% 0%, ${hexA(leftColor, 0.16)}, transparent 70%), radial-gradient(72% 44% at 50% 100%, ${hexA(rightColor, 0.16)}, transparent 70%), radial-gradient(58% 90% at 100% 52%, ${hexA(rightColor, 0.2)}, transparent 74%), radial-gradient(46% 90% at 0% 52%, ${hexA(leftColor, 0.16)}, transparent 72%), linear-gradient(180deg, rgba(8,7,11,.34), rgba(8,7,11,.28) 50%, rgba(8,7,11,.46)), radial-gradient(60% 50% at 50% 50%, rgba(8,7,11,.2), transparent 75%)` }} />
     </div>
   )
 }

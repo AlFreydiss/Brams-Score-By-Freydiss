@@ -680,6 +680,7 @@ export default function App() {
         <Route path="/tournoi/opening" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
         <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
+        <Route path="/tournoi/rap-vs-ost" element={<PageLayout><TournamentPage tournamentId="rapvsost" /></PageLayout>} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
         <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
         <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />

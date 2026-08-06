@@ -6,7 +6,7 @@ import {
   loadState, getTournamentProgress, getCurrentMatch,
   generateBracket, getWinner,
 } from '../lib/tournament.js'
-import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG } from '../data/tournament-data.js'
+import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG, RAP_VS_OST_CONFIG } from '../data/tournament-data.js'
 import {
   TOURNAMENT_CATEGORIES,
   UPCOMING_TOURNAMENTS,
@@ -687,6 +687,7 @@ export default function TournamentHubPage() {
   const ost           = useTournamentState(TOURNAMENT_CONFIG)
   const opening       = useTournamentState(OPENING_TOURNAMENT_CONFIG)
   const ending        = useTournamentState(ENDING_TOURNAMENT_CONFIG)
+  const rapVsOst      = useTournamentState(RAP_VS_OST_CONFIG)
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
 
@@ -731,6 +732,12 @@ export default function TournamentHubPage() {
           <div ref={activeRef} style={{ marginBottom: 76 }}>
             <SectionHeading title="Tournois actifs" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+              <ActiveTournamentCard
+                config={RAP_VS_OST_CONFIG}
+                progress={rapVsOst.progress}
+                currentRound={rapVsOst.currentRound}
+                winner={rapVsOst.winner}
+              />
               <ActiveTournamentCard
                 config={OPENING_TOURNAMENT_CONFIG}
                 progress={opening.progress}

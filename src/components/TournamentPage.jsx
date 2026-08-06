@@ -14,14 +14,15 @@ import {
   resetTournament,
 } from '../lib/tournament.js'
 import { TOURNAMENT_CONFIGS } from '../data/tournament-data.js'
-import DuelArena         from './tournament/DuelArena.jsx'
-import DuelAmbient       from './tournament/DuelAmbient.jsx'
-import BracketPanel      from './tournament/BracketPanel.jsx'
-import WinnerCard        from './tournament/WinnerCard.jsx'
-import TournamentBracket from './tournament/TournamentBracket.jsx'
-import TournamentResults from './tournament/TournamentResults.jsx'
+import DuelArena          from './tournament/DuelArena.jsx'
+import DuelAmbient        from './tournament/DuelAmbient.jsx'
+import BracketPanel       from './tournament/BracketPanel.jsx'
+import WinnerCard         from './tournament/WinnerCard.jsx'
+import TournamentBracket  from './tournament/TournamentBracket.jsx'
+import TournamentResults  from './tournament/TournamentResults.jsx'
+import TournamentBackdrop from './tournament/TournamentBackdrop.jsx'
 
-const BG      = '#020203'
+const BG      = '#050308'
 const PINK    = '#9d174d'
 const PURPLE  = '#4c1d95'
 const PINK_L  = '#db2777'
@@ -32,70 +33,26 @@ const GOLD    = PINK
 const GOLD2   = PINK_LL
 
 const T_CSS = `
-  @keyframes t_glow    { 0%,100%{opacity:.5} 50%{opacity:1} }
-  @keyframes tTwinkle  { 0%,100%{opacity:.07} 50%{opacity:.50} }
-  @keyframes tScan     { 0%{top:-2px} 100%{top:100%} }
-  @keyframes tGridMove { 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-72px,72px,0)} }
-  @keyframes tShadowSweep { 0%{transform:translateX(-35%) skewX(-12deg); opacity:.10} 50%{opacity:.22} 100%{transform:translateX(135%) skewX(-12deg); opacity:.10} }
+  @keyframes t_glow     { 0%,100%{opacity:.5} 50%{opacity:1} }
+  @keyframes tTitleFlow { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  @keyframes tBadgeRing { 0%{transform:scale(1); opacity:.55} 100%{transform:scale(1.9); opacity:0} }
+  @keyframes tShimmer   { 0%{transform:translateX(-130%)} 100%{transform:translateX(230%)} }
+  @keyframes tGlyphUp   { 0%{transform:translateY(0) rotate(0deg); opacity:0} 12%{opacity:.5} 85%{opacity:.25} 100%{transform:translateY(-140px) rotate(18deg); opacity:0} }
+  @media (prefers-reduced-motion: reduce){ [data-tfx]{animation:none!important} }
 `
 
-function TDarkBackdrop() {
+// Notes de musique qui s'élèvent doucement autour du hero.
+function HeroGlyphs() {
+  const glyphs = ['♪', '♫', '♩', '✦', '♪', '♬']
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: BG }}>
-      <div style={{
-        position: 'absolute', inset: '-20%',
-        background: [
-          'linear-gradient(115deg, transparent 0%, rgba(157,23,77,.08) 46%, rgba(76,29,149,.06) 50%, transparent 55%)',
-          'repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px)',
-          'repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 72px)',
-          'linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.78))',
-        ].join(','),
-        opacity: 0.62,
-        animation: 'tGridMove 26s linear infinite',
-      }} />
-      <div style={{
-        position: 'absolute', top: 0, bottom: 0, width: '34%',
-        background: 'linear-gradient(90deg, transparent, rgba(219,39,119,.09), rgba(255,255,255,.025), transparent)',
-        filter: 'blur(10px)',
-        animation: 'tShadowSweep 11s ease-in-out infinite',
-      }} />
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(2,2,3,.78) 42%, rgba(0,0,0,.96) 100%)',
-      }} />
-    </div>
-  )
-}
-
-function TStars() {
-  const stars = Array.from({ length: 50 }, (_, i) => ({
-    x: (i * 37.3 + 11) % 98, y: (i * 41.9 + 17) % 96,
-    size: i % 9 === 0 ? 2.5 : i % 4 === 0 ? 1.6 : 1,
-    dur: 2.8 + (i * 0.28) % 4.5, del: (i * 0.21) % 7,
-    gold: i % 13 === 0,
-  }))
-  return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-      {stars.map((s, i) => (
-        <div key={i} style={{
-          position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
-          width: s.size, height: s.size, borderRadius: '50%',
-          background: s.gold ? 'rgba(157,23,77,.55)' : 'rgba(255,255,255,.4)',
-          animation: `tTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
-        }} />
+    <div aria-hidden style={{ position: 'absolute', inset: '0 0 -40px', pointerEvents: 'none', zIndex: 0 }}>
+      {glyphs.map((g, i) => (
+        <span key={i} data-tfx style={{
+          position: 'absolute', left: `${8 + i * 15.5}%`, bottom: 0,
+          fontSize: i % 2 ? 15 : 20, color: i % 3 === 0 ? PINK_LL : 'rgba(255,255,255,.5)',
+          animation: `tGlyphUp ${7 + (i * 1.3) % 5}s ${(i * 1.7) % 6}s linear infinite`,
+        }}>{g}</span>
       ))}
-    </div>
-  )
-}
-
-function TScanLine() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute', left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg,transparent,rgba(157,23,77,.10),rgba(76,29,149,.14),rgba(157,23,77,.10),transparent)',
-        animation: 'tScan 18s linear infinite',
-      }} />
     </div>
   )
 }
@@ -187,22 +144,31 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
         background: 'radial-gradient(ellipse 80% 90% at 50% 0%, rgba(157,23,77,.07) 0%, transparent 55%)',
       }} />
 
+      <HeroGlyphs />
+
       <div style={{ position: 'relative', zIndex: 1 }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.05 }}
           style={{
+            position: 'relative',
             display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 18px',
             borderRadius: 100, background: 'rgba(157,23,77,.10)', border: '1px solid rgba(157,23,77,.30)',
-            fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: GOLD,
+            fontSize: 9, fontWeight: 800, letterSpacing: '.18em', color: GOLD2,
             textTransform: 'uppercase', marginBottom: 18,
           }}
         >
-          {'♪'} Best Anime OST
+          <span data-tfx style={{
+            position: 'absolute', inset: 0, borderRadius: 100,
+            border: '1px solid rgba(219,39,119,.5)',
+            animation: 'tBadgeRing 2.6s ease-out infinite',
+          }} />
+          {'♪'} {config.categoryLabel}
         </motion.div>
 
         <motion.h1
+          data-tfx
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
@@ -210,9 +176,12 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
             fontFamily: "'Pirata One',cursive",
             fontSize: 'clamp(40px, 7vw, 88px)',
             fontWeight: 900, margin: '0 0 14px',
-            background: GRAD_TXT,
+            background: `linear-gradient(110deg, ${PINK_LL} 0%, ${PINK_L} 30%, ${PURPLE} 55%, ${PINK_L} 80%, ${PINK_LL} 100%)`,
+            backgroundSize: '220% 100%',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             letterSpacing: '-0.01em', lineHeight: 0.95,
+            animation: 'tTitleFlow 9s ease-in-out infinite',
+            filter: 'drop-shadow(0 6px 34px rgba(157,23,77,.4))',
           }}
         >
           {config.title}
@@ -247,13 +216,24 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
             <span>PROGRESSION GLOBALE</span>
             <span>{progress.pct}%</span>
           </div>
-          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
+          <div style={{ height: 4, borderRadius: 3, background: 'rgba(255,255,255,.06)', overflow: 'hidden', position: 'relative' }}>
             <motion.div
               initial={false}
               animate={{ width: `${progress.pct}%` }}
               transition={{ duration: 0.8, ease: 'easeOut' }}
-              style={{ height: '100%', background: GRAD }}
-            />
+              style={{
+                height: '100%',
+                background: `linear-gradient(90deg, ${PURPLE}, ${PINK_L} 70%, ${PINK_LL})`,
+                boxShadow: `0 0 12px ${PINK_L}99`,
+                position: 'relative', overflow: 'hidden',
+              }}
+            >
+              <span data-tfx style={{
+                position: 'absolute', top: 0, bottom: 0, width: '45%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent)',
+                animation: 'tShimmer 2.8s ease-in-out infinite',
+              }} />
+            </motion.div>
           </div>
         </div>
       </div>
@@ -308,18 +288,30 @@ function TournamentTabs({ active, onChange, roundLabel, matchLabel }) {
               key={tab.id}
               onClick={() => onChange(tab.id)}
               style={{
+                position: 'relative',
                 padding: '10px 28px',
                 borderRadius: 11, border: 'none', cursor: 'pointer',
                 fontSize: 13, fontWeight: 700,
-                background: active === tab.id ? 'rgba(157,23,77,.12)' : 'transparent',
-                color: active === tab.id ? GOLD : 'rgba(255,255,255,.38)',
-                outline: active === tab.id ? `1px solid rgba(157,23,77,.22)` : 'none',
-                transition: 'all 0.18s',
+                background: 'transparent',
+                color: active === tab.id ? GOLD2 : 'rgba(255,255,255,.38)',
+                transition: 'color 0.18s',
                 display: 'flex', alignItems: 'center', gap: 7,
               }}
             >
-              <span>{tab.icon}</span>
-              {tab.label}
+              {active === tab.id && (
+                <motion.span
+                  layoutId="t-tab-pill"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  style={{
+                    position: 'absolute', inset: 0, borderRadius: 11,
+                    background: 'rgba(157,23,77,.16)',
+                    border: '1px solid rgba(219,39,119,.3)',
+                    boxShadow: '0 4px 18px rgba(157,23,77,.22)',
+                  }}
+                />
+              )}
+              <span style={{ position: 'relative' }}>{tab.icon}</span>
+              <span style={{ position: 'relative' }}>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -364,7 +356,7 @@ function WinnerSection({ winner, onReset }) {
       >
         {showThumb && (
           <>
-            <img loading="lazy" decoding="async"
+            <img
               src={thumb}
               onLoad={handleLoad}
               onError={() => setImgFailed(true)}
@@ -595,10 +587,8 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative' }}>
       <style>{T_CSS}</style>
 
-      {/* Fixed bg layers */}
-      <TDarkBackdrop />
-      <TStars />
-      <TScanLine />
+      {/* Fond scène de concert : auras, projecteurs, sol néon, égaliseur, embers */}
+      <TournamentBackdrop />
 
       {/* Inner container — wide */}
       <div style={{ position: 'relative', zIndex: 2 }}>

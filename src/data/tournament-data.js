@@ -1,4 +1,5 @@
 import { LOCAL_TRACKS } from '../lib/blindTest.js'
+import { RAP_VS_OST_CONFIG } from './rap-vs-ost-data.js'
 
 // ── OST Participants catalog ───────────────────────────────────────────────
 // ytId: YouTube video ID for playback embed. Verify/update IDs as needed.
@@ -108,4 +109,7 @@ export const TOURNAMENT_CONFIGS = {
   ost: TOURNAMENT_CONFIG,
   opening: OPENING_TOURNAMENT_CONFIG,
   ending: ENDING_TOURNAMENT_CONFIG,
+  rapvsost: RAP_VS_OST_CONFIG,
 }
+
+export { RAP_VS_OST_CONFIG }

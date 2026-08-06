@@ -34,6 +34,17 @@ export const TOURNAMENT_CATEGORIES = [
     color: '#0891b2',
   },
   {
+    id: 'rapvsost',
+    label: 'Rap VS OST',
+    tagline: 'Deux mondes, un seul survivant.',
+    description: '32 sons de rap FR contre 32 openings et OST anime. 64 participants, le choc des cultures.',
+    icon: '♬',
+    route: '/tournoi/rap-vs-ost',
+    status: 'active',
+    activeCount: 1,
+    color: '#f59e0b',
+  },
+  {
     id: 'character',
     label: 'Personnages',
     tagline: 'Puissance, charisme, écriture.',
