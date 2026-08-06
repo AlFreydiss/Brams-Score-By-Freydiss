@@ -25,21 +25,12 @@ const ARENA_CSS = `
 // ── Page background overlay ────────────────────────────────────────────────
 function PlayingBgOverlay({ ytId, audioUrl, color }) {
   const c = color || GOLD
-  const thumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null
-  const fallbackThumb = ytId ? `https://img.youtube.com/vi/${ytId}/sddefault.jpg` : null
   const media = {
     position: 'absolute', inset: 0,
     width: '100%', height: '100%',
     maxWidth: 'none', maxHeight: 'none',
     objectFit: 'cover',
   }
-  const onThumbError = e => {
-    if (fallbackThumb && e.currentTarget.src !== fallbackThumb) e.currentTarget.src = fallbackThumb
-  }
-  const imageLayer = (style) => thumb ? (
-    <img loading="lazy" decoding="async" src={thumb} alt="" onError={onThumbError} style={{ ...media, ...style }} />
-  ) : null
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -51,28 +42,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
         background: `radial-gradient(90% 100% at 50% 45%, ${c}30, rgba(8,9,14,.72) 56%, rgba(8,9,14,.92) 100%)`,
       }}
     >
-      {ytId ? (
-        <>
-          {imageLayer({
-            objectPosition: 'left 35%',
-            transform: 'scale(1.9) translateX(-19%)',
-            filter: 'blur(54px) brightness(0.74) saturate(1.55)',
-            opacity: 0.42,
-          })}
-          {imageLayer({
-            objectPosition: 'right 35%',
-            transform: 'scale(1.9) translateX(19%)',
-            filter: 'blur(54px) brightness(0.78) saturate(1.65)',
-            opacity: 0.5,
-          })}
-          {imageLayer({
-            objectPosition: 'center 35%',
-            transform: 'scale(1.16)',
-            filter: 'blur(20px) brightness(0.62) saturate(1.45)',
-            opacity: 0.72,
-          })}
-        </>
-      ) : audioUrl ? (
+      {audioUrl ? (
         <video src={audioUrl} autoPlay muted loop playsInline
           style={{
             ...media,

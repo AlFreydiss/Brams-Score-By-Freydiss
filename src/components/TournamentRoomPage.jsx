@@ -794,11 +794,11 @@ function WinnerReveal({ winner }) {
             <span style={{ fontSize: 13 }}>🏆</span>
             <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.22em', color: '#fff' }}>VAINQUEUR DU DUEL</span>
           </motion.div>
-          {ytOk && (
-            <motion.img initial={{ scale: 1.04 }} animate={{ scale: 1 }} transition={{ duration: 0.5, ease }}
-              src={`https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg`} alt=""
-              style={{ display: 'block', width: '100%', maxWidth: 430, margin: '0 auto', borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 28px 80px ${hexA(col, 0.5)}, 0 0 0 6px ${hexA(col, 0.08)}` }} />
-          )}
+          <motion.div initial={{ scale: 1.04 }} animate={{ scale: 1 }} transition={{ duration: 0.5, ease }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: 430, aspectRatio: '16/9', margin: '0 auto', borderRadius: 18, border: `2px solid ${col}`, boxShadow: `0 28px 80px ${hexA(col, 0.5)}, 0 0 0 6px ${hexA(col, 0.08)}`,
+                     background: `radial-gradient(ellipse at 50% 35%, ${hexA(col, 0.55)} 0%, ${hexA(col, 0.16)} 45%, rgba(7,9,14,.96) 78%)` }}>
+            <span style={{ fontSize: 64, filter: `drop-shadow(0 0 26px ${hexA(col, 0.8)})` }}>🏆</span>
+          </motion.div>
           <h2 style={{ margin: '20px 0 5px', fontSize: 'clamp(26px,4.4vw,36px)', fontWeight: 900, letterSpacing: '-.02em', color: '#fff', textShadow: '0 4px 28px rgba(0,0,0,.6)' }}>{winner.title}</h2>
           <div style={{ color: 'rgba(255,255,255,.7)', fontSize: 14.5, fontWeight: 600 }}>{winner.anime}{winner.artist ? ` · ${winner.artist}` : ''}</div>
           <div style={{ marginTop: 16, fontSize: 11.5, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: TXT_FAINT }}>Duel suivant…</div>

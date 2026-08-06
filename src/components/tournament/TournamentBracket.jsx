@@ -28,9 +28,7 @@ function MatchCard({ match, isActive, isMobile }) {
     : 'rgba(255,255,255,0.025)'
 
   function Slot({ participant, isWinner, isLoser, imgFailed, setImgFailed }) {
-    const thumb = participant?.ytId && !participant.ytId.startsWith('similar') && !imgFailed
-      ? `https://img.youtube.com/vi/${participant.ytId}/default.jpg`
-      : null
+    const thumb = null
 
     return (
       <div style={{

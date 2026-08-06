@@ -9,14 +9,10 @@ const PINK = '#db2777', PURPLE = '#7c3aed', PINK_LL = '#f9a8d4', GOLD = '#f5c945
 const REDUCE = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
 
 export default function WinnerCard({ winner, onReset, resetLabel = 'Rejouer le tournoi', subtitle = 'Le tournoi est terminé. La communauté a parlé.' }) {
-  const [imgFailed, setImgFailed] = useState(false)
-  const [imgState, setImgState] = useState('loading')
   const [playing, setPlaying] = useState(false)
   const [copied, setCopied] = useState(false)
   const accent = winner?.color || PINK
   const ytOk = winner?.ytId && !String(winner.ytId).startsWith('similar')
-  const thumb = ytOk && !imgFailed ? `https://img.youtube.com/vi/${winner.ytId}/hqdefault.jpg` : null
-  const showThumb = !!thumb && imgState !== 'failed' && !imgFailed
   const gradTxt = `linear-gradient(135deg, #fff 0%, ${PINK_LL} 40%, ${accent} 100%)`
 
   // confettis : ~46 particules déterministes (pas de Math.random au render — varie par index)
@@ -35,10 +31,6 @@ export default function WinnerCard({ winner, onReset, resetLabel = 'Rejouer le t
     })
   }, [accent])
 
-  function handleLoad(e) {
-    if (e.target.naturalWidth <= 120) setImgFailed(true)
-    else setImgState('ok')
-  }
   function share() {
     const txt = `🏆 « ${winner?.title} »${winner?.anime ? ` (${winner.anime})` : ''} a gagné le tournoi sur Brams Community !`
     try {
@@ -109,15 +101,7 @@ export default function WinnerCard({ winner, onReset, resetLabel = 'Rejouer le t
           maxWidth: 560, width: '100%',
         }}
       >
-        {showThumb ? (
-          <>
-            <img loading="lazy" decoding="async" src={thumb} onLoad={handleLoad} onError={() => setImgFailed(true)} alt=""
-              style={{ position: 'absolute', inset: '-5%', width: '110%', height: '110%', maxWidth: 'none', objectFit: 'cover', filter: 'blur(18px) brightness(0.28) saturate(1.4)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 50% 35%, ${accent}3a 0%, rgba(7,9,14,0.92) 66%)` }} />
-          </>
-        ) : (
-          <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 45% 30%, ${accent}66 0%, ${accent}1c 42%, rgba(7,9,14,.98) 70%)` }} />
-        )}
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 45% 30%, ${accent}66 0%, ${accent}1c 42%, rgba(7,9,14,.98) 70%)` }} />
 
         <div className="wc-inner" style={{ position: 'relative', zIndex: 1, padding: '46px 56px' }}>
           {playing && ytOk ? (

@@ -13,10 +13,7 @@ export default function OSTDuelCard({
   videoSyncRef,
   vivid = false, // multi split-screen : chaque carte montre SA miniature en plein, pas d'assombrissement
 }) {
-  const [imgState, setImgState] = useState('loading')
   const videoRef = useRef(null)
-
-  useEffect(() => { setImgState('loading') }, [participant?.id])
 
   // Quand la lecture démarre, reset la vidéo de fond à 0 pour rester synchro avec le player audio
   useEffect(() => {
@@ -57,9 +54,8 @@ export default function OSTDuelCard({
 
   const ytOk     = participant?.ytId && !participant.ytId.startsWith('similar')
   const canPlay  = ytOk || !!participant?.audioUrl
-  const thumbUrl = ytOk ? `https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg` : null
-  const showThumb = !!thumbUrl && imgState === 'ok'
   const accent   = participant?.color || GOLD
+  const campGlyph = participant?.camp === 'rap' ? '🎤' : '🎼'
   const myVote   = voted === side
   // Badge type : camp (rap/ost) prioritaire, sinon ED → ENDING, OP → OPENING, sinon OST.
   const typeBadge = participant?.camp === 'rap' ? 'RAP FR'
@@ -111,17 +107,6 @@ export default function OSTDuelCard({
     >
       {/* ── BACKGROUND PLEINE CARTE ── */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        {/* Img hidden pour state tracking */}
-        {thumbUrl && (
-          <img loading="lazy" decoding="async"
-            src={thumbUrl}
-            alt=""
-            onLoad={e => { if (e.target.naturalWidth > 120) setImgState('ok') }}
-            onError={() => setImgState('failed')}
-            style={{ display: 'none' }}
-          />
-        )}
-
         {/* Vidéo de fond — preview (opacité réduite) quand inactive, plein quand en lecture */}
         {participant?.audioUrl && (
           <video
@@ -151,34 +136,18 @@ export default function OSTDuelCard({
           />
         )}
 
-        {/* Thumbnail YouTube quand pas de audioUrl — en lecture: zoom lent + couleurs
-            poussées (zéro chrome YouTube, l'audio vit dans l'iframe cachée du player). */}
-        {!participant?.audioUrl && showThumb && (
-          <img loading="lazy" decoding="async"
-            src={`https://img.youtube.com/vi/${participant.ytId}/hqdefault.jpg`}
-            alt=""
-            onError={e => { e.currentTarget.src = thumbUrl }}
-            style={{
-              position: 'absolute', top: '-8%', left: '-5%',
-              width: '110%', height: '116%',
-              maxWidth: 'none', maxHeight: 'none',
-              objectFit: 'cover', objectPosition: 'center 30%',
-              opacity: isPlaying ? (isLoser ? 0.2 : 0.85)
-                : vivid ? (isLoser ? 0.32 : 0.66) : (isLoser ? 0.08 : 0.48),
-              filter: isPlaying ? 'saturate(1.5) brightness(0.95)' : 'saturate(1.3) brightness(0.9)',
-              animation: isPlaying ? 'arSlowZoom 22s ease-in-out infinite' : 'none',
-              transition: 'opacity .5s, filter .5s',
-            }}
-          />
-        )}
-
-        {/* Gradient couleur uniquement si aucun media disponible */}
-        {!participant?.audioUrl && !showThumb && (
+        {/* Fond couleur du participant — aucune miniature YouTube. En lecture:
+            aura renforcée + respiration lente. */}
+        {!participant?.audioUrl && (
           <div style={{
-            position: 'absolute', inset: 0,
+            position: 'absolute', inset: '-6%',
             background: isLoser
               ? `radial-gradient(ellipse at 50% 10%, ${a15} 0%, transparent 65%)`
-              : `radial-gradient(ellipse at 50% 15%, ${a60} 0%, ${a35} 30%, ${a15} 55%, transparent 80%)`,
+              : isPlaying
+                ? `radial-gradient(ellipse at 50% 32%, ${a60} 0%, ${a35} 40%, ${a15} 64%, transparent 88%)`
+                : `radial-gradient(ellipse at 50% 15%, ${a60} 0%, ${a35} 30%, ${a15} 55%, transparent 80%)`,
+            animation: isPlaying ? 'arSlowZoom 18s ease-in-out infinite' : 'none',
+            transition: 'background .6s',
           }} />
         )}
 
@@ -270,14 +239,14 @@ export default function OSTDuelCard({
               ))}
             </div>
           )}
-          {!isPlaying && !showThumb && !participant?.audioUrl && participant.emoji && (
+          {!isPlaying && !participant?.audioUrl && (
             <span style={{
               fontSize: isMobile ? 52 : 68,
               lineHeight: 1,
               filter: `drop-shadow(0 0 18px ${accent}) drop-shadow(0 0 40px ${a35})`,
               opacity: isLoser ? 0.25 : 0.9,
             }}>
-              {participant.emoji}
+              {participant.emoji || campGlyph}
             </span>
           )}
         </div>
