@@ -85,7 +85,7 @@ function fmt(s) {
 }
 
 // ── Compact audio strip ────────────────────────────────────────────────────
-function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef, boost = 1 }) {
+function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef, boost = 1, endAt = null }) {
   const iframeRef = useRef(null)
   const videoRef  = useRef(null)
   const timerRef  = useRef(null)
@@ -150,7 +150,12 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       const media = mediaRef.current
       if (!media || disposed) return
       const loaded = () => setDuration(media.duration || 0)
-      const time = () => setElapsed(media.currentTime || 0)
+      const time = () => {
+        const t = media.currentTime || 0
+        setElapsed(t)
+        // endAt = fin reelle de l'opening (le fichier se termine par une pub muette)
+        if (endAt && t >= endAt) stopRef.current?.()
+      }
       const ended = () => stopRef.current?.()
       media.addEventListener('loadedmetadata', loaded)
       media.addEventListener('timeupdate', time)
@@ -167,7 +172,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       }
     })
     return () => { disposed = true; cancelAnimationFrame(raf); cleanup() }
-  }, [audioUrl, mediaRef, ytId])
+  }, [audioUrl, mediaRef, ytId, endAt])
 
   useEffect(() => {
     if (!audioUrl && iframeRef.current) {
@@ -178,13 +183,15 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     }
   }, [volume, audioUrl])
 
-  // Échelle de la barre = durée réelle du média : la vidéo se joue entièrement.
-  const total  = duration > 0 && Number.isFinite(duration) ? duration : 0
+  // Échelle de la barre = durée réelle de l'opening : endAt (fin de la musique,
+  // avant la pub muette en fin de fichier) prime sur la durée du fichier.
+  const fileDur = duration > 0 && Number.isFinite(duration) ? duration : 0
+  const total  = endAt ? Math.min(endAt, fileDur || endAt) : fileDur
   const pct    = total ? Math.min(100, (elapsed / total) * 100) : 0
   const volPct = volume + '%'
 
   function handleSeek(rawValue) {
-    const t = Number(rawValue)
+    const t = Math.min(Number(rawValue), total || Number(rawValue))
     setElapsed(t)
     const media = getMedia()
     if (audioUrl && media) media.currentTime = t
@@ -222,7 +229,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {audioUrl && !mediaRef ? (
         <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
           onLoadedMetadata={e => setDuration(e.target.duration || 0)}
-          onTimeUpdate={e => setElapsed(e.target.currentTime)}
+          onTimeUpdate={e => { setElapsed(e.target.currentTime); if (endAt && e.target.currentTime >= endAt) onStop() }}
           onEnded={onStop}
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
         />
@@ -424,6 +431,7 @@ export default function DuelArena({
       anime:    p.anime,
       type:     p.type || null,   // 'OP' → boost de loudness dans le player compact
       gain:     p.gain || null,   // boost spécifique à la piste (prioritaire)
+      endAt:    p.endAt || null,  // fin reelle de l'opening (coupe la pub muette)
     })
   }
 
@@ -582,6 +590,7 @@ export default function DuelArena({
             onSeek={handleCardBgSeek}
             mediaRef={playing.audioUrl ? cardBgVideoRef : null}
             boost={playing.gain || (playing.audioUrl ? 2.2 : 1)}
+            endAt={playing.endAt}
           />
         )}
       </AnimatePresence>

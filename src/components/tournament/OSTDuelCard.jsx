@@ -122,6 +122,13 @@ export default function OSTDuelCard({
             loop={!isPlaying}
             playsInline
             preload={isPlaying ? 'auto' : 'metadata'}
+            onTimeUpdate={e => {
+              // Preview : reboucle à la fin réelle de l'opening (la fin du fichier
+              // est une pub muette). En lecture, c'est le player compact qui stoppe.
+              if (!isPlaying && participant?.endAt && e.target.currentTime >= participant.endAt) {
+                e.target.currentTime = 0
+              }
+            }}
             style={{
               position: 'absolute', inset: 0,
               width: '100%', height: '100%',

@@ -48,6 +48,7 @@ const toBlindTestParticipant = (track) => ({
   type: track.type || 'OP',
   episode: track.episode,
   audioUrl: track.url,
+  endAt: track.endAt || null, // fin reelle de l'opening (pub muette coupee)
   ytId: track.ytId || null,
   color: track.color || '#6366f1',
   emoji: track.emoji || null,
