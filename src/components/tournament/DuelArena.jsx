@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti'
 import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
-import { boostElement } from '../../lib/audioBoost.js'
+import { boostElement, corsUrl } from '../../lib/audioBoost.js'
 const VideoPlayer = lazy(() => import('../VideoPlayer.jsx'))
 
 const PINK   = '#9d174d'
@@ -23,8 +23,25 @@ const ARENA_CSS = `
 `
 
 // ── Page background overlay ────────────────────────────────────────────────
-function PlayingBgOverlay({ ytId, audioUrl, color }) {
+function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
   const c = color || GOLD
+  const bgVideoRef = useRef(null)
+
+  // Sync la vidéo floutée de fond sur la vidéo source (celle de la carte) :
+  // rattrape la dérive en continu et suit instantanément les seeks du lecteur,
+  // pour que le fond reste calé même quand on avance dans la vidéo.
+  useEffect(() => {
+    if (!audioUrl || !syncRef) return
+    const sync = () => {
+      const main = syncRef.current, bg = bgVideoRef.current
+      if (!main || !bg || !bg.duration) return
+      if (Math.abs(bg.currentTime - main.currentTime) > 0.3) bg.currentTime = main.currentTime
+    }
+    const iv = setInterval(sync, 250)
+    const main = syncRef.current
+    main?.addEventListener('seeked', sync)
+    return () => { clearInterval(iv); main?.removeEventListener('seeked', sync) }
+  }, [audioUrl, syncRef])
   const media = {
     position: 'absolute', inset: 0,
     width: '100%', height: '100%',
@@ -43,7 +60,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color }) {
       }}
     >
       {audioUrl ? (
-        <video src={audioUrl} autoPlay muted loop playsInline
+        <video ref={bgVideoRef} src={corsUrl(audioUrl)} autoPlay muted loop playsInline
           style={{
             ...media,
             objectPosition: 'center center',
@@ -80,17 +97,39 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
   const getMedia = () => (audioUrl && mediaRef?.current) ? mediaRef.current : videoRef.current
 
   useEffect(() => { stopRef.current = onStop }, [onStop])
-  const LIMIT = 103   // lecteur tournoi plafonné à 1m43 de vidéo
 
-  useEffect(() => {
-    timerRef.current = setTimeout(onStop, LIMIT * 1000)
-    return () => clearTimeout(timerRef.current)
-  }, [onStop])
-
+  // Lecture intégrale : plus de plafond. L'arrêt vient de 'ended' (vidéo R2)
+  // ou de playerState 0 (YouTube). Garde-fou 8 min côté YouTube au cas où les
+  // messages de l'iframe seraient bloqués.
   useEffect(() => {
     if (audioUrl) return
-    const iv = setInterval(() => setElapsed(Math.min(LIMIT, (Date.now() - startRef.current) / 1000)), 250)
-    return () => clearInterval(iv)
+    timerRef.current = setTimeout(() => stopRef.current?.(), 8 * 60 * 1000)
+    return () => clearTimeout(timerRef.current)
+  }, [audioUrl])
+
+  // YouTube : durée / position / fin réelles via l'API postMessage de l'iframe
+  // (enablejsapi=1). Fallback horloge tant qu'aucun infoDelivery n'est reçu.
+  useEffect(() => {
+    if (audioUrl) return
+    let gotInfo = false
+    const handshake = setInterval(() => {
+      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'listening', id: 'arena' }), '*')
+    }, 500)
+    const onMsg = e => {
+      if (typeof e.data !== 'string' || !String(e.origin).includes('youtube')) return
+      let data
+      try { data = JSON.parse(e.data) } catch { return }
+      if (data.event !== 'infoDelivery' || !data.info) return
+      if (!gotInfo) { gotInfo = true; clearInterval(handshake) }
+      if (data.info.duration > 0) setDuration(data.info.duration)
+      if (typeof data.info.currentTime === 'number') setElapsed(data.info.currentTime)
+      if (data.info.playerState === 0) stopRef.current?.()   // 0 = ended
+    }
+    window.addEventListener('message', onMsg)
+    const iv = setInterval(() => {
+      if (!gotInfo) setElapsed((Date.now() - startRef.current) / 1000)
+    }, 250)
+    return () => { window.removeEventListener('message', onMsg); clearInterval(handshake); clearInterval(iv) }
   }, [audioUrl])
 
   useEffect(() => {
@@ -111,11 +150,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       const media = mediaRef.current
       if (!media || disposed) return
       const loaded = () => setDuration(media.duration || 0)
-      const time = () => {
-        const t = media.currentTime || 0
-        setElapsed(t)
-        if (t >= LIMIT) stopRef.current?.()
-      }
+      const time = () => setElapsed(media.currentTime || 0)
       const ended = () => stopRef.current?.()
       media.addEventListener('loadedmetadata', loaded)
       media.addEventListener('timeupdate', time)
@@ -143,9 +178,9 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     }
   }, [volume, audioUrl])
 
-  // Échelle de la barre = toujours 1m43 (LIMIT), pas la durée du clip source :
-  // un extrait court ne doit pas remplir la barre comme s'il faisait 1m43.
-  const pct    = (Math.min(elapsed, LIMIT) / LIMIT) * 100
+  // Échelle de la barre = durée réelle du média : la vidéo se joue entièrement.
+  const total  = duration > 0 && Number.isFinite(duration) ? duration : 0
+  const pct    = total ? Math.min(100, (elapsed / total) * 100) : 0
   const volPct = volume + '%'
 
   function handleSeek(rawValue) {
@@ -153,6 +188,10 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     setElapsed(t)
     const media = getMedia()
     if (audioUrl && media) media.currentTime = t
+    if (!audioUrl) {
+      startRef.current = Date.now() - t * 1000
+      iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [t, true] }), '*')
+    }
     onSeek?.(t)
   }
 
@@ -183,7 +222,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {audioUrl && !mediaRef ? (
         <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
           onLoadedMetadata={e => setDuration(e.target.duration || 0)}
-          onTimeUpdate={e => { setElapsed(e.target.currentTime); if (e.target.currentTime >= LIMIT) onStop() }}
+          onTimeUpdate={e => setElapsed(e.target.currentTime)}
           onEnded={onStop}
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
         />
@@ -215,7 +254,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {/* Timeline — barre épaisse cliquable partout (clic = saut à la position) */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <input
-          type="range" min="0" max={LIMIT} step="0.1" value={Math.min(elapsed, LIMIT)}
+          type="range" min="0" max={total || 100} step="0.1" value={total ? Math.min(elapsed, total) : elapsed}
           onChange={e => handleSeek(e.target.value)}
           aria-label="Position dans l'opening"
           style={{
@@ -230,7 +269,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
 
       {/* Time */}
       <div style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', flexShrink: 0, minWidth: 32 }}>
-        {fmt(elapsed)}
+        {fmt(elapsed)}{total ? ` / ${fmt(total)}` : ''}
       </div>
 
       {/* Volume */}
@@ -414,7 +453,7 @@ export default function DuelArena({
           dans le contexte de la page comme DuelAmbient : son z-index 0 le garde
           derrière les cartes (grid z1) et la navbar reste au-dessus. */}
       <AnimatePresence>
-        {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} audioUrl={playing.audioUrl} color={playing.color} />}
+        {playing && <PlayingBgOverlay key={playing.ytId || playing.audioUrl} ytId={playing.ytId} audioUrl={playing.audioUrl} color={playing.color} syncRef={playing.audioUrl ? cardBgVideoRef : null} />}
       </AnimatePresence>
 
       {/* Ambient glow subtil */}
