@@ -2,8 +2,8 @@
 // Deux formats : '916' (1080×1920, stories) et '11' (1080×1080, X/Discord).
 // Module partagé entre le Wrapped et le Flashback (carte souvenir).
 
-const GOLD = '#F5D97B'
-const GOLD_DEEP = '#BFA46A'
+const GOLD = '#C9A46A'
+const GOLD_DEEP = '#A8884E'
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath()
@@ -67,10 +67,10 @@ export async function generateShareCard(data, format = '916', variant = 'wrapped
 
   // Fond nuit en mer
   const bg = ctx.createLinearGradient(0, 0, 0, H)
-  bg.addColorStop(0, '#0A1A33'); bg.addColorStop(0.55, '#06101F'); bg.addColorStop(1, '#040A14')
+  bg.addColorStop(0, '#16110A'); bg.addColorStop(0.55, '#07080C'); bg.addColorStop(1, '#050403')
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
   const halo = ctx.createRadialGradient(W / 2, H * 0.28, 60, W / 2, H * 0.28, W * 0.8)
-  halo.addColorStop(0, 'rgba(245,217,123,0.12)'); halo.addColorStop(1, 'transparent')
+  halo.addColorStop(0, 'rgba(201,164,106,0.16)'); halo.addColorStop(1, 'transparent')
   ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H)
   drawNoise(ctx, W, H)
 
@@ -85,7 +85,7 @@ export async function generateShareCard(data, format = '916', variant = 'wrapped
   ctx.textAlign = 'center'
   ctx.fillStyle = 'rgba(245,217,123,.85)'
   ctx.font = "800 34px 'Bricolage Grotesque', 'Inter', sans-serif"
-  ctx.fillText(variant === 'flashback' ? '— FLASHBACK —' : `BRAMS WRAPPED · ${(data.period_label || '').toUpperCase()}`, cx, y)
+  ctx.fillText(variant === 'flashback' ? 'FLASHBACK' : `BRAMS WRAPPED  ${(data.period_label || '').toUpperCase()}`, cx, y)
   y += format === '916' ? 130 : 100
 
   // Avatar
