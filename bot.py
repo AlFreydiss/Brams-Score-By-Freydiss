@@ -17,6 +17,14 @@ import psycopg2
 from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
 from utils.security import add_security_headers, sanitize, sanitize_name, validate_amount, is_safe_url
+from utils.wrapped_math import (
+    overlap_same_channel as _wr_overlap,
+    best_binome as _wr_best_binome,
+    membership_ok as _wr_membership_ok,
+    days_aboard as _wr_days_aboard,
+    hour_vibe as _wr_hour_vibe,
+    MEMBERSHIP_DAYS as WRAPPED_MIN_MEMBERSHIP_DAYS,
+)
 
 app = Flask('')
 app.after_request(add_security_headers)
@@ -1526,42 +1534,54 @@ def _ai_server_snapshot(guild) -> dict:
 bot.ai_server_snapshot = _ai_server_snapshot
 
 
+def _ai_live_channels(guild) -> dict:
+    out = {}
+    if guild is None:
+        return out
+    for vc in list(guild.voice_channels) + list(getattr(guild, "stage_channels", []) or []):
+        if not _is_counted_voice_channel(guild, vc):
+            continue
+        for m in vc.members:
+            if not m.bot:
+                out[str(m.id)] = str(vc.id)
+    return out
+
+
+def _ai_overlap_intervals(udata, cutoff, now, live_ch=None):
+    iv = []
+    for s in udata.get("vocal_sessions", []):
+        try:
+            if s["end"] <= cutoff:
+                continue
+            iv.append((max(float(s["start"]), cutoff), min(float(s["end"]), now), s.get("channel")))
+        except Exception:
+            continue
+    jt = udata.get("join_time")
+    if jt and now > jt:
+        iv.append((max(float(jt), cutoff), now, live_ch or udata.get("voice_channel")))
+    return iv
+
+
 def _ai_overlap_partner(member) -> tuple[str | None, float]:
-    """(uid, heures) du membre avec qui on a partagé le plus de vocal sur 7j (two-pointer)."""
+    """(uid, heures) du membre avec qui on a partagé le plus de vocal sur 7j (même salon)."""
     uid = str(member.id)
     now = now_ts()
     cutoff = now - 7 * 86400
-
-    def _intervals(u):
-        iv = [(max(s["start"], cutoff), min(s["end"], now))
-              for s in u.get("vocal_sessions", []) if s["end"] > cutoff]
-        if u.get("join_time"):
-            iv.append((max(u["join_time"], cutoff), now))
-        return sorted((a, b) for a, b in iv if b > a)
-
-    mine = _intervals(get_user(_CACHE, uid))
+    live = _ai_live_channels(getattr(member, "guild", None))
+    mine = _ai_overlap_intervals(get_user(_CACHE, uid), cutoff, now, live.get(uid))
     if not mine:
         return None, 0.0
-    best_uid, best = None, 0
+    best_uid, best = None, 0.0
     for other_uid, other in _CACHE.items():
         if other_uid == uid or not isinstance(other, dict):
             continue
-        theirs = _intervals(other)
+        theirs = _ai_overlap_intervals(other, cutoff, now, live.get(other_uid))
         if not theirs:
             continue
-        total, i, j = 0, 0, 0
-        while i < len(mine) and j < len(theirs):
-            a = max(mine[i][0], theirs[j][0])
-            b = min(mine[i][1], theirs[j][1])
-            if b > a:
-                total += b - a
-            if mine[i][1] < theirs[j][1]:
-                i += 1
-            else:
-                j += 1
-        if total > best:
-            best, best_uid = total, other_uid
-    return best_uid, best / 3600
+        ov = _wr_overlap(mine, theirs)
+        if ov > best:
+            best, best_uid = ov, other_uid
+    return best_uid, best
 bot.ai_overlap_partner = _ai_overlap_partner
 
 
@@ -3392,9 +3412,11 @@ async def on_voice_state_update(member, before, after):
         if after_counted:
             user["join_time"] = event_now
             user["voice_seen"] = user["join_time"]
+            user["voice_channel"] = str(after.channel.id)
         else:
             user["join_time"] = None
             user.pop("last_berry_ts", None)
+            user.pop("voice_channel", None)
         _DIRTY.add(uid)
         entry_url = user.get("entry_sound")
         if entry_url:
@@ -3415,6 +3437,7 @@ async def on_voice_state_update(member, before, after):
             })
             archive_voice_session(uid, start, end, str(before.channel.id))
             user["join_time"] = None
+            user.pop("voice_channel", None)
             clean_old_data(user)
 
             # Berry reliquat depuis le dernier tick (loop paie toutes les 2 min)
@@ -3432,6 +3455,7 @@ async def on_voice_state_update(member, before, after):
         elif user.get("join_time"):
             user["join_time"] = None
             user.pop("last_berry_ts", None)
+            user.pop("voice_channel", None)
             _DIRTY.add(uid)
         asyncio.create_task(_apply_boost_role(member, False))
 
@@ -3457,6 +3481,9 @@ async def on_voice_state_update(member, before, after):
         user["join_time"] = event_now if after_counted else None
         if after_counted:
             user["voice_seen"] = user["join_time"]
+            user["voice_channel"] = str(after.channel.id)
+        else:
+            user.pop("voice_channel", None)
         clean_old_data(user)
         _DIRTY.add(uid)
         seconds_7d = seconds_in_period(user["vocal_sessions"], 7, join_time=user["join_time"] if after_counted else None)
@@ -3545,6 +3572,7 @@ async def vocal_rank_loop():
                 # Heartbeat : dernière présence vocale confirmée. Sert à créditer
                 # proprement la session en cours si le bot redémarre (cf. on_ready).
                 user["voice_seen"] = now
+                user["voice_channel"] = str(vc.id)
                 _DIRTY.add(uid)
                 # Découpe la présence continue en tranches de 6h archivées : évite
                 # qu'une session géante (non-stop) soit tronquée à 24h par fenêtre.
@@ -3554,8 +3582,12 @@ async def vocal_rank_loop():
                 if jt and now - jt >= SESSION_CHUNK_SECONDS:
                     t = max(jt, now - 14 * 86400)
                     while now - t >= SESSION_CHUNK_SECONDS:
-                        user.setdefault("vocal_sessions", []).append({"start": t, "end": t + SESSION_CHUNK_SECONDS})
-                        archive_voice_session(uid, t, t + SESSION_CHUNK_SECONDS, None)
+                        user.setdefault("vocal_sessions", []).append({
+                            "start": t,
+                            "end": t + SESSION_CHUNK_SECONDS,
+                            "channel": str(vc.id),
+                        })
+                        archive_voice_session(uid, t, t + SESSION_CHUNK_SECONDS, str(vc.id))
                         t += SESSION_CHUNK_SECONDS
                     user["join_time"] = t   # reliquat (< 6h) reste la session ouverte
                     jt = t
@@ -8414,15 +8446,14 @@ async def addberries_cmd(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-#  BRAMS WRAPPED — calcul des snapshots (30 j) + DM des liens
-#  Données : users.data.vocal_sessions (rétention 32 j) ; binôme = chevauchement
-#  de sessions entre membres éligibles ; lecture page via RPC get_wrapped(token).
+#  BRAMS WRAPPED — snapshots 30 j + génération à la volée
+#  Éligible = à bord depuis >= 30 jours (plus de seuil 5h).
+#  Binôme = même salon au même moment (pas un chevauchement horaire global).
 # ═════════════════════════════════════════════════════════════════════════════
 WRAPPED_URL = os.environ.get("WRAPPED_URL", "https://brams.community/wrapped")
-WRAPPED_MIN_HOURS = 5.0
 _FR_DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 
-def _wr_sessions(udata, cutoff, now):
+def _wr_sessions(udata, cutoff, now, live_channel=None):
     out = []
     for s in udata.get("vocal_sessions", []):
         try:
@@ -8434,28 +8465,79 @@ def _wr_sessions(udata, cutoff, now):
         out.append((max(st, cutoff), min(en, now), s.get("channel")))
     jt = udata.get("join_time")
     if jt and now > jt:
-        out.append((max(float(jt), cutoff), now, None))
+        ch = live_channel or udata.get("voice_channel")
+        out.append((max(float(jt), cutoff), now, ch))
     out.sort()
     return out
 
-def _wr_overlap(a, b):
-    """Heures de chevauchement entre deux listes de sessions triées (two-pointer)."""
-    i = j = 0
-    total = 0.0
-    while i < len(a) and j < len(b):
-        lo = max(a[i][0], b[j][0]); hi = min(a[i][1], b[j][1])
-        if hi > lo:
-            total += hi - lo
-        if a[i][1] < b[j][1]: i += 1
-        else: j += 1
-    return total / 3600
+def _wr_live_channels(guild):
+    return _ai_live_channels(guild)
 
-def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted):
+def _wr_joined_ts(uid, udata, guild=None):
+    candidates = []
+    uid_s = str(uid) if uid else ""
+    if uid_s.isdigit():
+        guilds = [guild] if guild else []
+        guilds.extend(g for g in bot.guilds if g.id in GUILD_IDS and g is not guild)
+        for g in guilds:
+            if g is None:
+                continue
+            m = g.get_member(int(uid_s))
+            if m and m.joined_at:
+                candidates.append(m.joined_at.timestamp())
+    msgs = udata.get("messages") or []
+    if msgs:
+        try:
+            candidates.append(float(min(msgs)))
+        except Exception:
+            pass
+    starts = []
+    for s in udata.get("vocal_sessions") or []:
+        try:
+            starts.append(float(s["start"]))
+        except Exception:
+            pass
+    if starts:
+        candidates.append(min(starts))
+    return min(candidates) if candidates else None
+
+def _wr_is_eligible(member, udata, now, guild=None):
+    joined = None
+    if member and getattr(member, "joined_at", None):
+        joined = member.joined_at.timestamp()
+    if not joined:
+        joined = _wr_joined_ts(getattr(member, "id", None) or "", udata, guild or getattr(member, "guild", None))
+    return _wr_membership_ok(joined, now)
+
+def _wr_collect_sessions(guild, now, cutoff):
+    live = _wr_live_channels(guild)
+    all_sessions = {}
+    hours_by_uid = []
+    for uid, udata in list(_CACHE.items()):
+        if not isinstance(udata, dict):
+            continue
+        member = None
+        if guild and str(uid).isdigit():
+            member = guild.get_member(int(uid))
+            if member and member.bot:
+                continue
+        sess = _wr_sessions(udata, cutoff, now, live.get(uid) or udata.get("voice_channel"))
+        name = udata.get("username")
+        avatar = udata.get("avatar_url")
+        if member:
+            name = name or member.display_name
+            avatar = avatar or str(member.display_avatar.with_size(128).url)
+        all_sessions[uid] = (sess, name or f"Pirate #{str(uid)[-4:]}", avatar)
+        hours_by_uid.append((uid, sum(en - st for st, en, _ in sess) / 3600))
+    hours_by_uid.sort(key=lambda kv: -kv[1])
+    return all_sessions, hours_by_uid
+
+def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted, joined_ts=None, now=None):
     import datetime as _dt
     tz = _dt.timezone(_dt.timedelta(hours=2))  # Paris (été)
+    now = now or now_ts()
     hours = sum(en - st for st, en, _ in sess) / 3600
 
-    # Par jour (best_day, streak, jour signature)
     days, dow = {}, {}
     longest = (0.0, None)
     chans = {}
@@ -8477,31 +8559,42 @@ def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted):
     top_channels = []
     for ch, secs in sorted(chans.items(), key=lambda kv: -kv[1])[:3]:
         c = guild.get_channel(int(ch)) if guild and str(ch).isdigit() else None
-        top_channels.append({"name": (f"🎙️ {c.name}" if c else "Salon vocal"), "hours": round(secs / 3600, 1)})
+        top_channels.append({"name": (c.name if c else "Salon vocal"), "hours": round(secs / 3600, 1)})
 
-    # Binôme : meilleur chevauchement avec les autres éligibles
-    binome = None
-    best_ov = 0.0
-    for ouid, (osess, oname, oavatar) in all_sessions.items():
-        if ouid == uid:
-            continue
-        ov = _wr_overlap(sess, osess)
-        if ov > best_ov:
-            best_ov = ov
-            binome = {"username": oname, "avatar_url": oavatar, "hours": round(ov, 1)}
-    if binome and best_ov < 1:
-        binome = None
+    binome = _wr_best_binome(uid, sess, all_sessions)
 
-    # Percentile parmi les éligibles
-    rankpos = next((i for i, (u, h) in enumerate(hours_sorted) if u == uid), len(hours_sorted) - 1)
-    percentile = max(1, round((rankpos + 1) / max(1, len(hours_sorted)) * 100))
+    voiced = [(u, h) for u, h in hours_sorted if h > 0]
+    if voiced:
+        rankpos = next((i for i, (u, _h) in enumerate(voiced) if u == uid), len(voiced) - 1)
+        percentile = max(1, round((rankpos + 1) / max(1, len(voiced)) * 100))
+    else:
+        percentile = None
 
     h7 = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=udata.get("join_time")) / 3600
     rank_name = next((nm for thr, nm in RANKS if h7 >= thr), None)
 
+    msg_cutoff = now - 30 * 86400
+    messages = 0
+    for ts in udata.get("messages") or []:
+        try:
+            if float(ts) >= msg_cutoff:
+                messages += 1
+        except Exception:
+            continue
+
+    vibe = _wr_hour_vibe(sess)
+    username = udata.get("username")
+    avatar = udata.get("avatar_url")
+    if guild and str(uid).isdigit():
+        m = guild.get_member(int(uid))
+        if m:
+            username = username or m.display_name
+            avatar = avatar or str(m.display_avatar.with_size(128).url)
+
     return {
-        "username": udata.get("username") or f"Pirate #{str(uid)[-4:]}",
-        "avatar_url": udata.get("avatar_url"),
+        "v": 2,
+        "username": username or f"Pirate #{str(uid)[-4:]}",
+        "avatar_url": avatar,
         "period_label": "30 derniers jours",
         "hours": round(hours, 1),
         "binome": binome,
@@ -8513,6 +8606,16 @@ def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted):
         "percentile": percentile,
         "streak": best,
         "signature_day": _FR_DAYS[max(dow.items(), key=lambda kv: kv[1])[0]] if dow else None,
+        "messages": messages,
+        "vibe": vibe.get("vibe"),
+        "night_share": vibe.get("night_share"),
+        "day_share": vibe.get("day_share"),
+        "days_on_server": _wr_days_aboard(joined_ts, now),
+        "joined_at": (
+            _dt.datetime.fromtimestamp(joined_ts, tz).date().isoformat()
+            if joined_ts else None
+        ),
+        "berrys": int(udata.get("berrys", 0)),
     }
 
 async def _wr_upsert_snapshot(uid, period, payload, token):
@@ -8561,57 +8664,76 @@ def _wr_embed(token):
     )
     return e
 
-@bot.tree.command(name="wrapped", description="Reçois le lien de TON Brams Wrapped (30 derniers jours)")
+async def _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid):
+    import secrets as _secrets
+    udata = get_user(_CACHE, uid)
+    member = guild.get_member(int(uid)) if guild and str(uid).isdigit() else None
+    joined = member.joined_at.timestamp() if member and member.joined_at else _wr_joined_ts(uid, udata, guild)
+    sess = all_sessions.get(uid, ([], None, None))[0]
+    payload = _wr_payload(uid, udata, sess, all_sessions, guild, hours_by_uid, joined_ts=joined, now=now)
+    token = await _wr_get_token(uid, period) or _secrets.token_urlsafe(16)
+    if not await _wr_upsert_snapshot(uid, period, payload, token):
+        return None
+    return token
+
+@bot.tree.command(name="wrapped", description="Ouvre TON Brams Wrapped (éligible après 1 mois à bord)")
 @app_commands.guilds(*GUILD_IDS)
 async def wrapped_cmd(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
-    token = await _wr_get_token(str(interaction.user.id), _wr_period())
+    uid = str(interaction.user.id)
+    guild = interaction.guild
+    now = now_ts()
+    udata = get_user(_CACHE, uid)
+    if not _wr_is_eligible(interaction.user, udata, now, guild):
+        joined = interaction.user.joined_at.timestamp() if interaction.user.joined_at else _wr_joined_ts(uid, udata, guild)
+        left = WRAPPED_MIN_MEMBERSHIP_DAYS - _wr_days_aboard(joined, now)
+        await interaction.followup.send(
+            f"🧭 Ton Log de Bord s'ouvre après **1 mois** à bord.\n"
+            f"Encore **{max(1, left)} jour(s)**. Reviens avec `/wrapped`.",
+            ephemeral=True,
+        )
+        return
+    cutoff = now - 30 * 86400
+    period = _wr_period()
+    all_sessions, hours_by_uid = _wr_collect_sessions(guild, now, cutoff)
+    token = await _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid)
     if not token:
         await interaction.followup.send(
-            "🧭 Ton Wrapped n'a pas encore été généré (il faut au moins 5h de vocal sur 30 jours, "
-            "et qu'un admin ait lancé `/wrapped_lancer`).", ephemeral=True)
+            "🧭 Impossible d'écrire le log pour l'instant. Réessaie dans une minute.",
+            ephemeral=True,
+        )
         return
     await interaction.followup.send(embed=_wr_embed(token), ephemeral=True)
 
-@bot.tree.command(name="wrapped_lancer", description="[ADMIN] Génère les Wrapped de tous les membres éligibles et les envoie en DM")
+@bot.tree.command(name="wrapped_lancer", description="[ADMIN] Génère les Wrapped de tous les membres à bord depuis 1 mois")
 @app_commands.guilds(*GUILD_IDS)
 @app_commands.default_permissions(administrator=True)
 @app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(dm="Envoyer les DM (false = générer les liens sans DM)")
 async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
-    import secrets as _secrets
     await interaction.response.defer(ephemeral=True)
     guild = interaction.guild
     now = now_ts()
     cutoff = now - 30 * 86400
     period = _wr_period()
+    all_sessions, hours_by_uid = _wr_collect_sessions(guild, now, cutoff)
 
-    # 1) sessions 30 j de tout le monde + éligibles (>= 5 h)
-    # _CACHE est un dict plat { uid: udata } (cf. get_user)
-    all_sessions = {}
-    hours_by_uid = []
-    for uid, udata in list(_CACHE.items()):
-        if not isinstance(udata, dict) or "vocal_sessions" not in udata:
+    eligible = []
+    for m in guild.members:
+        if m.bot:
             continue
-        sess = _wr_sessions(udata, cutoff, now)
-        if not sess:
-            continue
-        h = sum(en - st for st, en, _ in sess) / 3600
-        if h >= WRAPPED_MIN_HOURS:
-            all_sessions[uid] = (sess, udata.get("username") or f"Pirate #{str(uid)[-4:]}", udata.get("avatar_url"))
-            hours_by_uid.append((uid, h))
-    hours_by_uid.sort(key=lambda kv: -kv[1])
-    if not hours_by_uid:
-        await interaction.followup.send("Aucun membre éligible (≥ 5h de vocal sur 30 j).", ephemeral=True)
+        udata = get_user(_CACHE, str(m.id))
+        if _wr_is_eligible(m, udata, now, guild):
+            eligible.append(str(m.id))
+    if not eligible:
+        await interaction.followup.send("Aucun membre à bord depuis 1 mois.", ephemeral=True)
         return
 
-    print(f"[WRAPPED] lancement : {len(hours_by_uid)} membres eligibles")
+    print(f"[WRAPPED] lancement : {len(eligible)} membres eligibles (1 mois+)")
     ok = fail_dm = 0
-    for uid, _h in hours_by_uid:
-        udata = get_user(_CACHE, uid)
-        payload = _wr_payload(uid, udata, all_sessions[uid][0], all_sessions, guild, hours_by_uid)
-        token = await _wr_get_token(uid, period) or _secrets.token_urlsafe(16)
-        if not await _wr_upsert_snapshot(uid, period, payload, token):
+    for uid in eligible:
+        token = await _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid)
+        if not token:
             continue
         ok += 1
         if dm:
@@ -8624,11 +8746,13 @@ async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
                 except Exception as e:
                     fail_dm += 1
                     print(f"[WRAPPED] DM {uid}: {e}")
-                await asyncio.sleep(1.1)   # throttle anti rate-limit Discord
+                await asyncio.sleep(1.1)
     print(f"[WRAPPED] termine : {ok} snapshots, {fail_dm} DM fermes")
     await interaction.followup.send(
-        f"🧭 **Wrapped généré !** {ok} membres éligibles · {fail_dm} DM fermés.\n"
-        f"Chacun peut récupérer son lien avec `/wrapped`.", ephemeral=True)
+        f"🧭 **Wrapped généré !** {ok} membres à bord depuis 1 mois · {fail_dm} DM fermés.\n"
+        f"Chacun peut aussi taper `/wrapped` pour régénérer le sien.",
+        ephemeral=True,
+    )
 
 
 # ── FLASHBACK : milestone + token + DM (page /flashback/:token) ───────────────

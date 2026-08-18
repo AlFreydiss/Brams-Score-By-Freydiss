@@ -618,7 +618,7 @@ class AIExtraCog(commands.Cog):
             color=GOLD,
         )
         embed.set_thumbnail(url=partner.display_avatar.url)
-        embed.set_footer(text=f"{_FOOTER} • Calculé sur le chevauchement réel de vos sessions vocales")
+        embed.set_footer(text=f"{_FOOTER} • Temps passé dans le même salon (pas juste en ligne en même temps)")
         await interaction.followup.send(embed=embed)
 
     # ── /journal ──────────────────────────────────────────────────
