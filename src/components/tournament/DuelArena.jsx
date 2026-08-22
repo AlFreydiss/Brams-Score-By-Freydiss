@@ -22,25 +22,73 @@ const ARENA_CSS = `
   input[type=range]::-webkit-slider-runnable-track { height:3px; border-radius:2px; }
 `
 
+function seekMedia(el, t) {
+  if (!el || !Number.isFinite(t)) return
+  const dur = el.duration
+  const max = Number.isFinite(dur) && dur > 0 ? Math.max(0, dur - 0.05) : t
+  const clamped = Math.min(Math.max(0, t), max)
+  try { el.currentTime = clamped } catch { /* seek ignore si pas prêt */ }
+}
+
 // ── Page background overlay ────────────────────────────────────────────────
 function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
   const c = color || GOLD
   const bgVideoRef = useRef(null)
 
-  // Sync la vidéo floutée de fond sur la vidéo source (celle de la carte) :
-  // rattrape la dérive en continu et suit instantanément les seeks du lecteur,
-  // pour que le fond reste calé même quand on avance dans la vidéo.
+  // Le fond est une 2e copie de la même source. Sans ça, `loop` + autoPlay
+  // partent tout seuls : dès qu'on seek la barre, carte et fond ne sont plus
+  // à la même frame. On copie temps + pause/play, et on rattrape la dérive.
   useEffect(() => {
     if (!audioUrl || !syncRef) return
-    const sync = () => {
-      const main = syncRef.current, bg = bgVideoRef.current
-      if (!main || !bg || !bg.duration) return
-      if (Math.abs(bg.currentTime - main.currentTime) > 0.3) bg.currentTime = main.currentTime
+    let cancelled = false
+    let tries = 0
+    let retryTimer = 0
+    let drift = 0
+    let off = () => {}
+    const attach = () => {
+      if (cancelled) return
+      const main = syncRef.current
+      const bg = bgVideoRef.current
+      if (!main || !bg) {
+        if (tries++ < 40) retryTimer = window.setTimeout(attach, 50)
+        return
+      }
+      bg.muted = true
+      bg.loop = false
+      const copyTime = (force = false) => {
+        if (cancelled || !Number.isFinite(main.currentTime)) return
+        if (force || Math.abs((bg.currentTime || 0) - main.currentTime) > 0.12) {
+          seekMedia(bg, main.currentTime)
+        }
+      }
+      const onSeeking = () => copyTime(true)
+      const onSeeked = () => copyTime(true)
+      const onPlay = () => { copyTime(true); bg.play().catch(() => {}) }
+      const onPause = () => { bg.pause(); copyTime(true) }
+      main.addEventListener('seeking', onSeeking)
+      main.addEventListener('seeked', onSeeked)
+      main.addEventListener('play', onPlay)
+      main.addEventListener('pause', onPause)
+      copyTime(true)
+      bg.playbackRate = main.playbackRate || 1
+      if (main.paused) bg.pause()
+      else bg.play().catch(() => {})
+      drift = window.setInterval(() => copyTime(false), 120)
+      off = () => {
+        window.clearInterval(drift)
+        main.removeEventListener('seeking', onSeeking)
+        main.removeEventListener('seeked', onSeeked)
+        main.removeEventListener('play', onPlay)
+        main.removeEventListener('pause', onPause)
+      }
     }
-    const iv = setInterval(sync, 250)
-    const main = syncRef.current
-    main?.addEventListener('seeked', sync)
-    return () => { clearInterval(iv); main?.removeEventListener('seeked', sync) }
+    attach()
+    return () => {
+      cancelled = true
+      window.clearTimeout(retryTimer)
+      window.clearInterval(drift)
+      off()
+    }
   }, [audioUrl, syncRef])
   const media = {
     position: 'absolute', inset: 0,
@@ -60,7 +108,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
       }}
     >
       {audioUrl ? (
-        <video ref={bgVideoRef} src={corsUrl(audioUrl)} autoPlay muted loop playsInline
+        <video ref={bgVideoRef} src={corsUrl(audioUrl)} muted playsInline preload="auto"
           style={{
             ...media,
             objectPosition: 'center center',
@@ -94,6 +142,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
   const [volume,  setVolume]  = useState(100)
   const [elapsed, setElapsed] = useState(0)
   const [duration, setDuration] = useState(0)
+  const draggingRef = useRef(false)
   const getMedia = () => (audioUrl && mediaRef?.current) ? mediaRef.current : videoRef.current
 
   useEffect(() => { stopRef.current = onStop }, [onStop])
@@ -122,7 +171,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       if (data.event !== 'infoDelivery' || !data.info) return
       if (!gotInfo) { gotInfo = true; clearInterval(handshake) }
       if (data.info.duration > 0) setDuration(data.info.duration)
-      if (typeof data.info.currentTime === 'number') setElapsed(data.info.currentTime)
+      if (typeof data.info.currentTime === 'number' && !draggingRef.current) setElapsed(data.info.currentTime)
       if (data.info.playerState === 0) stopRef.current?.()   // 0 = ended
     }
     window.addEventListener('message', onMsg)
@@ -149,8 +198,12 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     const raf = requestAnimationFrame(() => {
       const media = mediaRef.current
       if (!media || disposed) return
-      const loaded = () => setDuration(media.duration || 0)
+      const loaded = () => {
+        const d = media.duration
+        if (Number.isFinite(d) && d > 0) setDuration(d)
+      }
       const time = () => {
+        if (draggingRef.current) return
         const t = media.currentTime || 0
         setElapsed(t)
         // endAt = fin reelle de l'opening (le fichier se termine par une pub muette)
@@ -158,6 +211,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       }
       const ended = () => stopRef.current?.()
       media.addEventListener('loadedmetadata', loaded)
+      media.addEventListener('durationchange', loaded)
       media.addEventListener('timeupdate', time)
       media.addEventListener('ended', ended)
       media.muted = false
@@ -167,6 +221,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       time()
       cleanup = () => {
         media.removeEventListener('loadedmetadata', loaded)
+        media.removeEventListener('durationchange', loaded)
         media.removeEventListener('timeupdate', time)
         media.removeEventListener('ended', ended)
       }
@@ -191,15 +246,29 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
   const volPct = volume + '%'
 
   function handleSeek(rawValue) {
-    const t = Math.min(Number(rawValue), total || Number(rawValue))
-    setElapsed(t)
     const media = getMedia()
-    if (audioUrl && media) media.currentTime = t
+    const fileDur = media && Number.isFinite(media.duration) && media.duration > 0 ? media.duration : 0
+    const cap = endAt ? Math.min(endAt, fileDur || endAt) : (fileDur || total)
+    if (!cap) return
+    const t = Math.max(0, Math.min(Number(rawValue), cap))
+    setElapsed(t)
+    if (audioUrl && media) seekMedia(media, t)
     if (!audioUrl) {
       startRef.current = Date.now() - t * 1000
       iframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [t, true] }), '*')
     }
     onSeek?.(t)
+  }
+
+  function onSeekPointerDown() {
+    draggingRef.current = true
+    const media = getMedia()
+    if (audioUrl && media && !media.paused) media.pause()
+  }
+  function onSeekPointerUp() {
+    draggingRef.current = false
+    const media = getMedia()
+    if (audioUrl && media) media.play().catch(() => {})
   }
 
   return (
@@ -261,8 +330,12 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {/* Timeline — barre épaisse cliquable partout (clic = saut à la position) */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <input
-          type="range" min="0" max={total || 100} step="0.1" value={total ? Math.min(elapsed, total) : elapsed}
+          type="range" min="0" max={total || 0.001} step="0.1" value={total ? Math.min(elapsed, total) : 0}
+          disabled={!total}
           onChange={e => handleSeek(e.target.value)}
+          onPointerDown={onSeekPointerDown}
+          onPointerUp={onSeekPointerUp}
+          onPointerCancel={onSeekPointerUp}
           aria-label="Position dans l'opening"
           style={{
             width: '100%', height: 14, cursor: 'pointer',

@@ -14,13 +14,18 @@ export default function OSTDuelCard({
   vivid = false, // multi split-screen : chaque carte montre SA miniature en plein, pas d'assombrissement
 }) {
   const videoRef = useRef(null)
+  const wasPlaying = useRef(false)
 
-  // Quand la lecture démarre, reset la vidéo de fond à 0 pour rester synchro avec le player audio
+  // Reset à 0 uniquement au PASSAGE en lecture. Sinon un seek de la barre
+  // est écrasé et la carte / le fond ne sont plus au même endroit.
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
     video.muted = !isPlaying
-    if (isPlaying) video.currentTime = 0
+    if (isPlaying && !wasPlaying.current) {
+      try { video.currentTime = 0 } catch { /* */ }
+    }
+    wasPlaying.current = !!isPlaying
     video.play().catch(() => {})
   }, [isPlaying])
 
