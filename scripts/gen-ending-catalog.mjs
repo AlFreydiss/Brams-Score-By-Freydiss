@@ -265,6 +265,105 @@ const SLUGS = {
   'undeadunluck': 'Undead Unluck',
   'windbreaker': 'Wind Breaker',
   'haikyuu': 'Haikyuu!!',
+  'jojo': "JoJo's Bizarre Adventure",
+  'gintama': 'Gintama',
+  'ns': 'Naruto Shippuden',
+  'pokemon': 'Pokemon',
+  'boruto': 'Boruto',
+  'fireforce': 'Fire Force',
+  'solo': 'Solo Leveling',
+  'sololeveling': 'Solo Leveling',
+  'assassination': 'Assassination Classroom',
+  'ansatsu': 'Assassination Classroom',
+  'agk': 'Akame ga Kill!',
+  'kaguya': 'Kaguya-sama: Love is War',
+  'mobpsycho': 'Mob Psycho 100',
+  'mob': 'Mob Psycho 100',
+  'onepunch': 'One Punch Man',
+  'onepiece': 'One Piece',
+  'naruto': 'Naruto',
+  'bleach': 'Bleach',
+  'db': 'Dragon Ball',
+  'dbk': 'Dragon Ball Kai',
+  'eyeshield21': 'Eyeshield 21',
+  'ft': 'Fairy Tail',
+  'fsn': 'Fate/stay night',
+  'fumetsuno': 'Fumetsu no Anata e',
+  'goldentime': 'Golden Time',
+  'goblinslayer': 'Goblin Slayer',
+  'haikyuu': 'Haikyuu!!',
+  'hxh': 'Hunter x Hunter',
+  'ippo': 'Hajime no Ippo',
+  'jjk': 'Jujutsu Kaisen',
+  'kny': 'Demon Slayer',
+  'konosuba': 'KonoSuba',
+  'madeinabyss': 'Made in Abyss',
+  'amdb': 'Made in Abyss',
+  'mha': 'My Hero Academia',
+  'bokuno': 'My Hero Academia',
+  'ngnl': 'No Game No Life',
+  'nisekoi': 'Nisekoi',
+  'opm': 'One Punch Man',
+  'parasyte': 'Parasyte',
+  'rezero': 'Re:Zero',
+  'sao': 'Sword Art Online',
+  'shieldhero': 'The Rising of the Shield Hero',
+  'slamdunk': 'Slam Dunk',
+  'tensura': 'That Time I Got Reincarnated as a Slime',
+  'trigun': 'Trigun',
+  'violet': 'Violet Evergarden',
+  'vivy': "Vivy: Fluorite Eye's Song",
+  'yugioh5ds': 'Yu-Gi-Oh! 5Ds',
+  'yugioharc': 'Yu-Gi-Oh! ARC-V',
+  'yugiohduel': 'Yu-Gi-Oh!',
+  'yugiohvrains': 'Yu-Gi-Oh! VRAINS',
+  'yugiohzexal': 'Yu-Gi-Oh! ZEXAL',
+  'yuuyuuhakusho': 'Yu Yu Hakusho',
+  'captaintsubasa': 'Captain Tsubasa',
+  'claymore': 'Claymore',
+  'cyberpunkedger': 'Cyberpunk Edgerunners',
+  'dal': 'Date A Live',
+  'deathparade': 'Death Parade',
+  'densetsuno': 'The Legend of the Legendary Heroes',
+  'devilmancrybab': 'Devilman Crybaby',
+  'digimonadventu': 'Digimon Adventure',
+  'digimonfrontie': 'Digimon Frontier',
+  'domestic': 'Domestic Girlfriend',
+  'dragonquest': 'Dragon Quest',
+  'dtb': 'Date A Live',
+  'eurekaseven': 'Eureka Seven',
+  'ff': 'Fire Force',
+  'fireforce': 'Fire Force',
+  'fate': 'Fate',
+  'goldenkamuy': 'Golden Kamuy',
+  'haikyuu': 'Haikyuu!!',
+  'kaiju': 'Kaiju No. 8',
+  'kaguya': 'Kaguya-sama',
+  'madeinabyss': 'Made in Abyss',
+  'natsumeyuujinc': "Natsume's Book of Friends",
+  'nodamecantabil': 'Nodame Cantabile',
+  'ourankoukou': 'Ouran High School Host Club',
+  'primadoll': 'Prima Doll',
+  'rokkano': 'Rokka: Braves of the Six Flowers',
+  'sakamotodays': 'Sakamoto Days',
+  'samuraichamplo': 'Samurai Champloo',
+  'seishunbuta': 'Rascal Does Not Dream of Bunny Girl Senpai',
+  'seraph': 'Seraph of the End',
+  'shuumatsuno': 'Record of Ragnarok',
+  'sinnanatsu': 'The Seven Deadly Sins',
+  'toaruhikuushi': "The Pilot's Love Song",
+  'windbreaker': 'Wind Breaker',
+  'yuushaou': 'The Heroic Legend of Arslan',
+  'yuushayamemasu': "I'm Quitting Heroing",
+  'zoneof': 'Zone of the Enders',
+  'aoharu': 'Aoharu x Kikanjuu',
+  'apothecary': 'The Apothecary Diaries',
+  'barakamon': 'Barakamon',
+  'baki': 'Baki',
+  'beelzebub': 'Beelzebub',
+  'berserk': 'Berserk',
+  'bishoujosenshi': 'Sailor Moon',
+  'anohi': 'Anohana',
 }
 
 const KNOWN = {
@@ -297,24 +396,26 @@ function parseEdNum(stem) {
   return m ? m[1] : null
 }
 
-function slugAnime(stem) {
+function slugAnime(stem, kind = 'ed') {
+  const k = kind === 'op' ? 'op' : 'ed'
   let base = stem
-    .replace(/[-_]s\d+[-_]ed\d*$/i, '')
-    .replace(/[-_]ed[-_]?s?\d*$/i, '')
-    .replace(/[-_]ed$/i, '')
+    .replace(new RegExp(`[-_]s\\d+[-_]${k}\\d*$`, 'i'), '')
+    .replace(new RegExp(`[-_]${k}[-_]?s?\\d*$`, 'i'), '')
+    .replace(new RegExp(`[-_]${k}$`, 'i'), '')
   const suffix = []
   if (/final/i.test(stem)) suffix.push('Final')
   if (/tybw/i.test(stem)) suffix.push('TYBW')
   if (/alicization/i.test(stem)) suffix.push('Alicization')
-  if (/-r2-/i.test(stem) || /r2-ed/i.test(stem)) suffix.push('R2')
-  if (/-s2-/i.test(stem) || /s2-ed/i.test(stem)) suffix.push('S2')
-  if (/-s3-/i.test(stem) || /s3-ed/i.test(stem)) suffix.push('S3')
-  if (/-s4-/i.test(stem) || /s4-ed/i.test(stem)) suffix.push('S4')
+  if (/-wou-/i.test(stem)) suffix.push('WoU')
+  if (/-r2-/i.test(stem) || new RegExp(`r2-${k}`, 'i').test(stem)) suffix.push('R2')
+  if (/-s2-/i.test(stem) || new RegExp(`s2-${k}`, 'i').test(stem)) suffix.push('S2')
+  if (/-s3-/i.test(stem) || new RegExp(`s3-${k}`, 'i').test(stem)) suffix.push('S3')
+  if (/-s4-/i.test(stem) || new RegExp(`s4-${k}`, 'i').test(stem)) suffix.push('S4')
   if (SLUGS[base]) return suffix.length ? `${SLUGS[base]} ${suffix.join(' ')}` : SLUGS[base]
   const keys = Object.keys(SLUGS).sort((a, b) => b.length - a.length)
-  for (const k of keys) {
-    if (base === k || base.startsWith(k + '-') || base.startsWith(k)) {
-      return suffix.length ? `${SLUGS[k]} ${suffix.join(' ')}` : SLUGS[k]
+  for (const key of keys) {
+    if (base === key || base.startsWith(key + '-') || base.startsWith(key + '_')) {
+      return suffix.length ? `${SLUGS[key]} ${suffix.join(' ')}` : SLUGS[key]
     }
   }
   return base.split(/[-_]/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
@@ -486,3 +587,177 @@ ${lines.join('\n')}
 const dest = path.join(root, 'src/data/ending-r2-catalog.js')
 fs.writeFileSync(dest, out)
 console.log('wrote', dest, out.length, 'bytes')
+
+// ── Openings (même source R2) ─────────────────────────────────────────────
+function isOpFile(file) {
+  if (!file.endsWith('.mp4')) return false
+  if (/-ed(\d+|[-_s])/i.test(file) && !/-op/i.test(file)) return false
+  return /[-_]op\d/i.test(file) || /op\d+\.mp4$/i.test(file) || /[-_]op\.mp4$/i.test(file)
+}
+
+function parseOpNum(stem) {
+  const m = stem.match(/[-_]op[-_]?s?(\d+)/i) || stem.match(/op(\d+)$/i)
+  return m ? m[1] : null
+}
+
+const OP_ALIAS_DROP = new Set([
+  'eightysix-op1',
+  'tenshino-op1',
+  'anohi-circle-game-op1',
+  'csm-op1',
+  'cb-op1',
+  'kny-op1', 'knykimetsu-no-op1',
+  'dr-stone-op1',
+  'bokuno-op1',
+  'onk-op1',
+  'rezerokara-op1', 'rezerokara-op2',
+  'ousama-op1',
+  'samuraichamplo-op1',
+  'owarino-op1',
+  'tensura-op1',
+  'shieldhero-op1',
+  'yourlie-op1',
+  'spy-op1', 'spy-s2-op1',
+  'promised-op1',
+  'dn-op1', 'dn-op2',
+  'cg-op1', 'cg-op2', 'cg-op3',
+  'konosubarashii-op1', 'konosubarashii-fantastic-drea-op1',
+  'ft-power-of-the-dream-op1',
+  'ft-down-by-law-op2', 'ft-strike-back-op2',
+  'ft-mysterious-magic-op3', 'ft-no-limit-op3',
+  'ft-break-out-op4', 'ft-more-than-like-op4',
+  'ft-yume-iro-graffiti-op5',
+  'ft-never-end-tale-op6',
+  'gintama-bakuchi-dancer-op1',
+  'gintama-kaze-no-gotoku-op2',
+  'gintama-kanousei-girl-op3',
+  'gintama-katoniago-op4',
+  'naruto-baton-road-op1',
+  'naruto-over-op2',
+  'naruto-it-s-all-in-th-op3',
+  'naruto-lonely-go-op4',
+  'naruto-golden-time-op5',
+  'naruto-teenage-dream-op6',
+  'naruto-hajimatte-iku-takamatte-iku-op7',
+  'ns-niwaka-ame-nimo-makezu-op13',
+  'nge-zankoku-na-tenshi-no-thesis-op1',
+  'op-one-piece-theme-op1',
+  'op-saikou-toutatsuten-op25',
+  'pokemon-pokemon-theme-gotta-catch-em-all-op1',
+  'pokemon-a-whole-new-world-pokemon-johto-op3',
+  'fmab-again-op1',
+  'ghostin-get9-op1',
+  'sonobisque-ao-to-kirameki-op1',
+  'yahariore-harumodoki-op1',
+  'bleach-scar-op1', 'bleach-shoujo-s-op10',
+  'dbs-genkai-toppa-x-op2',
+  'souleater-counter-identity-op1',
+  'souleater-ai-ga-hoshii-yo-op2',
+  'tr-white-noise-op1',
+  'psychopass-q-vism-op1',
+  'bishoujosenshi-moonlight-densetsu-op1',
+  'bishoujosenshi-sailor-moon-theme-op1',
+  'yuuyuuhakusho-hohoemi-no-bak-op1',
+  'tg-asphyxia-op1',
+  'fullmetalalche-op1', 'fullmetalalche-op2', 'fullmetalalche-op3', 'fullmetalalche-op4',
+  'vivyfluorite-op1', 'vivyfluorite-op2', 'vivyfluorite-op4',
+  'plasticmemorie-op1',
+  'oshi-no-ko-op1',
+  'beastars2nd-s2-op1',
+])
+
+const localOpById = {}
+const localOpByFile = {}
+for (const chunk of chunks) {
+  const id = field(chunk, 'id')
+  const type = field(chunk, 'type') || 'OP'
+  if (!id || type === 'ED') continue
+  const rec = {
+    id,
+    title: field(chunk, 'title'),
+    anime: field(chunk, 'anime'),
+    artist: field(chunk, 'artist'),
+    episode: field(chunk, 'episode'),
+    url: field(chunk, 'url'),
+    color: field(chunk, 'color'),
+    endAt: field(chunk, 'endAt'),
+    gain: field(chunk, 'gain'),
+    emoji: field(chunk, 'emoji'),
+  }
+  localOpById[id] = rec
+  if (rec.url) {
+    const file = rec.url.split('/').pop().replace(/\.mp4$/i, '')
+    localOpByFile[file] = rec
+  }
+}
+console.log('LOCAL_TRACKS OP parsed', Object.keys(localOpById).length)
+
+const opKeys = keys.filter(k => {
+  const file = k.split('/').pop()
+  return isOpFile(file) && !k.includes('/faststart/')
+})
+
+const seenOp = new Set()
+const openings = []
+
+function pushOp(id, audioUrl, local) {
+  if (seenOp.has(id)) return
+  seenOp.add(id)
+  const known = KNOWN[id] || {}
+  const num = parseOpNum(id)
+  const anime = local?.anime || known.anime || slugAnime(id, 'op')
+  const title = (local?.title && local.title !== 'Opening 1' && !/^Opening \d+$/.test(local.title) ? local.title : null)
+    || known.title
+    || (num ? `Opening ${num}` : 'Opening')
+  const artist = local?.artist || known.artist || ''
+  const episode = local?.episode || (num ? `Opening ${num}` : 'Opening')
+  const color = local?.color || colorFor(id)
+  openings.push({
+    id,
+    title,
+    anime,
+    artist,
+    type: 'OP',
+    episode,
+    audioUrl,
+    endAt: local?.endAt ? Number(local.endAt) : null,
+    color,
+    emoji: local?.emoji || '▶',
+    gain: local?.gain ? Number(local.gain) : null,
+  })
+}
+
+for (const key of opKeys.sort()) {
+  const file = key.split('/').pop()
+  const id = file.replace(/\.mp4$/i, '')
+  if (OP_ALIAS_DROP.has(id)) continue
+  const local = localOpById[id] || localOpByFile[id]
+  pushOp(id, `${PUBLIC}/${key}`, local)
+}
+for (const rec of Object.values(localOpById)) {
+  if (seenOp.has(rec.id) || OP_ALIAS_DROP.has(rec.id)) continue
+  pushOp(rec.id, rec.url, rec)
+}
+
+openings.sort((a, b) => a.anime.localeCompare(b.anime) || a.id.localeCompare(b.id))
+const nOp = openings.length
+let pow2op = 1
+while (pow2op < nOp) pow2op *= 2
+console.log(JSON.stringify({ r2OpFiles: opKeys.length, catalog: nOp, padTo: pow2op, firstRoundPlayable: Math.floor(nOp / 2) }, null, 2))
+
+const opLines = openings.map(p => {
+  const extra = [
+    p.endAt ? `endAt:${p.endAt}` : null,
+    p.gain ? `gain:${p.gain}` : null,
+  ].filter(Boolean).join(', ')
+  return `  { id:${jsStr(p.id)}, title:${jsStr(p.title)}, anime:${jsStr(p.anime)}, artist:${jsStr(p.artist)}, type:'OP', episode:${jsStr(p.episode)}, audioUrl:${jsStr(p.audioUrl)}, color:${jsStr(p.color)}, emoji:${jsStr(p.emoji)}${extra ? ', ' + extra : ''} },`
+})
+const opOut = `// Auto-généré par scripts/gen-ending-catalog.mjs depuis R2 blind-test + LOCAL_TRACKS OP.
+// ${nOp} openings → bracket ${pow2op} → ~${Math.floor(nOp / 2)} duels au 1er tour.
+export const OPENING_R2_CATALOG = [
+${opLines.join('\n')}
+]
+`
+const opDest = path.join(root, 'src/data/opening-r2-catalog.js')
+fs.writeFileSync(opDest, opOut)
+console.log('wrote', opDest, opOut.length, 'bytes')

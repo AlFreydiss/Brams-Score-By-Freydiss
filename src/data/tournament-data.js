@@ -1,6 +1,6 @@
-import { LOCAL_TRACKS } from '../lib/blindTest.js'
-import { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG, OST_ANIME_CATALOG } from './rap-vs-ost-data.js'
+import { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from './rap-vs-ost-data.js'
 import { ENDING_R2_CATALOG } from './ending-r2-catalog.js'
+import { OPENING_R2_CATALOG } from './opening-r2-catalog.js'
 
 // ── OST Participants catalog ───────────────────────────────────────────────
 // ytId: YouTube video ID for playback embed. Verify/update IDs as needed.
@@ -41,49 +41,7 @@ export const OST_CATALOG = [
   { id:'yoi-op1',      title:'History Maker',            anime:'Yuri!!! on Ice',             artist:'Dean Fujioka',           ytId:'rFOVBVMJhgY', color:'#1d4ed8' },
 ]
 
-const toBlindTestParticipant = (track) => ({
-  id: track.id,
-  title: track.title,
-  anime: track.anime,
-  artist: track.artist || track.episode || 'Blind Test',
-  type: track.type || 'OP',
-  episode: track.episode,
-  audioUrl: track.url,
-  endAt: track.endAt || null, // fin reelle de l'opening (pub muette coupee)
-  ytId: track.ytId || null,
-  color: track.color || '#6366f1',
-  emoji: track.emoji || null,
-  gain: track.gain || null,   // boost de loudness par piste (ex. Michishirube trop bas)
-})
-
-function padCatalog(base, type, n = 128) {
-  const seen = new Set(base.map(p => String(p.title || '').toLowerCase()))
-  const out = [...base]
-  for (const f of OST_ANIME_CATALOG) {
-    if (out.length >= n) break
-    const title = String(f.title || '')
-    const key = title.toLowerCase()
-    if (!key || seen.has(key)) continue
-    seen.add(key)
-    out.push({
-      id: `pad-${type}-${f.id}`,
-      title,
-      anime: f.anime,
-      artist: f.artist || 'OST',
-      type,
-      audioUrl: f.audioUrl || null,
-      ytId: f.ytId || null,
-      color: f.color || '#6366f1',
-    })
-  }
-  return out
-}
-
-export const BLIND_TEST_OPENING_CATALOG = padCatalog(
-  LOCAL_TRACKS.filter((track) => (track.type || 'OP') === 'OP').map(toBlindTestParticipant),
-  'OP',
-)
-
+export const BLIND_TEST_OPENING_CATALOG = OPENING_R2_CATALOG
 export const BLIND_TEST_ENDING_CATALOG = ENDING_R2_CATALOG
 
 // ── Initial tournament configuration ─────────────────────────────────────
@@ -111,7 +69,7 @@ export const OPENING_TOURNAMENT_CONFIG = {
   startDate:   '2026-05-27',
   categoryLabel:'Openings',
   route:        '/tournoi/openings',
-  version:      'v3-opening-128',
+  version:      'v4-opening-r2',
   participants: BLIND_TEST_OPENING_CATALOG,
 }
 
