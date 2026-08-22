@@ -11,6 +11,8 @@ export function getRoundLabel(size) {
   if (size === 32)  return '32e de finale'
   if (size === 64)  return '64e de finale'
   if (size === 128) return '128e de finale'
+  if (size === 256) return '256e de finale'
+  if (size === 512) return '512e de finale'
   return `Tour de ${size}`
 }
 

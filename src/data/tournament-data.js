@@ -1,5 +1,6 @@
 import { LOCAL_TRACKS } from '../lib/blindTest.js'
 import { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG, OST_ANIME_CATALOG } from './rap-vs-ost-data.js'
+import { ENDING_R2_CATALOG } from './ending-r2-catalog.js'
 
 // ── OST Participants catalog ───────────────────────────────────────────────
 // ytId: YouTube video ID for playback embed. Verify/update IDs as needed.
@@ -83,10 +84,7 @@ export const BLIND_TEST_OPENING_CATALOG = padCatalog(
   'OP',
 )
 
-export const BLIND_TEST_ENDING_CATALOG = padCatalog(
-  LOCAL_TRACKS.filter((track) => track.type === 'ED').map(toBlindTestParticipant),
-  'ED',
-)
+export const BLIND_TEST_ENDING_CATALOG = ENDING_R2_CATALOG
 
 // ── Initial tournament configuration ─────────────────────────────────────
 export const TOURNAMENT_CONFIG = {
@@ -127,7 +125,7 @@ export const ENDING_TOURNAMENT_CONFIG = {
   startDate:   '2026-06-02',
   categoryLabel:'Endings',
   route:        '/tournoi/endings',
-  version:      'v2-ending-128',
+  version:      'v3-ending-r2',
   participants: BLIND_TEST_ENDING_CATALOG,
 }
 
