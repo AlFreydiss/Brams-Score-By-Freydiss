@@ -1,5 +1,5 @@
 import { LOCAL_TRACKS } from '../lib/blindTest.js'
-import { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from './rap-vs-ost-data.js'
+import { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG, OST_ANIME_CATALOG } from './rap-vs-ost-data.js'
 
 // ── OST Participants catalog ───────────────────────────────────────────────
 // ytId: YouTube video ID for playback embed. Verify/update IDs as needed.
@@ -55,13 +55,38 @@ const toBlindTestParticipant = (track) => ({
   gain: track.gain || null,   // boost de loudness par piste (ex. Michishirube trop bas)
 })
 
-export const BLIND_TEST_OPENING_CATALOG = LOCAL_TRACKS
-  .filter((track) => (track.type || 'OP') === 'OP')
-  .map(toBlindTestParticipant)
+function padCatalog(base, type, n = 128) {
+  const seen = new Set(base.map(p => String(p.title || '').toLowerCase()))
+  const out = [...base]
+  for (const f of OST_ANIME_CATALOG) {
+    if (out.length >= n) break
+    const title = String(f.title || '')
+    const key = title.toLowerCase()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push({
+      id: `pad-${type}-${f.id}`,
+      title,
+      anime: f.anime,
+      artist: f.artist || 'OST',
+      type,
+      audioUrl: f.audioUrl || null,
+      ytId: f.ytId || null,
+      color: f.color || '#6366f1',
+    })
+  }
+  return out
+}
 
-export const BLIND_TEST_ENDING_CATALOG = LOCAL_TRACKS
-  .filter((track) => track.type === 'ED')
-  .map(toBlindTestParticipant)
+export const BLIND_TEST_OPENING_CATALOG = padCatalog(
+  LOCAL_TRACKS.filter((track) => (track.type || 'OP') === 'OP').map(toBlindTestParticipant),
+  'OP',
+)
+
+export const BLIND_TEST_ENDING_CATALOG = padCatalog(
+  LOCAL_TRACKS.filter((track) => track.type === 'ED').map(toBlindTestParticipant),
+  'ED',
+)
 
 // ── Initial tournament configuration ─────────────────────────────────────
 export const TOURNAMENT_CONFIG = {
@@ -88,7 +113,7 @@ export const OPENING_TOURNAMENT_CONFIG = {
   startDate:   '2026-05-27',
   categoryLabel:'Openings',
   route:        '/tournoi/openings',
-  version:      'v2-opening-blind-test',
+  version:      'v3-opening-128',
   participants: BLIND_TEST_OPENING_CATALOG,
 }
 
@@ -102,7 +127,7 @@ export const ENDING_TOURNAMENT_CONFIG = {
   startDate:   '2026-06-02',
   categoryLabel:'Endings',
   route:        '/tournoi/endings',
-  version:      'v1-ending-blind-test',
+  version:      'v2-ending-128',
   participants: BLIND_TEST_ENDING_CATALOG,
 }
 

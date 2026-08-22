@@ -297,15 +297,15 @@ export const RAP_VS_OST_CONFIG = {
 export const RAP_FR_CONFIG = {
   id:          'rap-fr-2026',
   title:       'Rap FR Arena',
-  description: `${RAP_FR_TOURNAMENT.length} classiques et bangers du rap français, clips inclus. Un seul son au sommet.`,
+  description: `${RAP_FR_CATALOG.length} classiques et bangers du rap français. Un seul son au sommet.`,
   status:      'active',
   format:      'single_elimination',
   edition:     'Edition 1',
   startDate:   '2026-08-06',
   categoryLabel:'Rap FR',
   route:        '/tournoi/rap-fr',
-  version:      'v3-rap-fr-64-clips',
-  participants: RAP_FR_TOURNAMENT,
+  version:      'v4-rap-fr-128',
+  participants: RAP_FR_CATALOG,
 }
 
 export const OST_ANIME_CONFIG = {
