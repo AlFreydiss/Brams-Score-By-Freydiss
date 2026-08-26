@@ -1,13 +1,14 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DOUBLAGE_SCENES } from '../data/doublage-data.js'
 import { corsUrl } from '../lib/audioBoost.js'
 
 // ── Guerre du Doublage ──────────────────────────────────────────────────────
-// Une manche = une scène, jouée deux fois : piste VF (`src` de l'épisode) et
-// piste VOSTFR (`audio[ja].mediaSrc`). Les deux vidéos sont chargées sur le
-// MÊME instant, donc basculer de A à B ne change que le doublage.
+// Une manche = un extrait de dialogue, joué deux fois : la piste française et
+// la piste japonaise du même épisode (résolues côté script de génération, voir
+// scripts/gen-doublage-catalog.mjs). Les deux vidéos sont chargées sur le MÊME
+// instant, donc basculer de A à B ne change que le doublage.
 // Le camp A/B est tiré au sort à chaque manche : on vote à l'aveugle, la
 // révélation arrive après le vote.
 
@@ -70,16 +71,22 @@ const needsHlsJs = url => isHls(url) && !NATIVE_HLS
 const mediaSrc = url => (needsHlsJs(url) ? undefined : corsUrl(url))
 
 function useHlsSource(ref, url, startAt, onError) {
+  // onError vient du parent et change d'identité à chaque rendu : le garder
+  // dans les dépendances détruirait et recréerait l'instance hls.js en boucle.
+  const errorRef = useRef(onError)
+  useEffect(() => { errorRef.current = onError }, [onError])
+
   useEffect(() => {
     const video = ref.current
     if (!video || !url || !needsHlsJs(url)) return
+    const fail = () => errorRef.current?.()
 
     let hls = null
     let cancelled = false
 
     import('hls.js').then(({ default: Hls }) => {
       if (cancelled || !video.isConnected) return
-      if (!Hls.isSupported()) { onError?.(); return }
+      if (!Hls.isSupported()) { fail(); return }
       // startPosition évite de télécharger l'épisode depuis le début pour un
       // extrait qui commence à 13 minutes.
       hls = new Hls({ enableWorker: true, maxBufferLength: 30, backBufferLength: 10, startPosition: startAt })
@@ -89,19 +96,19 @@ function useHlsSource(ref, url, startAt, onError) {
         if (!data?.fatal) return
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad()
         else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError()
-        else onError?.()
+        else fail()
       })
-    }).catch(() => onError?.())
+    }).catch(() => fail())
 
     return () => {
       cancelled = true
       if (hls) { try { hls.destroy() } catch { /* déjà détruit */ } }
     }
-  }, [ref, url, startAt, onError])
+  }, [ref, url, startAt])
 }
 
-// Épisodes regroupés par animé : My Hero Academia pèse à lui seul 37% des
-// extraits, un tirage uniforme donnerait une session presque monochrome.
+// Épisodes regroupés par animé : My Hero Academia pèse à lui seul plus de la
+// moitié des extraits, un tirage uniforme donnerait une session monochrome.
 const BY_ANIME = DOUBLAGE_SCENES.reduce((map, scene) => {
   ;(map[scene.anime] ||= []).push(scene)
   return map
@@ -137,8 +144,10 @@ function buildDeck() {
 function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, onStart, onMediaError }) {
   const aRef = useRef(null)
   const bRef = useRef(null)
-  const readyCount = useRef(0)
   const [ready, setReady] = useState(false)
+
+  const errorRef = useRef(onMediaError)
+  useEffect(() => { errorRef.current = onMediaError }, [onMediaError])
 
   // scene.sideA vaut 'vf' ou 'vostfr' : le tirage au sort vient du parent.
   const srcA = scene.sideA === 'vf' ? scene.vf : scene.vostfr
@@ -148,17 +157,49 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
   useHlsSource(aRef, srcA, startAt, onMediaError)
   useHlsSource(bRef, srcB, startAt, onMediaError)
 
-  // Positionne les deux pistes sur le même instant dès l'arrivée des métadonnées.
-  const handleMeta = useCallback(el => {
-    if (!el) return
-    // Les timecodes viennent des sous-titres français : si la piste japonaise
-    // est plus courte (montage différent), on retombe sur le milieu du fichier.
-    const target = Number.isFinite(el.duration) && el.duration > startAt + 5
-      ? startAt
-      : Math.max(0, (el.duration || 0) / 2)
-    try { el.currentTime = target } catch { /* seek ignoré si pas prêt */ }
-    readyCount.current += 1
-    if (readyCount.current >= 2) setReady(true)
+  // Positionne les deux pistes sur le même instant.
+  //
+  // Un simple seek sur `loadedmetadata` ne suffit pas : sur un gros fichier
+  // (un film de 35 min) le seek peut être avalé et la piste reste à 0, ce qui
+  // laissait l'écran de chargement à vie. On réapplique donc la position tant
+  // qu'elle n'a pas pris, et on ne déclare prêt que quand LES DEUX pistes sont
+  // réellement au bon endroit.
+  useEffect(() => {
+    const a = aRef.current, b = bRef.current
+    if (!a || !b) return
+
+    let done = false
+    const deadline = Date.now() + 25000
+
+    // On vise startAt par défaut : en HLS la durée vaut encore NaN ou Infinity
+    // au début, et retomber sur 0 ferait démarrer l'extrait au tout début de
+    // l'épisode. On ne dévie que si la piste est plus courte que l'extrait.
+    const targetFor = el => {
+      const d = el.duration
+      return (Number.isFinite(d) && d > 0 && d <= startAt + 5) ? Math.max(0, d / 2) : startAt
+    }
+
+    const tick = () => {
+      if (done) return
+      let placed = 0
+      for (const el of [a, b]) {
+        if (el.readyState < 1) continue          // métadonnées pas encore là
+        const want = targetFor(el)
+        if (Math.abs(el.currentTime - want) > 1.5) {
+          if (!el.seeking) { try { el.currentTime = want } catch { /* pas encore seekable */ } }
+          continue
+        }
+        placed++
+      }
+      if (placed === 2) { done = true; setReady(true); return }
+      // Une piste qui ne se cale jamais (média retiré, épisode illisible) :
+      // on passe à une autre scène plutôt que de bloquer la manche.
+      if (Date.now() > deadline) { done = true; errorRef.current?.() }
+    }
+
+    const id = setInterval(tick, 250)
+    tick()
+    return () => { done = true; clearInterval(id) }
   }, [startAt])
 
   // Une seule piste parle ; l'autre suit en muet pour rester alignée.
@@ -209,14 +250,12 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
       <video
         ref={aRef} src={mediaSrc(srcA)} crossOrigin="anonymous"
         playsInline preload="metadata" muted
-        onLoadedMetadata={e => handleMeta(e.currentTarget)}
         onError={onMediaError}
         style={videoStyle(side === 'A')}
       />
       <video
         ref={bRef} src={mediaSrc(srcB)} crossOrigin="anonymous"
         playsInline preload="metadata" muted
-        onLoadedMetadata={e => handleMeta(e.currentTarget)}
         onError={onMediaError}
         style={videoStyle(side === 'B')}
       />
