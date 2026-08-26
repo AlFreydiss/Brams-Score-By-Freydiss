@@ -42,3 +42,6 @@ CLAUDE.local.md
 .agents/skills/*/*/*
 
 *.tmp.*
+
+# Cache de téléchargement des sous-titres (régénéré par gen-doublage-catalog.mjs)
+scripts/doublage-vtt-cache.json

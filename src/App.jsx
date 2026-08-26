@@ -91,6 +91,9 @@ const TierListPage       = lazyWithReload(() => import('./components/TierListPag
 const TournamentHubPage  = lazyWithReload(() => import('./components/TournamentHubPage.jsx'))
 const TournamentPage     = lazyWithReload(() => import('./components/TournamentPage.jsx'))
 const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentRoomPage.jsx'))
+const DoublagePage       = lazyWithReload(() => import('./components/DoublagePage.jsx'))
+const HigherLowerPage    = lazyWithReload(() => import('./components/HigherLowerPage.jsx'))
+const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipperPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
 import GarticErrorBoundary from './features/garticphone/GarticErrorBoundary.jsx'
@@ -683,10 +686,16 @@ export default function App() {
         <Route path="/tournoi/rap-vs-ost" element={<PageLayout><TournamentPage tournamentId="rapvsost" /></PageLayout>} />
         <Route path="/tournoi/rap-fr" element={<PageLayout><TournamentPage tournamentId="rapfr" /></PageLayout>} />
         <Route path="/tournoi/ost-anime" element={<PageLayout><TournamentPage tournamentId="ostanime" /></PageLayout>} />
+        <Route path="/tournoi/sakuga" element={<PageLayout><TournamentPage tournamentId="sakuga" /></PageLayout>} />
+        {/* Guerre du Doublage : pas un bracket, une série de duels VF/VOSTFR. */}
+        <Route path="/tournoi/doublage" element={<PageLayout><DoublagePage /></PageLayout>} />
+        {/* Outil staff pour découper les extraits du tournoi Sakuga. */}
+        <Route path="/staff/sakuga" element={<SakugaClipperPage />} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
         <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
         <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />
         <Route path="/jeux"        element={<PageLayout><GamesHubPage /></PageLayout>} />
+        <Route path="/jeux/plus-ou-moins" element={<PageLayout><HigherLowerPage /></PageLayout>} />
         {/* Univers de jeu autonomes plein écran (2D stricte, onglets Jouer/Règles/Classement/Paramètres) */}
         <Route path="/jeux/echecs"       element={<Suspense fallback={null}><ChessUniverse /></Suspense>} />
         <Route path="/jeux/echecs/:tab"  element={<Suspense fallback={null}><ChessUniverse /></Suspense>} />

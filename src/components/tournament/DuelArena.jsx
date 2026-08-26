@@ -133,7 +133,9 @@ function fmt(s) {
 }
 
 // ── Compact audio strip ────────────────────────────────────────────────────
-function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef, boost = 1, endAt = null }) {
+// startAt : début de l'extrait (tournoi Sakuga — un clip découpé dans un
+// épisode). 0 pour un opening, qui se joue depuis le début du fichier.
+function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, mediaRef, boost = 1, endAt = null, startAt = 0 }) {
   const iframeRef = useRef(null)
   const videoRef  = useRef(null)
   const timerRef  = useRef(null)
@@ -143,6 +145,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
   const [elapsed, setElapsed] = useState(0)
   const [duration, setDuration] = useState(0)
   const draggingRef = useRef(false)
+  const seekedRef   = useRef(false)   // le saut initial vers startAt n'a lieu qu'une fois
   const getMedia = () => (audioUrl && mediaRef?.current) ? mediaRef.current : videoRef.current
 
   useEffect(() => { stopRef.current = onStop }, [onStop])
@@ -201,6 +204,13 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       const loaded = () => {
         const d = media.duration
         if (Number.isFinite(d) && d > 0) setDuration(d)
+        // Extrait découpé dans un épisode : on se cale sur le début du clip
+        // dès que la durée est connue, une seule fois.
+        if (startAt > 0 && !seekedRef.current && Number.isFinite(d) && d > startAt) {
+          seekedRef.current = true
+          seekMedia(media, startAt)
+          setElapsed(startAt)
+        }
       }
       const time = () => {
         if (draggingRef.current) return
@@ -227,7 +237,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       }
     })
     return () => { disposed = true; cancelAnimationFrame(raf); cleanup() }
-  }, [audioUrl, mediaRef, ytId, endAt])
+  }, [audioUrl, mediaRef, ytId, endAt, startAt])
 
   useEffect(() => {
     if (!audioUrl && iframeRef.current) {
@@ -238,19 +248,23 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     }
   }, [volume, audioUrl])
 
-  // Échelle de la barre = durée réelle de l'opening : endAt (fin de la musique,
-  // avant la pub muette en fin de fichier) prime sur la durée du fichier.
-  const fileDur = duration > 0 && Number.isFinite(duration) ? duration : 0
-  const total  = endAt ? Math.min(endAt, fileDur || endAt) : fileDur
-  const pct    = total ? Math.min(100, (elapsed / total) * 100) : 0
-  const volPct = volume + '%'
+  // La barre mesure la portion jouable [startAt, endAt] : endAt (fin réelle de
+  // la musique, avant la pub muette du fichier) prime sur la durée du fichier,
+  // et pour un extrait Sakuga la position absolue dans l'épisode n'a aucun sens.
+  const fileDur  = duration > 0 && Number.isFinite(duration) ? duration : 0
+  const endBound = endAt ? Math.min(endAt, fileDur || endAt) : fileDur
+  const total    = Math.max(0, endBound - startAt)
+  const played   = Math.max(0, elapsed - startAt)
+  const pct      = total ? Math.min(100, (played / total) * 100) : 0
+  const volPct   = volume + '%'
 
+  // rawValue est relatif au début de l'extrait (0 = startAt).
   function handleSeek(rawValue) {
     const media = getMedia()
     const fileDur = media && Number.isFinite(media.duration) && media.duration > 0 ? media.duration : 0
-    const cap = endAt ? Math.min(endAt, fileDur || endAt) : (fileDur || total)
+    const cap = endAt ? Math.min(endAt, fileDur || endAt) : (fileDur || startAt + total)
     if (!cap) return
-    const t = Math.max(0, Math.min(Number(rawValue), cap))
+    const t = Math.max(startAt, Math.min(startAt + Number(rawValue), cap))
     setElapsed(t)
     if (audioUrl && media) seekMedia(media, t)
     if (!audioUrl) {
@@ -297,14 +311,17 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {/* Audio element caché — source de vérité pour l'audio */}
       {audioUrl && !mediaRef ? (
         <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
-          onLoadedMetadata={e => setDuration(e.target.duration || 0)}
+          onLoadedMetadata={e => {
+            setDuration(e.target.duration || 0)
+            if (startAt > 0) seekMedia(e.target, startAt)
+          }}
           onTimeUpdate={e => { setElapsed(e.target.currentTime); if (endAt && e.target.currentTime >= endAt) onStop() }}
           onEnded={onStop}
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
         />
       ) : !audioUrl ? (
         <iframe ref={iframeRef} width={0} height={0}
-          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=0&enablejsapi=1&controls=0`}
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&start=${Math.floor(startAt)}${endAt ? `&end=${Math.ceil(endAt)}` : ''}&enablejsapi=1&controls=0`}
           allow="autoplay; encrypted-media"
           style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', border: 'none' }}
           title={title}
@@ -330,7 +347,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       {/* Timeline — barre épaisse cliquable partout (clic = saut à la position) */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <input
-          type="range" min="0" max={total || 0.001} step="0.1" value={total ? Math.min(elapsed, total) : 0}
+          type="range" min="0" max={total || 0.001} step="0.1" value={total ? Math.min(played, total) : 0}
           disabled={!total}
           onChange={e => handleSeek(e.target.value)}
           onPointerDown={onSeekPointerDown}
@@ -349,7 +366,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
 
       {/* Time */}
       <div style={{ fontSize: 9, color: 'rgba(255,255,255,.22)', flexShrink: 0, minWidth: 32 }}>
-        {fmt(elapsed)}{total ? ` / ${fmt(total)}` : ''}
+        {fmt(played)}{total ? ` / ${fmt(total)}` : ''}
       </div>
 
       {/* Volume */}
@@ -505,6 +522,7 @@ export default function DuelArena({
       type:     p.type || null,   // 'OP' → boost de loudness dans le player compact
       gain:     p.gain || null,   // boost spécifique à la piste (prioritaire)
       endAt:    p.endAt || null,  // fin reelle de l'opening (coupe la pub muette)
+      startAt:  p.startAt || 0,   // début de l'extrait (clips du tournoi Sakuga)
     })
   }
 
@@ -664,6 +682,7 @@ export default function DuelArena({
             mediaRef={playing.audioUrl ? cardBgVideoRef : null}
             boost={playing.gain || (playing.audioUrl ? 2.2 : 1)}
             endAt={playing.endAt}
+            startAt={playing.startAt}
           />
         )}
       </AnimatePresence>
