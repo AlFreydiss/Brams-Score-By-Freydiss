@@ -19,9 +19,11 @@ const GRAD    = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 const VF_COLOR = '#2563eb'
 const JA_COLOR = '#dc2626'
 
-const ROUNDS      = 10    // manches par session
-const CLIP_LENGTH = 30    // secondes d'extrait avant rebouclage
-const STORE_KEY   = 'brams_doublage_stats_v1'
+const ROUNDS    = 10    // manches par session
+const STORE_KEY = 'brams_doublage_stats_v1'
+
+// Nombre total d'extraits, tous épisodes confondus (affiché en pied de page).
+const CLIP_TOTAL = DOUBLAGE_SCENES.reduce((n, s) => n + s.clips.length, 0)
 
 const CSS = `
   @keyframes dbPulse { 0%,100%{opacity:.55} 50%{opacity:1} }
@@ -49,10 +51,90 @@ function shuffle(arr) {
   return a
 }
 
+const pick = arr => arr[Math.floor(Math.random() * arr.length)]
+
+// ── Source média ────────────────────────────────────────────────────────────
+// La majorité des épisodes sont servis en HLS : un <video src="…m3u8"> ne joue
+// que sur Safari, partout ailleurs il faut passer par hls.js (déjà utilisé par
+// le lecteur du site).
+const isHls = url => /\.m3u8(\?|$)/i.test(url)
+
+const NATIVE_HLS = typeof document !== 'undefined' &&
+  Boolean(document.createElement('video').canPlayType('application/vnd.apple.mpegurl'))
+
+const needsHlsJs = url => isHls(url) && !NATIVE_HLS
+
+// hls.js alimente lui-même l'élément : lui poser un `src` ferait charger le
+// manifeste comme une vidéo et casserait la lecture. Le paramètre anti-cache
+// CORS ne concerne que les fichiers lus directement.
+const mediaSrc = url => (needsHlsJs(url) ? undefined : corsUrl(url))
+
+function useHlsSource(ref, url, startAt, onError) {
+  useEffect(() => {
+    const video = ref.current
+    if (!video || !url || !needsHlsJs(url)) return
+
+    let hls = null
+    let cancelled = false
+
+    import('hls.js').then(({ default: Hls }) => {
+      if (cancelled || !video.isConnected) return
+      if (!Hls.isSupported()) { onError?.(); return }
+      // startPosition évite de télécharger l'épisode depuis le début pour un
+      // extrait qui commence à 13 minutes.
+      hls = new Hls({ enableWorker: true, maxBufferLength: 30, backBufferLength: 10, startPosition: startAt })
+      hls.attachMedia(video)
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => hls.loadSource(url))
+      hls.on(Hls.Events.ERROR, (_evt, data) => {
+        if (!data?.fatal) return
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad()
+        else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError()
+        else onError?.()
+      })
+    }).catch(() => onError?.())
+
+    return () => {
+      cancelled = true
+      if (hls) { try { hls.destroy() } catch { /* déjà détruit */ } }
+    }
+  }, [ref, url, startAt, onError])
+}
+
+// Épisodes regroupés par animé : My Hero Academia pèse à lui seul 37% des
+// extraits, un tirage uniforme donnerait une session presque monochrome.
+const BY_ANIME = DOUBLAGE_SCENES.reduce((map, scene) => {
+  ;(map[scene.anime] ||= []).push(scene)
+  return map
+}, {})
+
+// Une manche = un extrait précis dans un épisode précis. On tourne animé par
+// animé pour que dix manches donnent dix animés différents quand c'est possible.
+function buildDeck() {
+  const animes = shuffle(Object.keys(BY_ANIME))
+  const usedEpisodes = new Set()
+  const deck = []
+
+  while (deck.length < ROUNDS) {
+    const before = deck.length
+    for (const anime of animes) {
+      if (deck.length >= ROUNDS) break
+      const pool = BY_ANIME[anime].filter(s => !usedEpisodes.has(s.id))
+      if (!pool.length) continue
+      const scene = pick(pool)
+      usedEpisodes.add(scene.id)
+      deck.push({ scene, clip: pick(scene.clips) })
+    }
+    // Aucun animé n'a plus d'épisode disponible : inutile de boucler à vide.
+    if (deck.length === before) break
+  }
+
+  return deck
+}
+
 // ── Lecteur double piste ────────────────────────────────────────────────────
 // Les deux <video> restent montées : la bascule doit être instantanée, sinon
 // l'oreille perd la comparaison. Seule la piste active est visible et audible.
-function DualTrackPlayer({ scene, side, onSideChange, startAt, started, onStart, onMediaError }) {
+function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, onStart, onMediaError }) {
   const aRef = useRef(null)
   const bRef = useRef(null)
   const readyCount = useRef(0)
@@ -62,11 +144,16 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, started, onStart,
   const srcA = scene.sideA === 'vf' ? scene.vf : scene.vostfr
   const srcB = scene.sideA === 'vf' ? scene.vostfr : scene.vf
 
+  // Les épisodes HLS (la majorité) ne se lisent pas via l'attribut src.
+  useHlsSource(aRef, srcA, startAt, onMediaError)
+  useHlsSource(bRef, srcB, startAt, onMediaError)
+
   // Positionne les deux pistes sur le même instant dès l'arrivée des métadonnées.
   const handleMeta = useCallback(el => {
     if (!el) return
-    // Un épisode plus court que le point tiré au sort : on recale au milieu.
-    const target = Number.isFinite(el.duration) && el.duration > startAt + CLIP_LENGTH
+    // Les timecodes viennent des sous-titres français : si la piste japonaise
+    // est plus courte (montage différent), on retombe sur le milieu du fichier.
+    const target = Number.isFinite(el.duration) && el.duration > startAt + 5
       ? startAt
       : Math.max(0, (el.duration || 0) / 2)
     try { el.currentTime = target } catch { /* seek ignoré si pas prêt */ }
@@ -92,19 +179,20 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, started, onStart,
     passive.play().catch(() => {})
   }, [side, ready, started])
 
-  // Boucle sur l'extrait : au-delà de CLIP_LENGTH on revient au point de départ.
+  // Boucle sur la scène : passé endAt on repart au début de l'extrait, pour
+  // pouvoir réécouter le même passage autant de fois qu'on veut.
   useEffect(() => {
     const a = aRef.current, b = bRef.current
     if (!a || !b || !ready) return
     const id = setInterval(() => {
       for (const el of [a, b]) {
-        if (el.currentTime > startAt + CLIP_LENGTH) {
+        if (el.currentTime > endAt) {
           try { el.currentTime = startAt } catch { /* ignore */ }
         }
       }
-    }, 500)
+    }, 400)
     return () => clearInterval(id)
-  }, [startAt, ready])
+  }, [startAt, endAt, ready])
 
   const videoStyle = visible => ({
     position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -119,14 +207,14 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, started, onStart,
       border: '1px solid rgba(255,255,255,.1)',
     }}>
       <video
-        ref={aRef} src={corsUrl(srcA)} crossOrigin="anonymous"
+        ref={aRef} src={mediaSrc(srcA)} crossOrigin="anonymous"
         playsInline preload="metadata" muted
         onLoadedMetadata={e => handleMeta(e.currentTarget)}
         onError={onMediaError}
         style={videoStyle(side === 'A')}
       />
       <video
-        ref={bRef} src={corsUrl(srcB)} crossOrigin="anonymous"
+        ref={bRef} src={mediaSrc(srcB)} crossOrigin="anonymous"
         playsInline preload="metadata" muted
         onLoadedMetadata={e => handleMeta(e.currentTarget)}
         onError={onMediaError}
@@ -219,7 +307,7 @@ function VerdictBar({ vf, vostfr, compact }) {
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function DoublagePage() {
   const [stats, setStats]       = useState(loadStats)
-  const [deck, setDeck]         = useState(() => shuffle(DOUBLAGE_SCENES).slice(0, ROUNDS))
+  const [deck, setDeck]         = useState(buildDeck)
   const [index, setIndex]       = useState(0)
   const [side, setSide]         = useState('A')
   const [revealed, setReveal]   = useState(null) // 'vf' | 'vostfr' — le camp voté
@@ -227,18 +315,18 @@ export default function DoublagePage() {
   const [finished, setFinished] = useState(false)
   const [started, setStarted]   = useState(false)
 
-  const scene = deck[index]
+  const entry = deck[index]
 
-  // Camp A et point de départ tirés au sort, refaits à chaque manche.
+  // L'extrait vient du catalogue (fenêtre de dialogue repérée dans les
+  // sous-titres) ; seul le camp A reste tiré au sort, pour voter à l'aveugle.
   const round = useMemo(() => {
-    if (!scene) return null
+    if (!entry) return null
     return {
-      ...scene,
+      ...entry.scene,
+      clip:  entry.clip,
       sideA: Math.random() < 0.5 ? 'vf' : 'vostfr',
-      // Milieu d'épisode : évite le générique de début et celui de fin.
-      startAt: 240 + Math.floor(Math.random() * 480),
     }
-  }, [scene])
+  }, [entry])
 
   useEffect(() => { setSide('A'); setReveal(null) }, [index])
 
@@ -263,20 +351,21 @@ export default function DoublagePage() {
   }
 
   function restart() {
-    setDeck(shuffle(DOUBLAGE_SCENES).slice(0, ROUNDS))
+    setDeck(buildDeck())
     setIndex(0); setSession({ vf: 0, vostfr: 0 }); setFinished(false); setReveal(null)
   }
 
   // Un média injoignable (fichier retiré de R2) ne doit pas bloquer la manche :
-  // on remplace la scène par une autre au lieu de laisser un écran noir.
+  // on remplace l'épisode par un autre au lieu de laisser un écran noir.
   function replaceBrokenScene() {
     if (revealed) return
     setDeck(current => {
-      const ids = new Set(current.map(s => s.id))
+      const ids = new Set(current.map(r => r.scene.id))
       const candidates = DOUBLAGE_SCENES.filter(s => !ids.has(s.id))
       if (!candidates.length) return current
+      const scene = pick(candidates)
       const next = [...current]
-      next[index] = candidates[Math.floor(Math.random() * candidates.length)]
+      next[index] = { scene, clip: pick(scene.clips) }
       return next
     })
   }
@@ -368,17 +457,18 @@ export default function DoublagePage() {
           <span>MANCHE {index + 1} / {deck.length}</span>
           <span style={{ color: 'rgba(255,255,255,.28)' }}>
             {revealed
-              ? `${round.anime} · ${round.season}E${round.episode}`
-              : 'Animé masqué jusqu’au vote'}
+              ? `${round.anime} · ${round.season}E${round.episode} — ${round.title}`
+              : `Scène de ${Math.round(round.clip.endAt - round.clip.startAt)}s · ${round.clip.lines} répliques`}
           </span>
         </div>
 
         <DualTrackPlayer
-          key={round.id}
+          key={`${round.id}-${round.clip.startAt}`}
           scene={round}
           side={side}
           onSideChange={setSide}
-          startAt={round.startAt}
+          startAt={round.clip.startAt}
+          endAt={round.clip.endAt}
           started={started}
           onStart={() => setStarted(true)}
           onMediaError={replaceBrokenScene}
@@ -443,7 +533,8 @@ export default function DoublagePage() {
         <div style={{
           marginTop: 34, fontSize: 11, color: 'rgba(255,255,255,.25)', textAlign: 'center', lineHeight: 1.7,
         }}>
-          {DOUBLAGE_SCENES.length} scènes disponibles · extrait de {CLIP_LENGTH}s pris au hasard en milieu d'épisode
+          {CLIP_TOTAL} extraits sur {DOUBLAGE_SCENES.length} épisodes · scènes repérées dans les
+          sous-titres, jamais un générique ni un silence
           <br />
           Les deux versions jouent au même instant : seuls la piste audio et le doublage changent.
         </div>
