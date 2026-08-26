@@ -50,6 +50,12 @@ const GAMES = [
   { to: '/akinator',   emoji: '🔮', title: 'Akinator',   tag: 'IA',          accent: '#c77dc4',
     desc: "Pense à un personnage (anime, jeu, célébrité…) et laisse l'IA le deviner en quelques questions.",
     caps: ['IA'] },
+  { to: '/jeux/plus-ou-moins', emoji: '📅', title: 'Plus vieux / Plus récent', tag: 'Swipe', accent: '#9d174d',
+    desc: "Deux openings, une seule année affichée. Swipe à droite si le second est plus récent, à gauche s'il est plus vieux. La série continue tant que tu ne te trompes pas.",
+    caps: ['Solo'] },
+  { to: '/tournoi/doublage', emoji: '🎙️', title: 'Guerre du Doublage', tag: 'VF vs VOSTFR', accent: '#2563eb',
+    desc: "La même scène dans les deux doublages, à l'aveugle. Bascule d'une version à l'autre, vote, et découvre de quel camp tu es vraiment.",
+    caps: ['Solo'] },
 ]
 
 // Les 3 jeux mis en scène dans le bandeau vedette (rotation auto).

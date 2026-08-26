@@ -348,7 +348,11 @@ function NoMatchReady({ onReset }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function TournamentPage({ tournamentId = 'ost' }) {
-  const config = TOURNAMENT_CONFIGS[tournamentId] || TOURNAMENT_CONFIGS.ost
+  const requested = TOURNAMENT_CONFIGS[tournamentId]
+  // Un tournoi dont le catalogue n'est pas encore rempli (Sakuga tant qu'aucun
+  // clip n'est découpé) n'a rien à mettre dans un bracket : on retombe sur l'OST
+  // plutôt que de générer un arbre vide.
+  const config = (requested?.participants?.length >= 2) ? requested : TOURNAMENT_CONFIGS.ost
   const [tab,           setTab]           = useState('duel')
   const [rounds,        setRounds]        = useState(() => loadRoundsWithVersionCheck(config))
   const [personalVotes, setPersonalVotes] = useState(() => loadPersonalVotes(config.id))
@@ -481,6 +485,35 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
   const isLastMatch = !current || !(getCurrentMatch(
     advanceWinner(rounds, current.match.id, current.match.left?.id)
   ))
+
+  // Tournoi déclaré mais catalogue encore vide : on le dit, plutôt que de
+  // rediriger en douce vers un autre bracket.
+  if (requested && requested !== config) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: BG, display: 'grid', placeItems: 'center', padding: 24,
+      }}>
+        <div style={{ textAlign: 'center', maxWidth: 460 }}>
+          <div style={{
+            fontFamily: "'Pirata One',cursive", fontSize: 44, marginBottom: 10,
+            background: GRAD_TXT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+          }}>
+            {requested.title}
+          </div>
+          <p style={{ color: 'rgba(255,255,255,.5)', fontSize: 15, lineHeight: 1.7 }}>
+            Le catalogue de ce tournoi n'est pas encore rempli. Il ouvrira dès que les
+            participants seront prêts.
+          </p>
+          <a href="/tournoi" style={{
+            display: 'inline-block', marginTop: 18, padding: '12px 28px', borderRadius: 12,
+            background: GRAD, color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700,
+          }}>
+            Retour aux tournois
+          </a>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative' }}>

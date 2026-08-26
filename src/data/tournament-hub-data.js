@@ -1,5 +1,34 @@
+import { DOUBLAGE_SCENE_COUNT } from './doublage-count.js'
+import { SAKUGA_CLIPS, SAKUGA_READY } from './sakuga-data.js'
+
 // ── Tournament categories ──────────────────────────────────────────────────
 export const TOURNAMENT_CATEGORIES = [
+  {
+    id: 'doublage',
+    label: 'Doublage',
+    tagline: 'VF ou VOSTFR : tranche à l\'aveugle.',
+    description: `La même scène jouée dans les deux doublages, sur ${DOUBLAGE_SCENE_COUNT} extraits. Tu bascules, tu écoutes, tu votes sans savoir laquelle est laquelle.`,
+    icon: '🎙',
+    route: '/tournoi/doublage',
+    status: 'active',
+    activeCount: 1,
+    color: '#2563eb',
+  },
+  {
+    id: 'sakuga',
+    label: 'Sakuga',
+    tagline: 'On juge l\'image, pas le son.',
+    // Le catalogue se remplit via /staff/sakuga : tant qu'il est vide, la carte
+    // reste en « bientôt » plutôt que d'ouvrir un bracket sans participants.
+    description: SAKUGA_READY
+      ? `${SAKUGA_CLIPS.length} séquences d'animation en 1v1. Pas de musique : seule la qualité de l'animation compte.`
+      : 'Les meilleures séquences d\'animation en 1v1. Catalogue en cours de découpage.',
+    icon: '✦',
+    route: SAKUGA_READY ? '/tournoi/sakuga' : null,
+    status: SAKUGA_READY ? 'active' : 'soon',
+    activeCount: SAKUGA_READY ? 1 : 0,
+    color: '#0d9488',
+  },
   {
     id: 'ost',
     label: 'OST Arena',

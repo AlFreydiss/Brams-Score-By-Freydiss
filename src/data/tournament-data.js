@@ -1,6 +1,7 @@
 import { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from './rap-vs-ost-data.js'
 import { ENDING_R2_CATALOG } from './ending-r2-catalog.js'
 import { OPENING_R2_CATALOG } from './opening-r2-catalog.js'
+import { SAKUGA_CONFIG } from './sakuga-data.js'
 
 // ── OST Participants catalog ───────────────────────────────────────────────
 // ytId: YouTube video ID for playback embed. Verify/update IDs as needed.
@@ -94,6 +95,7 @@ export const TOURNAMENT_CONFIGS = {
   rapvsost: RAP_VS_OST_CONFIG,
   rapfr: RAP_FR_CONFIG,
   ostanime: OST_ANIME_CONFIG,
+  sakuga: SAKUGA_CONFIG,
 }
 
-export { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG }
+export { RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG, SAKUGA_CONFIG }
