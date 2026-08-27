@@ -34,7 +34,11 @@
   "artist": "Rika Mayama",
   "offset": 25
  },
- "akamega-op1": null,
+ "akamega-op1": {
+  "title": "Skyreach",
+  "artist": "Sora Amamiya",
+  "offset": 30
+ },
  "angelbeats-op1": {
   "title": "My Soul, Your Beats!",
   "artist": "Lia & VISUAL ARTS / Key",
@@ -482,7 +486,11 @@
   "artist": "BUMP OF CHICKEN",
   "offset": 8
  },
- "dungeonmeshi-op2": null,
+ "dungeonmeshi-op2": {
+  "title": "Unmei",
+  "artist": "sumika",
+  "offset": 15
+ },
  "ds-op1": {
   "title": "Gurenge",
   "artist": "LiSA",
@@ -613,7 +621,11 @@
   "artist": "Home Made Kazoku",
   "offset": 25
  },
- "eurekaseven-op3": null,
+ "eurekaseven-op3": {
+  "title": "Taiyou No Mannaka He (Live)",
+  "artist": "Bivattchee",
+  "offset": 30
+ },
  "eurekaseven-op4": {
   "title": "sakura",
   "artist": "NIRGILIS",
@@ -959,7 +971,11 @@
   "artist": "Masatoshi Ono",
   "offset": 25
  },
- "yuushayamemasu-op1": null,
+ "yuushayamemasu-op1": {
+  "title": "Broken Identity",
+  "artist": "Minori Suzuki",
+  "offset": 30
+ },
  "ichigo100-op1": {
   "title": "SHINE OF VOICE",
   "artist": "根岸貴幸",
@@ -1491,16 +1507,36 @@
   "artist": "BLUE ENCOUNT",
   "offset": 45
  },
- "mha-s5-op1": null,
+ "mha-s5-op1": {
+  "title": "No.1",
+  "artist": "DISH//",
+  "offset": 30
+ },
  "mha-s5-op2": {
   "title": "Merry-Go-Round",
   "artist": "MAN WITH A MISSION",
   "offset": 45
  },
- "mha-s6-op1": null,
- "mha-s6-op2": null,
- "mha-s7-op1": null,
- "mha-s7-op2": null,
+ "mha-s6-op1": {
+  "title": "Hitamuki",
+  "artist": "SUPER BEAVER",
+  "offset": 30
+ },
+ "mha-s6-op2": {
+  "title": "Bokurano",
+  "artist": "EVE",
+  "offset": 30
+ },
+ "mha-s7-op1": {
+  "title": "Tagatame",
+  "artist": "TK from Ling tosite sigure",
+  "offset": 30
+ },
+ "mha-s7-op2": {
+  "title": "Curtain Call",
+  "artist": "Yuuri",
+  "offset": 30
+ },
  "mha-s2-op1": null,
  "mha-s2-op2": null,
  "mha-s3-op1": {
@@ -1513,80 +1549,208 @@
   "artist": "Lenny code fiction",
   "offset": 25
  },
- "mha-s4-op2": null,
+ "mha-s4-op2": {
+  "title": "Starmarker (Album Mix)",
+  "artist": "KANA-BOON",
+  "offset": 30
+ },
  "nana-op1": {
   "title": "Rose",
   "artist": "ANNA TSUCHIYA inspi' NANA(BLACK STONES)",
   "offset": 8
  },
- "nana-op2": null,
- "nana-op3": null,
- "naruto-op1": null,
- "naruto-op10": null,
- "naruto-op11": null,
- "naruto-op12": null,
- "naruto-op2": null,
- "naruto-op3": null,
- "naruto-op4": null,
- "naruto-op5": null,
- "naruto-op6": null,
+ "nana-op2": {
+  "title": "Wish",
+  "artist": "OLIVIA inspi' REIRA(TRAPNEST)",
+  "offset": 30
+ },
+ "nana-op3": {
+  "title": "Lucy",
+  "artist": "ANNA TSUCHIYA inspi' NANA(BLACK STONES)",
+  "offset": 30
+ },
+ "naruto-op1": {
+  "title": "ROCKS",
+  "artist": "Hound Dog",
+  "offset": 30
+ },
+ "naruto-op10": {
+  "title": "GOLD",
+  "artist": "FLOW",
+  "offset": 30
+ },
+ "naruto-op11": {
+  "title": "Kirarirari",
+  "artist": "KANA-BOON",
+  "offset": 30
+ },
+ "naruto-op12": {
+  "title": "Karma",
+  "artist": "Asian Kung-Fu Generation",
+  "offset": 30
+ },
+ "naruto-op2": {
+  "title": "Haruka Kanata - From THE FIRST TAKE",
+  "artist": "Asian Kung-Fu Generation",
+  "offset": 30
+ },
+ "naruto-op3": {
+  "title": "Kanashimi wo Yasashisani ni",
+  "artist": "Little by Little",
+  "offset": 30
+ },
+ "naruto-op4": {
+  "title": "Go!!!",
+  "artist": "FLOW",
+  "offset": 30
+ },
+ "naruto-op5": {
+  "title": "Seishun Kyousoukyoku",
+  "artist": "Sambomaster",
+  "offset": 30
+ },
+ "naruto-op6": {
+  "title": "No Boy No Cry (Album Version)",
+  "artist": "Stance Punks",
+  "offset": 30
+ },
  "naruto-op7": {
   "title": "Namikaze Satellite",
   "artist": "Snowkel",
   "offset": 8
  },
- "naruto-op8": null,
- "naruto-op9": null,
- "ns-op1": null,
+ "naruto-op8": {
+  "title": "FLOW NARUTO OP / ED Size Special Collection",
+  "artist": "FLOW",
+  "offset": 30
+ },
+ "naruto-op9": {
+  "title": "Yura Yura",
+  "artist": "HEARTS GROW",
+  "offset": 30
+ },
+ "ns-op1": {
+  "title": "Hero's Come Back!!",
+  "artist": "Nobodyknows+",
+  "offset": 30
+ },
  "ns-op10": {
   "title": "Newsong",
   "artist": "tacica",
   "offset": 8
  },
  "ns-op11": null,
- "ns-op12": null,
- "ns-op13": null,
+ "ns-op12": {
+  "title": "Moshimo",
+  "artist": "Daisuke",
+  "offset": 30
+ },
+ "ns-op13": {
+  "title": "Niwakaame Nimo Makezu",
+  "artist": "NICO Touches the Walls",
+  "offset": 30
+ },
  "ns-op14": {
   "title": "Tsukino Ookisa",
   "artist": "Nogizaka46",
   "offset": 25
  },
- "ns-op15": null,
- "ns-op16": null,
+ "ns-op15": {
+  "title": "Guren",
+  "artist": "DOES",
+  "offset": 30
+ },
+ "ns-op16": {
+  "title": "Silhouette",
+  "artist": "KANA-BOON",
+  "offset": 30
+ },
  "ns-op17": {
   "title": "Kaze",
   "artist": "Yamazaru",
   "offset": 8
  },
- "ns-op18": null,
- "ns-op19": null,
+ "ns-op18": {
+  "title": "Line (Anime Version)",
+  "artist": "Sukimaswitch",
+  "offset": 30
+ },
+ "ns-op19": {
+  "title": "Blood Circulator",
+  "artist": "Asian Kung-Fu Generation",
+  "offset": 30
+ },
  "ns-op2": {
   "title": "Distance",
   "artist": "Naruto Shippuden",
   "offset": 8
  },
- "ns-op20": null,
- "ns-op3": null,
- "ns-op4": null,
- "ns-op5": null,
- "ns-op6": null,
- "ns-op7": null,
- "ns-op8": null,
+ "ns-op20": {
+  "title": "Karano Kokoro (Instrumental)",
+  "artist": "Anly",
+  "offset": 30
+ },
+ "ns-op3": {
+  "title": "Blue Bird",
+  "artist": "Ikimonogakari",
+  "offset": 30
+ },
+ "ns-op4": {
+  "title": "Closer (Naruto Opening Ver.)",
+  "artist": "Joe Inoue",
+  "offset": 30
+ },
+ "ns-op5": {
+  "title": "Hotarunohikari (2021 Remastered)",
+  "artist": "Ikimonogakari",
+  "offset": 30
+ },
+ "ns-op6": {
+  "title": "Sign",
+  "artist": "FLOW",
+  "offset": 30
+ },
+ "ns-op7": {
+  "title": "Toumeidatta Sekai",
+  "artist": "Hata Motohiro",
+  "offset": 30
+ },
+ "ns-op8": {
+  "title": "Diver",
+  "artist": "NICO Touches the Walls",
+  "offset": 30
+ },
  "ns-op9": {
   "title": "Lovers",
   "artist": "seven oops",
   "offset": 8
  },
- "natsumeyuujinc-op1": null,
+ "natsumeyuujinc-op1": {
+  "title": "Issei no sei",
+  "artist": "Shuhei Kita",
+  "offset": 30
+ },
  "nge-op1": {
   "title": "The Cruel Angel's Thesis",
   "artist": "Yoko Takahashi",
   "offset": 45
  },
- "newgame-op1": null,
+ "newgame-op1": {
+  "title": "SAKURAスキップ",
+  "artist": "fourfolium",
+  "offset": 30
+ },
  "newgame-op2": null,
- "nichijou-op1": null,
- "nichijou-op2": null,
+ "nichijou-op1": {
+  "title": "ヒャダインのカカカタ☆カタオモイ-C",
+  "artist": "Hyadain",
+  "offset": 30
+ },
+ "nichijou-op2": {
+  "title": "ヒャダインのじょーじょーゆーじょー (without ヒャダル子)",
+  "artist": "Hyadain",
+  "offset": 30
+ },
  "nisekoi-op1": {
   "title": "Click",
   "artist": "ClariS",
@@ -1602,13 +1766,41 @@
   "artist": "MONOGATARI Series",
   "offset": 25
  },
- "nisemonogatari-op2": null,
- "nisemonogatari-op3": null,
- "ngnl-op1": null,
- "nogame-op2": null,
- "no6-op1": null,
- "nodamecantabil-op1": null,
- "noragami-op1": null,
+ "nisemonogatari-op2": {
+  "title": "Marshmallow Justice",
+  "artist": "MONOGATARI Series",
+  "offset": 30
+ },
+ "nisemonogatari-op3": {
+  "title": "Platinum Disco",
+  "artist": "MONOGATARI Series",
+  "offset": 30
+ },
+ "ngnl-op1": {
+  "title": "This game",
+  "artist": "Konomi Suzuki",
+  "offset": 30
+ },
+ "nogame-op2": {
+  "title": "おねがい☆すにゃいぱー",
+  "artist": "初瀬いづな(CV:沢城みゆき)",
+  "offset": 30
+ },
+ "no6-op1": {
+  "title": "Spell",
+  "artist": "Lama",
+  "offset": 30
+ },
+ "nodamecantabil-op1": {
+  "title": "Allegro Cantabile",
+  "artist": "SUEMITSU & THE SUEMITH",
+  "offset": 30
+ },
+ "noragami-op1": {
+  "title": "Goyanomachiawase",
+  "artist": "Hello Sleepwalkers",
+  "offset": 30
+ },
  "noragamiaragot-op1": {
   "title": "Kyouran Hey Kids!!",
   "artist": "THE ORAL CIGARETTES",
@@ -1619,16 +1811,36 @@
   "artist": "Skirt & PUNPEE",
   "offset": 45
  },
- "op-op1": null,
+ "op-op1": {
+  "title": "We Are!",
+  "artist": "Kitadani Hiroshi",
+  "offset": 30
+ },
  "op-op11": {
   "title": "Share The World",
   "artist": "TVXQ!",
   "offset": 45
  },
- "op-op12": null,
- "op-op13": null,
- "op-op14": null,
- "op-op15": null,
+ "op-op12": {
+  "title": "Kazewo sagashite",
+  "artist": "YAGUCHI MARI with STRAW HAT",
+  "offset": 30
+ },
+ "op-op13": {
+  "title": "One day",
+  "artist": "The ROOTLESS",
+  "offset": 30
+ },
+ "op-op14": {
+  "title": "Fight Together",
+  "artist": "Namie Amuro",
+  "offset": 55
+ },
+ "op-op15": {
+  "title": "We go!",
+  "artist": "Kitadani Hiroshi",
+  "offset": 30
+ },
  "op-op16": {
   "title": "HANDS UP !",
   "artist": "Kota Shinzato",
@@ -1644,13 +1856,41 @@
   "artist": "GENERATIONS from EXILE TRIBE",
   "offset": 25
  },
- "op-op19": null,
- "op-op2": null,
- "op-op20": null,
- "op-op21": null,
- "op-op22": null,
- "op-op23": null,
- "op-op24": null,
+ "op-op19": {
+  "title": "We Can!",
+  "artist": "Kishidan & Kitadani Hiroshi",
+  "offset": 30
+ },
+ "op-op2": {
+  "title": "Believe",
+  "artist": "Folder 5",
+  "offset": 30
+ },
+ "op-op20": {
+  "title": "Hope",
+  "artist": "Namie Amuro",
+  "offset": 30
+ },
+ "op-op21": {
+  "title": "Super Powers",
+  "artist": "mugiwara-san",
+  "offset": 30
+ },
+ "op-op22": {
+  "title": "OVER THE TOP",
+  "artist": "Kitadani Hiroshi",
+  "offset": 30
+ },
+ "op-op23": {
+  "title": "DREAMIN' ON",
+  "artist": "Da-iCE",
+  "offset": 30
+ },
+ "op-op24": {
+  "title": "PAINT",
+  "artist": "I Don't Like Mondays.",
+  "offset": 30
+ },
  "op-op25": {
   "title": "The Peak",
   "artist": "SEKAI NO OWARI",
@@ -1666,18 +1906,46 @@
   "artist": "GRe4N BOYZ",
   "offset": 8
  },
- "op-op28": null,
- "op-op29": null,
- "op-op3": null,
- "op-op4": null,
- "op-op5": null,
+ "op-op28": {
+  "title": "Carmine",
+  "artist": "Ellegarden",
+  "offset": 30
+ },
+ "op-op29": {
+  "title": "Luminous",
+  "artist": "Aina The End",
+  "offset": 30
+ },
+ "op-op3": {
+  "title": "Hikari E",
+  "artist": "mugiwara-san",
+  "offset": 30
+ },
+ "op-op4": {
+  "title": "Bon Voyage!",
+  "artist": "BON-BON BLANCO",
+  "offset": 30
+ },
+ "op-op5": {
+  "title": "ココロのちず",
+  "artist": "BOYSTYLE",
+  "offset": 30
+ },
  "op-op6": {
   "title": "Brand New World",
   "artist": "D-51",
   "offset": 45
  },
- "op-op8": null,
- "op-op9": null,
+ "op-op8": {
+  "title": "Crazy Rainbow",
+  "artist": "タッキー＆翼",
+  "offset": 30
+ },
+ "op-op9": {
+  "title": "Jungle P",
+  "artist": "50/50",
+  "offset": 30
+ },
  "opm-op1": {
   "title": "THE HERO !!: Ikareru Kobushi ni Hi o Tsukero",
   "artist": "JAM Project",
@@ -1688,8 +1956,16 @@
   "artist": "JAM Project",
   "offset": 8
  },
- "yahariore-op1": null,
- "onk-s2-op1": null,
+ "yahariore-op1": {
+  "title": "ユキトキ",
+  "artist": "yanaginagi",
+  "offset": 30
+ },
+ "onk-s2-op1": {
+  "title": "Fatal",
+  "artist": "GEMN, Kento Nakajima & Tatsuya Kitani",
+  "offset": 30
+ },
  "ourankoukou-op1": {
   "title": "Sakura Kiss",
   "artist": "Chieco Kawabe",
@@ -1700,17 +1976,41 @@
   "artist": "OxT",
   "offset": 45
  },
- "overlordii-op1": null,
+ "overlordii-op1": {
+  "title": "GO CRY GO",
+  "artist": "OxT",
+  "offset": 30
+ },
  "overlordiv-op1": {
   "title": "HOLLOW HUNGER",
   "artist": "OxT",
   "offset": 25
  },
- "overlord-op3": null,
- "parasyte-op1": null,
- "pingpong-op1": null,
- "pokemon-believe-in-me-op5": null,
- "pokemon-op1": null,
+ "overlord-op3": {
+  "title": "VORACITY",
+  "artist": "MYTH & ROID",
+  "offset": 30
+ },
+ "parasyte-op1": {
+  "title": "Let Me Hear",
+  "artist": "Fear, and Loathing in Las Vegas",
+  "offset": 30
+ },
+ "pingpong-op1": {
+  "title": "Tadahitori (Album Mix)",
+  "artist": "BAKUDAN JOHNNY",
+  "offset": 30
+ },
+ "pokemon-believe-in-me-op5": {
+  "title": "Pokemon Theme Season 2: One Piece Theme - Incredible Crash Test Dummies Theme",
+  "artist": "4Kids TV",
+  "offset": 30
+ },
+ "pokemon-op1": {
+  "title": "めざせポケモンマスター",
+  "artist": "Rica Matsumoto",
+  "offset": 30
+ },
  "pokemon-op2": {
   "title": "ライバル!",
   "artist": "Rica Matsumoto",
@@ -1721,30 +2021,86 @@
   "artist": "Rica Matsumoto",
   "offset": 8
  },
- "pokemon-op4": null,
- "pokemon-fr-op1": null,
- "primadoll-op1": null,
- "psychopass-op1": null,
- "psychopass-op2": null,
- "psychopass-s2-op1": null,
- "qualideacode-op1": null,
- "qualideacode-op2": null,
- "ousamaranking-op1": null,
- "ousamaranking-op2": null,
- "seishunbuta-op1": null,
+ "pokemon-op4": {
+  "title": "Born to Be a Winner",
+  "artist": "Pokémon",
+  "offset": 30
+ },
+ "pokemon-fr-op1": {
+  "title": "Pokémon-Thema (Komm schnapp sie dir)",
+  "artist": "Anime Allstars",
+  "offset": 30
+ },
+ "primadoll-op1": {
+  "title": "Tin Toy Melody",
+  "artist": "Chat noir(Haizakura, Karasuba, Gekka, Houkiboshi, Retzel)",
+  "offset": 30
+ },
+ "psychopass-op1": {
+  "title": "Abnormalize (Best of Tornado Remastering)",
+  "artist": "Ling tosite sigure",
+  "offset": 30
+ },
+ "psychopass-op2": {
+  "title": "Out of Control",
+  "artist": "Nothing's Carved In Stone",
+  "offset": 30
+ },
+ "psychopass-s2-op1": {
+  "title": "Enigmatic Feeling",
+  "artist": "Ling tosite sigure",
+  "offset": 30
+ },
+ "qualideacode-op1": {
+  "title": "Brave Freak Out",
+  "artist": "LiSA",
+  "offset": 30
+ },
+ "qualideacode-op2": {
+  "title": "Axxxis",
+  "artist": "LiSA",
+  "offset": 30
+ },
+ "ousamaranking-op1": {
+  "title": "BOY",
+  "artist": "King Gnu",
+  "offset": 30
+ },
+ "ousamaranking-op2": {
+  "title": "Hadaka No Yusha",
+  "artist": "VAUNDY",
+  "offset": 30
+ },
+ "seishunbuta-op1": {
+  "title": "Kiminosei (Remastered 2022)",
+  "artist": "the peggies",
+  "offset": 30
+ },
  "rekan-op1": {
   "title": "Colorful Story",
   "artist": "every❤ing !",
   "offset": 25
  },
- "rezero-op1": null,
+ "rezero-op1": {
+  "title": "Redo",
+  "artist": "Konomi Suzuki",
+  "offset": 30
+ },
  "rezero-op2": {
   "title": "Realize",
   "artist": "Konomi Suzuki",
   "offset": 45
  },
- "shuumatsuno-op1": null,
- "kanojo-op1": null,
+ "shuumatsuno-op1": {
+  "title": "KAMIGAMI (TV edit)",
+  "artist": "MAXIMUM THE HORMONE",
+  "offset": 30
+ },
+ "kanojo-op1": {
+  "title": "Centimeter",
+  "artist": "the peggies",
+  "offset": 30
+ },
  "rokkano-op1": {
   "title": "Cry for the Truth (Instrumental)",
   "artist": "MICHI",
@@ -1755,22 +2111,46 @@
   "artist": "UROBOROS",
   "offset": 25
  },
- "bishoujosenshi-op1": null,
+ "bishoujosenshi-op1": {
+  "title": "MOON PRIDE",
+  "artist": "Momoiro Clover Z",
+  "offset": 30
+ },
  "sakamotodays-op1": {
   "title": "Hashire SAKAMOTO (Sakamoto Days OP)",
   "artist": "Dai Luong",
   "offset": 25
  },
- "sakurasouno-op1": null,
- "sakurasouno-op2": null,
- "champloo-op1": null,
- "seraph-op1": null,
+ "sakurasouno-op1": {
+  "title": "君が夢を連れてきた(TVサイズ)",
+  "artist": "Ai Kayano, 中津真莉子 & Natsumi Takamori",
+  "offset": 30
+ },
+ "sakurasouno-op2": {
+  "title": "夢の続き",
+  "artist": "Konomi Suzuki",
+  "offset": 30
+ },
+ "champloo-op1": {
+  "title": "Battlecry (feat. Shing02)",
+  "artist": "Nujabes",
+  "offset": 30
+ },
+ "seraph-op1": {
+  "title": "X.U. (feat. Gemie)",
+  "artist": "SawanoHiroyuki[nZk]",
+  "offset": 30
+ },
  "serialexperime-op1": {
   "title": "Duvet",
   "artist": "bôa",
   "offset": 45
  },
- "nanatsu-op1": null,
+ "nanatsu-op1": {
+  "title": "Netsujo No Spectrum",
+  "artist": "Ikimonogakari",
+  "offset": 30
+ },
  "shakuganno-op1": {
   "title": "Prophecy",
   "artist": "Mami Kawada",
@@ -1781,40 +2161,96 @@
   "artist": "Takanori Nishikawa & ASCA",
   "offset": 8
  },
- "slamdunk-op1": null,
- "slamdunk-op2": null,
- "solo-leveling-op1": null,
- "souleater-op1": null,
- "souleater-op2": null,
- "sg-op1": null,
+ "slamdunk-op1": {
+  "title": "君が好きだと叫びたい",
+  "artist": "BAAD",
+  "offset": 30
+ },
+ "slamdunk-op2": {
+  "title": "ぜったいに 誰も",
+  "artist": "ZYYG",
+  "offset": 30
+ },
+ "solo-leveling-op1": {
+  "title": "LEveL (feat. TOMORROW X TOGETHER)",
+  "artist": "SawanoHiroyuki[nZk]",
+  "offset": 30
+ },
+ "souleater-op1": {
+  "title": "Resonance",
+  "artist": "T.M.Revolution",
+  "offset": 30
+ },
+ "souleater-op2": {
+  "title": "PAPERMOON",
+  "artist": "Tommy heavenly6",
+  "offset": 30
+ },
+ "sg-op1": {
+  "title": "Hacking to the Gate",
+  "artist": "ITO KANAKO",
+  "offset": 30
+ },
  "supercub-op1": {
   "title": "まほうのかぜ (Instrumental)",
   "artist": "Akane Kumada",
   "offset": 45
  },
- "superlovers-op1": null,
+ "superlovers-op1": {
+  "title": "おかえり。",
+  "artist": "矢田悠祐",
+  "offset": 30
+ },
  "sao-op1": {
   "title": "Crossing Field",
   "artist": "LiSA",
   "offset": 25
  },
- "sao-op2": null,
+ "sao-op2": {
+  "title": "Innocence",
+  "artist": "Eir Aoi",
+  "offset": 30
+ },
  "sao-resolution-op1": {
   "title": "Resolution",
   "artist": "Haruka Tomatsu",
   "offset": 25
  },
- "sao-alicization-op1": null,
- "sao-alicization-op2": null,
- "sao-s2-op1": null,
- "sao-s2-op2": null,
- "sao-s2-op3": null,
+ "sao-alicization-op1": {
+  "title": "ADAMAS",
+  "artist": "LiSA",
+  "offset": 30
+ },
+ "sao-alicization-op2": {
+  "title": "Resister (Instrumental)",
+  "artist": "ASCA",
+  "offset": 30
+ },
+ "sao-s2-op1": {
+  "title": "Ignite",
+  "artist": "Eir Aoi",
+  "offset": 30
+ },
+ "sao-s2-op2": {
+  "title": "Courage (Album Mix)",
+  "artist": "Haruka Tomatsu",
+  "offset": 30
+ },
+ "sao-s2-op3": {
+  "title": "Separate Ways",
+  "artist": "Haruka Tomatsu",
+  "offset": 30
+ },
  "sao-wou-op2": {
   "title": "ANIMA",
   "artist": "ReoNa",
   "offset": 25
  },
- "tenseishitara-op1": null,
+ "tenseishitara-op1": {
+  "title": "Nameless Story",
+  "artist": "Takuma Terashima",
+  "offset": 30
+ },
  "tenseishitara-op2": {
   "title": "メグルモノ",
   "artist": "Takuma Terashima",
@@ -1825,10 +2261,26 @@
   "artist": "TRUE",
   "offset": 8
  },
- "amdb-op1": null,
- "apothecary-op1": null,
- "kusuriyano-op2": null,
- "kusuriyano-s2-op1": null,
+ "amdb-op1": {
+  "title": "Here",
+  "artist": "JUNNA",
+  "offset": 30
+ },
+ "apothecary-op1": {
+  "title": "Be a flower",
+  "artist": "Ryokuoushoku Shakai",
+  "offset": 30
+ },
+ "kusuriyano-op2": {
+  "title": "Ambivalent",
+  "artist": "Uru",
+  "offset": 30
+ },
+ "kusuriyano-s2-op1": {
+  "title": "In Bloom",
+  "artist": "Lilas",
+  "offset": 30
+ },
  "vanitas-op2": {
   "title": "Your Name",
   "artist": "Little Glee Monster",
@@ -1839,28 +2291,72 @@
   "artist": "Masaaki Endoh",
   "offset": 45
  },
- "densetsuno-op1": null,
- "densetsuno-op2": null,
+ "densetsuno-op1": {
+  "title": "LAMENT〜やがて喜びを〜",
+  "artist": "Aira Yuuki",
+  "offset": 30
+ },
+ "densetsuno-op2": {
+  "title": "Last Inferno",
+  "artist": "Ceui",
+  "offset": 30
+ },
  "toaruhikuushi-op1": {
   "title": "Azurite",
   "artist": "Petit Milady",
   "offset": 25
  },
- "tpn-op1": null,
- "gotoubunno-op1": null,
- "tateno-op1": null,
- "tateno-op2": null,
- "tateno-s2-op1": null,
+ "tpn-op1": {
+  "title": "Touch off",
+  "artist": "UVERworld",
+  "offset": 30
+ },
+ "gotoubunno-op1": {
+  "title": "Gotoubun no Kimochi",
+  "artist": "Nakanoke no Itsutsugo",
+  "offset": 30
+ },
+ "tateno-op1": {
+  "title": "Rise",
+  "artist": "MADKID",
+  "offset": 30
+ },
+ "tateno-op2": {
+  "title": "Faith",
+  "artist": "MADKID",
+  "offset": 30
+ },
+ "tateno-s2-op1": {
+  "title": "Bring Back (English Version)",
+  "artist": "MADKID",
+  "offset": 30
+ },
  "nanatsuno-op1": null,
- "nanatsuno-op2": null,
- "sinnanatsu-op1": null,
+ "nanatsuno-op2": {
+  "title": "Seven Deadly Sins",
+  "artist": "MAN WITH A MISSION",
+  "offset": 30
+ },
+ "sinnanatsu-op1": {
+  "title": "My Sweet Maiden",
+  "artist": "Mia REGINA",
+  "offset": 30
+ },
  "tokyoesp-op1": {
   "title": "Tokyo Zero Hearts",
   "artist": "Faylan",
   "offset": 25
  },
- "tg-op1": null,
- "tg-s2-op1": null,
+ "tg-op1": {
+  "title": "Unravel",
+  "artist": "TK from Ling tosite sigure",
+  "offset": 30
+ },
+ "tg-s2-op1": {
+  "title": "Katharsis",
+  "artist": "TK from Ling tosite sigure",
+  "offset": 30
+ },
  "tr-op1": {
   "title": "Cry Baby",
   "artist": "OFFICIAL HIGE DANDISM",
@@ -1886,7 +2382,11 @@
   "artist": "Kvi Baba",
   "offset": 25
  },
- "undeadunluck-op1": null,
+ "undeadunluck-op1": {
+  "title": "ZERO ICHI",
+  "artist": "Queen Bee",
+  "offset": 30
+ },
  "undeadunluck-op2": {
   "title": "Love Call",
   "artist": "Shiyui",
