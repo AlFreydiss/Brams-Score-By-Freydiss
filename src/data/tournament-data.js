@@ -70,7 +70,7 @@ export const OPENING_TOURNAMENT_CONFIG = {
   startDate:   '2026-05-27',
   categoryLabel:'Openings',
   route:        '/tournoi/openings',
-  version:      'v5-opening-noms-animes',
+  version:      'v6-opening-dedup',
   participants: BLIND_TEST_OPENING_CATALOG,
 }
 

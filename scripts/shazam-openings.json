@@ -482,5 +482,647 @@
   "artist": "BUMP OF CHICKEN",
   "offset": 8
  },
- "dungeonmeshi-op2": null
+ "dungeonmeshi-op2": null,
+ "ds-op1": {
+  "title": "Gurenge",
+  "artist": "LiSA",
+  "offset": 25
+ },
+ "ds-op2": {
+  "title": "Zankyosanka",
+  "artist": "Aimer",
+  "offset": 45
+ },
+ "ds-op3": {
+  "title": "Kizuna No Kiseki",
+  "artist": "MAN WITH A MISSION & milet",
+  "offset": 25
+ },
+ "kny-s2-op1": {
+  "title": "Zankyosanka",
+  "artist": "Aimer",
+  "offset": 25
+ },
+ "kny-s3-op1": {
+  "title": "Kizuna No Kiseki",
+  "artist": "MAN WITH A MISSION & milet",
+  "offset": 45
+ },
+ "devilmancrybab-op1": {
+  "title": "Man Human (Devilman Crybaby Version)",
+  "artist": "Denki Groove",
+  "offset": 25
+ },
+ "digimonadventu-op1": {
+  "title": "Digimon Main Theme",
+  "artist": "Digimon",
+  "offset": 25
+ },
+ "digimonfrontie-op1": {
+  "title": "FIRE!!",
+  "artist": "Koji Wada",
+  "offset": 45
+ },
+ "domestic-op1": {
+  "title": "Kawakiwoameku",
+  "artist": "Minami",
+  "offset": 25
+ },
+ "dr-stone-op3": {
+  "title": "Paradise (Instrumental)",
+  "artist": "Fujifabric",
+  "offset": 25
+ },
+ "drstone-op1": {
+  "title": "Good Morning World!",
+  "artist": "BURNOUT SYNDROMES",
+  "offset": 25
+ },
+ "drstone-op2": {
+  "title": "Primary Colors",
+  "artist": "PELICAN FANCLUB",
+  "offset": 25
+ },
+ "drstone-wasuregataki-op1": {
+  "title": "Wasuregataki",
+  "artist": "Huwie Ishizaki",
+  "offset": 25
+ },
+ "db-dan-dan-kokoro-hikarete-ku-op1": {
+  "title": "Dragon Hits",
+  "artist": "Josafat",
+  "offset": 25
+ },
+ "db-op1": {
+  "title": "Dragon Hits",
+  "artist": "Josafat",
+  "offset": 25
+ },
+ "dbk-op1": {
+  "title": "Dragon Soul",
+  "artist": "Takayoshi Tanimoto",
+  "offset": 25
+ },
+ "dbs-op1": {
+  "title": "Chozetsu Dynamic! (2023 Master)",
+  "artist": "Kazuya Yoshii",
+  "offset": 25
+ },
+ "dbs-op2": {
+  "title": "Limit Break x Survivor",
+  "artist": "Kiyoshi Hikawa",
+  "offset": 25
+ },
+ "dbz-op1": {
+  "title": "Dragon Hits",
+  "artist": "Josafat",
+  "offset": 25
+ },
+ "dbz-op2": {
+  "title": "Obstiné en quête de gloire éternel",
+  "artist": "Palaeksa",
+  "offset": 25
+ },
+ "dragonquest-op1": {
+  "title": "勇者よ いそげ!!",
+  "artist": "団時朗",
+  "offset": 25
+ },
+ "durarara-op1": {
+  "title": "Uragirinoyuuyake",
+  "artist": "Theatre Brook",
+  "offset": 25
+ },
+ "durarara-op2": {
+  "title": "Complication",
+  "artist": "ROOKiEZ Is Punk'd",
+  "offset": 25
+ },
+ "bokudake-op1": {
+  "title": "Re:Re:",
+  "artist": "Asian Kung-Fu Generation",
+  "offset": 25
+ },
+ "eurekaseven-op1": {
+  "title": "Days",
+  "artist": "FLOW",
+  "offset": 45
+ },
+ "eurekaseven-op2": {
+  "title": "Shonen Heart",
+  "artist": "Home Made Kazoku",
+  "offset": 25
+ },
+ "eurekaseven-op3": null,
+ "eurekaseven-op4": {
+  "title": "sakura",
+  "artist": "NIRGILIS",
+  "offset": 25
+ },
+ "eyeshield21-op3": {
+  "title": "DangDang",
+  "artist": "ZZ",
+  "offset": 25
+ },
+ "eyeshield21-op4": {
+  "title": "Blaze Line",
+  "artist": "BACK-ON",
+  "offset": 25
+ },
+ "eyeshield21-op5": {
+  "title": "Honoono running back",
+  "artist": "SHORT LEG SUMMER",
+  "offset": 25
+ },
+ "fairytail-op15": {
+  "title": "Masayume chasing",
+  "artist": "BoA",
+  "offset": 25
+ },
+ "ft-op1": {
+  "title": "Snow fairy",
+  "artist": "FUNKIST",
+  "offset": 25
+ },
+ "ft-op10": {
+  "title": "I Wish",
+  "artist": "Milky Bunny",
+  "offset": 25
+ },
+ "ft-op11": {
+  "title": "Hajimari No Sora",
+  "artist": "+Plus",
+  "offset": 25
+ },
+ "ft-op12": {
+  "title": "テノヒラ",
+  "artist": "HERO",
+  "offset": 25
+ },
+ "ft-op13": {
+  "title": "Breakthrough",
+  "artist": "GOING UNDER GROUND",
+  "offset": 25
+ },
+ "ft-op14": {
+  "title": "Fairy Tail ~Yakusoku No Hi~",
+  "artist": "Chihiro Yonekura",
+  "offset": 25
+ },
+ "ft-op2": {
+  "title": "S.O.W. Sense of Wonder",
+  "artist": "Idoling!!!",
+  "offset": 25
+ },
+ "ft-op3": {
+  "title": "ft.",
+  "artist": "FUNKIST",
+  "offset": 25
+ },
+ "ft-op4": {
+  "title": "R.P.G - Rockin' Playing Game",
+  "artist": "SuG",
+  "offset": 25
+ },
+ "ft-op5": {
+  "title": "Egao No Mahou",
+  "artist": "MAGIC PARTY",
+  "offset": 45
+ },
+ "ft-op6": {
+  "title": "Fiesta",
+  "artist": "+Plus",
+  "offset": 25
+ },
+ "ft-op7": {
+  "title": "Evidence",
+  "artist": "Daisy×Daisy",
+  "offset": 25
+ },
+ "ft-op8": {
+  "title": "The Rock City Boy",
+  "artist": "Jamil",
+  "offset": 25
+ },
+ "ft-op9": {
+  "title": "Towa no Kizuna Feat. Another Infinity",
+  "artist": "Daisy×Daisy",
+  "offset": 25
+ },
+ "fsn-ubw-op2": {
+  "title": "Brave Shine",
+  "artist": "Aimer",
+  "offset": 25
+ },
+ "fz-op1": {
+  "title": "Oath Sign",
+  "artist": "LiSA",
+  "offset": 25
+ },
+ "ff-op3": {
+  "title": "SPARK - AGAIN",
+  "artist": "Aimer",
+  "offset": 25
+ },
+ "fireforce-op1": {
+  "title": "Inferno",
+  "artist": "Mrs. GREEN APPLE",
+  "offset": 25
+ },
+ "fireforce-op2": {
+  "title": "MAYDAY (feat. Ryo)",
+  "artist": "coldrain",
+  "offset": 25
+ },
+ "fmab-op5": {
+  "title": "Rain",
+  "artist": "Sid",
+  "offset": 8
+ },
+ "frieren-op1": {
+  "title": "The Brave",
+  "artist": "YOASOBI",
+  "offset": 25
+ },
+ "frieren-op2": {
+  "title": "Sunny",
+  "artist": "Yorushika",
+  "offset": 25
+ },
+ "fruitsbasket-op1": {
+  "title": "Again",
+  "artist": "Beverly",
+  "offset": 25
+ },
+ "fruitsbasket-op2": {
+  "title": "Chime",
+  "artist": "Ai Otsuka",
+  "offset": 25
+ },
+ "fmab-op1": {
+  "title": "Again",
+  "artist": "YUI",
+  "offset": 25
+ },
+ "fmab-op2": {
+  "title": "Hologram",
+  "artist": "NICO Touches the Walls",
+  "offset": 25
+ },
+ "fmab-op3": {
+  "title": "Golden Time Rubber",
+  "artist": "Sukimaswitch",
+  "offset": 25
+ },
+ "fmab-op4": {
+  "title": "Period",
+  "artist": "CHEMISTRY",
+  "offset": 25
+ },
+ "fumetsuno-op1": {
+  "title": "PINK BLOOD",
+  "artist": "Hikaru Utada",
+  "offset": 25
+ },
+ "mirai-nikki-op1": {
+  "title": "空想メソロギヰ",
+  "artist": "Das Feenreich",
+  "offset": 25
+ },
+ "gambano-op1": {
+  "title": "Op ガンバのうた 【ガンバの冒険】",
+  "artist": "河原　裕昌",
+  "offset": 25
+ },
+ "ghostin-op1": {
+  "title": "Inner Universe",
+  "artist": "Origa",
+  "offset": 25
+ },
+ "gintama-op1": {
+  "title": "Pray",
+  "artist": "Tommy heavenly6",
+  "offset": 25
+ },
+ "gintama-op17": {
+  "title": "KNOW KNOW KNOW",
+  "artist": "DOES",
+  "offset": 25
+ },
+ "gintama-op2": {
+  "title": "Tooi Nioi",
+  "artist": "YO-KING",
+  "offset": 25
+ },
+ "gintama-op3": {
+  "title": "Gin Iro No Sora",
+  "artist": "redballoon",
+  "offset": 45
+ },
+ "gintama-op4": {
+  "title": "kasanarukage",
+  "artist": "HEARTS GROW",
+  "offset": 8
+ },
+ "gintama-op5": {
+  "title": "A Cloudy Sky",
+  "artist": "DOES",
+  "offset": 25
+ },
+ "gintama-op6": {
+  "title": "Anata MAGIC",
+  "artist": "Monobright",
+  "offset": 25
+ },
+ "gintama-op7": {
+  "title": "Stairway Generation",
+  "artist": "Base Ball Bear",
+  "offset": 25
+ },
+ "gintama-op8": {
+  "title": "Light Infection",
+  "artist": "Prague",
+  "offset": 25
+ },
+ "given-op1": {
+  "title": "Kizuato (Instrumental)",
+  "artist": "Centimillimental",
+  "offset": 25
+ },
+ "goblinslayer-op1": {
+  "title": "Rightfully (TV Animation Goblin Slayer Opening)",
+  "artist": "Mili",
+  "offset": 25
+ },
+ "goldenkamuy-op1": {
+  "title": "Winding Road",
+  "artist": "MAN WITH A MISSION",
+  "offset": 25
+ },
+ "goldentime-op2": {
+  "title": "The♡World's♡End",
+  "artist": "Yui Horie",
+  "offset": 25
+ },
+ "gunx-op1": {
+  "title": "GUN×SWORD (feat. 鬼太鼓座)",
+  "artist": "Kotaro Nakagawa",
+  "offset": 25
+ },
+ "tengentoppa-op1": {
+  "title": "Sorairo Days",
+  "artist": "Shoko Nakagawa",
+  "offset": 25
+ },
+ "hagureyuusha-op1": {
+  "title": "Realization",
+  "artist": "Faylan",
+  "offset": 25
+ },
+ "haikyuu-op1": {
+  "title": "Imagination",
+  "artist": "SPYAIR",
+  "offset": 25
+ },
+ "haikyuu-op3": {
+  "title": "hikariare",
+  "artist": "BURNOUT SYNDROMES",
+  "offset": 25
+ },
+ "hajimeno-op1": {
+  "title": "Under Star",
+  "artist": "Shocking Lemon",
+  "offset": 25
+ },
+ "hajimeno-op2": {
+  "title": "Inner Light",
+  "artist": "Shocking Lemon",
+  "offset": 25
+ },
+ "hajimeno-op3": {
+  "title": "Tumbling Dice",
+  "artist": "Tsuneo Imahori",
+  "offset": 25
+ },
+ "rehamatora-op1": {
+  "title": "Sen no Tsubasa",
+  "artist": "Gokhan Can",
+  "offset": 25
+ },
+ "hellsing-op1": {
+  "title": "Cool. The World Without Logos (HELLSING OST)",
+  "artist": "Yasushi Ishii",
+  "offset": 25
+ },
+ "horimiya-op1": {
+  "title": "Irokousui",
+  "artist": "YOH KAMIYAMA",
+  "offset": 25
+ },
+ "housekino-op1": {
+  "title": "Kyoumen No Nami",
+  "artist": "YURiKA",
+  "offset": 25
+ },
+ "hq-op1": {
+  "title": "Imagination",
+  "artist": "SPYAIR",
+  "offset": 25
+ },
+ "hq-op2": {
+  "title": "Ah Yeah!!",
+  "artist": "Sukimaswitch",
+  "offset": 25
+ },
+ "hq-fly-high-op2": {
+  "title": "FLY HIGH!!",
+  "artist": "BURNOUT SYNDROMES",
+  "offset": 25
+ },
+ "hq-hikari-are-op1": {
+  "title": "hikariare",
+  "artist": "BURNOUT SYNDROMES",
+  "offset": 25
+ },
+ "hq-i-m-a-believer-op1": {
+  "title": "I'm a Believer (Instrumental)",
+  "artist": "SPYAIR",
+  "offset": 25
+ },
+ "hq-phoenix-op1": {
+  "title": "Phoenix (instrumental)",
+  "artist": "BURNOUT SYNDROMES",
+  "offset": 25
+ },
+ "hxh-op1": {
+  "title": "departure! (Karaoke)",
+  "artist": "Masatoshi Ono",
+  "offset": 25
+ },
+ "yuushayamemasu-op1": null,
+ "ichigo100-op1": {
+  "title": "SHINE OF VOICE",
+  "artist": "根岸貴幸",
+  "offset": 25
+ },
+ "inuto-op1": {
+  "title": "Wan Wan Wan Wan N_1!!",
+  "artist": "Inukko Club",
+  "offset": 25
+ },
+ "inuyasha-op1": {
+  "title": "CHANGE THE WORLD",
+  "artist": "V6",
+  "offset": 25
+ },
+ "inuyasha-op2": {
+  "title": "I am(犬夜叉/BONUS TV SIZE)",
+  "artist": "ｈｉｔｏｍｉ",
+  "offset": 25
+ },
+ "inuyasha-op3": {
+  "title": "Owarinaiyume",
+  "artist": "Nanase Aikawa",
+  "offset": 25
+ },
+ "inuyasha-op4": {
+  "title": "Grip!",
+  "artist": "Every Little Thing",
+  "offset": 25
+ },
+ "inuyasha-op5": {
+  "title": "One Day,One Dream(カラオケ)",
+  "artist": "タッキー＆翼",
+  "offset": 45
+ },
+ "inuyasha-op6": {
+  "title": "ANGELUS",
+  "artist": "Hitomi Shimatani",
+  "offset": 45
+ },
+ "jigokuraku-op1": {
+  "title": "WORK",
+  "artist": "ꉈꀧ꒒꒒ꁄꍈꍈꀧ꒦ꉈ ꉣꅔꎡꅔꁕꁄ, Sheena Ringo & Daiki Tsuneta",
+  "offset": 25
+ },
+ "jojo-op10": {
+  "title": "STONE OCEAN",
+  "artist": "ichigo from Kisidakyoudan & the Akebosi rockets",
+  "offset": 25
+ },
+ "jojo-op2": {
+  "title": "Bloody Stream",
+  "artist": "Coda",
+  "offset": 25
+ },
+ "jojo-bloody-stream-op2": {
+  "title": "Bloody Stream",
+  "artist": "Coda",
+  "offset": 25
+ },
+ "jojo-op4": {
+  "title": "Bloody Stream",
+  "artist": "Coda",
+  "offset": 25
+ },
+ "jojo-op1": {
+  "title": "Jojo Sono Chino Sadame",
+  "artist": "tominaga tommy hiroaki",
+  "offset": 25
+ },
+ "jojo-op3": {
+  "title": "Stand Proud",
+  "artist": "Jin Hashimoto",
+  "offset": 25
+ },
+ "jojo-op6": {
+  "title": "Great Days",
+  "artist": "Karen Aoki & Daisuke Hasegawa",
+  "offset": 45
+ },
+ "jojo-op8": {
+  "title": "Fighting Gold",
+  "artist": "Coda",
+  "offset": 45
+ },
+ "joukamachino-op1": {
+  "title": "Ring Ring Rainbow !!",
+  "artist": "YUIKAORI",
+  "offset": 25
+ },
+ "jjk-op1": {
+  "title": "Kaikai Kitan",
+  "artist": "EVE",
+  "offset": 25
+ },
+ "jjk-op2": {
+  "title": "SPECIALZ",
+  "artist": "King Gnu",
+  "offset": 25
+ },
+ "jjk-s2-op1": {
+  "title": "Where Our Blue Is",
+  "artist": "Tatsuya Kitani",
+  "offset": 25
+ },
+ "jjk-s2-op2": {
+  "title": "SPECIALZ",
+  "artist": "King Gnu",
+  "offset": 25
+ },
+ "kaguya-giri-giri-op1": {
+  "title": "GIRI GIRI (feat. Suu)",
+  "artist": "Masayuki Suzuki",
+  "offset": 25
+ },
+ "kaguya-op1": {
+  "title": "Love Dramatic (feat. Rikka Ihara) [Funky Flag Version]",
+  "artist": "Masayuki Suzuki",
+  "offset": 25
+ },
+ "kaichouwa-op1": {
+  "title": "My Secret",
+  "artist": "Saaya Mizuno",
+  "offset": 25
+ },
+ "kaiju-op1": {
+  "title": "Abyss (from Kaiju No. 8)",
+  "artist": "YUNGBLUD",
+  "offset": 25
+ },
+ "kakegurui-op1": {
+  "title": "Deal With The Devil",
+  "artist": "Tia",
+  "offset": 25
+ },
+ "katanagatari-op1": {
+  "title": "冥夜花伝廊",
+  "artist": "Minami Kuribayashi",
+  "offset": 25
+ },
+ "katanagatari-op2": {
+  "title": "刀と鞘",
+  "artist": "ALI PROJECT",
+  "offset": 25
+ },
+ "kazega-op1": {
+  "title": "Catch up, Latency",
+  "artist": "UNISON SQUARE GARDEN",
+  "offset": 25
+ },
+ "kazega-op2": {
+  "title": "Kaze Tsuyoku, Kimi Atsuku.",
+  "artist": "Q-MHz",
+  "offset": 25
+ },
+ "kekkaisensen-op1": {
+  "title": "Hello,World! (TV Size Version)",
+  "artist": "BUMP OF CHICKEN",
+  "offset": 25
+ },
+ "kenganashura-op1": {
+  "title": "King & Ashley",
+  "artist": "MY FIRST STORY",
+  "offset": 25
+ }
 }

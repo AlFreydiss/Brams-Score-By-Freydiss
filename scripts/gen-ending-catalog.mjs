@@ -1013,6 +1013,28 @@ const OP_ALIAS_DROP = new Set([
   'plasticmemorie-op1',
   'oshi-no-ko-op1',
   'beastars2nd-s2-op1',
+  // Doublons confirmés par empreinte audio (chromaprint) : le même opening
+  // existait sous deux slugs, souvent une fois nommé et une fois anonyme.
+  // On garde systématiquement l'entrée qui porte le vrai titre.
+  'jojo-op4', 'jojo-bloody-stream-op2', // = jojo-op2 « Bloody Stream »
+  'vinland-s2-op1',                     // = vinland-op2 « River »
+  'kny-s2-op1',                         // = ds-op2 « Zankyou Sanka »
+  'kny-s3-op1',                         // = ds-op3 « Kizuna no Kiseki »
+  'kon-op2',                            // = kon-op1
+  'lycorisrecoil-op1',                  // = lycoris-op1 « ALIVE »
+  'aot-shinzou-wo-sas-op1',             // = aot-s2-op « Shinzou wo Sasageyo! »
+  'aot-final-op',                       // = aot-op7 « The Rumbling »
+  'aot-final-op1',                      // = aot-op6 « My War »
+  'madein-op2',                         // = madeinabyss-op1 « Deep in Abyss »
+  'mha-s2-op1',                         // = mha-op2 « Peace Sign »
+  'mha-s2-op2',                         // = mha-op3 « Sora ni Utaeba »
+  'mha-s3-op1',                         // = mha-op4 « Make My Story »
+  'mha-op7',                            // = mha-op6 « Polaris »
+  'jjk-s2-op2',                         // = jjk-op2 « SPECIALZ »
+  'nanatsuno-op1',                      // = nanatsu-op1 « Netsujou no Spectrum »
+  'mobpsycho-op1',                      // = mob-op1 « 99 »
+  'mahoutsukaino-op1',                  // = amdb-op1 « Here »
+  'hq-op1',                             // = haikyuu-op1 « Imagination »
 ])
 
 const localOpById = {}
