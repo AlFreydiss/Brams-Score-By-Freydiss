@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import SakuraBackdrop from './SakuraBackdrop.jsx'
@@ -45,7 +45,29 @@ const HUB_CSS = `
   @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
   @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
   @keyframes htFloat   { 0%{transform:translateY(8px) translateX(0);opacity:0} 12%{opacity:.45} 88%{opacity:.32} 100%{transform:translateY(-90px) translateX(14px);opacity:0} }
-  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
+  @keyframes htShine   { 0%,72%{background-position:120% 50%} 100%{background-position:-20% 50%} }
+
+  /* Reflet du titre : une bande claire glisse dans le dégradé de chaque lettre.
+     Le décalage lettre par lettre (animationDelay en JS) donne l'impression
+     d'une lumière qui traverse le mot, et comme c'est le background de la
+     lettre elle-même, ça reste rogné aux glyphes. */
+  .ht-letter {
+    background:linear-gradient(100deg,
+      #f9a8d4 0%, #db2777 26%, #ffffff 42%, #f9a8d4 54%, #db2777 70%, #4c1d95 100%);
+    background-size:340% 100%;
+    background-position:120% 50%;
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    animation:htShine 6s ease-in-out infinite;
+  }
+  /* Anneau de focus : les cartes navigables sont atteignables au clavier, il
+     faut donc voir où on est. Un outline seul se perd sur fond sombre, d'où le
+     halo qui l'accompagne. */
+  [data-tkcard]:focus-visible {
+    outline:2px solid #f9a8d4; outline-offset:3px;
+    box-shadow:0 0 0 6px rgba(249,168,212,.16) !important;
+  }
+  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} .ht-letter{animation:none!important;background-position:50% 50%!important} }
 `
 
 // ── Section heading ────────────────────────────────────────────────────────
@@ -101,8 +123,20 @@ function CategoryCard({ cat, index }) {
   const navigate = useNavigate()
   const isActive = cat.status === 'active'
 
+  // Position du curseur dans la carte, pour le halo qui le suit.
+  const [spot, setSpot] = useState(null)
+
   function handleClick() {
     if (isActive && cat.route) navigate(cat.route)
+  }
+  function handleKeyDown(e) {
+    if (!isActive) return
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() }
+  }
+  function handleMove(e) {
+    if (!isActive) return
+    const r = e.currentTarget.getBoundingClientRect()
+    setSpot({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 })
   }
 
   return (
@@ -111,13 +145,22 @@ function CategoryCard({ cat, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.045, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onMouseMove={handleMove}
+      onMouseLeave={() => setSpot(null)}
+      // Une carte qui navigue doit être atteignable au clavier : sans ça, la
+      // moitié des arènes du hub était inaccessible sans souris.
+      role={isActive ? 'button' : undefined}
+      tabIndex={isActive ? 0 : undefined}
+      data-tkcard={isActive ? '' : undefined}
+      aria-label={isActive ? `Ouvrir l'arène ${cat.label}` : undefined}
       whileHover={isActive ? {
         y: -3,
         transition: { duration: 0.18 },
       } : {}}
       style={{
         background: `linear-gradient(145deg,${cat.color}16 0%,rgba(10,10,11,0.97) 100%)`,
-        border: `1px solid ${cat.color}22`,
+        border: `1px solid ${cat.color}${spot ? '5c' : '22'}`,
         borderTop: `2px solid ${isActive ? cat.color + 'cc' : 'rgba(255,255,255,.10)'}`,
         borderRadius: 14,
         padding: '20px 20px 18px',
@@ -125,7 +168,9 @@ function CategoryCard({ cat, index }) {
         opacity: isActive ? 1 : 0.62,
         display: 'flex', flexDirection: 'column', gap: 10,
         position: 'relative', overflow: 'hidden',
-        transition: 'border-color 0.2s',
+        outline: 'none',
+        boxShadow: spot ? `0 14px 40px rgba(0,0,0,.45), 0 0 30px ${cat.color}26` : 'none',
+        transition: 'border-color .2s, box-shadow .25s',
       }}
     >
       {/* Ambient glow */}
@@ -134,6 +179,14 @@ function CategoryCard({ cat, index }) {
           position: 'absolute', top: -20, left: -20, right: -20,
           height: 60, pointerEvents: 'none',
           background: `radial-gradient(ellipse 80% 100% at 50% 0%, ${cat.color}18 0%, transparent 70%)`,
+        }} />
+      )}
+
+      {/* Halo qui suit le curseur */}
+      {spot && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: `radial-gradient(220px circle at ${spot.x}% ${spot.y}%, ${cat.color}2e 0%, transparent 62%)`,
         }} />
       )}
 
@@ -233,7 +286,54 @@ function ProgressRing({ pct }) {
 }
 
 // ── Active tournament card ─────────────────────────────────────────────────
-function ActiveTournamentCard({ config, progress, currentRound, winner }) {
+// Affiche du duel ouvert : deux titres et un VS, avec les couleurs des deux
+// participants. C'est la seule chose de la carte qui change entre deux visites,
+// donc elle passe devant les compteurs.
+function CurrentDuelStrip({ match }) {
+  if (!match || !match.left || !match.right) return null
+  const l = match.left, r = match.right
+  const cl = l.color || PINK, cr = r.color || PURPLE
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'stretch', gap: 8, margin: '0 0 20px',
+      borderRadius: 12, overflow: 'hidden',
+      border: '1px solid rgba(255,255,255,.07)',
+      background: 'linear-gradient(90deg,' + cl + '1a, rgba(0,0,0,.2) 45%, rgba(0,0,0,.2) 55%,' + cr + '1a)',
+    }}>
+      <div style={{ flex: 1, minWidth: 0, padding: '11px 13px' }}>
+        <div style={{ fontSize: 7.5, letterSpacing: '.14em', color: cl, fontWeight: 800, marginBottom: 3 }}>
+          EN LICE
+        </div>
+        <div style={{
+          fontSize: 12, color: 'rgba(255,255,255,.82)', fontWeight: 700,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {l.title}
+        </div>
+      </div>
+      <div style={{
+        flexShrink: 0, alignSelf: 'center', padding: '0 4px',
+        fontFamily: "'Pirata One',cursive", fontSize: 15, color: 'rgba(255,255,255,.5)',
+      }}>
+        VS
+      </div>
+      <div style={{ flex: 1, minWidth: 0, padding: '11px 13px', textAlign: 'right' }}>
+        <div style={{ fontSize: 7.5, letterSpacing: '.14em', color: cr, fontWeight: 800, marginBottom: 3 }}>
+          EN LICE
+        </div>
+        <div style={{
+          fontSize: 12, color: 'rgba(255,255,255,.82)', fontWeight: 700,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {r.title}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ActiveTournamentCard({ config, progress, currentRound, currentMatch, winner }) {
   const navigate  = useNavigate()
   const route = config.route || '/tournoi/ost'
   const phaseName = winner ? 'Terminé' : currentRound?.label ?? 'En cours'
@@ -294,6 +394,9 @@ function ActiveTournamentCard({ config, progress, currentRound, winner }) {
               ? `${winner.title} remporte le tournoi.`
               : config.description}
           </p>
+
+          {/* Affiche du duel ouvert */}
+          {!isFinished && <CurrentDuelStrip match={currentMatch} />}
 
           {/* Stats */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18 }}>
@@ -445,8 +548,95 @@ function UpcomingCard({ item, index }) {
   )
 }
 
+// ── Titre du hero ──────────────────────────────────────────────────────────
+// Les lettres tombent une à une, puis un balayage de lumière traverse le mot.
+// Le titre reste UN seul <h1> pour les lecteurs d'écran : les lettres sont des
+// <span aria-hidden> et le texte complet est porté par aria-label.
+function HeroTitle({ text }) {
+  const letters = useMemo(() => text.split(''), [text])
+  return (
+    // Bloc : les lettres sont en inline-block, et sans ça le titre remonterait
+    // sur la ligne du badge qui le précède.
+    <h1
+      aria-label={text}
+      style={{
+        display: 'block',
+        fontFamily: "'Pirata One',cursive",
+        fontSize: 'clamp(56px,10vw,110px)',
+        fontWeight: 900, margin: '0 0 16px',
+        letterSpacing: '-0.01em', lineHeight: 0.95,
+      }}
+    >
+      {letters.map((ch, i) => (
+        <motion.span
+          key={i}
+          aria-hidden
+          className="ht-letter"
+          initial={{ opacity: 0, y: 26, rotateX: -55 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ delay: 0.06 + i * 0.035, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          style={{
+            display: 'inline-block',
+            whiteSpace: ch === ' ' ? 'pre' : 'normal',
+            transformOrigin: 'bottom center',
+            // Le reflet vit DANS le dégradé de chaque lettre et se décale de
+            // proche en proche : il traverse le mot en restant rogné aux
+            // glyphes. Un calque posé par-dessus s'afficherait en rectangle,
+            // car le background-clip d'un parent ne rogne pas ses enfants.
+            animationDelay: (i * 0.07) + 's',
+          }}
+        >
+          {ch === ' ' ? ' ' : ch}
+        </motion.span>
+      ))}
+    </h1>
+  )
+}
+
+// ── Bandeau live du hero ───────────────────────────────────────────────────
+// Dit ce qui se joue en ce moment sur l'arène la plus avancée. S'il n'y a
+// aucun duel ouvert, la ligne disparaît plutôt que d'annoncer du vide.
+function HeroTicker({ read }) {
+  if (!read || !read.currentMatch) return null
+  const left  = read.currentMatch.left
+  const right = read.currentMatch.right
+  if (!left || !right) return null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.55, duration: 0.4 }}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+        justifyContent: 'center', marginBottom: 26,
+        padding: '8px 18px', borderRadius: 100,
+        background: 'rgba(255,255,255,.03)',
+        border: '1px solid rgba(255,255,255,.08)',
+        maxWidth: '100%',
+      }}
+    >
+      <span data-fx style={{
+        width: 6, height: 6, borderRadius: '50%', background: ACCENT_A,
+        boxShadow: '0 0 8px ' + ACCENT_A, animation: 'htPulse 1.6s ease-in-out infinite', flexShrink: 0,
+      }} />
+      <span style={{
+        fontSize: 9, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase',
+        color: 'rgba(255,255,255,.34)', flexShrink: 0,
+      }}>
+        {read.config.categoryLabel || 'Tournoi'} · {read.currentRound?.label || 'En cours'}
+      </span>
+      <span style={{ fontSize: 12, color: 'rgba(255,255,255,.62)' }}>
+        {left.title}
+        <span style={{ color: ACCENT_A, margin: '0 7px', fontWeight: 800 }}>vs</span>
+        {right.title}
+      </span>
+    </motion.div>
+  )
+}
+
 // ── Hero ───────────────────────────────────────────────────────────────────
-function TournamentHero({ activeRef, categoriesRef, duelRef }) {
+function TournamentHero({ activeRef, categoriesRef, duelRef, ticker }) {
   const navigate = useNavigate()
   function scrollTo(ref) {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -470,22 +660,8 @@ function TournamentHero({ activeRef, categoriesRef, duelRef }) {
         </span>
       </motion.div>
 
-      {/* Pirata One title */}
-      <motion.h1
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          fontFamily: "'Pirata One',cursive",
-          fontSize: 'clamp(56px,10vw,110px)',
-          fontWeight: 900, margin: '0 0 16px',
-          background: GRAD_TXT,
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.01em', lineHeight: 0.95,
-        }}
-      >
-        Tournois Brams
-      </motion.h1>
+      {/* Titre : lettres révélées une à une, puis balayage de lumière */}
+      <HeroTitle text="Tournois Brams" />
 
       {/* Tagline */}
       <motion.p
@@ -514,6 +690,9 @@ function TournamentHero({ activeRef, categoriesRef, duelRef }) {
       >
         Openings, endings, OST, personnages, théories ou wiki battles — choisis ton tournoi et fais gagner tes favoris avec la communauté.
       </motion.p>
+
+      {/* Ce qui se joue en ce moment */}
+      <HeroTicker read={ticker} />
 
       {/* CTAs */}
       <motion.div
@@ -628,7 +807,12 @@ export default function TournamentHubPage() {
         }}>
 
           {/* Hero */}
-          <TournamentHero activeRef={activeRef} categoriesRef={categoriesRef} duelRef={duelRef} />
+          <TournamentHero
+            activeRef={activeRef}
+            categoriesRef={categoriesRef}
+            duelRef={duelRef}
+            ticker={stats.hottest || reads.find(r => r.currentMatch) || null}
+          />
 
           {/* ── Stats du hub ── */}
           <LiveStatsBar stats={stats} accentA={ACCENT_A} accentB={ACCENT_B} />
@@ -665,6 +849,7 @@ export default function TournamentHubPage() {
                   config={r.config}
                   progress={r.progress}
                   currentRound={r.currentRound}
+                  currentMatch={r.currentMatch}
                   winner={r.winner}
                 />
               ))}

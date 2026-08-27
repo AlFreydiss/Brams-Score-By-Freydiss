@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DOUBLAGE_SCENES } from '../data/doublage-data.js'
+import { DOUBLAGE_SUBS } from '../data/doublage-subs.js'
+import { loadCues, cueAt } from '../lib/vttCues.js'
 import { corsUrl } from '../lib/audioBoost.js'
 import DoublageBackdrop, { SIDE_A, SIDE_B } from './tournament/DoublageBackdrop.jsx'
 import ArenaField from './tournament/ArenaField.jsx'
@@ -24,6 +26,7 @@ const JA_COLOR = '#dc2626'
 
 const ROUNDS    = 10    // manches par session
 const STORE_KEY = 'brams_doublage_stats_v1'
+const SUBS_KEY  = 'brams_doublage_subs'
 
 // Nombre total d'extraits, tous épisodes confondus (affiché en pied de page).
 const CLIP_TOTAL = DOUBLAGE_SCENES.reduce((n, s) => n + s.clips.length, 0)
@@ -143,10 +146,11 @@ function buildDeck() {
 // ── Lecteur double piste ────────────────────────────────────────────────────
 // Les deux <video> restent montées : la bascule doit être instantanée, sinon
 // l'oreille perd la comparaison. Seule la piste active est visible et audible.
-function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, onStart, onMediaError, replayRef }) {
+function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, onStart, onMediaError, replayRef, subsOn }) {
   const aRef = useRef(null)
   const bRef = useRef(null)
   const [ready, setReady] = useState(false)
+  const [cue, setCue] = useState(null)
 
   const errorRef = useRef(onMediaError)
   useEffect(() => { errorRef.current = onMediaError }, [onMediaError])
@@ -256,6 +260,33 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
     transition: 'opacity .18s ease', pointerEvents: 'none',
   })
 
+  // ── Sous-titres ───────────────────────────────────────────────────────────
+  // Le fichier est celui de la VOSTFR, mais il est calé sur le même montage que
+  // la VF : la même ligne tombe au même instant sur les deux pistes. On l'affiche
+  // donc quel que soit le camp écouté — ça n'indique pas laquelle est laquelle,
+  // et ça permet de suivre la scène quand on écoute la version japonaise.
+  useEffect(() => {
+    if (!subsOn || !started) { setCue(null); return }
+    let alive = true
+    let raf = 0
+    let cues = []
+
+    loadCues(DOUBLAGE_SUBS[scene.id]).then(list => { if (alive) cues = list })
+
+    let shown = null
+    function tick() {
+      const el = side === 'A' ? aRef.current : bRef.current
+      if (el && cues.length) {
+        const found = cueAt(cues, el.currentTime)
+        // On ne repasse par setState que quand la réplique change vraiment.
+        if (found !== shown) { shown = found; setCue(found) }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => { alive = false; cancelAnimationFrame(raf) }
+  }, [subsOn, started, scene.id, side])
+
   return (
     <div style={{
       position: 'relative', width: '100%', aspectRatio: '16 / 9',
@@ -304,6 +335,29 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
         >
           ▶ LANCER LA COMPARAISON
         </button>
+      )}
+
+      {/* Sous-titres — posés au-dessus de la bascule A/B, jamais dessous. */}
+      {subsOn && cue && started && (
+        <div style={{
+          position: 'absolute', left: '4%', right: '4%', bottom: 78,
+          textAlign: 'center', pointerEvents: 'none', zIndex: 3,
+        }}>
+          <span style={{
+            display: 'inline-block',
+            padding: '7px 15px', borderRadius: 8,
+            background: 'rgba(0,0,0,.62)',
+            backdropFilter: 'blur(3px)',
+            color: '#fff',
+            fontSize: 'clamp(14px,1.6vw,20px)', lineHeight: 1.42, fontWeight: 600,
+            // Ombre portée plutôt qu'un contour : lisible sur un plan clair
+            // comme sur un plan sombre, sans écraser l'image.
+            textShadow: '0 2px 6px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.9)',
+            whiteSpace: 'pre-line',
+          }}>
+            {cue.text}
+          </span>
+        </div>
       )}
 
       {/* Bascule A / B : le geste central du jeu, gros et toujours atteignable. */}
@@ -387,6 +441,10 @@ export default function DoublagePage() {
   // Temps d'écoute par camp : voter sans avoir entendu les deux n'a pas de sens,
   // on le signale au lieu de laisser passer.
   const [heard, setHeard]       = useState({ A: 0, B: 0 })
+  // Préférence de sous-titres, gardée d'une session à l'autre.
+  const [subsOn, setSubsOn]     = useState(() => {
+    try { return localStorage.getItem(SUBS_KEY) !== '0' } catch { return true }
+  })
   const replayRef               = useRef(null)
 
   const entry = deck[index]
@@ -404,6 +462,10 @@ export default function DoublagePage() {
 
   useEffect(() => { setSide('A'); setReveal(null); setHeard({ A: 0, B: 0 }) }, [index])
 
+  useEffect(() => {
+    try { localStorage.setItem(SUBS_KEY, subsOn ? '1' : '0') } catch {}
+  }, [subsOn])
+
   // Compte le temps passé sur chaque version pendant l'écoute.
   useEffect(() => {
     if (!started || revealed) return
@@ -419,6 +481,7 @@ export default function DoublagePage() {
       if (k === 'a') setSide('A')
       if (k === 'b') setSide('B')
       if (k === 'r') replayRef.current?.()
+      if (k === 's') setSubsOn(v => !v)
       if (k === '1') vote('A')
       if (k === '2') vote('B')
       if (k === 'enter' && revealed) nextRound()
@@ -492,9 +555,17 @@ export default function DoublagePage() {
           <div style={{ fontSize: 13, letterSpacing: '.2em', color: 'rgba(255,255,255,.4)' }}>
             VERDICT DE LA SESSION
           </div>
+          {/* Ici la couleur a un sens : le camp est révélé. Le verdict prend
+              donc celle du camp gagnant, comme le fond derrière lui. */}
           <div style={{
-            fontFamily: "'Pirata One',cursive", fontSize: 64, lineHeight: 1.1, margin: '14px 0 6px',
-            background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            fontFamily: "'Pirata One',cursive", fontSize: 'clamp(44px,9vw,70px)', lineHeight: 1.08,
+            margin: '14px 0 6px',
+            background: team === 'NEUTRE'
+              ? 'linear-gradient(180deg,#ffffff,#a9a2bb)'
+              : `linear-gradient(180deg,#ffffff 0%, ${team === 'VF' ? SIDE_B.glow : SIDE_A.glow} 100%)`,
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', color: 'transparent',
+            filter: `drop-shadow(0 0 30px ${team === 'VF' ? SIDE_B.glow : SIDE_A.glow}4d)`,
           }}>
             TEAM {team}
           </div>
@@ -536,6 +607,9 @@ export default function DoublagePage() {
 
   if (!round) return null
 
+  // Couleur du camp actuellement écouté : sert au titre, au filet et au champ.
+  const campGlow = side === 'A' ? SIDE_A.glow : SIDE_B.glow
+
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '90px 16px 60px', position: 'relative' }}>
       <style>{CSS}</style>
@@ -561,13 +635,38 @@ export default function DoublagePage() {
           }}>
             ← TOURNOIS
           </Link>
+          {/* Le titre est volontairement NEUTRE. En rose il portait la couleur
+              du camp B, sur un fond qui prend celle du camp écouté : deux
+              chromas concurrents, et un titre qui semblait prendre parti. Ici
+              il reste blanc, et le seul accent coloré de la page est celui du
+              camp qu'on écoute — porté par le halo et le filet sous le titre. */}
+          {/* Le titre est en inline-block (pour que le halo colle aux glyphes),
+              il lui faut donc sa propre ligne : sinon il remonte à côté du lien
+              de retour, qui est inline. */}
+          <div>
           <h1 style={{
-            fontFamily: "'Pirata One',cursive", fontSize: 46, margin: '10px 0 4px',
-            background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            position: 'relative', display: 'inline-block',
+            fontFamily: "'Pirata One',cursive",
+            fontSize: 'clamp(38px,6vw,58px)', margin: '12px 0 10px',
+            lineHeight: 1.02, letterSpacing: '.01em',
+            background: 'linear-gradient(180deg,#ffffff 0%,#e8e4ef 46%,#a9a2bb 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', color: 'transparent',
+            filter: `drop-shadow(0 0 26px ${campGlow}59) drop-shadow(0 2px 2px rgba(0,0,0,.6))`,
+            transition: 'filter .45s ease',
           }}>
             Guerre du Doublage
           </h1>
-          <p style={{ color: 'rgba(255,255,255,.45)', fontSize: 14, margin: 0 }}>
+          </div>
+          {/* Filet lumineux : la seule couleur du bloc titre, et elle bascule
+              avec le camp — le fond, le cadre vidéo et lui disent la même chose. */}
+          <div aria-hidden style={{
+            width: 'min(280px, 62%)', height: 2, margin: '0 auto 12px', borderRadius: 2,
+            background: `linear-gradient(90deg, transparent, ${campGlow}, transparent)`,
+            boxShadow: `0 0 18px ${campGlow}80`,
+            transition: 'background .45s ease, box-shadow .45s ease',
+          }} />
+          <p style={{ color: 'rgba(255,255,255,.5)', fontSize: 14, margin: 0 }}>
             Même scène, deux doublages. Bascule, écoute, vote à l'aveugle.
           </p>
         </motion.div>
@@ -612,6 +711,7 @@ export default function DoublagePage() {
           onStart={() => setStarted(true)}
           onMediaError={replaceBrokenScene}
           replayRef={replayRef}
+          subsOn={subsOn}
         />
 
         {/* Barre de contrôle : relecture de l'extrait, équilibre d'écoute, et
@@ -629,6 +729,20 @@ export default function DoublagePage() {
             }}
           >
             ↺ Réécouter l'extrait
+          </button>
+
+          <button
+            onClick={() => setSubsOn(v => !v)}
+            aria-pressed={subsOn}
+            style={{
+              padding: '7px 14px', borderRadius: 9, cursor: 'pointer',
+              background: subsOn ? 'rgba(255,255,255,.10)' : 'rgba(255,255,255,.03)',
+              color: subsOn ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.45)',
+              border: `1px solid ${subsOn ? 'rgba(255,255,255,.26)' : 'rgba(255,255,255,.10)'}`,
+              fontSize: 12,
+            }}
+          >
+            {subsOn ? '▣ Sous-titres' : '□ Sous-titres'}
           </button>
 
           {/* Deux jauges qui montrent le temps passé de chaque côté. */}
@@ -652,7 +766,7 @@ export default function DoublagePage() {
           </div>
 
           <span style={{ color: 'rgba(255,255,255,.25)' }}>
-            A / B bascule · 1 / 2 vote · R réécoute
+            A / B bascule · 1 / 2 vote · R réécoute · S sous-titres
           </span>
         </div>
 

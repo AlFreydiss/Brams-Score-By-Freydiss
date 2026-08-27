@@ -109,14 +109,34 @@ export default function ArenaField({
       }
     }
 
+    // Qualité adaptative. Les liens de proximité sont en O(n²) : sur une
+    // machine modeste ou un grand écran, c'est eux qui coûtent. Plutôt que de
+    // fixer une densité au pif, on mesure le temps réel entre frames et on
+    // dégrade par paliers — d'abord les liens, puis le nombre de points. La
+    // qualité remonte si la machine suit à nouveau, avec une marge entre les
+    // deux seuils pour ne pas osciller.
+    let slow = 0, fast = 0
+    let quality = 2   // 2 = liens + tous les points, 1 = sans liens, 0 = moitié des points
+
+    function grade(dt) {
+      if (dt > 1.55) { slow++; fast = 0 } else if (dt < 1.15) { fast++; slow = 0 }
+      if (slow > 45 && quality > 0) { quality--; slow = 0 }
+      else if (fast > 240 && quality < 2) { quality++; fast = 0 }
+    }
+
     function frame(now) {
       const dt = Math.min(64, now - last) / 16.6667  // en « frames de 60 fps »
       last = now
+      grade(dt)
 
       const cfg = cfgRef.current
       const a = toRgb(cfg.accentA)
       const b = toRgb(cfg.accentB)
       const linkDist = Math.min(150, Math.max(80, w / 9))
+      // Au palier le plus bas on ne DESSINE qu'un point sur deux. Ils continuent
+      // tous de se déplacer : la nappe s'éclaircit, elle ne se fige pas, et elle
+      // se recomplète telle quelle si la qualité remonte.
+      const drawn = quality === 0 ? Math.ceil(particles.length / 2) : particles.length
 
       ctx.clearRect(0, 0, w, h)
 
@@ -160,11 +180,11 @@ export default function ArenaField({
       }
 
       // Liens de proximité — tracés avant les points pour rester en arrière.
-      if (cfg.linked) {
+      if (cfg.linked && quality === 2) {
         ctx.lineWidth = 0.7
-        for (let i = 0; i < particles.length; i++) {
+        for (let i = 0; i < drawn; i++) {
           const pa = particles[i]
-          for (let j = i + 1; j < particles.length; j++) {
+          for (let j = i + 1; j < drawn; j++) {
             const pb = particles[j]
             const dx = pa.x - pb.x
             const dy = pa.y - pb.y
@@ -181,7 +201,8 @@ export default function ArenaField({
         }
       }
 
-      for (const p of particles) {
+      for (let i = 0; i < drawn; i++) {
+        const p = particles[i]
         const c = p.b ? b : a
         const pulse = 0.55 + 0.45 * Math.sin(p.ph)
         const rad = p.r * (1 + pulse * 0.35)

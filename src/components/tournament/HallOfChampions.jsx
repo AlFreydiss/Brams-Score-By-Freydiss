@@ -16,6 +16,7 @@ const CSS = `
   @keyframes hcShine  { 0%{transform:translateX(-140%) skewX(-18deg)} 60%,100%{transform:translateX(320%) skewX(-18deg)} }
   @keyframes hcGlow   { 0%,100%{opacity:.4} 50%{opacity:.85} }
   @keyframes hcConf   { 0%{transform:translate3d(0,0,0) rotate(0deg); opacity:1} 100%{transform:translate3d(var(--cx,0px),var(--cy,140px),0) rotate(var(--cr,220deg)); opacity:0} }
+  [data-tkcard]:focus-visible { outline:2px solid #f9a8d4; outline-offset:3px; }
   @media (prefers-reduced-motion: reduce){ [data-hcfx]{animation:none!important} }
 `
 
@@ -87,6 +88,16 @@ function ChampionPlinth({ read, meta, index, accentA }) {
         onMouseMove={onMove}
         onMouseLeave={() => setTilt({ x: 0, y: 0 })}
         onClick={() => read.config.route && navigate(read.config.route)}
+        onKeyDown={e => {
+          if (!read.config.route) return
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(read.config.route) }
+        }}
+        role={read.config.route ? 'button' : undefined}
+        tabIndex={read.config.route ? 0 : undefined}
+        data-tkcard={read.config.route ? '' : undefined}
+        aria-label={read.config.route
+          ? `${leader.title} — ouvrir ${read.config.categoryLabel || read.config.title}`
+          : undefined}
         animate={{ rotateX: tilt.x, rotateY: tilt.y }}
         transition={{ type: 'spring', stiffness: 220, damping: 18 }}
         style={{

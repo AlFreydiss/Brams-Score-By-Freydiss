@@ -23,6 +23,7 @@ const CSS = `
   @keyframes gmScrub  { 0%,100%{left:6%} 50%{left:82%} }
   @keyframes gmFlick  { 0%,100%{opacity:.85} 47%{opacity:.85} 50%{opacity:.35} 53%{opacity:.85} }
   @keyframes gmHalo   { 0%,100%{opacity:.35} 50%{opacity:.75} }
+  [data-tkcard]:focus-visible { outline:2px solid #f9a8d4; outline-offset:3px; }
   @media (prefers-reduced-motion: reduce){ [data-gmfx]{animation:none!important} }
 `
 
@@ -188,6 +189,16 @@ function ModeCard({ mode, index }) {
       onHoverStart={() => setHot(true)}
       onHoverEnd={() => setHot(false)}
       onClick={() => open && navigate(mode.route)}
+      onKeyDown={e => {
+        if (!open) return
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(mode.route) }
+      }}
+      onFocus={() => setHot(true)}
+      onBlur={() => setHot(false)}
+      role={open ? 'button' : undefined}
+      tabIndex={open ? 0 : undefined}
+      data-tkcard={open ? '' : undefined}
+      aria-label={open ? `Jouer à ${mode.label}` : undefined}
       style={{
         position: 'relative', overflow: 'hidden',
         flex: '1 1 300px', minWidth: 260,
