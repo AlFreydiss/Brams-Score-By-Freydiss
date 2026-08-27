@@ -1,5 +1,5 @@
 // Auto-généré par scripts/gen-ending-catalog.mjs depuis R2 blind-test + LOCAL_TRACKS ED.
-// 342 endings → bracket 512 → ~171 duels au 1er tour.
+// 344 endings → bracket 512 → ~172 duels au 1er tour.
 export const ENDING_R2_CATALOG = [
   { id:"86-ed2", title:"Hands Up to the Sky (feat. Laco)", anime:"86 Eighty-Six", artist:"SawanoHiroyuki[nZk]", type:'ED', episode:"Ending 2", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/86-ed2.mp4", color:"#6d28d9", emoji:"◀" },
   { id:"eighty-six-ed1", title:"Avid", anime:"86 Eighty-Six", artist:"Hitorie", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/eighty-six-ed1.mp4", color:"#5D6D7E", emoji:"⚔️", endAt:246.81 },
@@ -110,6 +110,7 @@ export const ENDING_R2_CATALOG = [
   { id:"fsn-ubw-ed1", title:"Believe", anime:"Fate/stay night", artist:"Kalafina", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/fsn-ubw-ed1.mp4", color:"#1d4ed8", emoji:"◀" },
   { id:"fsn-ubw-ed2", title:"Ring Your Bell", anime:"Fate/stay night", artist:"Kalafina", type:'ED', episode:"Ending 2", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/fsn-ubw-ed2.mp4", color:"#991b1b", emoji:"◀" },
   { id:"fz-ed1", title:"Memoria", anime:"Fate/Zero", artist:"Kalafina", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/fz-ed1.mp4", color:"#3b2f6b", emoji:"🌙" },
+  { id:"fireforce-ed1", title:"veil", anime:"Fire Force", artist:"Keina Suda", type:'ED', episode:"Ending 1", ytId:"geE49ne2mQg", color:"#dc2626", emoji:"🔥" },
   { id:"flcl-ed1", title:"Ride On Shooting Star", anime:"FLCL", artist:"the pillows", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/flcl-ed1.mp4", color:"#d97706", emoji:"◀" },
   { id:"fmab-ed1", title:"Uso", anime:"FMA: Brotherhood", artist:"SID", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/fmab-ed1.mp4", color:"#b45309", emoji:"⚗️", endAt:89.11 },
   { id:"frieren-bliss-ed1", title:"bliss", anime:"Frieren", artist:"milet", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/frieren-bliss-ed1.mp4", color:"#7c3aed", emoji:"◀" },
@@ -265,6 +266,7 @@ export const ENDING_R2_CATALOG = [
   { id:"qualideacode-ed2", title:"Yakusoku - Promise Code", anime:"Qualidea Code", artist:"GARNiDELiA", type:'ED', episode:"Ending 2", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/qualideacode-ed2.mp4", color:"#0e7490", emoji:"◀" },
   { id:"ousamaranking-ed1", title:"Oz.", anime:"Ranking of Kings", artist:"yama", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/ousamaranking-ed1.mp4", color:"#9d174d", emoji:"◀" },
   { id:"ousamaranking-ed2", title:"Flare", anime:"Ranking of Kings", artist:"milet", type:'ED', episode:"Ending 2", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/ousamaranking-ed2.mp4", color:"#1e3a5f", emoji:"◀" },
+  { id:"seishunbuta-ed1", title:"Fukashigi no Carte", anime:"Rascal Does Not Dream of Bunny Girl Senpai", artist:"Mai Sakurajima (CV: Asami Seto)", type:'ED', episode:"Ending 1", ytId:"YjrSkBjDVEw", color:"#be185d", emoji:"🐰" },
   { id:"rekan-ed1", title:"Kesaran Pasaran", anime:"Re:Creators", artist:"every❤ing !", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/rekan-ed1.mp4", color:"#4c1d95", emoji:"◀" },
   { id:"rezero-ed1", title:"Styx Helix", anime:"Re:Zero", artist:"MYTH & ROID", type:'ED', episode:"Ending 1", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/rezero-ed1.mp4", color:"#7D3C98", emoji:"🕁️", endAt:88.82 },
   { id:"rezerokara-ed3", title:"Stay Alive", anime:"Re:Zero", artist:"EMILIA(CV:RIE TAKAHASHI)", type:'ED', episode:"Ending 3", audioUrl:"https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/blind-test/rezerokara-ed3.mp4", color:"#5b21b6", emoji:"◀" },

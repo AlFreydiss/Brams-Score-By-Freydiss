@@ -84,7 +84,7 @@ export const ENDING_TOURNAMENT_CONFIG = {
   startDate:   '2026-06-02',
   categoryLabel:'Endings',
   route:        '/tournoi/endings',
-  version:      'v5-ending-shazam',
+  version:      'v6-ending-shazam-yt',
   participants: BLIND_TEST_ENDING_CATALOG,
 }
 

@@ -1,0 +1,486 @@
+{
+ "86-op1": {
+  "title": "3 min 29 sec",
+  "artist": "hitorie",
+  "offset": 25
+ },
+ "toarumajutsu-op1": {
+  "title": "PSI-missing (TVサイズ)",
+  "artist": "Mami Kawada",
+  "offset": 25
+ },
+ "toarukagaku-op1": {
+  "title": "only my railgun",
+  "artist": "fripSide",
+  "offset": 25
+ },
+ "toarukagaku-op2": {
+  "title": "LEVEL5-judgelight-",
+  "artist": "fripSide",
+  "offset": 25
+ },
+ "accelworld-op1": {
+  "title": "Chase The World",
+  "artist": "May'n",
+  "offset": 25
+ },
+ "accelworld-op2": {
+  "title": "Burst the Gravity",
+  "artist": "Altima",
+  "offset": 45
+ },
+ "agk-op2": {
+  "title": "Liar Mask",
+  "artist": "Rika Mayama",
+  "offset": 25
+ },
+ "akamega-op1": null,
+ "angelbeats-op1": {
+  "title": "My Soul, Your Beats!",
+  "artist": "Lia & VISUAL ARTS / Key",
+  "offset": 25
+ },
+ "anohi-op1": {
+  "title": "Aoi Shiori",
+  "artist": "Galileo Galilei",
+  "offset": 25
+ },
+ "aono-op1": {
+  "title": "CORE PRIDE (Instrumental)",
+  "artist": "UVERworld",
+  "offset": 45
+ },
+ "aono-op2": {
+  "title": "In My World",
+  "artist": "ROOKiEZ Is Punk'd",
+  "offset": 25
+ },
+ "aoharu-op1": {
+  "title": "Sekai Wa Koi Ni Ochiteiru",
+  "artist": "CHiCO with HoneyWorks",
+  "offset": 25
+ },
+ "ansatsu-op1": {
+  "title": "青春サツバツ論(Full size)",
+  "artist": "3-nen E-gumi Utatan",
+  "offset": 25
+ },
+ "aot-op1": {
+  "title": "Guren no Yumiya",
+  "artist": "Linked Horizon",
+  "offset": 45
+ },
+ "aot-op2": {
+  "title": "Jiyuu no Tsubasa",
+  "artist": "Linked Horizon",
+  "offset": 25
+ },
+ "aot-op5": {
+  "title": "Shoukei to Shikabane no Michi",
+  "artist": "Linked Horizon",
+  "offset": 25
+ },
+ "aot-op6": {
+  "title": "Boku no Sensou",
+  "artist": "Shinsei kamattechan",
+  "offset": 25
+ },
+ "aot-op7": {
+  "title": "The Rumbling",
+  "artist": "SiM",
+  "offset": 25
+ },
+ "aot-shinzou-wo-sas-op1": {
+  "title": "Shinzo wo Sasageyo!",
+  "artist": "Linked Horizon",
+  "offset": 25
+ },
+ "aot-final-op": {
+  "title": "The Rumbling",
+  "artist": "SiM",
+  "offset": 25
+ },
+ "aot-final-op1": {
+  "title": "Boku no Sensou",
+  "artist": "Shinsei kamattechan",
+  "offset": 25
+ },
+ "aot-s2-op": {
+  "title": "Shinzo wo Sasageyo!",
+  "artist": "Linked Horizon",
+  "offset": 25
+ },
+ "aot-s3-op": {
+  "title": "Red Swan (feat. HYDE)",
+  "artist": "YOSHIKI",
+  "offset": 25
+ },
+ "baccano-op1": {
+  "title": "Gun's & Roses",
+  "artist": "Paradise Lunch",
+  "offset": 25
+ },
+ "bakemonogatari-op1": {
+  "title": "Staple Stable",
+  "artist": "MONOGATARI Series",
+  "offset": 25
+ },
+ "bakemonogatari-op2": {
+  "title": "Kaerimichi",
+  "artist": "MONOGATARI Series",
+  "offset": 25
+ },
+ "bakemonogatari-op3": {
+  "title": "Ambivalent World",
+  "artist": "MONOGATARI Series",
+  "offset": 25
+ },
+ "bakemonogatari-op4": {
+  "title": "Renai Circulation",
+  "artist": "MONOGATARI Series",
+  "offset": 25
+ },
+ "bakemonogatari-op5": {
+  "title": "Sugar Sweet Nightmare",
+  "artist": "MONOGATARI Series",
+  "offset": 25
+ },
+ "baki-op1": {
+  "title": "BEASTFUL",
+  "artist": "GRANRODEO",
+  "offset": 25
+ },
+ "baki-op2": {
+  "title": "Blue (Da Ba Dee) [Hannover Rmx]",
+  "artist": "Eiffel 65",
+  "offset": 25
+ },
+ "bananafish-op1": {
+  "title": "Found & Lost",
+  "artist": "Survive Said The Prophet",
+  "offset": 25
+ },
+ "bananafish-op2": {
+  "title": "Freedom",
+  "artist": "BLUE ENCOUNT",
+  "offset": 25
+ },
+ "barakamon-op1": {
+  "title": "Super Beaver",
+  "artist": "J Pop",
+  "offset": 25
+ },
+ "beastars-op1": {
+  "title": "Wild Side (Anime Version)",
+  "artist": "ALI",
+  "offset": 25
+ },
+ "beck-op1": {
+  "title": "Hit in the USA",
+  "artist": "BEAT CRUSADERS",
+  "offset": 25
+ },
+ "beelzebub-op1": {
+  "title": "Dadada",
+  "artist": "Group Tamashii",
+  "offset": 25
+ },
+ "beelzebub-op2": {
+  "title": "Hajimarunoha sayonara",
+  "artist": "ON/OFF",
+  "offset": 45
+ },
+ "beelzebub-op3": {
+  "title": "Hey!!!",
+  "artist": "FLOW",
+  "offset": 25
+ },
+ "beelzebub-op4": {
+  "title": "Baby U",
+  "artist": "MBLAQ",
+  "offset": 25
+ },
+ "beelzebub-op5": {
+  "title": "Only you -Kimitono Kizuna",
+  "artist": "Lc5",
+  "offset": 25
+ },
+ "berserk-op1": {
+  "title": "TELL ME WHY",
+  "artist": "PENPALS",
+  "offset": 25
+ },
+ "blackbullet-op1": {
+  "title": "Black Ballet",
+  "artist": "ASCII Media Works",
+  "offset": 25
+ },
+ "bc-op1": {
+  "title": "Harukamirai",
+  "artist": "KANKAKU PIERO",
+  "offset": 25
+ },
+ "bc-op10": {
+  "title": "Black Catcher",
+  "artist": "VK Blanka",
+  "offset": 25
+ },
+ "bc-op2": {
+  "title": "PAiNT it BLACK",
+  "artist": "BiSH",
+  "offset": 8
+ },
+ "bc-op3": {
+  "title": "Black Rover",
+  "artist": "VK Blanka",
+  "offset": 25
+ },
+ "bc-op4": {
+  "title": "Guess Who Is Back",
+  "artist": "Kumi Koda",
+  "offset": 25
+ },
+ "bc-op5": {
+  "title": "Gamushara",
+  "artist": "Miyuna",
+  "offset": 25
+ },
+ "bc-op7": {
+  "title": "JUSTadICE",
+  "artist": "Seiko Oomori",
+  "offset": 25
+ },
+ "bc-op8": {
+  "title": "sky & blue",
+  "artist": "GIRLFRIEND",
+  "offset": 25
+ },
+ "blacklagoon-op1": {
+  "title": "Red fraction",
+  "artist": "MELL",
+  "offset": 25
+ },
+ "bleach-op1": {
+  "title": "luna.",
+  "artist": "Darro",
+  "offset": 25
+ },
+ "bleach-op10": {
+  "title": "Shoujyo S",
+  "artist": "SCANDAL (JP)",
+  "offset": 25
+ },
+ "bleach-op11": {
+  "title": "Animarossa",
+  "artist": "Porno Graffitti",
+  "offset": 25
+ },
+ "bleach-op12": {
+  "title": "Change",
+  "artist": "miwa",
+  "offset": 25
+ },
+ "bleach-op13": {
+  "title": "Ranbu No Melody (Album Mix)",
+  "artist": "Sid",
+  "offset": 25
+ },
+ "bleach-op14": {
+  "title": "Blue",
+  "artist": "ViViD",
+  "offset": 25
+ },
+ "bleach-op15": {
+  "title": "HARUKAZE (Instrumental)",
+  "artist": "SCANDAL (JP)",
+  "offset": 25
+ },
+ "bleach-op2": {
+  "title": "D-tecnoLife",
+  "artist": "UVERworld",
+  "offset": 25
+ },
+ "bleach-op3": {
+  "title": "Ichirinnohana",
+  "artist": "HIGH and MIGHTY COLOR",
+  "offset": 25
+ },
+ "bleach-op4": {
+  "title": "Tonight, Tonight, Tonight",
+  "artist": "BEAT CRUSADERS",
+  "offset": 25
+ },
+ "bleach-op5": {
+  "title": "Rolling Star",
+  "artist": "YUI",
+  "offset": 25
+ },
+ "bleach-op6": {
+  "title": "Alones",
+  "artist": "Aqua Timez",
+  "offset": 25
+ },
+ "bleach-op7": {
+  "title": "After Dark",
+  "artist": "Asian Kung-Fu Generation",
+  "offset": 25
+ },
+ "bleach-op8": null,
+ "bleach-op9": {
+  "title": "Velonica",
+  "artist": "Aqua Timez",
+  "offset": 25
+ },
+ "bleach-tybw-op": {
+  "title": "Scar",
+  "artist": "Tatsuya Kitani",
+  "offset": 25
+ },
+ "blends-op1": {
+  "title": "Bon Appetit S (TV Size Version)",
+  "artist": "BLEND-A",
+  "offset": 25
+ },
+ "bluelock-op1": {
+  "title": "Chaos Ga Kiwamaru",
+  "artist": "UNISON SQUARE GARDEN",
+  "offset": 25
+ },
+ "bluelock-op2": {
+  "title": "Judgement",
+  "artist": "ASH DA HERO",
+  "offset": 25
+ },
+ "bocchi-op1": {
+  "title": "seisyun complex",
+  "artist": "kessoku band",
+  "offset": 25
+ },
+ "boruto-op8": {
+  "title": "BAKU",
+  "artist": "Ikimonogakari",
+  "offset": 25
+ },
+ "bungoustray-op1": {
+  "title": "TRASH CANDY",
+  "artist": "GRANRODEO",
+  "offset": 25
+ },
+ "captaintsubasa-op1": {
+  "title": "START DASH!",
+  "artist": "WEST.",
+  "offset": 25
+ },
+ "captaintsubasa-op2": {
+  "title": "KIZUDARAKE NO AI",
+  "artist": "WEST.",
+  "offset": 25
+ },
+ "cardcaptorsaku-op1": {
+  "title": "Catch You Catch Me",
+  "artist": "GUMI",
+  "offset": 25
+ },
+ "cardcaptorsaku-op2": null,
+ "cardcaptorsaku-op3": {
+  "title": "Platinum",
+  "artist": "Maaya Sakamoto",
+  "offset": 25
+ },
+ "carole-tuesday-op1": {
+  "title": "Kiss Me",
+  "artist": "CAROLE & TUESDAY (Vo. Nai Br.XX & Celeina Ann)",
+  "offset": 25
+ },
+ "chainsaw-op1": {
+  "title": "KICK BACK",
+  "artist": "Kenshi Yonezu",
+  "offset": 25
+ },
+ "charlotte-op1": {
+  "title": "Bravely You",
+  "artist": "Lia & VISUAL ARTS / Key",
+  "offset": 25
+ },
+ "cityhunter-op1": {
+  "title": "CITY HUNTER～愛よ消えないで～",
+  "artist": "Kahoru Kohiruimaki",
+  "offset": 45
+ },
+ "cityhunter-op2": {
+  "title": "Go Go Heaven",
+  "artist": "Yoshiyuki Osawa",
+  "offset": 25
+ },
+ "clannad-op1": {
+  "title": "Megumeru (Cuckool MIX 2007)",
+  "artist": "riya & VISUAL ARTS / Key",
+  "offset": 25
+ },
+ "clannadafter-op1": {
+  "title": "Toki Wo Kizamu Uta",
+  "artist": "Lia & VISUAL ARTS / Key",
+  "offset": 25
+ },
+ "claymore-op1": {
+  "title": "Rezondetoru",
+  "artist": "NIGHTMARE",
+  "offset": 25
+ },
+ "cg-r2-op1": {
+  "title": "O2",
+  "artist": "Orange Range",
+  "offset": 25
+ },
+ "cg-r2-op2": {
+  "title": "World End",
+  "artist": "FLOW",
+  "offset": 25
+ },
+ "codebreaker-op1": {
+  "title": "DARK SHAME",
+  "artist": "GRANRODEO",
+  "offset": 25
+ },
+ "bebop-op1": {
+  "title": "Tank!",
+  "artist": "SEAT BELTS",
+  "offset": 25
+ },
+ "cyberpunkedger-op1": {
+  "title": "This Fffire",
+  "artist": "Franz Ferdinand",
+  "offset": 25
+ },
+ "dandadan-op1": {
+  "title": "Otonoke",
+  "artist": "Creepy Nuts",
+  "offset": 25
+ },
+ "dtb-op3": {
+  "title": "Tsukiakari No Michishirube",
+  "artist": "Stereopony",
+  "offset": 25
+ },
+ "franxx-op1": {
+  "title": "Kiss of Death",
+  "artist": "Mika Nakashima",
+  "offset": 25
+ },
+ "dal-op1": {
+  "title": "Date a Live",
+  "artist": "Sweet Arms",
+  "offset": 25
+ },
+ "deathparade-op1": {
+  "title": "Flyers",
+  "artist": "BRADIO",
+  "offset": 45
+ },
+ "dungeonmeshi-op1": {
+  "title": "Sleep Walking Orchestra",
+  "artist": "BUMP OF CHICKEN",
+  "offset": 8
+ },
+ "dungeonmeshi-op2": null
+}

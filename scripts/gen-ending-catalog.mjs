@@ -759,6 +759,36 @@ const ALIAS_DROP = new Set([
   'ylia-ed3',
 ])
 
+// Endings cultes dont l'audio n'est pas sur R2 : ils sont joués depuis le
+// lecteur YouTube officiel plutôt que ré-hébergés. DuelArena sait lire un
+// participant qui porte un `ytId` au lieu d'un `audioUrl`.
+//
+// Chaque identifiant a été vérifié via l'API oEmbed de YouTube : la vidéo
+// existe et provient bien d'une chaîne officielle (chaîne d'artiste, chaîne
+// « - Topic » générée par le distributeur, ou éditeur de la licence).
+const EXTRA_YT = [
+  {
+    id: 'seishunbuta-ed1',
+    title: 'Fukashigi no Carte',
+    anime: 'Rascal Does Not Dream of Bunny Girl Senpai',
+    artist: 'Mai Sakurajima (CV: Asami Seto)',
+    episode: 'Ending 1',
+    ytId: 'YjrSkBjDVEw',   // chaîne « Mai Sakurajima(CV:Asami Seto) - Topic »
+    color: '#be185d',
+    emoji: '🐰',
+  },
+  {
+    id: 'fireforce-ed1',
+    title: 'veil',
+    anime: 'Fire Force',
+    artist: 'Keina Suda',
+    episode: 'Ending 1',
+    ytId: 'geE49ne2mQg',   // chaîne officielle Crunchyroll
+    color: '#dc2626',
+    emoji: '🔥',
+  },
+]
+
 function colorFor(id) {
   let h = 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
@@ -872,6 +902,14 @@ for (const rec of Object.values(localById)) {
   pushFrom(rec.id, rec.url, rec)
 }
 
+// Les entrées YouTube rejoignent le bracket comme les autres, sauf qu'un id
+// déjà servi depuis R2 garde la priorité (l'audio local est préférable).
+for (const yt of EXTRA_YT) {
+  if (seen.has(yt.id) || ALIAS_DROP.has(yt.id)) continue
+  seen.add(yt.id)
+  participants.push({ ...yt, type: 'ED', audioUrl: null, endAt: null, gain: null })
+}
+
 participants.sort((a, b) => a.anime.localeCompare(b.anime) || a.id.localeCompare(b.id))
 
 const n = participants.length
@@ -885,7 +923,8 @@ const lines = participants.map(p => {
     p.endAt ? `endAt:${p.endAt}` : null,
     p.gain ? `gain:${p.gain}` : null,
   ].filter(Boolean).join(', ')
-  return `  { id:${jsStr(p.id)}, title:${jsStr(p.title)}, anime:${jsStr(p.anime)}, artist:${jsStr(p.artist)}, type:'ED', episode:${jsStr(p.episode)}, audioUrl:${jsStr(p.audioUrl)}, color:${jsStr(p.color)}, emoji:${jsStr(p.emoji)}${extra ? ', ' + extra : ''} },`
+  const media = p.ytId ? `ytId:${jsStr(p.ytId)}` : `audioUrl:${jsStr(p.audioUrl)}`
+  return `  { id:${jsStr(p.id)}, title:${jsStr(p.title)}, anime:${jsStr(p.anime)}, artist:${jsStr(p.artist)}, type:'ED', episode:${jsStr(p.episode)}, ${media}, color:${jsStr(p.color)}, emoji:${jsStr(p.emoji)}${extra ? ', ' + extra : ''} },`
 })
 
 const out = `// Auto-généré par scripts/gen-ending-catalog.mjs depuis R2 blind-test + LOCAL_TRACKS ED.
