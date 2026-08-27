@@ -33,6 +33,9 @@ const CLIP_TOTAL = DOUBLAGE_SCENES.reduce((n, s) => n + s.clips.length, 0)
 
 const CSS = `
   @keyframes dbPulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+  /* Pas de clavier physique sous le doigt : on masque le rappel des touches. */
+  @media (hover: none) and (pointer: coarse) { .db-keys { display:none } }
+  @media (max-width: 560px) { .db-keys { display:none } }
   @media (prefers-reduced-motion: reduce){ [data-dbfx]{animation:none!important} }
 `
 
@@ -330,7 +333,10 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
             position: 'absolute', inset: 0, border: 'none', cursor: 'pointer',
             background: 'rgba(5,3,8,.72)', color: '#fff',
             display: 'grid', placeItems: 'center', gap: 8,
-            fontFamily: "'Pirata One',cursive", fontSize: 30, letterSpacing: '.06em',
+            fontFamily: "'Pirata One',cursive",
+            // Taille fixe, le libellé touchait les bords sur un écran de 390 px.
+            fontSize: 'clamp(17px,4.6vw,30px)', letterSpacing: '.06em',
+            padding: '0 12px', textAlign: 'center',
           }}
         >
           ▶ LANCER LA COMPARAISON
@@ -765,7 +771,9 @@ export default function DoublagePage() {
             })}
           </div>
 
-          <span style={{ color: 'rgba(255,255,255,.25)' }}>
+          {/* Les raccourcis n'ont rien à dire sur un écran tactile : ils y
+              prenaient une ligne pour annoncer des touches absentes. */}
+          <span className="db-keys" style={{ color: 'rgba(255,255,255,.25)' }}>
             A / B bascule · 1 / 2 vote · R réécoute · S sous-titres
           </span>
         </div>

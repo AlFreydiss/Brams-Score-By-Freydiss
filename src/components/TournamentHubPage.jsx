@@ -41,11 +41,35 @@ const GOLD  = PINK
 const GOLD2 = PINK_LL
 
 const HUB_CSS = `
-  @keyframes htTwinkle { 0%,100%{opacity:.07} 50%{opacity:.50} }
-  @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
   @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
-  @keyframes htFloat   { 0%{transform:translateY(8px) translateX(0);opacity:0} 12%{opacity:.45} 88%{opacity:.32} 100%{transform:translateY(-90px) translateX(14px);opacity:0} }
   @keyframes htShine   { 0%,72%{background-position:120% 50%} 100%{background-position:-20% 50%} }
+
+  /* Tournois actifs. Sur grand écran, une grille. Sur téléphone, les six
+     cartes empilées faisaient 3800 px à elles seules — 43 % de la page — et
+     enterraient tout ce qui suit. Elles passent donc en rail horizontal avec
+     accroche : une carte par écran, on glisse. */
+  .ht-actifs {
+    display:grid; gap:14px;
+    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  }
+  @media (max-width: 760px) {
+    .ht-actifs {
+      display:flex; grid-template-columns:none;
+      overflow-x:auto; overscroll-behavior-x:contain;
+      scroll-snap-type:x mandatory;
+      /* Le débord sert de marge : la carte suivante dépasse, ce qui montre
+         qu'on peut glisser sans avoir à l'écrire. */
+      margin-inline:calc(-1 * clamp(16px,4vw,56px));
+      padding-inline:clamp(16px,4vw,56px);
+      scrollbar-width:none;
+    }
+    .ht-actifs::-webkit-scrollbar { display:none }
+    .ht-actifs > * {
+      flex:0 0 86%; scroll-snap-align:center; min-width:0;
+    }
+  }
+  .ht-swipe { display:none }
+  @media (max-width: 760px) { .ht-swipe { display:block } }
 
   /* Reflet du titre : une bande claire glisse dans le dégradé de chaque lettre.
      Le décalage lettre par lettre (animationDelay en JS) donne l'impression
@@ -842,7 +866,13 @@ export default function TournamentHubPage() {
           {/* ── Tournois actifs ── */}
           <div ref={activeRef} style={{ marginBottom: 76 }}>
             <SectionHeading title="Tournois actifs" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+            <div className="ht-swipe" style={{
+              fontSize: 10, color: 'rgba(255,255,255,.26)', letterSpacing: '.08em',
+              textAlign: 'center', margin: '-14px 0 14px',
+            }}>
+              {reads.length} arènes — glisse pour les parcourir →
+            </div>
+            <div className="ht-actifs">
               {reads.map(r => (
                 <ActiveTournamentCard
                   key={r.id}
@@ -855,6 +885,27 @@ export default function TournamentHubPage() {
               ))}
             </div>
           </div>
+
+          {/* ── Prochainement ──
+              UpcomingCard et UPCOMING_TOURNAMENTS existaient déjà mais rien ne
+              les rendait : trois tournois annoncés dormaient dans les données. */}
+          {UPCOMING_TOURNAMENTS.length > 0 && (
+            <div style={{ marginBottom: 76 }}>
+              <SectionHeading
+                title="Prochainement"
+                subtitle="Les prochaines arènes à ouvrir. Elles arrivent avec la communauté."
+              />
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: 12,
+              }}>
+                {UPCOMING_TOURNAMENTS.map((item, i) => (
+                  <UpcomingCard key={item.id} item={item} index={i} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── Podium ── */}
           <HallOfChampions board={podium} accentA={ACCENT_A} accentB={ACCENT_B} />
