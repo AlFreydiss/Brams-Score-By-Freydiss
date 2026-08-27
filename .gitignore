@@ -45,3 +45,9 @@ CLAUDE.local.md
 
 # Cache de téléchargement des sous-titres (régénéré par gen-doublage-catalog.mjs)
 scripts/doublage-vtt-cache.json
+
+# Fichiers de travail temporaires (audits, caches d empreintes)
+.fp-*.json
+.r2-*.json
+.ed-*.json
+.tmpaudio/
