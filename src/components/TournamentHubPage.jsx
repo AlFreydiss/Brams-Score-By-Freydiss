@@ -2,15 +2,33 @@ import { useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import SakuraBackdrop from './SakuraBackdrop.jsx'
-import {
-  loadState, getTournamentProgress, getCurrentMatch,
-  generateBracket, getWinner,
-} from '../lib/tournament.js'
+import ArenaBackdrop from './tournament/ArenaBackdrop.jsx'
+import LiveStatsBar from './tournament/LiveStatsBar.jsx'
+import DailyDuel from './tournament/DailyDuel.jsx'
+import HallOfChampions from './tournament/HallOfChampions.jsx'
+import GameModesShowcase from './tournament/GameModesShowcase.jsx'
+import { readAll, globalStats, championsBoard } from '../lib/tournamentStats.js'
 import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG, RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from '../data/tournament-data.js'
 import {
   TOURNAMENT_CATEGORIES,
   UPCOMING_TOURNAMENTS,
 } from '../data/tournament-hub-data.js'
+
+// Accents de l'arène : fond, sections et cartes tirent tous d'ici pour que le
+// hub parle d'une seule palette.
+const ACCENT_A = '#e85aa0'
+const ACCENT_B = '#9d5aff'
+
+// Ordre d'affichage des tournois actifs — et source unique des agrégats du hub
+// (stats, podium), pour ne pas relire six fois le même localStorage.
+const ACTIVE_CONFIGS = [
+  RAP_VS_OST_CONFIG,
+  RAP_FR_CONFIG,
+  OST_ANIME_CONFIG,
+  OPENING_TOURNAMENT_CONFIG,
+  ENDING_TOURNAMENT_CONFIG,
+  TOURNAMENT_CONFIG,
+]
 
 const BG      = '#0a0a0b'
 const PINK    = '#9d174d'   // rose sombre
@@ -27,126 +45,8 @@ const HUB_CSS = `
   @keyframes htScan    { 0%{top:-2px} 100%{top:100%} }
   @keyframes htPulse   { 0%,100%{opacity:.5} 50%{opacity:.85} }
   @keyframes htFloat   { 0%{transform:translateY(8px) translateX(0);opacity:0} 12%{opacity:.45} 88%{opacity:.32} 100%{transform:translateY(-90px) translateX(14px);opacity:0} }
-  @keyframes arenaGridMove { from{background-position:0 0} to{background-position:0 72px} }
-  @keyframes arenaAura     { 0%,100%{opacity:.9; transform:scale(1)} 50%{opacity:1; transform:scale(1.05)} }
-  @keyframes arenaEmber    { 0%{transform:translateY(0) translateX(0);opacity:0} 10%{opacity:.8} 85%{opacity:.5} 100%{transform:translateY(-96vh) translateX(24px);opacity:0} }
-  @keyframes arenaHorizon  { 0%,100%{opacity:.55} 50%{opacity:.95} }
-  @keyframes arenaSweep    { 0%{transform:translateX(-60%) rotate(8deg);opacity:0} 35%{opacity:.5} 70%{opacity:0} 100%{transform:translateX(120%) rotate(8deg);opacity:0} }
-  .arena-grid {
-    position:absolute; left:-40%; right:-40%; bottom:-18%; height:72%;
-    background-image:
-      linear-gradient(rgba(232,90,160,.42) 1.4px, transparent 1.4px),
-      linear-gradient(90deg, rgba(150,90,255,.34) 1.4px, transparent 1.4px);
-    background-size:72px 72px;
-    transform:perspective(520px) rotateX(60deg); transform-origin:bottom center;
-    -webkit-mask-image:linear-gradient(to top,#000 8%, transparent 82%);
-    mask-image:linear-gradient(to top,#000 8%, transparent 82%);
-    animation:arenaGridMove 6s linear infinite;
-  }
-  /* Ligne d'horizon lumineuse (là où la grille rencontre le ciel) */
-  .arena-horizon {
-    position:absolute; left:0; right:0; bottom:36%; height:2px;
-    background:linear-gradient(90deg, transparent, rgba(232,90,160,.9) 35%, rgba(150,90,255,.9) 65%, transparent);
-    box-shadow:0 0 30px 6px rgba(232,90,160,.35), 0 0 60px 14px rgba(150,90,255,.22);
-    animation:arenaHorizon 4.5s ease-in-out infinite;
-  }
-  /* Balayage de lumière diagonal */
-  .arena-sweep {
-    position:absolute; top:-20%; left:0; width:55%; height:140%;
-    background:linear-gradient(100deg, transparent, rgba(232,90,160,.10) 45%, rgba(150,90,255,.07) 55%, transparent);
-    filter:blur(8px); animation:arenaSweep 9s ease-in-out infinite;
-  }
-  .arena-grain {
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} .arena-grid{animation:none!important} }
+  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
-
-// ── Ambient background ─────────────────────────────────────────────────────
-function HTStars() {
-  const stars = useMemo(() => Array.from({ length: 55 }, (_, i) => ({
-    x: (i * 39.1 + 7) % 98, y: (i * 43.7 + 13) % 96,
-    size: i % 9 === 0 ? 2.5 : i % 4 === 0 ? 1.6 : 1,
-    dur: 2.8 + (i * 0.28) % 4.5, del: (i * 0.21) % 7,
-    gold: i % 13 === 0,
-  })), [])
-  return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
-      {stars.map((s, i) => (
-        <div key={i} style={{
-          position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
-          width: s.size, height: s.size, borderRadius: '50%',
-          background: s.gold ? 'rgba(157,23,77,.55)' : 'rgba(255,255,255,.4)',
-          animation: `htTwinkle ${s.dur}s ${s.del}s ease-in-out infinite`,
-        }} />
-      ))}
-    </div>
-  )
-}
-
-function HTScanLine() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
-      <div style={{
-        position: 'absolute', left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg,transparent,rgba(157,23,77,.10),rgba(76,29,149,.14),rgba(157,23,77,.10),transparent)',
-        animation: 'htScan 18s linear infinite',
-      }} />
-    </div>
-  )
-}
-
-// ── Fond « arène » épique mais sobre : auras maîtrisées + sol en perspective
-// (grille qui défile) + embers + vignette + grain. Glow contrôlé (pas de RGB abusé).
-function ArenaBackdrop() {
-  const embers = useMemo(() => Array.from({ length: 16 }, (_, i) => ({
-    x: (i * 53.3 + 9) % 96, dur: 9 + (i * 0.73) % 7, del: (i * 1.31) % 9,
-    size: i % 3 === 0 ? 3 : 2, gold: i % 4 === 0,
-  })), [])
-  return (
-    <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-      {/* Base + auras (magenta au sommet, violet sur les flancs) — plus marquées */}
-      <div data-fx style={{
-        position: 'absolute', inset: 0, animation: 'arenaAura 10s ease-in-out infinite',
-        background:
-          'radial-gradient(ellipse 70% 55% at 50% -6%, rgba(196,40,110,.42) 0%, transparent 58%),' +
-          'radial-gradient(ellipse 60% 60% at 100% 18%, rgba(140,80,255,.28) 0%, transparent 60%),' +
-          'radial-gradient(ellipse 62% 66% at 0% 82%, rgba(196,40,110,.22) 0%, transparent 60%),' +
-          'linear-gradient(180deg, #0c0612 0%, #090410 55%, #050308 100%)',
-      }} />
-      {/* Balayage de lumière + sol en perspective + horizon lumineux = arène */}
-      <div data-fx className="arena-sweep" />
-      <div data-fx className="arena-grid" />
-      <div data-fx className="arena-horizon" />
-      {/* Embers montants raffinés */}
-      {embers.map((e, i) => (
-        <div key={i} data-fx style={{
-          position: 'absolute', left: `${e.x}%`, bottom: -12, width: e.size, height: e.size, borderRadius: '50%',
-          background: e.gold ? 'rgba(249,168,212,.7)' : 'rgba(157,23,77,.6)',
-          boxShadow: `0 0 6px ${e.gold ? 'rgba(249,168,212,.5)' : 'rgba(157,23,77,.45)'}`,
-          animation: `arenaEmber ${e.dur}s ${e.del}s linear infinite`,
-        }} />
-      ))}
-      {/* Vignette pour la profondeur */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 96% 86% at 50% 38%, transparent 47%, rgba(0,0,0,.62) 100%)' }} />
-      {/* Grain fin */}
-      <div className="arena-grain" style={{ position: 'absolute', inset: 0, opacity: 0.075, mixBlendMode: 'overlay' }} />
-    </div>
-  )
-}
-
-// ── Hook: live tournament state ─────────────────────────────────────────────
-function useTournamentState(config) {
-  return useMemo(() => {
-    const saved  = loadState(config.id)
-    const rounds = saved || generateBracket(config.participants).rounds
-    return {
-      progress:     getTournamentProgress(rounds),
-      currentRound: getCurrentMatch(rounds)?.round ?? null,
-      winner:       getWinner(rounds),
-    }
-  }, [config])
-}
 
 // ── Section heading ────────────────────────────────────────────────────────
 function SectionHeading({ title, subtitle }) {
@@ -546,7 +446,7 @@ function UpcomingCard({ item, index }) {
 }
 
 // ── Hero ───────────────────────────────────────────────────────────────────
-function TournamentHero({ activeRef, categoriesRef }) {
+function TournamentHero({ activeRef, categoriesRef, duelRef }) {
   const navigate = useNavigate()
   function scrollTo(ref) {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -623,17 +523,32 @@ function TournamentHero({ activeRef, categoriesRef }) {
         style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 30 }}
       >
         <motion.button
+          onClick={() => scrollTo(duelRef)}
+          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(232,90,160,.42)` }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            padding: '14px 36px', borderRadius: 100,
+            border: 'none',
+            background: `linear-gradient(135deg, ${ACCENT_A}, #f06cb5 55%, ${ACCENT_B})`,
+            color: '#1a0011', fontWeight: 800, fontSize: 14,
+            cursor: 'pointer', letterSpacing: '0.04em',
+            fontFamily: "'Pirata One',cursive",
+            boxShadow: `0 6px 24px rgba(232,90,160,.3)`,
+          }}
+        >
+          ⚡ Duel du jour
+        </motion.button>
+        <motion.button
           onClick={() => scrollTo(activeRef)}
           whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(157,23,77,.38)` }}
           whileTap={{ scale: 0.97 }}
           style={{
             padding: '14px 36px', borderRadius: 100,
-            border: 'none',
-            background: `linear-gradient(135deg, ${GOLD}, #f06cb5)`,
-            color: '#1a0011', fontWeight: 800, fontSize: 14,
+            border: `1px solid ${GOLD}66`,
+            background: 'rgba(157,23,77,.14)',
+            color: '#f9a8d4', fontWeight: 800, fontSize: 14,
             cursor: 'pointer', letterSpacing: '0.04em',
             fontFamily: "'Pirata One',cursive",
-            boxShadow: `0 6px 24px rgba(157,23,77,.24)`,
           }}
         >
           Tournois actifs
@@ -684,21 +599,23 @@ function TournamentHero({ activeRef, categoriesRef }) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 export default function TournamentHubPage() {
-  const ost           = useTournamentState(TOURNAMENT_CONFIG)
-  const opening       = useTournamentState(OPENING_TOURNAMENT_CONFIG)
-  const ending        = useTournamentState(ENDING_TOURNAMENT_CONFIG)
-  const rapVsOst      = useTournamentState(RAP_VS_OST_CONFIG)
-  const rapFr         = useTournamentState(RAP_FR_CONFIG)
-  const ostAnime      = useTournamentState(OST_ANIME_CONFIG)
+  // Une seule lecture de l'état local pour tout le hub : les cartes de tournoi,
+  // le bandeau de stats et le podium partent des mêmes chiffres.
+  const reads   = useMemo(() => readAll(ACTIVE_CONFIGS), [])
+  const stats   = useMemo(() => globalStats(reads), [reads])
+  const podium  = useMemo(() => championsBoard(reads, 3), [reads])
+
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
+  const duelRef       = useRef(null)
 
   return (
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
-      {/* Fond arène épique (auras + balayage + sol perspective + horizon + embers + grain) */}
-      <ArenaBackdrop />
+      {/* Fond arène : ciel, projecteurs et sol néon en parallaxe + champ
+          d'énergie interactif au curseur */}
+      <ArenaBackdrop accentA={ACCENT_A} accentB={ACCENT_B} />
       {/* Pétales sakura par-dessus (remis à la demande) — touche communautaire */}
       <SakuraBackdrop count={22} />
 
@@ -711,7 +628,15 @@ export default function TournamentHubPage() {
         }}>
 
           {/* Hero */}
-          <TournamentHero activeRef={activeRef} categoriesRef={categoriesRef} />
+          <TournamentHero activeRef={activeRef} categoriesRef={categoriesRef} duelRef={duelRef} />
+
+          {/* ── Stats du hub ── */}
+          <LiveStatsBar stats={stats} accentA={ACCENT_A} accentB={ACCENT_B} />
+
+          {/* ── Arène du jour : 5 duels seedés sur la date ── */}
+          <div ref={duelRef}>
+            <DailyDuel accentA={ACCENT_A} accentB={ACCENT_B} />
+          </div>
 
           {/* ── Arènes ── */}
           <div ref={categoriesRef} style={{ marginBottom: 76 }}>
@@ -734,44 +659,23 @@ export default function TournamentHubPage() {
           <div ref={activeRef} style={{ marginBottom: 76 }}>
             <SectionHeading title="Tournois actifs" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-              <ActiveTournamentCard
-                config={RAP_VS_OST_CONFIG}
-                progress={rapVsOst.progress}
-                currentRound={rapVsOst.currentRound}
-                winner={rapVsOst.winner}
-              />
-              <ActiveTournamentCard
-                config={RAP_FR_CONFIG}
-                progress={rapFr.progress}
-                currentRound={rapFr.currentRound}
-                winner={rapFr.winner}
-              />
-              <ActiveTournamentCard
-                config={OST_ANIME_CONFIG}
-                progress={ostAnime.progress}
-                currentRound={ostAnime.currentRound}
-                winner={ostAnime.winner}
-              />
-              <ActiveTournamentCard
-                config={OPENING_TOURNAMENT_CONFIG}
-                progress={opening.progress}
-                currentRound={opening.currentRound}
-                winner={opening.winner}
-              />
-              <ActiveTournamentCard
-                config={ENDING_TOURNAMENT_CONFIG}
-                progress={ending.progress}
-                currentRound={ending.currentRound}
-                winner={ending.winner}
-              />
-              <ActiveTournamentCard
-                config={TOURNAMENT_CONFIG}
-                progress={ost.progress}
-                currentRound={ost.currentRound}
-                winner={ost.winner}
-              />
+              {reads.map(r => (
+                <ActiveTournamentCard
+                  key={r.id}
+                  config={r.config}
+                  progress={r.progress}
+                  currentRound={r.currentRound}
+                  winner={r.winner}
+                />
+              ))}
             </div>
           </div>
+
+          {/* ── Podium ── */}
+          <HallOfChampions board={podium} accentA={ACCENT_A} accentB={ACCENT_B} />
+
+          {/* ── Modes de jeu (Doublage, Plus vieux/Plus récent, Sakuga) ── */}
+          <GameModesShowcase accentA={ACCENT_A} accentB={ACCENT_B} />
 
         </div>
       </div>

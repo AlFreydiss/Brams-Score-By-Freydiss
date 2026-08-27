@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { DOUBLAGE_SCENES } from '../data/doublage-data.js'
 import { corsUrl } from '../lib/audioBoost.js'
 import DoublageBackdrop, { SIDE_A, SIDE_B } from './tournament/DoublageBackdrop.jsx'
+import ArenaField from './tournament/ArenaField.jsx'
 
 // ── Guerre du Doublage ──────────────────────────────────────────────────────
 // Une manche = un extrait de dialogue, joué deux fois : la piste française et
@@ -480,6 +481,13 @@ export default function DoublagePage() {
         <style>{CSS}</style>
         {/* Le fond garde la couleur du camp majoritaire de la session. */}
         <DoublageBackdrop side={vfPct >= 50 ? 'A' : 'B'} revealed={vfPct > 50 ? 'vf' : vfPct < 50 ? 'vostfr' : null} started />
+        {/* Champ d'énergie commun aux pages de tournoi, teinté du camp gagnant. */}
+        <ArenaField
+          accentA={vfPct >= 50 ? SIDE_A.glow : SIDE_B.glow}
+          accentB={vfPct >= 50 ? SIDE_B.glow : SIDE_A.glow}
+          density={0.6}
+          zIndex={0}
+        />
         <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 13, letterSpacing: '.2em', color: 'rgba(255,255,255,.4)' }}>
             VERDICT DE LA SESSION
@@ -532,6 +540,13 @@ export default function DoublagePage() {
     <div style={{ minHeight: '100vh', background: BG, padding: '90px 16px 60px', position: 'relative' }}>
       <style>{CSS}</style>
       <DoublageBackdrop side={side} revealed={revealed} started={started} />
+      {/* Le champ suit le camp qui parle : l'accent bascule avec `side`. */}
+      <ArenaField
+        accentA={side === 'A' ? SIDE_A.glow : SIDE_B.glow}
+        accentB={side === 'A' ? SIDE_B.glow : SIDE_A.glow}
+        density={0.6}
+        zIndex={0}
+      />
       <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         {/* Entrée en fondu montant, comme les sections du portfolio. */}

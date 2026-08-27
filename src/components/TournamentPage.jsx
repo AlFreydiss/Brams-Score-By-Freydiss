@@ -21,6 +21,7 @@ import WinnerCard         from './tournament/WinnerCard.jsx'
 import TournamentBracket  from './tournament/TournamentBracket.jsx'
 import TournamentResults  from './tournament/TournamentResults.jsx'
 import TournamentBackdrop from './tournament/TournamentBackdrop.jsx'
+import ArenaField         from './tournament/ArenaField.jsx'
 
 const BG      = '#050308'
 const PINK    = '#9d174d'
@@ -521,6 +522,10 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
 
       {/* Fond scène de concert : auras, projecteurs, sol néon, égaliseur, embers */}
       <TournamentBackdrop />
+      {/* Champ d'énergie du hub, posé par-dessus : la même profondeur
+          interactive sur toutes les pages de tournoi, sans rien retirer au
+          décor de scène déjà en place. */}
+      <ArenaField accentA="#e85aa0" accentB="#9d5aff" density={0.75} zIndex={1} />
 
       {/* Inner container — wide */}
       <div style={{ position: 'relative', zIndex: 2 }}>
