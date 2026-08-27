@@ -51,3 +51,9 @@ scripts/doublage-vtt-cache.json
 .r2-*.json
 .ed-*.json
 .tmpaudio/
+.op-*.json
+.op-audit.mjs
+.r2ls.mjs
+.shot-*.mjs
+.patch-*.mjs
+.apply-*.mjs

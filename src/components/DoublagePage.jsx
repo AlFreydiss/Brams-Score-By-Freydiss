@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DOUBLAGE_SCENES } from '../data/doublage-data.js'
 import { corsUrl } from '../lib/audioBoost.js'
+import DoublageBackdrop, { SIDE_A, SIDE_B } from './tournament/DoublageBackdrop.jsx'
 
 // ── Guerre du Doublage ──────────────────────────────────────────────────────
 // Une manche = un extrait de dialogue, joué deux fois : la piste française et
@@ -245,7 +246,11 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
     <div style={{
       position: 'relative', width: '100%', aspectRatio: '16 / 9',
       borderRadius: 16, overflow: 'hidden', background: '#000',
-      border: '1px solid rgba(255,255,255,.1)',
+      // Le cadre prend la couleur du camp qu'on écoute : on sait toujours où on
+      // en est sans lire les boutons.
+      border: `1px solid ${side === 'A' ? SIDE_A.glow : SIDE_B.glow}55`,
+      boxShadow: `0 0 46px -12px ${side === 'A' ? SIDE_A.glow : SIDE_B.glow}66`,
+      transition: 'border-color .3s ease, box-shadow .3s ease',
     }}>
       <video
         ref={aRef} src={mediaSrc(srcA)} crossOrigin="anonymous"
@@ -293,23 +298,33 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
         display: 'flex', gap: 2, padding: 10,
         background: 'linear-gradient(to top, rgba(0,0,0,.85), transparent)',
       }}>
-        {['A', 'B'].map(s => (
-          <button
-            key={s}
-            onClick={() => onSideChange(s)}
-            disabled={!ready}
-            style={{
-              flex: 1, padding: '14px 0', border: 'none', cursor: ready ? 'pointer' : 'default',
-              borderRadius: s === 'A' ? '10px 0 0 10px' : '0 10px 10px 0',
-              background: side === s ? GRAD : 'rgba(255,255,255,.08)',
-              color: side === s ? '#fff' : 'rgba(255,255,255,.55)',
-              fontFamily: "'Pirata One',cursive", fontSize: 22, letterSpacing: '.08em',
-              transition: 'background .18s ease, color .18s ease',
-            }}
-          >
-            VERSION {s}
-          </button>
-        ))}
+        {['A', 'B'].map(s => {
+          const camp = s === 'A' ? SIDE_A : SIDE_B
+          const on = side === s
+          return (
+            <button
+              key={s}
+              onClick={() => onSideChange(s)}
+              disabled={!ready}
+              style={{
+                flex: 1, padding: '14px 0', cursor: ready ? 'pointer' : 'default',
+                borderRadius: s === 'A' ? '10px 0 0 10px' : '0 10px 10px 0',
+                border: `1px solid ${on ? camp.glow : 'rgba(255,255,255,.12)'}`,
+                // Chaque version a sa couleur, mais aucune ne trahit la VF :
+                // le camp A/B est retiré au sort à chaque manche.
+                background: on
+                  ? `linear-gradient(135deg, ${camp.base}, ${camp.glow}44)`
+                  : 'rgba(255,255,255,.05)',
+                color: on ? '#fff' : 'rgba(255,255,255,.5)',
+                textShadow: on ? `0 0 18px ${camp.glow}` : 'none',
+                fontFamily: "'Pirata One',cursive", fontSize: 22, letterSpacing: '.08em',
+                transition: 'background .25s ease, color .25s ease, border-color .25s ease',
+              }}
+            >
+              VERSION {s}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -417,9 +432,11 @@ export default function DoublagePage() {
     const pct   = vfPct > 50 ? vfPct : 100 - vfPct
 
     return (
-      <div style={{ minHeight: '100vh', background: BG, padding: '90px 20px 60px' }}>
+      <div style={{ minHeight: '100vh', background: BG, padding: '90px 20px 60px', position: 'relative' }}>
         <style>{CSS}</style>
-        <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center' }}>
+        {/* Le fond garde la couleur du camp majoritaire de la session. */}
+        <DoublageBackdrop side={vfPct >= 50 ? 'A' : 'B'} revealed={vfPct > 50 ? 'vf' : vfPct < 50 ? 'vostfr' : null} started />
+        <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 13, letterSpacing: '.2em', color: 'rgba(255,255,255,.4)' }}>
             VERDICT DE LA SESSION
           </div>
@@ -468,9 +485,10 @@ export default function DoublagePage() {
   if (!round) return null
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, padding: '90px 16px 60px' }}>
+    <div style={{ minHeight: '100vh', background: BG, padding: '90px 16px 60px', position: 'relative' }}>
       <style>{CSS}</style>
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <DoublageBackdrop side={side} revealed={revealed} started={started} />
+      <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
           <Link to="/tournoi" style={{
@@ -526,16 +544,21 @@ export default function DoublagePage() {
                 Quel doublage rend le mieux sur cette scène ?
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                {['A', 'B'].map(s => (
-                  <button key={s} onClick={() => vote(s)} style={{
-                    flex: 1, padding: '18px 0', borderRadius: 12, cursor: 'pointer',
-                    background: 'rgba(255,255,255,.05)', color: '#fff',
-                    border: '1px solid rgba(255,255,255,.14)',
-                    fontFamily: "'Pirata One',cursive", fontSize: 26, letterSpacing: '.06em',
-                  }}>
-                    JE VOTE {s}
-                  </button>
-                ))}
+                {['A', 'B'].map(s => {
+                  const camp = s === 'A' ? SIDE_A : SIDE_B
+                  return (
+                    <button key={s} onClick={() => vote(s)} style={{
+                      flex: 1, padding: '18px 0', borderRadius: 12, cursor: 'pointer',
+                      background: `linear-gradient(135deg, ${camp.base}33, transparent)`,
+                      color: '#fff', border: `1px solid ${camp.glow}55`,
+                      textShadow: `0 0 16px ${camp.glow}88`,
+                      fontFamily: "'Pirata One',cursive", fontSize: 26, letterSpacing: '.06em',
+                      transition: 'background .2s ease, border-color .2s ease',
+                    }}>
+                      JE VOTE {s}
+                    </button>
+                  )
+                })}
               </div>
             </motion.div>
           ) : (
