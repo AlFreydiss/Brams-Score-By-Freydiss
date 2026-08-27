@@ -70,7 +70,7 @@ export const OPENING_TOURNAMENT_CONFIG = {
   startDate:   '2026-05-27',
   categoryLabel:'Openings',
   route:        '/tournoi/openings',
-  version:      'v4-opening-r2',
+  version:      'v5-opening-noms-animes',
   participants: BLIND_TEST_OPENING_CATALOG,
 }
 
@@ -84,7 +84,7 @@ export const ENDING_TOURNAMENT_CONFIG = {
   startDate:   '2026-06-02',
   categoryLabel:'Endings',
   route:        '/tournoi/endings',
-  version:      'v3-ending-r2',
+  version:      'v5-ending-shazam',
   participants: BLIND_TEST_ENDING_CATALOG,
 }
 
