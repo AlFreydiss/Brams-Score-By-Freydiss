@@ -19,6 +19,10 @@ const CSS = `
   @keyframes dbEq      { 0%,100%{transform:scaleY(.16)}                        50%{transform:scaleY(1)} }
   @keyframes dbMote    { 0%{transform:translate3d(0,0,0); opacity:0} 12%{opacity:.7} 88%{opacity:.35} 100%{transform:translate3d(22px,-92vh,0); opacity:0} }
   @keyframes dbRing    { 0%{transform:translate(-50%,-50%) scale(.5); opacity:.55} 100%{transform:translate(-50%,-50%) scale(1.7); opacity:0} }
+  @keyframes dbRayA    { 0%,100%{transform:rotate(14deg) scaleY(1);   opacity:.16} 50%{transform:rotate(23deg) scaleY(1.12); opacity:.36} }
+  @keyframes dbRayB    { 0%,100%{transform:rotate(-16deg) scaleY(1.1);opacity:.14} 50%{transform:rotate(-25deg) scaleY(.95); opacity:.32} }
+  @keyframes dbFog     { 0%{transform:translateX(-12%)} 50%{transform:translateX(10%)} 100%{transform:translateX(-12%)} }
+  @keyframes dbGlyph   { 0%{transform:translate3d(0,6vh,0) rotate(0deg); opacity:0} 14%{opacity:var(--gop,.09)} 86%{opacity:var(--gop,.09)} 100%{transform:translate3d(var(--gx,3vw),-94vh,0) rotate(var(--gr,20deg)); opacity:0} }
 
   .db-grain {
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -41,6 +45,21 @@ export default function DoublageBackdrop({ side = 'A', revealed = null, started 
     del: (i * 0.197) % 1.7,
     h: 12 + (i * 14.3) % 40,
   })), [])
+
+  // Glyphes de doublage qui dérivent vers le haut, dans l'esprit d'AnimeBackdrop.
+  const glyphs = useMemo(() => {
+    const motifs = ['🎙', '♪', '🎧', '💬', '♫', '🗣']
+    return Array.from({ length: 14 }, (_, i) => ({
+      char: motifs[i % motifs.length],
+      left: (i * 47.3 + 7) % 97,
+      size: 15 + (i * 11) % 26,
+      dur: 22 + (i * 1.9) % 20,
+      del: -((i * 3.1) % 24),
+      gx: `${((i * 5.3) % 11 - 5).toFixed(1)}vw`,
+      gr: `${((i * 23) % 70) - 35}deg`,
+      gop: (0.05 + (i % 4) * 0.018).toFixed(3),
+    }))
+  }, [])
 
   const activeA = side === 'A'
   // Après le vote, c'est le camp voté qui colore la scène.
@@ -66,6 +85,43 @@ export default function DoublageBackdrop({ side = 'A', revealed = null, started 
       <div data-dbbg style={aura(SIDE_A, activeA, 'dbAuraA', { left: '-30vmax', top: '-22vmax' })} />
       {/* Aura du camp B, ancrée à droite */}
       <div data-dbbg style={aura(SIDE_B, !activeA, 'dbAuraB', { right: '-30vmax', bottom: '-26vmax' })} />
+
+      {/* Faisceaux de projecteur, un par camp, comme sur le hero du site. */}
+      <div data-dbbg style={{
+        position: 'absolute', left: '18%', top: '-40%', width: 220, height: '150%',
+        transformOrigin: 'top center',
+        background: `linear-gradient(to bottom, ${SIDE_A.soft}${activeA ? '.30' : '.10'}), transparent 72%)`,
+        filter: 'blur(26px)',
+        animation: 'dbRayA 15s ease-in-out infinite',
+        transition: 'background .6s ease',
+      }} />
+      <div data-dbbg style={{
+        position: 'absolute', right: '18%', top: '-40%', width: 200, height: '150%',
+        transformOrigin: 'top center',
+        background: `linear-gradient(to bottom, ${SIDE_B.soft}${activeA ? '.10' : '.30'}), transparent 72%)`,
+        filter: 'blur(26px)',
+        animation: 'dbRayB 18s ease-in-out infinite',
+        transition: 'background .6s ease',
+      }} />
+
+      {/* Nappe de brume qui glisse au ras du sol : donne de la profondeur. */}
+      <div data-dbbg style={{
+        position: 'absolute', left: '-15%', right: '-15%', bottom: 0, height: '34%',
+        background: `linear-gradient(to top, ${activeA ? SIDE_A.soft : SIDE_B.soft}.12), transparent)`,
+        filter: 'blur(40px)',
+        animation: 'dbFog 24s ease-in-out infinite',
+        transition: 'background .8s ease',
+      }} />
+
+      {/* Glyphes de doublage qui montent lentement. */}
+      {glyphs.map((g, i) => (
+        <span key={i} data-dbbg style={{
+          position: 'absolute', left: `${g.left}%`, bottom: '-8vh',
+          fontSize: g.size, color: '#fff',
+          '--gx': g.gx, '--gr': g.gr, '--gop': g.gop,
+          opacity: 0, animation: `dbGlyph ${g.dur}s ${g.del}s linear infinite`,
+        }}>{g.char}</span>
+      ))}
 
       {/* Ligne de faille : la frontière entre les deux versions. */}
       <div data-dbbg style={{

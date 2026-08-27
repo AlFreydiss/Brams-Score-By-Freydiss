@@ -142,7 +142,7 @@ function buildDeck() {
 // ── Lecteur double piste ────────────────────────────────────────────────────
 // Les deux <video> restent montées : la bascule doit être instantanée, sinon
 // l'oreille perd la comparaison. Seule la piste active est visible et audible.
-function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, onStart, onMediaError }) {
+function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, onStart, onMediaError, replayRef }) {
   const aRef = useRef(null)
   const bRef = useRef(null)
   const [ready, setReady] = useState(false)
@@ -220,6 +220,19 @@ function DualTrackPlayer({ scene, side, onSideChange, startAt, endAt, started, o
     active.play().catch(() => {})
     passive.play().catch(() => {})
   }, [side, ready, started])
+
+  // Relecture manuelle de l'extrait, exposée au parent (bouton + touche R).
+  useEffect(() => {
+    if (!replayRef) return
+    replayRef.current = () => {
+      for (const el of [aRef.current, bRef.current]) {
+        if (!el) continue
+        try { el.currentTime = startAt } catch { /* pas encore seekable */ }
+        el.play().catch(() => {})
+      }
+    }
+    return () => { replayRef.current = null }
+  }, [replayRef, startAt])
 
   // Boucle sur la scène : passé endAt on repart au début de l'extrait, pour
   // pouvoir réécouter le même passage autant de fois qu'on veut.
@@ -368,6 +381,12 @@ export default function DoublagePage() {
   const [session, setSession]   = useState({ vf: 0, vostfr: 0 })
   const [finished, setFinished] = useState(false)
   const [started, setStarted]   = useState(false)
+  // Un vote par manche, pour la frise de progression en haut de page.
+  const [history, setHistory]   = useState([])
+  // Temps d'écoute par camp : voter sans avoir entendu les deux n'a pas de sens,
+  // on le signale au lieu de laisser passer.
+  const [heard, setHeard]       = useState({ A: 0, B: 0 })
+  const replayRef               = useRef(null)
 
   const entry = deck[index]
 
@@ -382,12 +401,36 @@ export default function DoublagePage() {
     }
   }, [entry])
 
-  useEffect(() => { setSide('A'); setReveal(null) }, [index])
+  useEffect(() => { setSide('A'); setReveal(null); setHeard({ A: 0, B: 0 }) }, [index])
+
+  // Compte le temps passé sur chaque version pendant l'écoute.
+  useEffect(() => {
+    if (!started || revealed) return
+    const id = setInterval(() => setHeard(h => ({ ...h, [side]: h[side] + 250 })), 250)
+    return () => clearInterval(id)
+  }, [started, revealed, side])
+
+  // Raccourcis clavier : comparer sans lâcher le clavier va beaucoup plus vite.
+  useEffect(() => {
+    const onKey = e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      const k = e.key.toLowerCase()
+      if (k === 'a') setSide('A')
+      if (k === 'b') setSide('B')
+      if (k === 'r') replayRef.current?.()
+      if (k === '1') vote('A')
+      if (k === '2') vote('B')
+      if (k === 'enter' && revealed) nextRound()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   function vote(votedSide) {
     if (revealed || !round) return
     const camp = votedSide === 'A' ? round.sideA : (round.sideA === 'vf' ? 'vostfr' : 'vf')
     setReveal(camp)
+    setHistory(h => [...h, camp])
     setSession(s => ({ ...s, [camp]: s[camp] + 1 }))
     const next = { ...stats, [camp]: stats[camp] + 1 }
     setStats(next)
@@ -407,6 +450,7 @@ export default function DoublagePage() {
   function restart() {
     setDeck(buildDeck())
     setIndex(0); setSession({ vf: 0, vostfr: 0 }); setFinished(false); setReveal(null)
+    setHistory([]); setHeard({ A: 0, B: 0 })
   }
 
   // Un média injoignable (fichier retiré de R2) ne doit pas bloquer la manche :
@@ -490,7 +534,13 @@ export default function DoublagePage() {
       <DoublageBackdrop side={side} revealed={revealed} started={started} />
       <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
-        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+        {/* Entrée en fondu montant, comme les sections du portfolio. */}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
+          style={{ textAlign: 'center', marginBottom: 22 }}
+        >
           <Link to="/tournoi" style={{
             fontSize: 11, letterSpacing: '.18em', color: 'rgba(255,255,255,.35)', textDecoration: 'none',
           }}>
@@ -505,7 +555,7 @@ export default function DoublagePage() {
           <p style={{ color: 'rgba(255,255,255,.45)', fontSize: 14, margin: 0 }}>
             Même scène, deux doublages. Bascule, écoute, vote à l'aveugle.
           </p>
-        </div>
+        </motion.div>
 
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -519,6 +569,23 @@ export default function DoublagePage() {
           </span>
         </div>
 
+        {/* Frise de session : chaque manche jouée se colore du camp voté, ce qui
+            donne à voir sa propre tendance sans attendre le verdict final. */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+          {deck.map((_, i) => {
+            const vote = history[i]
+            return (
+              <div key={i} style={{
+                flex: 1, height: 4, borderRadius: 2,
+                background: vote === 'vf' ? VF_COLOR
+                  : vote === 'vostfr' ? JA_COLOR
+                  : i === index ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.08)',
+                transition: 'background .35s ease',
+              }} />
+            )
+          })}
+        </div>
+
         <DualTrackPlayer
           key={`${round.id}-${round.clip.startAt}`}
           scene={round}
@@ -529,7 +596,62 @@ export default function DoublagePage() {
           started={started}
           onStart={() => setStarted(true)}
           onMediaError={replaceBrokenScene}
+          replayRef={replayRef}
         />
+
+        {/* Barre de contrôle : relecture de l'extrait, équilibre d'écoute, et
+            rappel des raccourcis. */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+          marginTop: 10, fontSize: 11, color: 'rgba(255,255,255,.4)',
+        }}>
+          <button
+            onClick={() => replayRef.current?.()}
+            style={{
+              padding: '7px 14px', borderRadius: 9, cursor: 'pointer',
+              background: 'rgba(255,255,255,.05)', color: 'rgba(255,255,255,.75)',
+              border: '1px solid rgba(255,255,255,.12)', fontSize: 12,
+            }}
+          >
+            ↺ Réécouter l'extrait
+          </button>
+
+          {/* Deux jauges qui montrent le temps passé de chaque côté. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200 }}>
+            <span>écoute</span>
+            {['A', 'B'].map(s => {
+              const camp = s === 'A' ? SIDE_A : SIDE_B
+              const total = heard.A + heard.B || 1
+              return (
+                <div key={s} style={{
+                  flex: 1, height: 5, borderRadius: 3, overflow: 'hidden',
+                  background: 'rgba(255,255,255,.07)',
+                }}>
+                  <div style={{
+                    width: `${Math.round((heard[s] / total) * 100)}%`, height: '100%',
+                    background: camp.glow, transition: 'width .3s linear',
+                  }} />
+                </div>
+              )
+            })}
+          </div>
+
+          <span style={{ color: 'rgba(255,255,255,.25)' }}>
+            A / B bascule · 1 / 2 vote · R réécoute
+          </span>
+        </div>
+
+        {/* Rappel discret quand on s'apprête à voter sans avoir entendu les deux. */}
+        {!revealed && started && (heard.A < 2000 || heard.B < 2000) && (
+          <div style={{
+            marginTop: 8, fontSize: 12, textAlign: 'center',
+            color: heard.A < 2000 && heard.B < 2000 ? 'rgba(255,255,255,.3)' : '#f0b429',
+          }}>
+            {heard.A < 2000 && heard.B < 2000
+              ? 'Écoute les deux versions avant de trancher.'
+              : `Tu n'as presque pas écouté la version ${heard.A < 2000 ? 'A' : 'B'}.`}
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {!revealed ? (

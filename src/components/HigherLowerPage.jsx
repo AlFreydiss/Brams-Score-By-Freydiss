@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { HIGHER_LOWER_POOL } from '../data/higher-lower-data.js'
 import { corsUrl } from '../lib/audioBoost.js'
+import HigherLowerBackdrop from './HigherLowerBackdrop.jsx'
 
 // ── Plus vieux / Plus récent ────────────────────────────────────────────────
 // Deux openings. Celui du haut a son année affichée, celui du bas est masqué :
@@ -50,6 +51,29 @@ function pickChallenger(reference, used) {
   const distinct = pool.filter(o => o.year !== reference?.year)
   const from = distinct.length >= 8 ? distinct : pool
   return from[Math.floor(Math.random() * from.length)]
+}
+
+// Compteur qui roule jusqu'à l'année : la révélation devient un petit moment
+// au lieu d'un chiffre qui apparaît d'un coup.
+function CountUpYear({ value, style }) {
+  const [shown, setShown] = useState(() => Math.max(1960, value - 26))
+
+  useEffect(() => {
+    let raf
+    const from = Math.max(1960, value - 26)
+    const start = performance.now()
+    const step = now => {
+      // Décélération franche : le chiffre freine en arrivant sur la bonne année.
+      const t = Math.min(1, (now - start) / 900)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setShown(Math.round(from + (value - from) * eased))
+      if (t < 1) raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+
+  return <div style={style}>{shown}</div>
 }
 
 // ── Carte opening ───────────────────────────────────────────────────────────
@@ -121,12 +145,16 @@ function OpeningCard({ item, revealed, muted, label, children, dimmed }) {
             {revealed ? (
               <motion.div
                 key="year"
-                className="hl-year"
                 initial={{ opacity: 0, scale: .6 }}
                 animate={{ opacity: 1, scale: 1 }}
-                style={{ fontSize: 58, color: '#fff', textShadow: '0 3px 20px rgba(0,0,0,.8)' }}
               >
-                {item.year}
+                <CountUpYear
+                  value={item.year}
+                  style={{
+                    fontFamily: "'Pirata One', cursive", lineHeight: 1,
+                    fontSize: 58, color: '#fff', textShadow: '0 3px 20px rgba(0,0,0,.8)',
+                  }}
+                />
               </motion.div>
             ) : (
               <motion.div
@@ -158,6 +186,7 @@ export default function HigherLowerPage() {
   const [muted, setMuted]       = useState(true)
   const [phase, setPhase]       = useState('play') // 'play' | 'reveal' | 'over'
   const [lastOk, setLastOk]     = useState(null)
+  const [copied, setCopied]     = useState(false)
   const usedRef                 = useRef(new Set())
 
   const [reference, setReference]   = useState(null)
@@ -240,9 +269,10 @@ export default function HigherLowerPage() {
   // ── Écran de fin ──────────────────────────────────────────────────────────
   if (phase === 'over') {
     return (
-      <div style={{ minHeight: '100vh', background: BG, padding: '90px 20px 60px' }}>
+      <div style={{ minHeight: '100vh', background: BG, padding: '90px 20px 60px', position: 'relative' }}>
         <style>{CSS}</style>
-        <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
+        <HigherLowerBackdrop streak={streak} verdict={false} />
+        <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: 12, letterSpacing: '.22em', color: 'rgba(255,255,255,.4)' }}>
             SÉRIE TERMINÉE
           </div>
@@ -277,6 +307,26 @@ export default function HigherLowerPage() {
             }}>
               Rejouer
             </button>
+
+            <button
+              onClick={async () => {
+                const texte = `Plus vieux / Plus récent sur brams.community : ${streak} d'affilée`
+                  + (streak >= best ? ' (nouveau record)' : ` — record ${best}`)
+                  + `\nDernier duel : ${challenger?.anime} (${challenger?.year}) vs ${reference?.anime} (${reference?.year})`
+                try {
+                  await navigator.clipboard.writeText(texte)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1800)
+                } catch { /* presse-papiers refusé par le navigateur */ }
+              }}
+              style={{
+                padding: '14px 30px', borderRadius: 12, cursor: 'pointer',
+                background: 'rgba(255,255,255,.06)', color: 'rgba(255,255,255,.8)',
+                fontSize: 15, border: '1px solid rgba(255,255,255,.1)',
+              }}
+            >
+              {copied ? 'Copié ✓' : 'Copier le résultat'}
+            </button>
             <Link to="/jeux" style={{
               padding: '14px 30px', borderRadius: 12, textDecoration: 'none',
               background: 'rgba(255,255,255,.06)', color: 'rgba(255,255,255,.8)',
@@ -293,9 +343,10 @@ export default function HigherLowerPage() {
   const revealed = phase === 'reveal'
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, padding: '84px 14px 40px' }}>
+    <div style={{ minHeight: '100vh', background: BG, padding: '84px 14px 40px', position: 'relative' }}>
       <style>{CSS}</style>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <HigherLowerBackdrop streak={streak} verdict={phase === 'reveal' ? lastOk : null} />
+      <div style={{ maxWidth: 900, margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
@@ -382,6 +433,44 @@ export default function HigherLowerPage() {
             </OpeningCard>
           </motion.div>
         </div>
+
+        {/* Écart entre les deux années : dit après coup si c'était serré ou
+            évident, ce qui donne son sel à une bonne réponse. */}
+        <AnimatePresence>
+          {revealed && reference && challenger && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              style={{
+                marginTop: 10, textAlign: 'center', fontSize: 13,
+                color: lastOk ? '#4ade80' : '#f87171',
+              }}
+            >
+              {challenger.year === reference.year
+                ? 'Même année — la manche est comptée juste.'
+                : `${Math.abs(challenger.year - reference.year)} an${Math.abs(challenger.year - reference.year) > 1 ? 's' : ''} d'écart`}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Palier de série : un petit éclat aux caps, pour marquer le coup. */}
+        <AnimatePresence>
+          {revealed && lastOk && streak > 0 && streak % 5 === 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: .8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                marginTop: 8, textAlign: 'center',
+                fontFamily: "'Pirata One',cursive", fontSize: 26,
+                background: GRAD, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}
+            >
+              {streak} D'AFFILÉE
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Boutons : le swipe reste le geste principal, mais tout doit être
             jouable au clic sur desktop. */}
