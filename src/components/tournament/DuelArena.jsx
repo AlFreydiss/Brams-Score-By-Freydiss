@@ -97,11 +97,12 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
     maxWidth: 'none', maxHeight: 'none',
     objectFit: 'cover',
   }
-  // Monté au niveau du body. Rendu en place, ce voile plein écran héritait du
-  // contexte d'empilement du contenu (zIndex 2) : bien qu'annoncé en zIndex 0,
-  // il passait devant tout le décor, dont l'égaliseur du fond — qu'il masquait
-  // exactement pendant la lecture, le seul moment où celui-ci s'anime.
-  const overlay = (
+  // Reste rendu EN PLACE, dans l'arbre du contenu. Le porter au niveau du body
+  // le faisait passer devant toute la page : le conteneur applicatif forme son
+  // propre contexte d'empilement, donc les zIndex du contenu ne pèsent plus
+  // rien face à un calque sorti à côté de lui. La lisibilité de l'égaliseur est
+  // réglée par la découpe du bas ci-dessous, qui ne dépend d'aucun empilement.
+  return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -135,7 +136,6 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.24) 0%, rgba(2,2,3,.26) 50%, rgba(2,2,3,.44) 100%), radial-gradient(62% 52% at 50% 46%, rgba(2,2,3,.22), transparent 82%)' }} />
     </motion.div>
   )
-  return typeof document !== 'undefined' ? createPortal(overlay, document.body) : overlay
 }
 
 function fmt(s) {
