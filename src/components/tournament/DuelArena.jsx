@@ -221,7 +221,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     let media = null
     let raf = 0
 
-    const onPlay = () => setNowPlaying(media)
+    const onPlay = () => setNowPlaying(media, color)
     const onStopped = () => clearNowPlaying(media)
 
     // La ref de la carte n'est pas encore posée au premier rendu.
@@ -245,7 +245,7 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
       media.removeEventListener('ended', onStopped)
       clearNowPlaying(media)
     }
-  }, [audioUrl, mediaRef])
+  }, [audioUrl, mediaRef, color])
 
   useEffect(() => {
     if (!audioUrl || !mediaRef) return

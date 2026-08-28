@@ -62,6 +62,20 @@ const BD_CSS = `
   @media (prefers-reduced-motion: reduce){ [data-bdfx]{animation:none!important} .bd-grid{animation:none!important} }
 `
 
+// Éclaircit une couleur hex vers le blanc. Les accents des participants sont
+// souvent sombres : sans ça, l'alternance d'une barre sur deux ne se verrait
+// pas. Renvoie l'entrée telle quelle si ce n'est pas un hex exploitable.
+function lighten(hex, amount) {
+  const h = String(hex || '').replace('#', '')
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  if (full.length !== 6) return hex
+  const n = parseInt(full, 16)
+  if (Number.isNaN(n)) return hex
+  const mix = c => Math.round(c + (255 - c) * amount)
+  const r = mix((n >> 16) & 255), g = mix((n >> 8) & 255), b = mix(n & 255)
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+}
+
 export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c3aed' }) {
   const embers = useMemo(() => Array.from({ length: 18 }, (_, i) => ({
     x: (i * 51.7 + 11) % 96, dur: 9 + (i * 0.77) % 8, del: (i * 1.19) % 9,
@@ -83,6 +97,9 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
   // qu'un extrait démarre, on lit le vrai spectre et on pilote scaleY.
   const eqWrapRef = useRef(null)
   const [live, setLive] = useState(false)
+  // Accent de la piste en cours : l'égaliseur prend la couleur de l'opening
+  // joué, comme le cadre de sa carte et le voile derrière.
+  const [liveColor, setLiveColor] = useState(null)
 
   useEffect(() => {
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
@@ -101,6 +118,7 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
       analyser = null
       freq = null
       setLive(false)
+      setLiveColor(null)
       const nodes = eqWrapRef.current?.children
       if (nodes) for (const n of nodes) n.style.transform = ''
     }
@@ -126,8 +144,8 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
       }
     }
 
-    const unsubscribe = subscribeNowPlaying(next => {
-      if (next === el) return
+    const unsubscribe = subscribeNowPlaying((next, color) => {
+      if (next === el) { setLiveColor(color || null); return }
       el = next
       stop()
       if (!el) return
@@ -136,6 +154,7 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
       freq = new Uint8Array(analyser.frequencyBinCount)
       level.fill(0)
       setLive(true)
+      setLiveColor(color || null)
       raf = requestAnimationFrame(frame)
     })
 
@@ -241,16 +260,25 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
         transition: 'opacity .5s ease',
       }}
     >
-      {bars.map((b, i) => (
-        <div key={`b${i}`} data-bdfx style={{
-          flex: 1, height: b.h, borderRadius: '3px 3px 0 0', transformOrigin: 'bottom',
-          // Lumineux à la base, atténué vers le haut : c'est le pied de la
-          // barre qui reste visible sous le masque, il doit donc porter la
-          // couleur. L'inverse rendait les barres presque transparentes.
-          background: `linear-gradient(0deg, ${i % 2 ? accentB : accentA}e6, ${i % 2 ? accentB : accentA}33)`,
-          animation: `bdEq ${b.dur}s ${b.del}s ease-in-out infinite`,
-        }} />
-      ))}
+      {bars.map((b, i) => {
+        // Une piste joue : ses deux tons remplacent la palette du décor. Une
+        // barre sur deux prend la version éclaircie, pour garder le relief que
+        // donnait l'alternance rose/violet.
+        const tone = liveColor
+          ? (i % 2 ? lighten(liveColor, 0.45) : liveColor)
+          : (i % 2 ? accentB : accentA)
+        return (
+          <div key={`b${i}`} data-bdfx style={{
+            flex: 1, height: b.h, borderRadius: '3px 3px 0 0', transformOrigin: 'bottom',
+            // Lumineux à la base, atténué vers le haut : c'est le pied de la
+            // barre qui reste visible sous le masque, il doit donc porter la
+            // couleur. L'inverse rendait les barres presque transparentes.
+            background: `linear-gradient(0deg, ${tone}e6, ${tone}33)`,
+            transition: 'background .45s ease',
+            animation: `bdEq ${b.dur}s ${b.del}s ease-in-out infinite`,
+          }} />
+        )
+      })}
     </div>
     </>
   )

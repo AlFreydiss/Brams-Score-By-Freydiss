@@ -9,17 +9,21 @@
 // fois (lancer un duel arrête l'autre).
 
 let current = null
+let currentColor = null
 const listeners = new Set()
 
 function emit() {
   for (const fn of listeners) {
-    try { fn(current) } catch { /* un abonné cassé n'empêche pas les autres */ }
+    try { fn(current, currentColor) } catch { /* un abonné cassé n'empêche pas les autres */ }
   }
 }
 
-export function setNowPlaying(el) {
-  if (current === el) return
+// `color` est l'accent du participant qui joue : le décor s'en sert pour teinter
+// l'égaliseur, de sorte que le bas de l'écran porte la couleur de la piste.
+export function setNowPlaying(el, color = null) {
+  if (current === el && currentColor === color) return
   current = el || null
+  currentColor = el ? (color || null) : null
   emit()
 }
 
@@ -29,6 +33,7 @@ export function clearNowPlaying(el) {
   if (el && current !== el) return
   if (!current) return
   current = null
+  currentColor = null
   emit()
 }
 
@@ -36,8 +41,12 @@ export function getNowPlaying() {
   return current
 }
 
+export function getNowPlayingColor() {
+  return currentColor
+}
+
 export function subscribeNowPlaying(fn) {
   listeners.add(fn)
-  fn(current)
+  fn(current, currentColor)
   return () => listeners.delete(fn)
 }
