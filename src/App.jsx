@@ -92,6 +92,7 @@ const TournamentHubPage  = lazyWithReload(() => import('./components/TournamentH
 const TournamentPage     = lazyWithReload(() => import('./components/TournamentPage.jsx'))
 const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentRoomPage.jsx'))
 const DoublagePage       = lazyWithReload(() => import('./components/DoublagePage.jsx'))
+const DoublageStudioPage = lazyWithReload(() => import('./components/DoublageStudioPage.jsx'))
 const HigherLowerPage    = lazyWithReload(() => import('./components/HigherLowerPage.jsx'))
 const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipperPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
@@ -689,6 +690,9 @@ export default function App() {
         <Route path="/tournoi/sakuga" element={<PageLayout><TournamentPage tournamentId="sakuga" /></PageLayout>} />
         {/* Guerre du Doublage : pas un bracket, une série de duels VF/VOSTFR. */}
         <Route path="/tournoi/doublage" element={<PageLayout><DoublagePage /></PageLayout>} />
+        {/* Studio : on double soi-même l'extrait et on repart avec le fichier. */}
+        <Route path="/tournoi/studio"   element={<PageLayout><DoublageStudioPage /></PageLayout>} />
+        <Route path="/studio-doublage"  element={<PageLayout><DoublageStudioPage /></PageLayout>} />
         {/* Outil staff pour découper les extraits du tournoi Sakuga. */}
         <Route path="/staff/sakuga" element={<SakugaClipperPage />} />
         <Route path="/akinator"    element={<AkinatorPage      />} />

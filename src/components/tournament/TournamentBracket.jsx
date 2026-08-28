@@ -76,11 +76,16 @@ function MatchCard({ match, isActive, isMobile }) {
 
   return (
     <div style={{
+      // Les cartes sont posées en absolu sur une grille de CARD_H : tout ce qui
+      // s'ajoute doit rester DANS la carte, sinon elle mord sur la suivante.
+      position: 'relative',
       width: CARD_W,
       borderRadius: 8,
       border: `1px solid ${borderColor}`,
       background: bg,
-      overflow: 'hidden',
+      // visible (et non hidden) pour laisser la pastille « en cours » se poser
+      // dans l'espace entre deux cartes : chaque slot arrondit déjà son fond.
+      overflow: 'visible',
       boxShadow: isActive ? `0 0 0 1px rgba(233,30,140,.15), 0 4px 20px rgba(233,30,140,.08)` : 'none',
       transition: 'all 0.3s',
     }}>
@@ -99,13 +104,15 @@ function MatchCard({ match, isActive, isMobile }) {
         imgFailed={imgR}
         setImgFailed={setImgR}
       />
+      {/* Pastille posée en absolu : la bande pleine largeur rallongeait la
+          carte de 16 px et la faisait recouvrir la carte du dessous. */}
       {isActive && (
         <div style={{
-          textAlign: 'center', fontSize: 9,
-          color: GOLD, padding: '3px 0 4px',
-          letterSpacing: '0.08em', fontWeight: 700,
-          background: 'rgba(233,30,140,.05)',
-        }}>VOTE EN COURS</div>
+          position: 'absolute', top: -12, right: 4,
+          fontSize: 7.5, lineHeight: 1.3, color: '#fff', background: GOLD,
+          padding: '1px 6px', borderRadius: 6,
+          letterSpacing: '0.09em', fontWeight: 800, whiteSpace: 'nowrap',
+        }}>EN COURS</div>
       )}
     </div>
   )

@@ -675,6 +675,17 @@ export default function DoublagePage() {
           <p style={{ color: 'rgba(255,255,255,.5)', fontSize: 14, margin: 0 }}>
             Même scène, deux doublages. Bascule, écoute, vote à l'aveugle.
           </p>
+
+          {/* Passerelle vers le Studio : juger les voix des autres donne vite
+              envie d'essayer soi-même. */}
+          <Link to="/tournoi/studio" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 16,
+            padding: '9px 18px', borderRadius: 999, textDecoration: 'none',
+            border: `1px solid ${SIDE_A.glow}55`, background: 'rgba(34,211,238,.08)',
+            color: SIDE_A.glow, fontSize: 12.5, fontWeight: 700, letterSpacing: '.02em',
+          }}>
+            🎬 Studio de doublage — pose ta voix sur la scène
+          </Link>
         </motion.div>
 
         <div style={{

@@ -15,6 +15,17 @@ export const TOURNAMENT_CATEGORIES = [
     color: '#2563eb',
   },
   {
+    id: 'studio',
+    label: 'Studio',
+    tagline: 'Cette fois, c\'est toi qui doubles.',
+    description: `Un extrait, le script à l'écran, ton micro. Tu poses ta voix sur la scène et tu repars avec le fichier monté.`,
+    icon: '🎬',
+    route: '/tournoi/studio',
+    status: 'active',
+    activeCount: 1,
+    color: '#22d3ee',
+  },
+  {
     id: 'sakuga',
     label: 'Sakuga',
     tagline: 'On juge l\'image, pas le son.',

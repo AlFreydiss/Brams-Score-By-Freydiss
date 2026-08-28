@@ -82,6 +82,37 @@ const animePlugin = {
   },
 }
 
+// ── /api/subtitles/r2 en développement ─────────────────────────────────────
+// En production c'est une fonction Vercel (api/subtitles.js). Le serveur Vite
+// ne sert pas /api : sans ce relais, aucun sous-titre ne charge en local — ni
+// sur la Guerre du Doublage, ni sur le Studio, qui en tire son script.
+const R2_BASE = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/'
+
+async function subtitlesMiddleware(req, res, next) {
+  const target = new URL(req.url || '/', 'http://local').searchParams.get('url')
+  if (!target || !target.startsWith(R2_BASE)) { next(); return }
+  try {
+    const upstream = await fetch(target, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+    if (!upstream.ok) { res.statusCode = upstream.status; res.end(); return }
+    res.setHeader('Content-Type', 'text/vtt; charset=utf-8')
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.end(await upstream.text())
+  } catch {
+    res.statusCode = 502
+    res.end()
+  }
+}
+
+const devSubtitlesPlugin = {
+  name: 'dev-subtitles-r2',
+  configureServer(server) {
+    server.middlewares.use('/api/subtitles/r2', subtitlesMiddleware)
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use('/api/subtitles/r2', subtitlesMiddleware)
+  },
+}
+
 const pruneHeavyPublicAssets = {
   name: 'prune-heavy-public-assets',
   closeBundle() {
@@ -100,7 +131,7 @@ const pruneHeavyPublicAssets = {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), animePlugin, pruneHeavyPublicAssets],
+  plugins: [react(), tailwindcss(), animePlugin, devSubtitlesPlugin, pruneHeavyPublicAssets],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

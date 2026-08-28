@@ -39,6 +39,8 @@ const T_CSS = `
   @keyframes tBadgeRing { 0%{transform:scale(1); opacity:.55} 100%{transform:scale(1.9); opacity:0} }
   @keyframes tShimmer   { 0%{transform:translateX(-130%)} 100%{transform:translateX(230%)} }
   @keyframes tGlyphUp   { 0%{transform:translateY(0) rotate(0deg); opacity:0} 12%{opacity:.5} 85%{opacity:.25} 100%{transform:translateY(-140px) rotate(18deg); opacity:0} }
+  @media (hover: none) and (pointer: coarse) { .t-keys { display:none } }
+  @media (max-width: 768px) { .t-keys { display:none } }
   @media (prefers-reduced-motion: reduce){ [data-tfx]{animation:none!important} }
 `
 
@@ -248,8 +250,11 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
+// L'arbre complet existait déjà (TournamentBracket, rendu plus bas) mais aucun
+// onglet n'y menait : la sidebar ne montre que le tour courant.
 const TABS = [
   { id: 'duel',    label: 'Duel',      icon: '⚔' },
+  { id: 'bracket', label: 'Arbre',     icon: '⛬' },
   { id: 'results', label: 'Résultats', icon: '📊' },
 ]
 
@@ -488,9 +493,32 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
     setTab('duel')
   }
 
-  const isLastMatch = !current || !(getCurrentMatch(
-    advanceWinner(rounds, current.match.id, current.match.left?.id)
-  ))
+  // advanceWinner clone le bracket entier pour répondre : sur 64 participants
+  // ça faisait une copie profonde à CHAQUE rendu, y compris pendant la lecture
+  // d'un opening. Le résultat ne dépend que du bracket et du duel courant.
+  const isLastMatch = useMemo(() => (
+    !current || !(getCurrentMatch(advanceWinner(rounds, current.match.id, current.match.left?.id)))
+  ), [rounds, current])
+
+  // Raccourcis clavier : enchaîner 63 duels à la souris est vite pénible.
+  // ← / 1 vote à gauche, → / 2 à droite, Entrée valide, S passe, B revient.
+  useEffect(() => {
+    const onKey = e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (tab !== 'duel' || !current) return
+      const voted = personalVotes[current.match.id]
+      const k = e.key.toLowerCase()
+
+      if (k === 'arrowleft'  || k === '1') { e.preventDefault(); if (!voted) handleVote('left') }
+      if (k === 'arrowright' || k === '2') { e.preventDefault(); if (!voted) handleVote('right') }
+      if (k === 'enter') { e.preventDefault(); if (voted) handleNext() }
+      if (k === 's') handleSkip()
+      if (k === 'b') handleBack()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   // Tournoi déclaré mais catalogue encore vide : on le dit, plutôt que de
   // rediriger en douce vers un autre bracket.
@@ -651,6 +679,18 @@ export default function TournamentPage({ tournamentId = 'ost' }) {
                         >
                           ← Retour
                         </button>
+
+                        {/* Rappel des raccourcis — masqué au doigt, où il ne
+                            sert à rien. */}
+                        <div className="t-keys" style={{
+                          fontSize: 10.5, lineHeight: 1.7, color: 'rgba(255,255,255,.22)',
+                          padding: '2px 4px', letterSpacing: '.03em',
+                        }}>
+                          <b style={{ color: 'rgba(255,255,255,.4)' }}>← →</b> voter ·{' '}
+                          <b style={{ color: 'rgba(255,255,255,.4)' }}>Entrée</b> valider ·{' '}
+                          <b style={{ color: 'rgba(255,255,255,.4)' }}>S</b> passer ·{' '}
+                          <b style={{ color: 'rgba(255,255,255,.4)' }}>B</b> retour
+                        </div>
                       </div>
                     </div>
                   </>
