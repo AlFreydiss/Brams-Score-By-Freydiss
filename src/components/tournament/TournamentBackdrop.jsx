@@ -35,7 +35,10 @@ const BD_CSS = `
   }
   .bd-eq-live > div {
     animation:none !important;
-    transition:transform .06s linear;
+    /* Les deux transitions dans la MÊME déclaration : en la posant en style
+       inline sur la barre, la propriété raccourcie écrasait celle-ci et le
+       lissage du transform disparaissait. */
+    transition:transform .06s linear, background .45s ease;
     filter:saturate(1.5) brightness(1.45);
   }
 
@@ -62,15 +65,20 @@ const BD_CSS = `
   @media (prefers-reduced-motion: reduce){ [data-bdfx]{animation:none!important} .bd-grid{animation:none!important} }
 `
 
-// Éclaircit une couleur hex vers le blanc. Les accents des participants sont
-// souvent sombres : sans ça, l'alternance d'une barre sur deux ne se verrait
-// pas. Renvoie l'entrée telle quelle si ce n'est pas un hex exploitable.
-function lighten(hex, amount) {
-  const h = String(hex || '').replace('#', '')
+// Normalise un accent en #rrggbb, ou null s'il n'est pas exploitable. Les
+// barres concatènent une opacité derrière la couleur : une valeur inattendue
+// (rgb(), nom CSS, hex à 8 chiffres) produirait un dégradé invalide.
+function hex6(value) {
+  const h = String(value || '').trim().replace('#', '')
   const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h
-  if (full.length !== 6) return hex
-  const n = parseInt(full, 16)
-  if (Number.isNaN(n)) return hex
+  if (full.length !== 6 || !/^[0-9a-f]{6}$/i.test(full)) return null
+  return '#' + full
+}
+
+// Éclaircit vers le blanc. Les accents des participants sont souvent sombres :
+// sans cet écart, l'alternance d'une barre sur deux ne se verrait pas.
+function lighten(hex, amount) {
+  const n = parseInt(hex.slice(1), 16)
   const mix = c => Math.round(c + (255 - c) * amount)
   const r = mix((n >> 16) & 255), g = mix((n >> 8) & 255), b = mix(n & 255)
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
@@ -264,8 +272,12 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
         // Une piste joue : ses deux tons remplacent la palette du décor. Une
         // barre sur deux prend la version éclaircie, pour garder le relief que
         // donnait l'alternance rose/violet.
-        const tone = liveColor
-          ? (i % 2 ? lighten(liveColor, 0.45) : liveColor)
+        // hex6 renvoie null si l'accent n'est pas exploitable : on retombe alors
+        // sur la palette du décor plutôt que de concaténer une opacité sur une
+        // couleur invalide, ce qui donnait un dégradé cassé donc une barre noire.
+        const base = hex6(liveColor)
+        const tone = base
+          ? (i % 2 ? lighten(base, 0.45) : base)
           : (i % 2 ? accentB : accentA)
         return (
           <div key={`b${i}`} data-bdfx style={{
@@ -274,7 +286,6 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
             // barre qui reste visible sous le masque, il doit donc porter la
             // couleur. L'inverse rendait les barres presque transparentes.
             background: `linear-gradient(0deg, ${tone}e6, ${tone}33)`,
-            transition: 'background .45s ease',
             animation: `bdEq ${b.dur}s ${b.del}s ease-in-out infinite`,
           }} />
         )

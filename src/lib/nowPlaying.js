@@ -29,8 +29,14 @@ export function setNowPlaying(el, color = null) {
 
 // Ne coupe que si l'élément passé est bien celui qui joue : deux lecteurs qui
 // se démontent dans le désordre ne doivent pas s'annuler l'un l'autre.
+//
+// Un `el` absent NE COUPE RIEN. Le garde l'acceptait et effaçait alors tout :
+// un lecteur qui se démontait en passant la ref d'un élément jamais rendu (donc
+// null) désinscrivait la piste que l'autre carte venait de lancer, et
+// l'égaliseur s'éteignait pile au changement de morceau. Pour un arrêt global,
+// appeler setNowPlaying(null).
 export function clearNowPlaying(el) {
-  if (el && current !== el) return
+  if (!el || current !== el) return
   if (!current) return
   current = null
   currentColor = null

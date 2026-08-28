@@ -161,9 +161,9 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
 
   useEffect(() => { stopRef.current = onStop }, [onStop])
 
-  // Le composant peut disparaître sans qu'un 'pause' soit émis (changement de
-  // duel, navigation) : sans ce nettoyage, l'égaliseur resterait branché sur un
-  // élément mort.
+  // Le composant peut disparaître sans qu'un 'pause' soit émis. Seul son
+  // élément propre est concerné : l'élément partagé des cartes est géré par
+  // DuelArena, qui sait laquelle joue.
   useEffect(() => () => clearNowPlaying(videoRef.current), [])
 
   // Lecture intégrale : plus de plafond. L'arrêt vient de 'ended' (vidéo R2)
@@ -209,43 +209,6 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     // crossOrigin sur la vidéo de la carte (déjà posé) + CORS R2 (OK).
     if (audioUrl && boost > 1) boostElement(media, boost)
   }, [volume, audioUrl, mediaRef, boost])
-
-  // Signale au décor quelle piste joue, pour que l'égaliseur du fond suive le
-  // vrai spectre. L'élément à écouter n'est pas toujours celui rendu ici :
-  // quand un audioUrl est présent, c'est la vidéo de la carte (mediaRef) qui
-  // porte le son. On passe donc par getMedia(), et on s'accroche via des
-  // écouteurs plutôt que des props React, puisque l'élément peut appartenir à
-  // un autre composant.
-  useEffect(() => {
-    if (!audioUrl) return   // YouTube : pas d'élément média lisible, spectre impossible
-    let media = null
-    let raf = 0
-
-    const onPlay = () => setNowPlaying(media, color)
-    const onStopped = () => clearNowPlaying(media)
-
-    // La ref de la carte n'est pas encore posée au premier rendu.
-    function attach() {
-      media = getMedia()
-      if (!media) { raf = requestAnimationFrame(attach); return }
-      media.addEventListener('play', onPlay)
-      media.addEventListener('playing', onPlay)
-      media.addEventListener('pause', onStopped)
-      media.addEventListener('ended', onStopped)
-      if (!media.paused) onPlay()
-    }
-    attach()
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf)
-      if (!media) return
-      media.removeEventListener('play', onPlay)
-      media.removeEventListener('playing', onPlay)
-      media.removeEventListener('pause', onStopped)
-      media.removeEventListener('ended', onStopped)
-      clearNowPlaying(media)
-    }
-  }, [audioUrl, mediaRef, color])
 
   useEffect(() => {
     if (!audioUrl || !mediaRef) return
@@ -527,6 +490,55 @@ export default function DuelArena({
   function handleCardBgSeek(t) {
     if (cardBgVideoRef.current) cardBgVideoRef.current.currentTime = t
   }
+
+  // ── Piste en cours, pour l'égaliseur du décor ─────────────────────────────
+  // Déclaré ICI et pas dans CompactPlayer : `cardBgVideoRef` est une ref
+  // PARTAGÉE entre les deux cartes, donc une instance de lecteur déjà périmée y
+  // lisait l'élément de la NOUVELLE piste et lui réappliquait sa propre couleur,
+  // avant de le désenregistrer en se démontant. L'égaliseur repassait au bleu
+  // de la piste précédente puis s'éteignait. DuelArena n'a qu'une instance et
+  // connaît la piste courante : la source de vérité est unique.
+  useEffect(() => {
+    if (!playing?.audioUrl) return
+    const color = playing.color || null
+
+    const onPlay = e => {
+      if (e.target !== cardBgVideoRef.current) return
+      setNowPlaying(e.target, color)
+    }
+    const onStopped = e => {
+      if (e.target instanceof HTMLMediaElement) clearNowPlaying(e.target)
+    }
+
+    // `play` et `pause` ne remontent pas : on écoute en phase de capture.
+    document.addEventListener('play', onPlay, true)
+    document.addEventListener('playing', onPlay, true)
+    document.addEventListener('pause', onStopped, true)
+    document.addEventListener('ended', onStopped, true)
+
+    // La piste peut déjà tourner quand l'effet se (re)joue.
+    const media = cardBgVideoRef.current
+    if (media && !media.paused) setNowPlaying(media, color)
+
+    return () => {
+      document.removeEventListener('play', onPlay, true)
+      document.removeEventListener('playing', onPlay, true)
+      document.removeEventListener('pause', onStopped, true)
+      document.removeEventListener('ended', onStopped, true)
+    }
+  }, [playing])
+
+  // Fin de lecture : plus aucune piste, l'égaliseur reprend son animation.
+  // Arrêt GLOBAL explicite : à ce stade la carte est démontée, il n'y a plus
+  // d'élément à désigner — et clearNowPlaying refuse désormais un argument nul.
+  useEffect(() => {
+    if (playing) return
+    setNowPlaying(null)
+  }, [playing])
+
+  // Démontage de l'arène (changement de duel, navigation) : aucun 'pause' n'est
+  // forcément émis.
+  useEffect(() => () => clearNowPlaying(cardBgVideoRef.current), [])
 
   const voted      = personalVotes?.[match.id] || null
   const hasVoted   = !!voted
