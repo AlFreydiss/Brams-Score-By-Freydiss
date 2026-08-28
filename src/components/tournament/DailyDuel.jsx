@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { OPENING_R2_CATALOG } from '../../data/opening-r2-catalog.js'
 import { FULL_CATALOG } from '../../data/rap-vs-ost-data.js'
+import { drawDuelCard } from '../../lib/duelShareCard.js'
+import { shareCanvas } from '../../lib/shareCardGenerator.js'
 
 // ── Duel du jour ────────────────────────────────────────────────────────────
 // Cinq duels tirés au sort une fois par jour, identiques pour tout le monde :
@@ -223,6 +225,7 @@ export default function DailyDuel({ accentA = '#e85aa0', accentB = '#9d5aff' }) 
   const [decided, setDecided] = useState(null)   // 'left' | 'right' pour la manche en cours
   const [shock, setShock] = useState(null)
   const [playing, setPlaying] = useState(null)
+  const [sharing, setSharing] = useState(false)
   const audioRef = useRef(null)
   const timersRef = useRef([])
 
@@ -303,6 +306,21 @@ export default function DailyDuel({ accentA = '#e85aa0', accentB = '#9d5aff' }) 
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  async function share() {
+    if (sharing) return
+    setSharing(true)
+    try {
+      const canvas = await drawDuelCard({
+        dateLabel: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+        verdict: verdictLabel,
+        picks: state.picks.map(p => byId.get(p.winner)).filter(Boolean),
+        streak,
+      })
+      await shareCanvas(canvas, 'brams-duel-du-jour.png')
+    } catch { /* partage annulé ou canvas indisponible : rien à signaler */ }
+    setSharing(false)
+  }
+
   function replay() {
     stopAudio()
     const fresh = { date: day, picks: [] }
@@ -317,6 +335,12 @@ export default function DailyDuel({ accentA = '#e85aa0', accentB = '#9d5aff' }) 
     acc[k] = (acc[k] || 0) + 1
     return acc
   }, {})
+
+  // Un seul calcul du verdict : l'écran et la carte partagée doivent dire la
+  // même chose.
+  const verdictLabel = camps.rap && camps.anime
+    ? (camps.anime >= camps.rap ? 'Camp Anime' : 'Camp Rap')
+    : 'Tes 5 verdicts'
 
   return (
     <div style={{ position: 'relative', marginBottom: 76 }}>
@@ -460,9 +484,7 @@ export default function DailyDuel({ accentA = '#e85aa0', accentB = '#9d5aff' }) 
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 marginBottom: 16,
               }}>
-                {camps.rap && camps.anime
-                  ? camps.anime >= camps.rap ? 'Camp Anime' : 'Camp Rap'
-                  : 'Tes 5 verdicts'}
+                {verdictLabel}
               </div>
               <div style={{
                 display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 24,
@@ -494,6 +516,21 @@ export default function DailyDuel({ accentA = '#e85aa0', accentB = '#9d5aff' }) 
                   }}
                 >
                   Enchaîner sur un vrai bracket
+                </motion.button>
+                <motion.button
+                  onClick={share}
+                  disabled={sharing}
+                  whileHover={{ scale: sharing ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}
+                  style={{
+                    padding: '13px 24px', borderRadius: 100,
+                    border: '1px solid ' + accentB + '66',
+                    background: 'linear-gradient(135deg, rgba(157,90,255,.2), rgba(232,90,160,.14))',
+                    color: '#e9d5ff', fontWeight: 800, fontSize: 13,
+                    cursor: sharing ? 'default' : 'pointer',
+                    opacity: sharing ? 0.6 : 1,
+                  }}
+                >
+                  {sharing ? 'Préparation…' : '⇪ Partager la carte'}
                 </motion.button>
                 <motion.button
                   onClick={replay}

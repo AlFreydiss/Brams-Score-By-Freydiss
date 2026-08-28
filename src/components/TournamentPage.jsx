@@ -123,7 +123,12 @@ function TournamentHero({ config, progress, roundLabel, matchLabel }) {
           onClick={() => navigate('/tournoi')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            background: 'none', border: 'none', cursor: 'pointer',
+            // Le retour ne faisait que 14 px de haut : impossible à viser au
+            // doigt. La zone cliquable est agrandie sans bouger le texte, via
+            // le padding et une marge négative qui le compense.
+            padding: '10px 12px', margin: '-10px -12px',
+            minHeight: 40,
             fontSize: 11, color: 'rgba(255,255,255,.35)',
             letterSpacing: '0.06em', fontWeight: 600,
             transition: 'color 0.18s',
