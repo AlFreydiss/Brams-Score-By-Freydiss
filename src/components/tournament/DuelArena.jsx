@@ -6,6 +6,7 @@ import { getVotePercents } from '../../lib/tournament.js'
 import OSTDuelCard from './OSTDuelCard.jsx'
 import VSPanel     from './VSPanel.jsx'
 import { boostElement, corsUrl } from '../../lib/audioBoost.js'
+import { setNowPlaying, clearNowPlaying } from '../../lib/nowPlaying.js'
 const VideoPlayer = lazy(() => import('../VideoPlayer.jsx'))
 
 const PINK   = '#9d174d'
@@ -96,7 +97,11 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
     maxWidth: 'none', maxHeight: 'none',
     objectFit: 'cover',
   }
-  return (
+  // Monté au niveau du body. Rendu en place, ce voile plein écran héritait du
+  // contexte d'empilement du contenu (zIndex 2) : bien qu'annoncé en zIndex 0,
+  // il passait devant tout le décor, dont l'égaliseur du fond — qu'il masquait
+  // exactement pendant la lecture, le seul moment où celui-ci s'anime.
+  const overlay = (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -105,6 +110,11 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
       style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
         background: `radial-gradient(90% 100% at 50% 45%, ${c}30, rgba(8,9,14,.72) 56%, rgba(8,9,14,.92) 100%)`,
+        // Le voile s'arrête juste au-dessus de l'égaliseur du décor. Sans cette
+        // découpe il le recouvrait pendant toute la lecture — c'est-à-dire au
+        // seul moment où l'égaliseur suit vraiment la musique.
+        maskImage: 'linear-gradient(to top, transparent 0, transparent 34px, #000 96px)',
+        WebkitMaskImage: 'linear-gradient(to top, transparent 0, transparent 34px, #000 96px)',
       }}
     >
       {audioUrl ? (
@@ -125,6 +135,7 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,.24) 0%, rgba(2,2,3,.26) 50%, rgba(2,2,3,.44) 100%), radial-gradient(62% 52% at 50% 46%, rgba(2,2,3,.22), transparent 82%)' }} />
     </motion.div>
   )
+  return typeof document !== 'undefined' ? createPortal(overlay, document.body) : overlay
 }
 
 function fmt(s) {
@@ -149,6 +160,11 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
   const getMedia = () => (audioUrl && mediaRef?.current) ? mediaRef.current : videoRef.current
 
   useEffect(() => { stopRef.current = onStop }, [onStop])
+
+  // Le composant peut disparaître sans qu'un 'pause' soit émis (changement de
+  // duel, navigation) : sans ce nettoyage, l'égaliseur resterait branché sur un
+  // élément mort.
+  useEffect(() => () => clearNowPlaying(videoRef.current), [])
 
   // Lecture intégrale : plus de plafond. L'arrêt vient de 'ended' (vidéo R2)
   // ou de playerState 0 (YouTube). Garde-fou 8 min côté YouTube au cas où les
@@ -193,6 +209,43 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
     // crossOrigin sur la vidéo de la carte (déjà posé) + CORS R2 (OK).
     if (audioUrl && boost > 1) boostElement(media, boost)
   }, [volume, audioUrl, mediaRef, boost])
+
+  // Signale au décor quelle piste joue, pour que l'égaliseur du fond suive le
+  // vrai spectre. L'élément à écouter n'est pas toujours celui rendu ici :
+  // quand un audioUrl est présent, c'est la vidéo de la carte (mediaRef) qui
+  // porte le son. On passe donc par getMedia(), et on s'accroche via des
+  // écouteurs plutôt que des props React, puisque l'élément peut appartenir à
+  // un autre composant.
+  useEffect(() => {
+    if (!audioUrl) return   // YouTube : pas d'élément média lisible, spectre impossible
+    let media = null
+    let raf = 0
+
+    const onPlay = () => setNowPlaying(media)
+    const onStopped = () => clearNowPlaying(media)
+
+    // La ref de la carte n'est pas encore posée au premier rendu.
+    function attach() {
+      media = getMedia()
+      if (!media) { raf = requestAnimationFrame(attach); return }
+      media.addEventListener('play', onPlay)
+      media.addEventListener('playing', onPlay)
+      media.addEventListener('pause', onStopped)
+      media.addEventListener('ended', onStopped)
+      if (!media.paused) onPlay()
+    }
+    attach()
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      if (!media) return
+      media.removeEventListener('play', onPlay)
+      media.removeEventListener('playing', onPlay)
+      media.removeEventListener('pause', onStopped)
+      media.removeEventListener('ended', onStopped)
+      clearNowPlaying(media)
+    }
+  }, [audioUrl, mediaRef])
 
   useEffect(() => {
     if (!audioUrl || !mediaRef) return
@@ -308,9 +361,12 @@ function CompactPlayer({ ytId, audioUrl, color, title, anime, onStop, onSeek, me
         background: `linear-gradient(90deg, transparent, ${color}45, ${color}45, transparent)`,
       }} />
 
-      {/* Audio element caché — source de vérité pour l'audio */}
+      {/* Audio element caché — source de vérité pour l'audio.
+          crossOrigin + corsUrl sont NÉCESSAIRES pour que l'égaliseur du décor
+          puisse lire le spectre : un média « tainted » routé dans Web Audio
+          devient muet. R2 renvoie bien ACAO sur l'URL ?cors=1. */}
       {audioUrl && !mediaRef ? (
-        <video ref={videoRef} src={audioUrl} autoPlay width={0} height={0}
+        <video ref={videoRef} src={corsUrl(audioUrl)} crossOrigin="anonymous" autoPlay width={0} height={0}
           onLoadedMetadata={e => {
             setDuration(e.target.duration || 0)
             if (startAt > 0) seekMedia(e.target, startAt)

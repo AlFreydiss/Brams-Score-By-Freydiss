@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ensureAnalyser } from '../../lib/audioBoost.js'
+import { subscribeNowPlaying } from '../../lib/nowPlaying.js'
 
 // Fond « scène de concert » de la page tournoi : auras qui respirent, faisceaux
 // de projecteurs balayés, sol néon en perspective, egaliseur au ras du sol,
@@ -16,6 +18,26 @@ const BD_CSS = `
   @keyframes bdEmber   { 0%{transform:translate3d(0,0,0); opacity:0} 10%{opacity:.75} 85%{opacity:.4} 100%{transform:translate3d(26px,-94vh,0); opacity:0} }
   @keyframes bdTwinkle { 0%,100%{opacity:.06} 50%{opacity:.5} }
   @keyframes bdRing    { 0%{transform:translate(-50%,-50%) scale(.6); opacity:.5} 100%{transform:translate(-50%,-50%) scale(1.6); opacity:0} }
+
+  /* Spectre réel : l'animation CSS rend la main, sinon les deux se disputent
+     le même transform et les barres tremblent.
+     Fusion additive : pendant la lecture, le fond derrière l'égaliseur est le
+     voile vidéo flouté, bien plus clair que le noir pour lequel ces couleurs
+     ont été choisies. En composition normale les barres s'y lisaient comme des
+     taches SOMBRES ; en screen elles ajoutent toujours de la lumière. */
+  .bd-eq-live {
+    mix-blend-mode:screen;
+    /* Le masque décoratif ne gardait que les 30 % du bas : une barre qui monte
+       disparaissait presque entièrement. En lecture on garde la quasi-totalité,
+       sinon le spectre est invisible. */
+    -webkit-mask-image:linear-gradient(to top, #000 82%, transparent) !important;
+    mask-image:linear-gradient(to top, #000 82%, transparent) !important;
+  }
+  .bd-eq-live > div {
+    animation:none !important;
+    transition:transform .06s linear;
+    filter:saturate(1.5) brightness(1.45);
+  }
 
   .bd-grid {
     position:absolute; left:-42%; right:-42%; bottom:-20%; height:66%;
@@ -56,7 +78,72 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
     h: 14 + (i * 13.7) % 42,
   })), [])
 
+  // ── Égaliseur branché sur la piste qui joue ───────────────────────────────
+  // Tant qu'aucune piste ne joue, les barres gardent leur animation CSS. Dès
+  // qu'un extrait démarre, on lit le vrai spectre et on pilote scaleY.
+  const eqWrapRef = useRef(null)
+  const [live, setLive] = useState(false)
+
+  useEffect(() => {
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    if (reduced) return
+
+    let raf = 0
+    let analyser = null
+    let freq = null
+    let el = null
+    // Niveau lissé par barre : sans ça le spectre saute d'une frame à l'autre
+    // et l'égaliseur clignote au lieu de danser.
+    const level = new Float32Array(44)
+
+    function stop() {
+      if (raf) { cancelAnimationFrame(raf); raf = 0 }
+      analyser = null
+      freq = null
+      setLive(false)
+      const nodes = eqWrapRef.current?.children
+      if (nodes) for (const n of nodes) n.style.transform = ''
+    }
+
+    function frame() {
+      raf = requestAnimationFrame(frame)
+      if (!analyser || !eqWrapRef.current) return
+      analyser.getByteFrequencyData(freq)
+      const nodes = eqWrapRef.current.children
+      const n = Math.min(nodes.length, level.length)
+      for (let i = 0; i < n; i++) {
+        // Répartition non linéaire : l'essentiel de la musique tient dans le
+        // bas du spectre, une répartition linéaire laisserait la moitié des
+        // barres plates en permanence.
+        const t = i / n
+        const idx = Math.floor(Math.pow(t, 1.7) * freq.length * 0.62)
+        // Courbe de contraste : sur un morceau fort, presque toutes les bandes
+        // sont proches du maximum et l'égaliseur devient un mur plat. La
+        // puissance écrase le bas du spectre et laisse ressortir les crêtes.
+        const v = Math.pow(freq[idx] / 255, 2.2)
+        level[i] += (v - level[i]) * (v > level[i] ? 0.6 : 0.1)  // montée vive, chute douce
+        nodes[i].style.transform = 'scaleY(' + (0.1 + level[i] * 2.1).toFixed(3) + ')'
+      }
+    }
+
+    const unsubscribe = subscribeNowPlaying(next => {
+      if (next === el) return
+      el = next
+      stop()
+      if (!el) return
+      analyser = ensureAnalyser(el)
+      if (!analyser) return   // média non routable : on garde l'animation CSS
+      freq = new Uint8Array(analyser.frequencyBinCount)
+      level.fill(0)
+      setLive(true)
+      raf = requestAnimationFrame(frame)
+    })
+
+    return () => { unsubscribe(); stop() }
+  }, [])
+
   return (
+    <>
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden', background: '#050308' }}>
       <style>{BD_CSS}</style>
 
@@ -108,23 +195,6 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
       <div data-bdfx className="bd-grid" />
       <div data-bdfx className="bd-horizon" />
 
-      {/* Égaliseur au ras du sol — identité musicale */}
-      <div style={{
-        position: 'absolute', left: 0, right: 0, bottom: 0, height: 64,
-        display: 'flex', alignItems: 'flex-end', gap: 5, padding: '0 3vw',
-        maskImage: 'linear-gradient(to top, #000 30%, transparent)',
-        WebkitMaskImage: 'linear-gradient(to top, #000 30%, transparent)',
-        opacity: 0.5,
-      }}>
-        {bars.map((b, i) => (
-          <div key={`b${i}`} data-bdfx style={{
-            flex: 1, height: b.h, borderRadius: '3px 3px 0 0', transformOrigin: 'bottom',
-            background: `linear-gradient(180deg, ${i % 2 ? accentB : accentA}b3, ${i % 2 ? accentB : accentA}26)`,
-            animation: `bdEq ${b.dur}s ${b.del}s ease-in-out infinite`,
-          }} />
-        ))}
-      </div>
-
       {/* Embers montants */}
       {embers.map((e, i) => (
         <div key={`e${i}`} data-bdfx style={{
@@ -151,5 +221,37 @@ export default function TournamentBackdrop({ accentA = '#db2777', accentB = '#7c
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 96% 84% at 50% 36%, transparent 46%, rgba(0,0,0,.66) 100%)' }} />
       <div className="bd-grain" style={{ position: 'absolute', inset: 0, opacity: 0.07, mixBlendMode: 'overlay' }} />
     </div>
+
+    {/* Égaliseur — calque à part, en zIndex 1.
+        Il vit hors du décor à dessein : pendant la lecture, le voile vidéo
+        flouté (PlayingBgOverlay) est lui aussi en zIndex 0 et rendu après, donc
+        il recouvrait l'égaliseur exactement quand celui-ci s'anime. À 1 il
+        passe devant ce voile, et reste sous le contenu de la page (zIndex 2). */}
+    <div
+      aria-hidden
+      ref={eqWrapRef}
+      className={live ? 'bd-eq-live' : undefined}
+      style={{
+        position: 'fixed', left: 0, right: 0, bottom: 0, height: 72, zIndex: 1,
+        pointerEvents: 'none',
+        display: 'flex', alignItems: 'flex-end', gap: 5, padding: '0 3vw',
+        maskImage: 'linear-gradient(to top, #000 30%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to top, #000 30%, transparent)',
+        opacity: live ? 1 : 0.5,
+        transition: 'opacity .5s ease',
+      }}
+    >
+      {bars.map((b, i) => (
+        <div key={`b${i}`} data-bdfx style={{
+          flex: 1, height: b.h, borderRadius: '3px 3px 0 0', transformOrigin: 'bottom',
+          // Lumineux à la base, atténué vers le haut : c'est le pied de la
+          // barre qui reste visible sous le masque, il doit donc porter la
+          // couleur. L'inverse rendait les barres presque transparentes.
+          background: `linear-gradient(0deg, ${i % 2 ? accentB : accentA}e6, ${i % 2 ? accentB : accentA}33)`,
+          animation: `bdEq ${b.dur}s ${b.del}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+    </>
   )
 }
