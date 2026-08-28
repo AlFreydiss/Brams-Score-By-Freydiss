@@ -118,8 +118,16 @@ function PlayingBgOverlay({ ytId, audioUrl, color, syncRef }) {
         WebkitMaskImage: 'linear-gradient(to top, transparent 0, transparent 34px, #000 96px)',
       }}
     >
+      {/* crossOrigin est OBLIGATOIRE ici, bien que ce fond soit muet et purement
+          décoratif : il demande la MÊME URL ?cors=1 que la vidéo de la carte.
+          Sans l'attribut, la requête part sans en-tête Origin, et la réponse —
+          mise en cache sans Access-Control-Allow-Origin — est ensuite réutilisée
+          par la carte, qui elle exige le CORS. Le média devient « tainted », et
+          Web Audio le rend MUET : au bout de quelques duels on lançait un
+          opening sans aucun son. C'est la pollution de cache que corsUrl() sert
+          à éviter, et qu'un seul consommateur non-CORS suffisait à provoquer. */}
       {audioUrl ? (
-        <video ref={bgVideoRef} src={corsUrl(audioUrl)} muted playsInline preload="auto"
+        <video ref={bgVideoRef} src={corsUrl(audioUrl)} crossOrigin="anonymous" muted playsInline preload="auto"
           style={{
             ...media,
             objectPosition: 'center center',
