@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { DUR, EASE } from '../lib/motion.js'
 import SakuraBackdrop from './SakuraBackdrop.jsx'
 import ArenaBackdrop from './tournament/ArenaBackdrop.jsx'
 import LiveStatsBar from './tournament/LiveStatsBar.jsx'
@@ -166,8 +167,9 @@ function CategoryCard({ cat, index }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.045, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
+      transition={{ delay: index * 0.045, duration: DUR.slow, ease: EASE.out }}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       onMouseMove={handleMove}
@@ -366,8 +368,9 @@ function ActiveTournamentCard({ config, progress, currentRound, currentMatch, wi
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
+      transition={{ duration: DUR.slow, ease: EASE.out }}
       style={{
         background: `linear-gradient(145deg, rgba(157,23,77,.07) 0%, rgba(10,10,11,0.97) 100%)`,
         border: '1px solid rgba(157,23,77,.18)',
@@ -516,8 +519,9 @@ function UpcomingCard({ item, index }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
+      transition={{ delay: index * 0.05, duration: DUR.base, ease: EASE.out }}
       style={{
         background: `linear-gradient(145deg, ${cat?.color ?? '#fff'}0c 0%, rgba(10,10,11,.97) 100%)`,
         border: `1px solid ${cat?.color ?? '#fff'}18`,

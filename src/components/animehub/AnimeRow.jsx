@@ -2,15 +2,23 @@
 // Titre Space Grotesk + compteur + « Tout voir › », flèches en bords au hover,
 // masques dégradés latéraux pour suggérer la suite. embla-carousel-react gère
 // le drag tactile et l'inertie (ne PAS réécrire de carrousel maison).
+//
+// Deux points de mouvement :
+//  · le survol de la row est en CSS (.ah2-row:hover .ah2-nav). En état React,
+//    entrer dans une row re-rendait ses vingt cartes à chaque aller-retour.
+//  · la row se révèle quand on l'atteint, et non au montage de la page : avant,
+//    toutes les entrées jouaient d'un coup au chargement, donc les rows du bas
+//    étaient déjà installées quand on arrivait dessus.
 import { useCallback, useEffect, useState } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { C, sectionTitleStyle, FONT_BODY } from './tokens.js'
+import { useReveal } from '../../lib/motion.js'
 
 export default function AnimeRow({ title, count = null, onSeeAll, children }) {
   const [emblaRef, embla] = useEmblaCarousel({ align: 'start', dragFree: true, containScroll: 'trimSnaps' })
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(false)
-  const [hover, setHover] = useState(false)
+  const [revealRef, shown] = useReveal()
 
   const refresh = useCallback(() => {
     if (!embla) return
@@ -31,13 +39,14 @@ export default function AnimeRow({ title, count = null, onSeeAll, children }) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: `linear-gradient(${dir < 0 ? 90 : 270}deg, ${C.bg0} 10%, transparent)`,
     border: 'none', cursor: 'pointer', color: C.text, fontSize: 22, zIndex: 2,
-    opacity: hover ? 1 : 0, transition: 'opacity 160ms ease',
   })
+
+  const mask = `linear-gradient(90deg, ${canPrev ? 'transparent, black 80px' : 'black'}, black calc(100% - 80px), ${canNext ? 'transparent' : 'black'})`
 
   return (
     <section
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      ref={revealRef}
+      className={`ah2-row mo-rise${shown ? ' mo-in' : ''}`}
       // padding:0 obligatoire : index.css applique un gros padding vertical
       // global aux <section> (home) — c'était le « vide géant » sous la toolbar.
       style={{ marginBottom: 34, padding: 0, fontFamily: FONT_BODY }}
@@ -62,15 +71,15 @@ export default function AnimeRow({ title, count = null, onSeeAll, children }) {
         <div ref={emblaRef} style={{
           overflow: 'hidden',
           // fondu de bord : les cartes coupées fondent au lieu d'être tranchées
-          maskImage: `linear-gradient(90deg, ${canPrev ? 'transparent, black 80px' : 'black'}, black calc(100% - 80px), ${canNext ? 'transparent' : 'black'})`,
-          WebkitMaskImage: `linear-gradient(90deg, ${canPrev ? 'transparent, black 80px' : 'black'}, black calc(100% - 80px), ${canNext ? 'transparent' : 'black'})`,
+          maskImage: mask,
+          WebkitMaskImage: mask,
         }}>
           <div style={{ display: 'flex', gap: 14 }}>
             {children}
           </div>
         </div>
-        {canPrev && <button aria-label="Défiler à gauche" onClick={() => embla?.scrollPrev()} style={arrow(-1)}>‹</button>}
-        {canNext && <button aria-label="Défiler à droite" onClick={() => embla?.scrollNext()} style={arrow(1)}>›</button>}
+        {canPrev && <button className="ah2-nav" aria-label="Défiler à gauche" onClick={() => embla?.scrollPrev()} style={arrow(-1)}>‹</button>}
+        {canNext && <button className="ah2-nav" aria-label="Défiler à droite" onClick={() => embla?.scrollNext()} style={arrow(1)}>›</button>}
       </div>
     </section>
   )

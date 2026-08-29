@@ -1,9 +1,9 @@
 // ── AnimeCard — LE composant central de la section Animés & Scans v2 ────────
 // Affiche portrait 2:3, skeleton pendant le chargement, badge sobre unique,
-// hover : scale 1.04 + overlay bas (note, genres, actions icône). La
+// survol : zoom + overlay bas (note, genres, actions icône), en CSS pur. La
 // progression n'apparaît QUE si > 0 (barre laiton fine en bas de l'affiche).
 import { useState } from 'react'
-import { C, FONT_BODY, RADIUS_CARD, SHADOW_CARD } from './tokens.js'
+import { C, FONT_BODY, RADIUS_CARD } from './tokens.js'
 import { TitleArt } from './HeroCinematic.jsx'
 
 const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart'
@@ -12,7 +12,6 @@ const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/key
 // Image backdrop (convention R2 anime/keyart/<id>.jpg, fallback affiche),
 // title-art ou titre en bas-gauche, badge « NOUVEL ÉPISODE » laiton si à jour.
 export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
-  const [hover, setHover] = useState(false)
   const [bdBroken, setBdBroken] = useState(false)
   const backdrop = bdBroken ? (anime.coverImage) : (anime.backdropUrl || `${KEYART_R2}/${anime.id}.jpg`)
   const fresh = anime.badge === 'À JOUR' || anime.badge === 'NOUVEAU'
@@ -21,15 +20,14 @@ export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
       role="button" tabIndex={0} aria-label={anime.title} className="ah2-card"
       onClick={() => onOpen?.(anime)}
       onKeyDown={e => { if (e.key === 'Enter') onOpen?.(anime) }}
-      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none' }}
     >
-      <div style={{
+      {/* Le survol passe par CSS (.ah2-art), plus par un état React : une rangée
+          porte une vingtaine de cartes et le moindre passage de souris les
+          re-rendait toutes. Le zoom part maintenant sur le compositeur. */}
+      <div className="ah2-art" style={{
         position: 'relative', aspectRatio: '16 / 9', borderRadius: RADIUS_CARD, overflow: 'hidden',
         background: 'rgba(255,255,255,0.04)',
-        transform: hover ? 'scale(1.04)' : 'scale(1)',
-        boxShadow: hover ? SHADOW_CARD : 'none',
-        transition: 'transform 180ms ease, box-shadow 180ms ease',
       }}>
         <img
           src={backdrop} alt="" loading="lazy" decoding="async"
@@ -73,7 +71,6 @@ export default function AnimeCard({
   onSetStatus,      // (anime, status|null) — pose/retire un statut Ma Liste
 }) {
   const STATUSES = [['avoir', 'À voir'], ['encours', 'En cours'], ['termine', 'Vu']]
-  const [hover, setHover] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
   return (
@@ -83,18 +80,13 @@ export default function AnimeCard({
       aria-label={anime.title}
       onClick={() => onOpen?.(anime)}
       onKeyDown={e => { if (e.key === 'Enter') onOpen?.(anime) }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none' }}
       className="ah2-card"
     >
-      {/* Affiche 2:3 */}
-      <div style={{
+      {/* Affiche 2:3 — zoom et overlay pilotés en CSS (voir .ah2-art / .ah2-ov) */}
+      <div className="ah2-art" style={{
         position: 'relative', aspectRatio: '2 / 3', borderRadius: RADIUS_CARD, overflow: 'hidden',
         background: 'rgba(255,255,255,0.04)',
-        transform: hover ? 'scale(1.04)' : 'scale(1)',
-        boxShadow: hover ? SHADOW_CARD : 'none',
-        transition: 'transform 180ms ease, box-shadow 180ms ease',
       }}>
         {/* Skeleton shimmer tant que l'image n'est pas là */}
         {!loaded && (
@@ -127,12 +119,13 @@ export default function AnimeCard({
           }}>{anime.badge}</span>
         )}
 
-        {/* Overlay hover : dégradé bas + note/genres + actions */}
-        <div style={{
+        {/* Overlay hover : dégradé bas + note/genres + actions.
+            `.ah2-ov` répond aussi au focus clavier, ce que l'état souris seul
+            ne faisait pas — les actions étaient inatteignables au clavier. */}
+        <div className="ah2-ov" style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
           background: 'linear-gradient(180deg, transparent 45%, rgba(11,14,20,0.92) 100%)',
-          opacity: hover ? 1 : 0, transition: 'opacity 180ms ease',
-          padding: 10, pointerEvents: hover ? 'auto' : 'none',
+          padding: 10,
         }}>
           <div style={{ fontSize: 11.5, color: C.dim, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
             {rating != null && <span style={{ color: C.brass, fontWeight: 600 }}>★ {Number(rating).toFixed(1)}</span>}

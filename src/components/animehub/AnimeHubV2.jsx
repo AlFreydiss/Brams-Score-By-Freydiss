@@ -7,7 +7,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
 import Navbar from '../Navbar.jsx'
-import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL, themeFor, THEME_FONT_HREF } from './tokens.js'
+import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL, SHADOW_CARD, themeFor, THEME_FONT_HREF } from './tokens.js'
+import { DUR, MOTION_CSS } from '../../lib/motion.js'
 import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
@@ -376,6 +377,7 @@ export default function AnimeHubV2(props) {
       {/* Navbar du site PAR-DESSUS le hero : transparente en haut de page,
           reprend son fond solide dès qu'on scrolle (réf. Netflix). */}
       <Navbar forceScrolled={scrolled} />
+      <style>{MOTION_CSS}</style>
       <style>{`
         @keyframes ah2-shimmer { to { background-position: -200% 0 } }
         @keyframes ah2-enter { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
@@ -383,6 +385,31 @@ export default function AnimeHubV2(props) {
         .ah2-enter-2 { animation: ah2-enter .65s .28s cubic-bezier(.22,1,.36,1) both }
         .ah2-seeall:hover { color: ${C.text} !important }
         .ah2-card:focus-visible { outline: 2px solid ${C.brass}; outline-offset: 3px; border-radius: 12px }
+
+        /* ── Survol des cartes, en CSS ─────────────────────────────────────
+           Le zoom et l'overlay étaient pilotés par un état React posé sur
+           chaque carte : survoler une row la re-rendait entièrement, cartes
+           comprises. Ici le navigateur s'en charge seul, sur le compositeur.
+           Le focus clavier ouvre le même overlay — ses boutons étaient
+           inatteignables autrement. */
+        .ah2-art { transition: transform ${DUR.fast}s var(--mo-out), box-shadow ${DUR.base}s var(--mo-out) }
+        .ah2-card:hover .ah2-art,
+        .ah2-card:focus-visible .ah2-art { transform: scale(1.045); box-shadow: ${SHADOW_CARD} }
+        .ah2-ov { opacity: 0; pointer-events: none; transition: opacity ${DUR.fast}s var(--mo-out) }
+        .ah2-card:hover .ah2-ov,
+        .ah2-card:focus-within .ah2-ov { opacity: 1; pointer-events: auto }
+
+        /* Flèches de row : visibles au survol de la row, ou dès qu'on les
+           atteint au clavier. */
+        .ah2-nav { opacity: 0; transition: opacity ${DUR.fast}s var(--mo-out) }
+        .ah2-row:hover .ah2-nav,
+        .ah2-nav:focus-visible { opacity: 1 }
+        @media (hover: none) { .ah2-nav { display: none } }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ah2-art, .ah2-ov, .ah2-nav { transition: none !important }
+          .ah2-card:hover .ah2-art { transform: none !important }
+        }
         /* Dans la GRILLE (pas les rows), les cartes remplissent leur cellule 1fr
            au lieu de rester à leur largeur fixe — sinon elles débordent les
            cellules plus étroites du mobile et créent un scroll horizontal. */

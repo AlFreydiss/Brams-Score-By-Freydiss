@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import CHAPTERS_DATA from '../data/chapters-data.json'
 import { Reader } from './MangaReader.jsx'
 import { onLiveProgress } from '../lib/liveSync.js'
+import { MOTION_CSS } from '../lib/motion.js'
 
 // ── Données ───────────────────────────────────────────────────────────────────
 
@@ -153,28 +154,20 @@ function Sidebar({ open, onClose, progress, onJumpArc, chapters }) {
 
 // ── Card de chapitre ──────────────────────────────────────────────────────────
 
-function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef, onToggleRead }) {
+function ChapterCard({ ch, index = 0, onOpen, status, highlight, cardRef, onToggleRead }) {
   const isRead    = status === 'read'
   const isReading = status === 'reading'
+  const cls = ['sc-card', isRead && 'sc-read', isReading && 'sc-reading', highlight && 'sc-hi']
+    .filter(Boolean).join(' ')
 
   return (
     <button
       ref={cardRef}
       onClick={onOpen}
-      onMouseEnter={onHover}
-      onMouseLeave={() => onHover(false)}
-      style={{
-        position:'relative',
-        background: highlight ? 'rgba(224,82,74,0.22)' : hovered ? 'rgba(224,82,74,0.12)' : isRead ? 'rgba(20,21,24,0.5)' : 'rgba(20,21,24,0.8)',
-        border: highlight ? '2px solid rgba(224,82,74,0.9)' : isReading ? '2px solid var(--accent)' : `1px solid ${hovered ? 'rgba(224,82,74,0.45)' : 'rgba(255,255,255,0.07)'}`,
-        borderRadius:14, padding:'16px',
-        cursor:'pointer', textAlign:'left', fontFamily:'var(--body)',
-        transition:'all 0.18s ease',
-        transform: hovered && !highlight ? 'translateY(-3px)' : 'translateY(0)',
-        boxShadow: highlight ? '0 0 0 3px rgba(224,82,74,0.4)' : hovered ? '0 10px 30px rgba(224,82,74,0.15)' : 'none',
-        opacity: isRead ? 0.65 : 1,
-        animation: isReading ? 'readingPulse 2s ease-in-out infinite' : 'none',
-      }}
+      className={cls}
+      // Cascade d'entrée : les cartes se posent l'une après l'autre, plafonnée
+      // pour que la dernière d'une page de quarante n'attende pas une seconde.
+      style={{ animationDelay: `${Math.min(index * 18, 320)}ms` }}
     >
       {/* Toggle lu / non-lu sans ouvrir le chapitre */}
       <span
@@ -197,7 +190,7 @@ function ChapterCard({ ch, hovered, onHover, onOpen, status, highlight, cardRef,
       </div>
       <div style={{ fontSize:10, fontWeight:700, color:'var(--accent)', letterSpacing:'0.08em', marginBottom:4 }}>CHAPITRE {ch.num}</div>
       <div style={{ fontSize:13, fontWeight:700, color: isRead ? 'rgba(255,255,255,0.5)' : '#fff', lineHeight:1.35, marginBottom:10 }}>{ch.title}</div>
-      <div style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700, color: hovered ? 'var(--accent)' : 'rgba(255,255,255,0.3)', transition:'color 0.18s' }}>
+      <div className="sc-cta" style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)' }}>
         📖 {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
       </div>
     </button>
@@ -262,7 +255,6 @@ export default function ScansPage({ onClose }) {
   const [perPage,   setPerPage]   = useState(PER_PAGE)
   const [goInput,   setGoInput]   = useState('')
   const [highlight, setHighlight] = useState(null)
-  const [hovered,   setHovered]   = useState(null)
   const [reading,   setReading]   = useState(null)
   const [sidebar,   setSidebar]   = useState(false)
   const [hideRead,  setHideRead]  = useState(false)
@@ -414,10 +406,47 @@ export default function ScansPage({ onClose }) {
 
   return (
     <>
+      <style>{MOTION_CSS}</style>
       <style>{`
         @keyframes readingPulse {
           0%,100% { box-shadow: 0 0 0 0 rgba(224,82,74,0.0); }
           50%      { box-shadow: 0 0 0 6px rgba(224,82,74,0.25); }
+        }
+        @keyframes scEnter { from { opacity: 0; transform: translate3d(0,14px,0) } to { opacity: 1; transform: none } }
+
+        /* ── Cartes de chapitre ────────────────────────────────────────────
+           Le survol était un état React remonté à la page : passer la souris
+           sur UNE carte re-rendait les quarante de la grille. Tout est en CSS,
+           et les couleurs de base descendent ici pour que :hover puisse les
+           reprendre (une valeur en style inline gagnerait toujours). */
+        .sc-card {
+          position: relative; border-radius: 14px; padding: 16px;
+          cursor: pointer; text-align: left; font-family: var(--body);
+          background: rgba(20,21,24,0.8);
+          border: 1px solid rgba(255,255,255,0.07);
+          animation: scEnter .42s var(--mo-out) both;
+          transition: background .18s var(--mo-out), border-color .18s var(--mo-out),
+                      box-shadow .18s var(--mo-out), transform .18s var(--mo-out);
+        }
+        .sc-card.sc-read { background: rgba(20,21,24,0.5); opacity: .65 }
+        .sc-card.sc-reading { border: 2px solid var(--accent); animation: scEnter .42s var(--mo-out) both, readingPulse 2s ease-in-out infinite }
+        .sc-card.sc-hi {
+          background: rgba(224,82,74,0.22);
+          border: 2px solid rgba(224,82,74,0.9);
+          box-shadow: 0 0 0 3px rgba(224,82,74,0.4);
+        }
+        .sc-card:not(.sc-hi):hover {
+          background: rgba(224,82,74,0.12);
+          border-color: rgba(224,82,74,0.45);
+          transform: translate3d(0,-3px,0);
+          box-shadow: 0 10px 30px rgba(224,82,74,0.15);
+        }
+        .sc-cta { transition: color .18s var(--mo-out) }
+        .sc-card:not(.sc-hi):hover .sc-cta { color: var(--accent) }
+
+        @media (prefers-reduced-motion: reduce) {
+          .sc-card { animation: none !important; transition: none !important }
+          .sc-card:not(.sc-hi):hover { transform: none !important }
         }
       `}</style>
 
@@ -573,12 +602,11 @@ export default function ScansPage({ onClose }) {
               </div>
             ) : view === 'grid' ? (
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:10 }}>
-                {paginated.map(ch => (
+                {paginated.map((ch, i) => (
                   <ChapterCard
                     key={ch.num}
                     ch={ch}
-                    hovered={hovered === ch.num}
-                    onHover={v => setHovered(v ? ch.num : null)}
+                    index={i}
                     onOpen={() => { const idx = CHAPTERS.indexOf(ch); openChapter(idx) }}
                     onToggleRead={() => toggleRead(ch.num)}
                     status={progress[ch.num] || null}
