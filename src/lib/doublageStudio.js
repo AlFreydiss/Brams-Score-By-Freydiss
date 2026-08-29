@@ -9,6 +9,10 @@
 // MediaRecorder → un .webm téléchargeable.
 
 import { corsUrl } from './audioBoost.js'
+import {
+  createOriginalChain, createVoiceProcessor,
+  speechWindows, scheduleWindows,
+} from './dubMixer.js'
 
 // ── Capacités du navigateur ─────────────────────────────────────────────────
 const HAS_REC = typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined'
@@ -148,8 +152,10 @@ export async function listMics() {
 
 // Mesure de niveau : sert au vu-mètre ET à la notation (elle dit QUAND on
 // parle). L'analyseur n'est jamais relié à la sortie — sinon larsen immédiat.
-export function createMeter(stream) {
-  const ctx = new AudioCtx()
+export function createMeter(stream, shared) {
+  // Le studio passe son contexte partagé : ouvrir un AudioContext par micro
+  // finit par les epuiser (Chrome en plafonne le nombre par page).
+  const ctx = shared || new AudioCtx()
   if (ctx.state === 'suspended') ctx.resume().catch(() => {})
   const source = ctx.createMediaStreamSource(stream)
   const analyser = ctx.createAnalyser()
@@ -170,7 +176,8 @@ export function createMeter(stream) {
     },
     close() {
       try { source.disconnect() } catch { /* déjà coupé */ }
-      try { ctx.close() } catch { /* déjà fermé */ }
+      // Un contexte prêté par l'appelant ne nous appartient pas.
+      if (!shared) { try { ctx.close() } catch { /* déjà fermé */ } }
     },
   }
 }
@@ -468,11 +475,85 @@ export const slug = s => String(s || '')
   .normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'scene'
 
-// Rendu final. Temps réel : un extrait de 30 s prend 30 s à écrire — il
-// n'existe pas d'encodeur vidéo hors-ligne dans le navigateur.
+// ── Incrustations sur l'image ───────────────────────────────────────────────
+function wrapText(g, text, maxWidth) {
+  const lines = []
+  for (const paragraph of String(text).split('\n')) {
+    let line = ''
+    for (const word of paragraph.split(' ')) {
+      const test = line ? line + ' ' + word : word
+      if (g.measureText(test).width > maxWidth && line) { lines.push(line); line = word }
+      else line = test
+    }
+    if (line) lines.push(line)
+  }
+  return lines
+}
+
+function paintCaption(g, w, h, text) {
+  const size = Math.round(h / 20)
+  g.font = `600 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`
+  g.textAlign = 'center'
+  g.textBaseline = 'alphabetic'
+  const lines = wrapText(g, text, w * 0.82).slice(-3)
+  const lineH = size * 1.28
+  let y = h - Math.round(h * 0.07) - (lines.length - 1) * lineH
+
+  for (const line of lines) {
+    // Contour sombre plutôt qu'un bandeau : lisible sur un plan clair comme
+    // sur un plan sombre, sans masquer l'image.
+    g.lineWidth = Math.max(3, size * 0.16)
+    g.strokeStyle = 'rgba(0,0,0,.88)'
+    g.lineJoin = 'round'
+    g.strokeText(line, w / 2, y)
+    g.fillStyle = '#fff'
+    g.fillText(line, w / 2, y)
+    y += lineH
+  }
+}
+
+function paintMark(g, w, h) {
+  const size = Math.round(h / 46)
+  g.font = `600 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`
+  g.textAlign = 'right'
+  g.textBaseline = 'alphabetic'
+  g.fillStyle = 'rgba(0,0,0,.5)'
+  g.fillText('brams.community', w - size * 1.1 + 1, h - size * 1.2 + 1)
+  g.fillStyle = 'rgba(255,255,255,.55)'
+  g.fillText('brams.community', w - size * 1.1, h - size * 1.2)
+}
+
+// Recherche dichotomique de la réplique active : appelée à chaque image.
+function cueAtTime(cues, t) {
+  let lo = 0, hi = cues.length - 1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    const c = cues[mid]
+    if (t < c.start) hi = mid - 1
+    else if (t > c.end) lo = mid + 1
+    else return c
+  }
+  return null
+}
+
+// ── Rendu final ─────────────────────────────────────────────────────────────
+// Temps réel : un extrait de 30 s prend 30 s à écrire, il n'existe pas
+// d'encodeur vidéo hors-ligne dans le navigateur.
+//
+// `voices` liste les prises à poser sur l'image. Une seule entrée en prise
+// continue, une par réplique en mode ligne par ligne :
+//   atClip     instant de la scène où l'on entre dans la prise
+//   offset     position d'entrée dans la prise, en secondes
+//   untilClip  instant où la prise se referme (fondu de sortie)
 export async function renderDub({
-  videoUrl, startAt, endAt, voiceBlob,
-  voiceGain = 1, ambience = 0.12, videoDelayMs = 0, syncMs = 0,
+  videoUrl, startAt, endAt,
+  voices = [],
+  cues = [],
+  removal = 1,
+  ambience = 0.55,
+  duckTo = 0.35,
+  voicePreset = 'naturelle',
+  captions = true,
   onProgress, onStage,
 }) {
   if (!CAN_EXPORT_VIDEO) throw new Error("Ce navigateur ne sait pas encoder de vidéo.")
@@ -495,24 +576,22 @@ export async function renderDub({
     await seekTo(video, startAt)
     if (audio.state === 'suspended') await audio.resume()
 
-    onStage?.('Décodage de ta voix…')
-    const voiceBuf = await audio.decodeAudioData(await voiceBlob.arrayBuffer())
-
-    // Graphe : voix + ambiance → un seul flux. La sortie ne passe JAMAIS par
-    // audio.destination, donc rien ne sort des haut-parleurs pendant le rendu.
     const dest = audio.createMediaStreamDestination()
 
-    const voiceNode = audio.createBufferSource()
-    voiceNode.buffer = voiceBuf
-    const voiceLevel = audio.createGain()
-    voiceLevel.gain.value = voiceGain
-    voiceNode.connect(voiceLevel).connect(dest)
-
-    const ambientLevel = audio.createGain()
-    ambientLevel.gain.value = ambience
-    audio.createMediaElementSource(video).connect(ambientLevel).connect(dest)
+    // Piste d'origine : voix retirée pendant les répliques, musique intacte
+    // entre elles. Même chaîne qu'à l'écoute, donc le fichier sonne comme
+    // l'aperçu.
+    onStage?.('Montage de la piste…')
+    const elementSource = audio.createMediaElementSource(video)
+    const original = createOriginalChain(audio, elementSource)
+    original.output.connect(dest)
+    original.levelParam.value = ambience
     video.muted = false
     video.volume = 1
+
+    // Ta voix : la prise reste brute sur le disque, le rendu est appliqué ici.
+    const chain = createVoiceProcessor(audio, voicePreset)
+    chain.output.connect(dest)
 
     // Image : le <video> recopié dans un canvas, capturé à 30 i/s.
     const w = video.videoWidth || 1280
@@ -521,7 +600,7 @@ export async function renderDub({
     canvas.width = w
     canvas.height = h
     const g = canvas.getContext('2d', { alpha: false })
-    g.drawImage(video, 0, 0, w, h)   // une première image avant la capture
+    g.drawImage(video, 0, 0, w, h)
     capture = canvas.captureStream(30)
 
     const stream = new MediaStream([
@@ -537,20 +616,57 @@ export async function renderDub({
     rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data) }
     const closed = new Promise(resolve => { rec.onstop = resolve })
 
-    // Recalage : la voix a démarré videoDelayMs AVANT l'image. `syncMs` est le
-    // réglage manuel (positif = voix plus tard).
-    const shift = (videoDelayMs - syncMs) / 1000
-    const offset = Math.max(0, shift)   // on entre dans la voix plus loin
-    const lead = Math.max(0, -shift)    // ou on la fait attendre
-
     onStage?.('Rendu en temps réel…')
     rec.start(250)
     const wallStart = performance.now()
-    const t0 = audio.currentTime + 0.08
-    voiceNode.start(t0 + lead, Math.min(offset, Math.max(0, voiceBuf.duration - 0.05)))
+    const t0 = audio.currentTime + 0.12
+
+    // Automation : le creusement et l'atténuation ne valent que sur les
+    // répliques. Hors répliques, la piste passe entière.
+    scheduleWindows(
+      [
+        ...original.removalTargets(removal),
+        { param: original.duckParam, idle: 1, active: duckTo },
+      ],
+      speechWindows(cues, startAt),
+      t0,
+    )
+
+    for (const v of voices) {
+      if (!v?.buffer) continue
+      const src = audio.createBufferSource()
+      src.buffer = v.buffer
+      const gain = audio.createGain()
+      src.connect(gain)
+      gain.connect(chain.input)
+
+      const at = t0 + Math.max(0, v.atClip - startAt)
+      const level = v.gain ?? 1
+      // Fondu court aux deux bouts : sans lui, le souffle du pré-décompte
+      // s'empile d'une réplique à l'autre en mode ligne par ligne.
+      gain.gain.setValueAtTime(0, at)
+      gain.gain.linearRampToValueAtTime(level, at + 0.09)
+      const until = v.untilClip ? t0 + (v.untilClip - startAt) : null
+      if (until && until > at + 0.3) {
+        gain.gain.setValueAtTime(level, until)
+        gain.gain.linearRampToValueAtTime(0, until + 0.18)
+      }
+      const enter = Math.min(Math.max(0, v.offset || 0), Math.max(0, src.buffer.duration - 0.05))
+      src.start(at, enter)
+      if (until) { try { src.stop(until + 0.25) } catch { /* déjà planifié */ } }
+    }
+
     await video.play()
 
-    const paint = () => { g.drawImage(video, 0, 0, w, h); raf = requestAnimationFrame(paint) }
+    const paint = () => {
+      g.drawImage(video, 0, 0, w, h)
+      if (captions) {
+        const line = cueAtTime(cues, video.currentTime)
+        if (line) paintCaption(g, w, h, line.text)
+      }
+      paintMark(g, w, h)
+      raf = requestAnimationFrame(paint)
+    }
     raf = requestAnimationFrame(paint)
 
     const span = Math.max(0.5, endAt - startAt)
@@ -562,7 +678,6 @@ export async function renderDub({
     })
 
     cancelAnimationFrame(raf)
-    try { voiceNode.stop() } catch { /* déjà fini */ }
     video.pause()
     const written = (performance.now() - wallStart) / 1000
     rec.stop()
