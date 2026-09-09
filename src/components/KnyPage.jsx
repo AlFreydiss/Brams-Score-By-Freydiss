@@ -6,7 +6,7 @@ import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/kny-videos.json'
-import CHAPTERS from '../data/kny-chapters.json'
+import CHAPTERS from '../data/manga/kny.json'
 
 const VIDEOS = VIDEOS_RAW
 

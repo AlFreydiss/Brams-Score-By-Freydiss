@@ -5,7 +5,7 @@ import EpisodeWatch from './EpisodeWatch.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/aot-videos.json'
-import CHAPTERS from '../data/aot-chapters.json'
+import CHAPTERS from '../data/manga/aot.json'
 
 const VIDEOS = VIDEOS_RAW
 

@@ -6,7 +6,7 @@ import { Reader } from './MangaReader.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/bluelock-videos.json'
-import CHAPTERS_RAW from '../data/bluelock-chapters.json'
+import CHAPTERS_RAW from '../data/manga/blue-lock.json'
 
 const VIDEOS = VIDEOS_RAW
 
