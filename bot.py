@@ -12,19 +12,21 @@ from flask import Flask
 from threading import Thread, Lock
 import os
 import asyncio
+import secrets
 import yt_dlp
 import psycopg2
 from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
 from utils.security import add_security_headers, sanitize, sanitize_name, validate_amount, is_safe_url
 from utils.wrapped_math import (
-    overlap_same_channel as _wr_overlap,
     best_binome as _wr_best_binome,
     membership_ok as _wr_membership_ok,
     days_aboard as _wr_days_aboard,
     hour_vibe as _wr_hour_vibe,
     sort_sessions as _wr_sort_sessions,
     clamp_sessions as _wr_clamp_sessions,
+    group_by_channel as _wr_group_by_channel,
+    overlap_grouped as _wr_overlap_grouped,
     percentile_for as _wr_percentile_for,
     MEMBERSHIP_DAYS as WRAPPED_MIN_MEMBERSHIP_DAYS,
 )
@@ -1564,38 +1566,22 @@ def _ai_live_channels(guild) -> dict:
     return out
 
 
-def _ai_overlap_intervals(udata, cutoff, now, live_ch=None):
-    iv = []
-    for s in udata.get("vocal_sessions", []):
-        try:
-            if s["end"] <= cutoff:
-                continue
-            iv.append((max(float(s["start"]), cutoff), min(float(s["end"]), now), s.get("channel")))
-        except Exception:
-            continue
-    jt = udata.get("join_time")
-    if jt and now > jt:
-        iv.append((max(float(jt), cutoff), now, live_ch or udata.get("voice_channel")))
-    return _wr_clamp_sessions(iv, MAX_SESSION_SECONDS)
-
-
 def _ai_overlap_partner(member) -> tuple[str | None, float]:
     """(uid, heures) du membre avec qui on a partagé le plus de vocal sur 7j (même salon)."""
     uid = str(member.id)
     now = now_ts()
     cutoff = now - 7 * 86400
     live = _ai_live_channels(getattr(member, "guild", None))
-    mine = _ai_overlap_intervals(get_user(_CACHE, uid), cutoff, now, live.get(uid))
+    # _wr_sessions est defini plus bas dans le module : resolu a l'appel, pas a
+    # l'import. C'est le seul constructeur de sessions (tri, filtre, cap 24h).
+    mine = _wr_group_by_channel(_wr_sessions(get_user(_CACHE, uid), cutoff, now, live.get(uid)))
     if not mine:
         return None, 0.0
     best_uid, best = None, 0.0
     for other_uid, other in _CACHE.items():
         if other_uid == uid or not isinstance(other, dict):
             continue
-        theirs = _ai_overlap_intervals(other, cutoff, now, live.get(other_uid))
-        if not theirs:
-            continue
-        ov = _wr_overlap(mine, theirs)
+        ov = _wr_overlap_grouped(mine, _wr_sessions(other, cutoff, now, live.get(other_uid)))
         if ov > best:
             best, best_uid = ov, other_uid
     return best_uid, best
@@ -8494,9 +8480,6 @@ def _wr_sessions(udata, cutoff, now, live_channel=None):
         out.append((max(float(jt), cutoff), now, ch))
     return _wr_sort_sessions(_wr_clamp_sessions(out, MAX_SESSION_SECONDS))
 
-def _wr_live_channels(guild):
-    return _ai_live_channels(guild)
-
 def _wr_joined_ts(uid, udata, guild=None):
     candidates = []
     uid_s = str(uid) if uid else ""
@@ -8550,7 +8533,7 @@ def _wr_is_eligible(member, udata, now, guild=None, uid=None):
     return _wr_membership_ok(joined, now)
 
 def _wr_collect_sessions(guild, now, cutoff):
-    live = _wr_live_channels(guild)
+    live = _ai_live_channels(guild)
     all_sessions = {}
     hours_by_uid = []
     for uid, udata in list(_CACHE.items()):
@@ -8618,13 +8601,12 @@ def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted, joined_ts=N
             continue
 
     vibe = _wr_hour_vibe(sess)
-    username = udata.get("username")
-    avatar = udata.get("avatar_url")
-    if guild and str(uid).isdigit():
-        m = guild.get_member(int(uid))
-        if m:
-            username = username or m.display_name
-            avatar = avatar or str(m.display_avatar.with_size(128).url)
+    # _wr_collect_sessions a deja resolu pseudo et avatar (cache puis Member) :
+    # les recalculer ici dupliquait la logique et refaisait un get_member, avec le
+    # risque que le binome et le proprietaire du payload ne soient pas d'accord.
+    _pack = all_sessions.get(str(uid))
+    username = (_pack[1] if _pack else None) or udata.get("username")
+    avatar = (_pack[2] if _pack else None) or udata.get("avatar_url")
 
     return {
         "v": 2,
@@ -8699,14 +8681,12 @@ def _wr_embed(token):
     )
     return e
 
-async def _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid):
-    import secrets as _secrets
+async def _wr_generate_one(uid, guild, now, period, all_sessions, hours_by_uid):
     udata = get_user(_CACHE, uid)
-    member = guild.get_member(int(uid)) if guild and str(uid).isdigit() else None
     joined = _wr_joined_ts(uid, udata, guild)
     sess = all_sessions.get(uid, ([], None, None))[0]
     payload = _wr_payload(uid, udata, sess, all_sessions, guild, hours_by_uid, joined_ts=joined, now=now)
-    token = await _wr_get_token(uid, period) or _secrets.token_urlsafe(16)
+    token = await _wr_get_token(uid, period) or secrets.token_urlsafe(16)
     if not await _wr_upsert_snapshot(uid, period, payload, token):
         return None
     return token
@@ -8732,7 +8712,7 @@ async def wrapped_cmd(interaction: discord.Interaction):
     cutoff = now - 30 * 86400
     period = _wr_period()
     all_sessions, hours_by_uid = _wr_collect_sessions(guild, now, cutoff)
-    token = await _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid)
+    token = await _wr_generate_one(uid, guild, now, period, all_sessions, hours_by_uid)
     if not token:
         await interaction.followup.send(
             "🧭 Impossible d'écrire le log pour l'instant. Réessaie dans une minute.",
@@ -8781,7 +8761,7 @@ async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
 
     ok = fail_dm = 0
     for uid in eligible:
-        token = await _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid)
+        token = await _wr_generate_one(uid, guild, now, period, all_sessions, hours_by_uid)
         if not token:
             continue
         ok += 1
@@ -8829,7 +8809,6 @@ FLASHBACK_URL = os.environ.get("FLASHBACK_URL", "https://brams.community/flashba
     app_commands.Choice(name="Rang Roi des pirates", value="rank-roi"),
 ])
 async def flashback_membre_cmd(interaction: discord.Interaction, membre: discord.Member, type_milestone: str = "anniversaire-1an"):
-    import secrets as _secrets
     import datetime as _dt
     await interaction.response.defer(ephemeral=True)
     uid = str(membre.id)
@@ -8838,14 +8817,20 @@ async def flashback_membre_cmd(interaction: discord.Interaction, membre: discord
 
     # Payload depuis la data dispo : arrivée Discord, rangs connus, records 30 j,
     # compagnons par chevauchement (réutilise les helpers Wrapped).
-    sess = _wr_sessions(udata, now - 30 * 86400, now)
+    # Les salons live doivent etre resolus, sinon la session ouverte de chacun
+    # part sans salon et le chevauchement "meme salon" la jette.
+    cutoff30 = now - 30 * 86400
+    live = _ai_live_channels(interaction.guild)
+    sess = _wr_sessions(udata, cutoff30, now, live.get(uid))
     companions = []
-    for ouid, oudata in list(_CACHE.items()):
-        if ouid == uid or not isinstance(oudata, dict) or "vocal_sessions" not in oudata:
-            continue
-        ov = _wr_overlap(sess, _wr_sessions(oudata, now - 30 * 86400, now))
-        if ov >= 1:
-            companions.append((ov, oudata.get("username") or f"Pirate #{str(ouid)[-4:]}"))
+    gsess = _wr_group_by_channel(sess)
+    if gsess:
+        for ouid, oudata in list(_CACHE.items()):
+            if ouid == uid or not isinstance(oudata, dict) or "vocal_sessions" not in oudata:
+                continue
+            ov = _wr_overlap_grouped(gsess, _wr_sessions(oudata, cutoff30, now, live.get(ouid)))
+            if ov >= 1:
+                companions.append((ov, oudata.get("username") or f"Pirate #{str(ouid)[-4:]}"))
     companions.sort(reverse=True)
 
     days_map = {}
@@ -8865,7 +8850,7 @@ async def flashback_membre_cmd(interaction: discord.Interaction, membre: discord
         "best_day": {"date": best[0].isoformat(), "hours": round(best[1] / 3600, 1)} if best else None,
         "prime": {"end": int(udata.get("berrys", 0))},
     }
-    token = _secrets.token_urlsafe(16)
+    token = secrets.token_urlsafe(16)
     url = f"{_SUPA_REST}/rest/v1/member_milestones?on_conflict=member_id,type"
     headers = {"apikey": _SUPA_KEY, "Authorization": f"Bearer {_SUPA_KEY}",
                "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates,return=minimal"}

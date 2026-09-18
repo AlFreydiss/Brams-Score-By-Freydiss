@@ -1,4 +1,15 @@
-"""Tests du binôme vocal : même salon obligatoire (bug Douglas)."""
+"""Tests du binôme vocal : même salon obligatoire (bug Douglas).
+
+Lance-les avec `python tests/test_wrapped_math.py` ou `pytest tests`.
+wrapped_math est importe depuis utils/ ajoute au sys.path, et non via le
+package utils : utils/__init__.py importe config, qui a besoin des variables
+d'environnement du bot. Les calculs testes ici sont purs.
+"""
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "utils"))
+
 from wrapped_math import (
     overlap_same_channel,
     best_binome,
