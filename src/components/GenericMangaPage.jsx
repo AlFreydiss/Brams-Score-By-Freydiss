@@ -22,16 +22,68 @@ function EmptyState({ icon, title, desc }) {
   )
 }
 
+function ScansToolbar({ color, total, shown, query, onQuery, desc, onToggleDesc, unread, onToggleUnread, ranges, range, onRange, resume, onResume }) {
+  const pill = (active) => ({
+    height: 34, padding: '0 13px', borderRadius: 9, cursor: 'pointer', flexShrink: 0,
+    fontFamily: 'var(--body)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
+    background: active ? `${color}26` : 'rgba(255,255,255,0.05)',
+    border: `1px solid ${active ? color + '66' : 'rgba(255,255,255,0.1)'}`,
+    color: active ? color : 'rgba(255,255,255,0.65)',
+    transition: 'all .15s',
+  })
+  return (
+    <div style={{ marginBottom: 18 }}>
+      {resume && (
+        <button onClick={onResume} style={{
+          display: 'flex', alignItems: 'center', gap: 12, width: '100%', marginBottom: 14,
+          padding: '13px 16px', borderRadius: 13, cursor: 'pointer', textAlign: 'left',
+          background: `linear-gradient(90deg, ${color}22, ${color}08)`,
+          border: `1px solid ${color}44`, fontFamily: 'var(--body)',
+        }}>
+          {resume.pages?.[0] && (
+            <img src={resume.pages[0]} alt="" loading="lazy"
+              style={{ width: 42, height: 56, objectFit: 'cover', objectPosition: 'center top', borderRadius: 7, flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color }}>Reprendre</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Chapitre {resume.num}
+            </div>
+          </div>
+        </button>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <input value={query} onChange={e => onQuery(e.target.value)} placeholder="Numéro ou titre…" aria-label="Rechercher un chapitre"
+          style={{ height: 34, flex: '1 1 180px', maxWidth: 260, padding: '0 12px', borderRadius: 9, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 12.5, outline: 'none', fontFamily: 'var(--body)' }} />
+        <button onClick={onToggleDesc} style={pill(desc)} title="Inverser l'ordre">
+          {desc ? 'Plus récents' : 'Plus anciens'}
+        </button>
+        <button onClick={onToggleUnread} style={pill(unread)}>Non lus</button>
+        {ranges.length > 1 && ranges.map((r, i) => (
+          <button key={i} onClick={() => onRange(i)} style={pill(range === i)}>{r.label}</button>
+        ))}
+        <div style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>
+          {shown === total ? `${total} chapitres` : `${shown} / ${total}`}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ChapterCard({ ch, status, onClick, color }) {
   const [hovered, setHovered] = useState(false)
   const isRead    = status === 'read'
   const isReading = status === 'reading'
+  const cover     = ch.pages?.[0] || null
+  const pageCount = ch.pages?.length || 0
+  // « Chapitre 12 » n'est pas un titre : c'est le repli pose a la generation.
+  const realTitle = ch.title && !/^chapitre\s*[\d.]+$/i.test(String(ch.title).trim()) ? ch.title : null
   return (
     <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{
       position: 'relative',
       background: hovered ? `${color}18` : isRead ? 'rgba(20,21,24,0.5)' : 'rgba(20,21,24,0.85)',
       border: isReading ? `2px solid ${color}` : `1px solid ${hovered ? color + '55' : 'rgba(255,255,255,0.07)'}`,
-      borderRadius: 14, padding: '16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--body)',
+      borderRadius: 14, padding: '10px', cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--body)',
       transition: 'all 0.18s ease',
       transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
       boxShadow: hovered ? `0 10px 28px ${color}18` : 'none',
@@ -39,11 +91,28 @@ function ChapterCard({ ch, status, onClick, color }) {
     }}>
       {isRead && <div style={{ position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: '50%', background: 'rgba(52,211,153,0.2)', border: '1px solid rgba(52,211,153,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#34d399', fontWeight: 700 }}>✓</div>}
       {isReading && <div style={{ position: 'absolute', top: 10, right: 10, fontSize: 10, fontWeight: 700, background: `${color}22`, color, border: `1px solid ${color}55`, borderRadius: 100, padding: '2px 8px' }}>En cours</div>}
-      <div style={{ fontSize: 22, marginBottom: 10 }}>{ch.emoji}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '0.08em', marginBottom: 4 }}>CHAPITRE {ch.num}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: isRead ? 'rgba(255,255,255,0.5)' : '#fff', lineHeight: 1.35, marginBottom: 10 }}>{ch.title}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: hovered ? color : 'rgba(255,255,255,0.3)', transition: 'color 0.18s' }}>
-        📖 {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
+      {/* Vignette = premiere page du chapitre. Elle est deja dans le JSON, donc
+          gratuite : un emoji repete ne disait rien du contenu. */}
+      <div style={{ position: 'relative', aspectRatio: '3 / 4', borderRadius: 9, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', marginBottom: 10 }}>
+        {cover ? (
+          <img src={cover} alt="" loading="lazy" decoding="async"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', filter: isRead ? 'grayscale(.55) brightness(.75)' : 'none', transform: hovered ? 'scale(1.05)' : 'scale(1)', transition: 'transform .35s ease, filter .2s' }} />
+        ) : (
+          <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 26, opacity: .3 }}>{ch.emoji}</div>
+        )}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 45%, rgba(8,7,12,.92))' }} />
+        <div style={{ position: 'absolute', left: 8, right: 8, bottom: 7, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
+          <span style={{ fontSize: 15, fontWeight: 900, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,.8)', lineHeight: 1.1 }}>#{ch.num}</span>
+          {pageCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.72)', textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{pageCount} p.</span>}
+        </div>
+      </div>
+      {/* Titre affiche seulement s'il en est un : sinon « Chapitre 12 » repetait
+          le numero deja pose sur la vignette. */}
+      {realTitle && (
+        <div style={{ fontSize: 12, fontWeight: 700, color: isRead ? 'rgba(255,255,255,0.45)' : '#fff', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{ch.title}</div>
+      )}
+      <div style={{ fontSize: 11, fontWeight: 700, marginTop: realTitle ? 6 : 0, color: hovered ? color : 'rgba(255,255,255,0.32)', transition: 'color 0.18s' }}>
+        {isRead ? 'Relire' : isReading ? 'Continuer' : 'Lire'}
       </div>
     </button>
   )
@@ -534,6 +603,12 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
   const [playerIdx,    setPlayerIdx]    = useState(null)
   const [videoArc,     setVideoArc]     = useState('all')
+  // Filtres de la grille de chapitres. Kingdom en compte 874 : sans recherche,
+  // tri et tranches, la page est inexploitable.
+  const [scanQuery,    setScanQuery]    = useState('')
+  const [scanDesc,     setScanDesc]     = useState(false)
+  const [scanUnread,   setScanUnread]   = useState(false)
+  const [scanRange,    setScanRange]    = useState(0)
   const [videoProgress,setVideoProgress]= useState(() => loadVideoProgress(namespace))
   const arcRefs = useRef({})
   const scrollRef = useRef(null)
@@ -634,8 +709,43 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     return m
   }, [CHAPTERS])
 
+  // Recherche, tri et « non lus » s'appliquent a toute liste affichee, arcs
+  // compris. Les tranches ne concernent que la liste a plat.
+  const filterChapters = useCallback((list) => {
+    const q = scanQuery.trim().toLowerCase()
+    let out = q
+      ? list.filter(c => String(c.num).includes(q) || (c.title || '').toLowerCase().includes(q))
+      : list
+    if (scanUnread) out = out.filter(c => progress[c.num] !== 'read')
+    return [...out].sort((a, b) => scanDesc ? Number(b.num) - Number(a.num) : Number(a.num) - Number(b.num))
+  }, [scanQuery, scanUnread, scanDesc, progress])
+
+  const flatFiltered = useMemo(() => filterChapters(CHAPTERS), [filterChapters, CHAPTERS])
+
+  // Au-dela de 120 chapitres, on decoupe par centaines : Kingdom en a 874 et la
+  // page devenait un mur de vignettes.
+  const ranges = useMemo(() => {
+    if (chaptersByArc || flatFiltered.length <= 120) return []
+    const out = []
+    for (let i = 0; i < flatFiltered.length; i += 100) {
+      const part = flatFiltered.slice(i, i + 100)
+      out.push({ label: `${part[0].num}–${part[part.length - 1].num}`, chapters: part })
+    }
+    return out
+  }, [chaptersByArc, flatFiltered])
+
+  const shownChapters = ranges.length > 1 ? (ranges[Math.min(scanRange, ranges.length - 1)]?.chapters || []) : flatFiltered
+
+  // Reprise : le chapitre en cours, sinon le premier non lu.
+  const resumeChapter = useMemo(() => {
+    const reading = CHAPTERS.find(c => progress[c.num] === 'reading')
+    if (reading) return reading
+    const unread = CHAPTERS.find(c => progress[c.num] !== 'read')
+    return unread && unread !== CHAPTERS[0] ? unread : null
+  }, [CHAPTERS, progress])
+
   const renderChapterGrid = (chapters) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
       {chapters.map(ch => (
         <ChapterCard key={ch.num} ch={ch} color={color} status={progress[ch.num] || null} onClick={() => openChapter(chNumToIdx[ch.num])} />
       ))}
@@ -801,14 +911,32 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
             {tab === 'scans' ? (
               CHAPTERS.length === 0
                 ? <EmptyState icon={headerEmoji} title="Scans bientôt disponibles" desc={`Les chapitres de ${title} seront ajoutés prochainement.`} />
-                : chaptersByArc
-                  ? chaptersByArc.map(arc => (
-                      <div key={arc.name} ref={el => { if (el) arcRefs.current[arc.name] = el }}>
-                        <ArcHeader arc={arc} color={color} readCount={readCountForArc(arc)} total={arc.chapters.length} />
-                        {renderChapterGrid(arc.chapters)}
-                      </div>
-                    ))
-                  : renderChapterGrid(CHAPTERS)
+                : <>
+                    <ScansToolbar
+                      color={color}
+                      total={CHAPTERS.length}
+                      shown={chaptersByArc ? CHAPTERS.length : shownChapters.length}
+                      query={scanQuery} onQuery={v => { setScanQuery(v); setScanRange(0) }}
+                      desc={scanDesc} onToggleDesc={() => { setScanDesc(d => !d); setScanRange(0) }}
+                      unread={scanUnread} onToggleUnread={() => { setScanUnread(u => !u); setScanRange(0) }}
+                      ranges={ranges} range={scanRange} onRange={setScanRange}
+                      resume={resumeChapter} onResume={() => openChapter(chNumToIdx[resumeChapter.num])}
+                    />
+                    {chaptersByArc
+                      ? chaptersByArc.map(arc => {
+                          const list = filterChapters(arc.chapters)
+                          if (!list.length) return null
+                          return (
+                            <div key={arc.name} ref={el => { if (el) arcRefs.current[arc.name] = el }}>
+                              <ArcHeader arc={arc} color={color} readCount={readCountForArc(arc)} total={arc.chapters.length} />
+                              {renderChapterGrid(list)}
+                            </div>
+                          )
+                        })
+                      : shownChapters.length
+                        ? renderChapterGrid(shownChapters)
+                        : <EmptyState icon="🔍" title="Aucun chapitre" desc="Aucun chapitre ne correspond à ces filtres." />}
+                  </>
             ) : (
               VIDEOS.length === 0
                 ? <EmptyState icon="🎬" title="Épisodes bientôt disponibles" desc="Les épisodes seront ajoutés prochainement." />
