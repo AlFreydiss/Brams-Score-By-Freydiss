@@ -7,6 +7,8 @@ from wrapped_math import (
     sort_sessions,
     group_by_channel,
     overlap_grouped,
+    clamp_sessions,
+    percentile_for,
     MEMBERSHIP_DAYS,
 )
 
@@ -114,6 +116,42 @@ def test_best_binome_without_any_channel_returns_none():
     mine = [(0, 10 * 3600, None)]
     others = {"x": ([(0, 10 * 3600, "sunny")], "X", None)}
     assert best_binome("me", mine, others) is None
+
+
+def test_clamp_sessions_keeps_last_24h():
+    # seconds_since plafonne deja chaque session a 24h, _wr_sessions ne le faisait
+    # pas : un join_time corrompu de 30j donnait 720h dans le classement.
+    day = 86400.0
+    out = clamp_sessions([(0.0, 30 * day, "c")], day)
+    assert out == [(29 * day, 30 * day, "c")]
+
+
+def test_clamp_sessions_leaves_normal_sessions_alone():
+    rows = [(0.0, 3600.0, "a"), (100.0, 100.0 + 6 * 3600, "b")]
+    assert clamp_sessions(rows, 86400.0) == rows
+
+
+def test_clamp_sessions_does_not_inflate_overlap():
+    day = 86400.0
+    fantome = clamp_sessions([(0.0, 30 * day, "c")], day)
+    vrai = clamp_sessions([(0.0, 2 * 3600, "c")], day)
+    # le fantome ne partage plus 2h avec une session du debut de fenetre
+    assert overlap_same_channel(fantome, vrai) == 0.0
+
+
+def test_percentile_none_when_user_has_no_hours():
+    # Sans heures on n'est pas classe : renvoyer 100 faisait afficher TOP 100%.
+    classement = [("a", 12.0), ("b", 3.0)]
+    assert percentile_for("a", classement) == 50
+    assert percentile_for("b", classement) == 100
+    assert percentile_for("moi", classement) is None
+    assert percentile_for("moi", []) is None
+
+
+def test_percentile_ignores_zero_hour_entries():
+    classement = [("a", 12.0), ("moi", 0.0)]
+    assert percentile_for("a", classement) == 100
+    assert percentile_for("moi", classement) is None
 
 
 if __name__ == "__main__":

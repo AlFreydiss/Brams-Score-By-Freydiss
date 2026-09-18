@@ -39,6 +39,41 @@ def sort_sessions(sessions: list) -> list:
     return sorted(sessions, key=lambda s: (s[0], s[1]))
 
 
+def clamp_sessions(sessions: list, max_seconds: float) -> list:
+    """Borne chaque session à `max_seconds` en gardant la FIN.
+
+    seconds_since() plafonne déjà chaque session à MAX_SESSION_SECONDS, mais les
+    constructeurs d'intervalles ne le faisaient pas : un join_time corrompu (très
+    ancien) produisait une session ouverte de plusieurs centaines d'heures qui
+    dominait le classement et gonflait le temps partagé. On garde la fin plutôt
+    que le début : sur une session fantôme, c'est le présent qui est fiable.
+    """
+    out = []
+    for item in sessions:
+        st, en = float(item[0]), float(item[1])
+        if en - st > max_seconds:
+            st = en - max_seconds
+        out.append((st, en) + tuple(item[2:]))
+    return out
+
+
+def percentile_for(uid, hours_sorted: list) -> int | None:
+    """Rang vocal en % parmi ceux qui ont des heures. None = non classé.
+
+    hours_sorted : [(uid, heures)] trié par heures décroissantes. Un membre sans
+    heures n'est PAS classé : l'ancien repli sur la dernière place l'affichait
+    « TOP 100% » comme s'il figurait au classement.
+    """
+    voiced = [u for u, h in hours_sorted if h > 0]
+    if not voiced:
+        return None
+    try:
+        rankpos = voiced.index(str(uid))
+    except ValueError:
+        return None
+    return max(1, round((rankpos + 1) / len(voiced) * 100))
+
+
 def group_by_channel(sessions: list[tuple[float, float, object]]) -> dict[str, list[tuple[float, float]]]:
     by: dict[str, list[tuple[float, float]]] = {}
     for item in sessions:

@@ -24,6 +24,8 @@ from utils.wrapped_math import (
     days_aboard as _wr_days_aboard,
     hour_vibe as _wr_hour_vibe,
     sort_sessions as _wr_sort_sessions,
+    clamp_sessions as _wr_clamp_sessions,
+    percentile_for as _wr_percentile_for,
     MEMBERSHIP_DAYS as WRAPPED_MIN_MEMBERSHIP_DAYS,
 )
 
@@ -1574,7 +1576,7 @@ def _ai_overlap_intervals(udata, cutoff, now, live_ch=None):
     jt = udata.get("join_time")
     if jt and now > jt:
         iv.append((max(float(jt), cutoff), now, live_ch or udata.get("voice_channel")))
-    return iv
+    return _wr_clamp_sessions(iv, MAX_SESSION_SECONDS)
 
 
 def _ai_overlap_partner(member) -> tuple[str | None, float]:
@@ -8490,7 +8492,7 @@ def _wr_sessions(udata, cutoff, now, live_channel=None):
     if jt and now > jt:
         ch = live_channel or udata.get("voice_channel")
         out.append((max(float(jt), cutoff), now, ch))
-    return _wr_sort_sessions(out)
+    return _wr_sort_sessions(_wr_clamp_sessions(out, MAX_SESSION_SECONDS))
 
 def _wr_live_channels(guild):
     return _ai_live_channels(guild)
@@ -8523,12 +8525,28 @@ def _wr_joined_ts(uid, udata, guild=None):
         candidates.append(min(starts))
     return min(candidates) if candidates else None
 
-def _wr_is_eligible(member, udata, now, guild=None):
-    joined = None
-    if member and getattr(member, "joined_at", None):
-        joined = member.joined_at.timestamp()
-    if not joined:
-        joined = _wr_joined_ts(getattr(member, "id", None) or "", udata, guild or getattr(member, "guild", None))
+def _wr_member_anywhere(uid):
+    """Le Member sur n'importe quel serveur suivi.
+
+    /wrapped_lancer doit couvrir les membres qui ne sont pas sur le serveur où la
+    commande est tapée : GUILD_IDS en contient deux.
+    """
+    if not str(uid).isdigit():
+        return None
+    for g in bot.guilds:
+        if g.id not in GUILD_IDS:
+            continue
+        m = g.get_member(int(uid))
+        if m:
+            return m
+    return None
+
+def _wr_is_eligible(member, udata, now, guild=None, uid=None):
+    # Toujours via _wr_joined_ts : il prend le plus ancien join sur TOUS les
+    # serveurs suivis. Court-circuiter sur le joined_at du serveur courant
+    # rendait l'eligibilite dependante du salon ou la commande etait tapee.
+    who = uid or getattr(member, "id", None) or ""
+    joined = _wr_joined_ts(who, udata, guild or getattr(member, "guild", None))
     return _wr_membership_ok(joined, now)
 
 def _wr_collect_sessions(guild, now, cutoff):
@@ -8585,12 +8603,7 @@ def _wr_payload(uid, udata, sess, all_sessions, guild, hours_sorted, joined_ts=N
 
     binome = _wr_best_binome(uid, sess, all_sessions)
 
-    voiced = [(u, h) for u, h in hours_sorted if h > 0]
-    if voiced:
-        rankpos = next((i for i, (u, _h) in enumerate(voiced) if u == uid), len(voiced) - 1)
-        percentile = max(1, round((rankpos + 1) / max(1, len(voiced)) * 100))
-    else:
-        percentile = None
+    percentile = _wr_percentile_for(uid, hours_sorted)
 
     h7 = seconds_in_period(udata.get("vocal_sessions", []), 7, join_time=udata.get("join_time")) / 3600
     rank_name = next((nm for thr, nm in RANKS if h7 >= thr), None)
@@ -8690,7 +8703,7 @@ async def _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_
     import secrets as _secrets
     udata = get_user(_CACHE, uid)
     member = guild.get_member(int(uid)) if guild and str(uid).isdigit() else None
-    joined = member.joined_at.timestamp() if member and member.joined_at else _wr_joined_ts(uid, udata, guild)
+    joined = _wr_joined_ts(uid, udata, guild)
     sess = all_sessions.get(uid, ([], None, None))[0]
     payload = _wr_payload(uid, udata, sess, all_sessions, guild, hours_by_uid, joined_ts=joined, now=now)
     token = await _wr_get_token(uid, period) or _secrets.token_urlsafe(16)
@@ -8708,7 +8721,7 @@ async def wrapped_cmd(interaction: discord.Interaction):
     now = now_ts()
     udata = get_user(_CACHE, uid)
     if not _wr_is_eligible(interaction.user, udata, now, guild):
-        joined = interaction.user.joined_at.timestamp() if interaction.user.joined_at else _wr_joined_ts(uid, udata, guild)
+        joined = _wr_joined_ts(uid, udata, guild)
         left = WRAPPED_MIN_MEMBERSHIP_DAYS - _wr_days_aboard(joined, now)
         await interaction.followup.send(
             f"🧭 Ton Log de Bord s'ouvre après **1 mois** à bord.\n"
@@ -8742,12 +8755,14 @@ async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
     all_sessions, hours_by_uid = _wr_collect_sessions(guild, now, cutoff)
 
     eligible = []
-    for m in guild.members:
-        if m.bot:
+    for uid, udata in list(_CACHE.items()):
+        if not isinstance(udata, dict):
             continue
-        udata = get_user(_CACHE, str(m.id))
-        if _wr_is_eligible(m, udata, now, guild):
-            eligible.append(str(m.id))
+        m = _wr_member_anywhere(uid)
+        if m and m.bot:
+            continue
+        if _wr_is_eligible(m, udata, now, guild, uid=uid):
+            eligible.append(str(uid))
     if not eligible:
         await interaction.followup.send("Aucun membre à bord depuis 1 mois.", ephemeral=True)
         return
