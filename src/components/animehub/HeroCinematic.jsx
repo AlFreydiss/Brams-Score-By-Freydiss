@@ -3,7 +3,7 @@
 // Phase 3 (l'API est déjà prête : passer plusieurs slides).
 // Full-bleed, double scrim (bas→haut + gauche→droite), le bas FOND dans la page.
 import { useEffect, useState } from 'react'
-import { C, FONT_BODY, FONT_DISPLAY, themeFor, onAccent, rgba } from './tokens.js'
+import { C, FONT_BODY, FONT_DISPLAY, GUTTER, themeFor, onAccent, rgba } from './tokens.js'
 
 // Audit dev des keyarts : un log par fichier (largeur native + alerte < 1920px)
 const keyartLogged = new Set()
@@ -121,9 +121,9 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
 
       {/* Contenu aligné gauche */}
       <div style={{
-        // aligné sur le conteneur commun (1320px / 24px de padding latéral) ;
+        // aligné sur le conteneur commun (gouttière GUTTER) ;
         // bottom haut : la première row vient chevaucher le bas du hero (-120px)
-        position: 'absolute', left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', right: 18, bottom: 'clamp(150px, 22vh, 220px)',
+        position: 'absolute', left: GUTTER, right: 18, bottom: 'clamp(150px, 22vh, 220px)',
         maxWidth: 560,
       }}>
         {/* Eyebrow de marque : mark épées laiton + type (seule exception capitales espacées) */}

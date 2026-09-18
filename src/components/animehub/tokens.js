@@ -27,6 +27,12 @@ export function rgba(hex, a = 1) {
 export const FONT_DISPLAY = "'Space Grotesk', 'Inter', system-ui, sans-serif"
 export const FONT_BODY    = "'Inter', system-ui, sans-serif"
 
+// Gouttiere laterale unique du hub. Les rangees vont desormais bord a bord
+// (facon Netflix) au lieu d'etre enfermees dans une colonne de 1320px : sur un
+// ecran 2560 la moitie de la largeur etait du vide et on ne voyait que 4 cartes
+// sur 10. Titres de section, toolbar et texte du hero s'alignent dessus.
+export const GUTTER = 'clamp(20px, 2.5vw, 48px)'
+
 export const RADIUS_CARD = 12
 export const RADIUS_PANEL = 16
 export const SHADOW_CARD = '0 18px 40px -22px rgba(0,0,0,.8)'

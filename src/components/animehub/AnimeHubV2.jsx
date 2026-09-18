@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
 import Navbar from '../Navbar.jsx'
-import { C, FONT_BODY, FONT_DISPLAY, RADIUS_PANEL, SHADOW_CARD, themeFor, THEME_FONT_HREF } from './tokens.js'
+import { C, FONT_BODY, FONT_DISPLAY, GUTTER, RADIUS_PANEL, SHADOW_CARD, themeFor, THEME_FONT_HREF } from './tokens.js'
 import { DUR, MOTION_CSS } from '../../lib/motion.js'
 import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
@@ -465,7 +465,7 @@ export default function AnimeHubV2(props) {
             </div>
           ))}
           {/* Indicateurs segments — au-dessus de la zone de chevauchement */}
-          <div style={{ position: 'absolute', bottom: 140, left: 'max(24px, calc((100vw - 1320px) / 2 + 24px))', zIndex: 3, display: 'flex', gap: 6 }}>
+          <div style={{ position: 'absolute', bottom: 140, left: GUTTER, zIndex: 3, display: 'flex', gap: 6 }}>
             {slides.map((s, i) => (
               <button key={s.id} aria-label={`Slide ${i + 1}`} onClick={() => setSlide(i)} style={{
                 width: 34, height: 3, borderRadius: 2, border: 'none', cursor: 'pointer', padding: 0,
@@ -490,7 +490,7 @@ export default function AnimeHubV2(props) {
         borderRadius: '12px 12px 0 0',
         transition: 'background 200ms ease, border-color 200ms ease',
       }}>
-        <div className="ah2-toolbar-inner" style={{ maxWidth: 1320, margin: '0 auto', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div className="ah2-toolbar-inner" style={{ padding: `10px ${GUTTER}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* Recherche */}
           <div className="ah2-search" style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
             <span aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint, fontSize: 13 }}>⌕</span>
@@ -568,9 +568,9 @@ export default function AnimeHubV2(props) {
       </div>
 
       {/* ── CONTENU ── */}
-      {/* Conteneur COMMUN à toutes les sections : 1320px / 24px / auto — la
-          toolbar et le hero (texte) s'alignent sur la même grille. */}
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: '24px 24px 90px' }}>
+      {/* Conteneur COMMUN à toutes les sections : pleine largeur avec la
+          gouttière GUTTER — la toolbar et le hero (texte) s'alignent dessus. */}
+      <div style={{ padding: `24px ${GUTTER} 90px` }}>
         {searching ? (
           <>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 18 }}>
