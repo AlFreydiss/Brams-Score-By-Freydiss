@@ -1633,6 +1633,10 @@ option { background: #100a04; }
 
   /* VideoPlayer — controls plus espacés */
   .vp-controls { padding: 8px !important; gap: 4px !important; }
+
+  /* VideoPlayer — titre centré de la barre : on garde « Animé E7 », le titre
+     d'épisode saute (il écrasait les clusters de boutons sur écran étroit) */
+  .vp-center-title .vp-ct-ep { display: none !important; }
 }
 
 /* ── Modal ── */

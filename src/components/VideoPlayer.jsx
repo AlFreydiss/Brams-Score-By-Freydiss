@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
+import PauseOverlay from './PauseOverlay.jsx'
 import { getAnimeMeta } from '../data/anime-meta.js'
 import { setBoost, corsUrl } from '../lib/audioBoost.js'
 import { saveWatchProgress, getWatchProgress } from '../lib/watchProgress.js'
@@ -182,6 +183,7 @@ const IcSettings = (p) => <Ic {...p}><circle cx="12" cy="12" r="3" /><path d="M1
 const IcFull     = (p) => <Ic {...p}><path d="M8 4H4v4M16 4h4v4M16 20h4v-4M8 20H4v-4" /></Ic>
 const IcFullExit = (p) => <Ic {...p}><path d="M4 8h4V4M20 8h-4V4M20 16h-4v4M4 16h4v4" /></Ic>
 const IcPip      = (p) => <Ic {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><rect x="11.5" y="11" width="7.5" height="6" rx="1.2" fill="currentColor" stroke="none" /></Ic>
+const IcList     = (p) => <Ic {...p}><rect x="3" y="4.5" width="18" height="15" rx="2" /><path d="M9 4.5v15M3 9.5h6M3 14.5h6" /></Ic>
 
 // ── Styles bottom-sheet « Réglages » (tactile uniquement) ──
 const vpSheetSection = { padding: '12px 4px 5px', color: 'rgba(255,255,255,0.42)', fontSize: 12, fontWeight: 900, letterSpacing: '.1em', textTransform: 'uppercase' }
@@ -396,6 +398,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [showSpdMenu,  setShowSpdMenu] = useState(false)
   const [showQualityMenu, setShowQualityMenu] = useState(false)
   const [showSettingsSheet, setShowSettingsSheet] = useState(false)  // tactile : panneau réglages unifié (bottom-sheet)
+  const [showEpisodes, setShowEpisodes] = useState(false)            // panneau latéral « Épisodes » (bouton liste de la barre)
   const [qualityLabel, setQualityLabel] = useState('AUTO')
   const [audioIdx,     setAudioIdx]    = useState(0)
   const [audioTrackState, setAudioTrackState] = useState('pending')
@@ -475,10 +478,11 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const showControls = useCallback(() => {
     setShowCtrl(true)
     clearTimeout(hideTimer.current)
-    if (playing) hideTimer.current = setTimeout(() => setShowCtrl(false), 3000)
-  }, [playing])
+    // Panneau « Épisodes » ouvert → on garde la barre affichée (le panneau en dépend visuellement)
+    if (playing && !showEpisodes) hideTimer.current = setTimeout(() => setShowCtrl(false), 3000)
+  }, [playing, showEpisodes])
 
-  useEffect(() => { showControls() }, [playing])
+  useEffect(() => { showControls() }, [playing, showEpisodes])
 
   useEffect(() => {
     const onKey = e => {
@@ -1108,6 +1112,10 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const subLabel = subsOff ? 'OFF' : hasSubs ? (video.subtitles[subIdx]?.label ?? 'CC') : 'N/A'
   const qualityHint = isLocal ? qualityLabel : 'AUTO'
   const episodeLabel = videoDisplayLabel(video)
+  // Métadonnées de l'animé + libellés courts pour le titre centré de la barre de contrôles
+  const animeMeta = getAnimeMeta(storageKey)
+  const isFilm = video?.kind === 'film' || (video?.season && String(video.season).toLowerCase().includes('film'))
+  const epShortTitle = video?.title && !/^episodes/i.test(String(video.title)) ? video.title : null
 
   // effectiveMediaSrc est déclaré plus haut (avant l'effet HLS) pour éviter un TDZ
   // sur son tableau de deps — ne pas le redéclarer ici.
@@ -1141,7 +1149,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
         onClick={togglePlay}
         onDoubleClick={toggleFullscreen}
         onMouseMove={showControls}
-        onMouseLeave={() => { if (playing) hideTimer.current = setTimeout(() => setShowCtrl(false), 1500) }}
+        onMouseLeave={() => { if (playing && !showEpisodes) hideTimer.current = setTimeout(() => setShowCtrl(false), 1500) }}
         style={{
           flex: 1, position: 'relative', background: '#000', cursor: 'default', overflow: 'hidden',
           // En cssFs : on borne explicitement (top/left/right/bottom:0) ET on centre la
@@ -1497,20 +1505,26 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             {IS_COARSE && started && !cssFs && (
               <button
                 onClick={(e) => { e.stopPropagation(); toggleFullscreen() }}
-                title="Plein écran"
-                aria-label="Mettre en plein écran"
+                title={fullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+                aria-label={fullscreen ? 'Quitter le plein écran' : 'Mettre en plein écran'}
                 style={{
                   position: 'absolute', zIndex: 9,
                   right: 'calc(12px + env(safe-area-inset-right, 0px))',
                   bottom: showCtrl ? 92 : 14, transition: 'bottom .25s ease, transform .15s',
                   display: 'flex', alignItems: 'center', gap: 7,
                   height: 44, padding: '0 15px', borderRadius: 12, cursor: 'pointer',
-                  background: `${color}e6`, border: `1px solid ${color}`, color: '#fff',
+                  // En sortie on passe en verre neutre : l'accent sert à APPELER le
+                  // plein écran, pas à hurler pendant qu'on regarde l'épisode.
+                  background: fullscreen ? 'rgba(8,9,12,0.7)' : `${color}e6`,
+                  backdropFilter: fullscreen ? 'blur(12px)' : undefined,
+                  border: `1px solid ${fullscreen ? 'rgba(255,255,255,0.2)' : color}`, color: '#fff',
                   fontFamily: 'var(--body)', fontSize: 13.5, fontWeight: 800, letterSpacing: '.02em',
-                  boxShadow: `0 8px 24px ${color}55, 0 2px 8px rgba(0,0,0,0.4)`,
+                  boxShadow: fullscreen ? '0 2px 8px rgba(0,0,0,0.4)' : `0 8px 24px ${color}55, 0 2px 8px rgba(0,0,0,0.4)`,
                   WebkitTapHighlightColor: 'transparent',
                 }}
-              ><IcFull size={20} /> Plein écran</button>
+              >{fullscreen
+                  ? <><IcFullExit size={20} /> Quitter</>
+                  : <><IcFull size={20} /> Plein écran</>}</button>
             )}
 
             {/* ── Interface "détail épisode" (pré-lecture) : titre + note + synopsis IA + trailer ── */}
@@ -1529,12 +1543,19 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
               )
             })()}
 
-            {/* ── Icône play centrale : seulement en pause PENDANT la lecture ──
-                 (en pré-lecture, c'est la carte centrale qui porte le bouton Lecture) */}
-            {started && !playing && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 4 }}>
-                <div style={{ width: 80, height: 80, borderRadius: '50%', background: `${color}e6`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.22)', boxShadow: `0 10px 40px rgba(0,0,0,.5)` }}><IcPlay size={36} /></div>
-              </div>
+            {/* ── Overlay de pause : voile + fiche « Vous regardez » ──
+                 Remplace l'ancienne pastille play centrale. Monté en continu tant que la
+                 lecture a démarré pour que le fondu joue dans les deux sens ; le synopsis
+                 n'est requêté qu'à la première pause (cache episodeSynopsis ensuite). */}
+            {started && !endOverlay && (
+              <PauseOverlay
+                visible={!playing && !showSettingsSheet && !showEpisodes}
+                animeId={storageKey}
+                animeTitle={animeMeta.title || video?.anime}
+                video={video}
+                episodeLabel={episodeLabel}
+                color={color}
+              />
             )}
 
             {/* ── Contrôles ── */}
@@ -1549,29 +1570,37 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             }}
               onClick={e => e.stopPropagation()}
             >
-              {/* Barre de progression */}
-              <ProgressBar
-                currentTime={currentTime}
-                duration={duration}
-                buffered={buffered}
-                onSeek={seek}
-                color={color}
-                previewSrc={video?.thumbnail}
-                previewTitle={video?.title || episodeLabel}
-                scrubSrc={scrubSrc}
-              />
+              {/* Barre de progression + temps RESTANT à droite (le « MM:SS / MM:SS »
+                  qui était dans la ligne de boutons est remplacé par ce seul repère) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 14 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <ProgressBar
+                    currentTime={currentTime}
+                    duration={duration}
+                    buffered={buffered}
+                    onSeek={seek}
+                    color={color}
+                    previewSrc={video?.thumbnail}
+                    previewTitle={video?.title || episodeLabel}
+                    scrubSrc={scrubSrc}
+                  />
+                </div>
+                <span className="vp-time" style={{ fontSize: IS_COARSE ? 12 : 13, fontWeight: 700, color: 'rgba(255,255,255,0.88)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {fmt(Math.max(0, duration - currentTime))}
+                </span>
+              </div>
 
               {/* Ligne de contrôles — espacement plus large au doigt (tactile) ; wrap
                   autorisé sur tactile pour qu'aucun bouton agrandi ne soit rogné. */}
-              <div className="vp-control-row" style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, marginTop: IS_COARSE ? 8 : 4, flexWrap: 'nowrap', rowGap: 0 }}>
+              <div className="vp-control-row" style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 8, marginTop: IS_COARSE ? 6 : 2, flexWrap: 'nowrap', rowGap: 0 }}>
 
-                {/* Préc / Suiv (tactile uniquement : sur mobile la barre haute est souvent
-                    masquée en plein écran → on remet la navigation d'épisode à portée de pouce) */}
+                {/* ══ Cluster GAUCHE : lecture, ±10s, volume ══ */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, flexShrink: 0 }}>
+
+                {/* Épisode précédent (tactile uniquement : sur mobile la barre haute est
+                    masquée en plein écran → navigation d'épisode à portée de pouce) */}
                 {IS_COARSE && (
-                  <>
-                    <Btn onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0} title="Épisode précédent" color={color}><IcPrev /></Btn>
-                    <Btn onClick={() => setIdx(i => Math.min(videos.length - 1, i + 1))} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}><IcNext /></Btn>
-                  </>
+                  <Btn onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0} title="Épisode précédent" color={color}><IcPrev /></Btn>
                 )}
 
                 {/* Play/Pause */}
@@ -1619,12 +1648,43 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   />
                 )}
 
-                {/* Temps */}
-                <span className="vp-time" style={{ fontSize: IS_COARSE ? 13 : 12, color: 'rgba(255,255,255,0.7)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', marginLeft: 4 }}>
-                  {fmt(currentTime)} / {fmt(duration)}
-                </span>
+                </div>{/* ══ fin cluster gauche ══ */}
 
-                <div style={{ flex: 1 }} />
+                {/* ══ Cluster CENTRE : animé + numéro d'épisode + titre d'épisode ══
+                     Le plein écran natif s'applique au conteneur vidéo : la barre haute
+                     est alors HORS cadre → ce bloc est le seul endroit où le titre reste
+                     visible pendant la lecture. Sur écran étroit, .vp-center-title masque
+                     le titre d'épisode (voir index.css) et garde « Animé E7 ». */}
+                <div className="vp-center-title" style={{
+                  flex: 1, minWidth: 0, padding: '0 10px',
+                  display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 7,
+                  whiteSpace: 'nowrap', overflow: 'hidden', fontFamily: 'var(--body)',
+                }}>
+                  <span style={{ fontSize: IS_COARSE ? 11.5 : 13, fontWeight: 800, color: 'rgba(255,255,255,0.92)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {animeMeta.title || video?.anime || episodeLabel}
+                  </span>
+                  {!isFilm && Number.isFinite(Number(video?.episode)) && (
+                    <span style={{ fontSize: IS_COARSE ? 11.5 : 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+                      E{video.episode}
+                    </span>
+                  )}
+                  {epShortTitle && (
+                    <span className="vp-ct-ep" style={{ fontSize: IS_COARSE ? 11.5 : 13, fontWeight: 600, color: 'rgba(255,255,255,0.68)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {epShortTitle}
+                    </span>
+                  )}
+                </div>
+
+                {/* ══ Cluster DROITE : suivant, liste, ST, audio, vitesse, qualité, PiP, plein écran ══ */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, flexShrink: 0 }}>
+
+                {/* Épisode suivant */}
+                <Btn onClick={() => setIdx(i => Math.min(videos.length - 1, i + 1))} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}><IcNext /></Btn>
+
+                {/* Liste des épisodes → panneau latéral */}
+                {videos.length > 1 && (
+                  <Btn onClick={e => { e.stopPropagation(); setShowEpisodes(v => !v) }} title="Épisodes" active={showEpisodes} color={color}><IcList /></Btn>
+                )}
 
                 {/* DESKTOP : les 4 menus déroulants séparés (inchangés). Sur tactile ils
                     sont remplacés par la bottom-sheet « Réglages » plus bas. */}
@@ -1836,21 +1896,65 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     {(fullscreen || cssFs) ? <IcFullExit /> : <IcFull />}
                   </Btn>
                 )}
+                </div>{/* ══ fin cluster droite ══ */}
               </div>
+              {/* La légende des raccourcis clavier a été retirée : elle encombrait le bas
+                  de l'écran. Les raccourcis (Espace, ←→, ↑↓, M, F) restent actifs. */}
+            </div>
 
-              {/* Légende raccourcis — CLAVIER uniquement : masquée sur tactile
-                  (sur téléphone elle encombrait l'overlay et gênait le play). */}
-              {!(typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) && (
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap', opacity: 0.55 }}>
-                  {[['Espace', 'Play/Pause'], ['←→', '±5s'], ['↑↓', 'Volume'], ['M', 'Muet'], ['F', 'Plein écran']].map(([k, v]) => (
-                    <span key={k} style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
-                      <kbd style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '1px 5px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', marginRight: 4 }}>{k}</kbd>
-                      {v}
-                    </span>
+            {/* ── Panneau latéral « Épisodes » (bouton liste du cluster droite) ──
+                 Le plein écran s'applique au conteneur vidéo : la bande d'épisodes
+                 sous le lecteur est hors cadre. Ce panneau rend les épisodes
+                 accessibles sans quitter le plein écran. */}
+            {showEpisodes && videos.length > 1 && (
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{
+                  position: 'absolute', top: 0, right: 0, bottom: 0, zIndex: 12,
+                  width: IS_COARSE ? 'min(86%, 340px)' : 360,
+                  display: 'flex', flexDirection: 'column',
+                  background: 'rgba(8,9,12,0.94)', backdropFilter: 'blur(20px)',
+                  borderLeft: `1px solid ${color}33`,
+                  boxShadow: '-18px 0 60px rgba(0,0,0,0.6)',
+                  animation: 'fadeIn .22s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+                  <span style={{ fontFamily: 'var(--display)', fontSize: 15, fontWeight: 800, color: '#fff' }}>Épisodes</span>
+                  <button onClick={() => setShowEpisodes(false)} aria-label="Fermer la liste des épisodes"
+                    style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', width: IS_COARSE ? 40 : 30, height: IS_COARSE ? 40 : 30, fontSize: 15, fontWeight: 700, flexShrink: 0, WebkitTapHighlightColor: 'transparent' }}
+                  >✕</button>
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {videos.map((v, i) => (
+                    <button key={i} onClick={() => { setIdx(i); setShowEpisodes(false) }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: 6, textAlign: 'left', flexShrink: 0,
+                        borderRadius: 10, cursor: 'pointer',
+                        border: `1px solid ${i === idx ? color + '66' : 'rgba(255,255,255,0.08)'}`,
+                        background: i === idx ? `${color}1f` : 'transparent',
+                        transition: 'background .15s', WebkitTapHighlightColor: 'transparent',
+                      }}
+                      onMouseEnter={e => { if (i !== idx) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                      onMouseLeave={e => { if (i !== idx) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <div style={{ flexShrink: 0, borderRadius: 6, overflow: 'hidden' }}>
+                        <EpisodeMiniThumb video={v} color={color} />
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 800, color: i === idx ? color : '#fff' }}>
+                          {v.season && <span style={{ opacity: 0.55, marginRight: 4 }}>S{String(v.season).replace(/^S/i, '')}</span>}
+                          Ép. {v.episode}
+                        </div>
+                        {v.title && !/^episode\s/i.test(String(v.title)) && (
+                          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{v.title}</div>
+                        )}
+                      </div>
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* ── TACTILE : bottom-sheet « Réglages » unifiée ──
                  Regroupe sous-titres (on/off + langue + apparence), audio, vitesse, qualité.
@@ -2017,12 +2121,12 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <EpisodeMiniThumb video={v} color={color} />
                     <div style={{ padding: '4px 6px', fontSize: 11, fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                      {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season} ·</span>}Ép.{v.episode}
+                      {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>{'S' + String(v.season).replace(/^S/i, '')} ·</span>}Ép.{v.episode}
                     </div>
                   </div>
                 ) : (
                   <span style={{ fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>S{v.season}·</span>}Ép.{v.episode}
+                    {v.season && <span style={{ opacity: 0.55, marginRight: 3 }}>{'S' + String(v.season).replace(/^S/i, '')}·</span>}Ép.{v.episode}
                   </span>
                 )}
               </button>
