@@ -114,14 +114,17 @@ export default function PauseOverlay({ visible, animeId, animeTitle, video, epis
               Vous regardez
             </div>
 
+            {/* lineHeight >= 1.18 : sous 1.1, la line-box est plus courte que le
+                glyphe et overflow:hidden rase les jambages (le « g » de Song) sur
+                la derniere ligne du clamp. Syne a des descendantes longues. */}
             <div style={{
               fontFamily: 'var(--display)', fontSize: titleSize, fontWeight: 800,
-              lineHeight: 1.04, marginTop: titleSize * 0.14,
+              lineHeight: 1.18, marginTop: titleSize * 0.1,
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>{title}</div>
 
             {showRepeatTitle && (
-              <div style={{ fontSize: metaSize, fontWeight: 800, marginTop: 9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+              <div style={{ fontSize: metaSize, fontWeight: 800, lineHeight: 1.4, marginTop: 9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
             )}
 
             <div style={{ fontSize: metaSize, fontWeight: 800, marginTop: showRepeatTitle ? 16 : 8 }}>{epLine}</div>

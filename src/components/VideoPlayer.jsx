@@ -292,7 +292,9 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
   const barHeight = IS_COARSE ? 28 : 20
   const railHeight = IS_COARSE ? 6 : 4
   const thumbSize = IS_COARSE ? 20 : 12
-  const showThumb = IS_COARSE || hoverPct !== null || dragging
+  // Netflix garde la boule affichee en continu : elle marque la tete de lecture,
+  // pas seulement une cible de clic. Elle grossit au survol et pendant le drag.
+  const thumbActive = IS_COARSE || hoverPct !== null || dragging
 
   return (
     <div ref={barRef}
@@ -327,7 +329,7 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
         {/* Progress */}
         <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${pct * 100}%`, background: color, borderRadius: railHeight, pointerEvents: 'none', transition: dragging ? 'none' : 'width .1s linear' }} />
         {/* Thumb — toujours visible au doigt (tactile) pour donner une cible de scrub claire */}
-        <div style={{ position: 'absolute', top: '50%', left: `${pct * 100}%`, transform: 'translate(-50%, -50%)', width: thumbSize, height: thumbSize, borderRadius: '50%', background: '#fff', boxShadow: `0 0 6px ${color}88`, pointerEvents: 'none', opacity: showThumb ? 1 : 0, transition: 'opacity .15s' }} />
+        <div style={{ position: 'absolute', top: '50%', left: `${pct * 100}%`, transform: 'translate(-50%, -50%)', width: thumbActive ? thumbSize : thumbSize * 0.78, height: thumbActive ? thumbSize : thumbSize * 0.78, borderRadius: '50%', background: color, boxShadow: `0 0 0 1px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.5)`, pointerEvents: 'none', transition: 'width .15s, height .15s' }} />
       </div>
     </div>
   )
@@ -1405,39 +1407,56 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             })()}
 
             {/* ── Fin d'épisode : autoplay (compte à rebours) ou carte manuelle ── */}
-            {endOverlay && videos[idx + 1] && (
-              <div style={{ position:'absolute', right:'calc(24px + env(safe-area-inset-right, 0px))', bottom: showCtrl ? 118 : 40, zIndex:25, width:308, maxWidth:'calc(100vw - 48px - env(safe-area-inset-right, 0px) - env(safe-area-inset-left, 0px))', padding:18, borderRadius:16, background:'rgba(10,8,16,0.93)', backdropFilter:'blur(16px)', border:`1px solid ${color}55`, boxShadow:'0 18px 50px rgba(0,0,0,0.6)', animation:'fadeIn .3s ease' }}>
-                <div style={{ fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color, marginBottom:6 }}>
-                  {countdown != null ? `Épisode suivant dans ${countdown}s` : 'Épisode suivant'}
-                </div>
-                <div style={{ fontSize:15, fontWeight:800, color:'#fff', lineHeight:1.3, marginBottom:13 }}>
-                  {videos[idx + 1].title || `Épisode ${videos[idx + 1].episode}`}
-                </div>
-                {countdown != null && (
-                  <div style={{ height:4, borderRadius:999, background:'rgba(255,255,255,0.12)', overflow:'hidden', marginBottom:13 }}>
-                    <div style={{ height:'100%', borderRadius:999, background:color, width:`${(1 - countdown / cdMax) * 100}%`, transition:'width 1s linear' }} />
+            {endOverlay && videos[idx + 1] && (() => {
+              const nxt = videos[idx + 1]
+              const nxtTitle = nxt.title && !/^episodes/i.test(String(nxt.title)) ? nxt.title : null
+              return (
+              <div style={{ position:'absolute', right:'calc(24px + env(safe-area-inset-right, 0px))', bottom: showCtrl ? 118 : 40, zIndex:25, width:392, maxWidth:'calc(100vw - 48px - env(safe-area-inset-right, 0px) - env(safe-area-inset-left, 0px))', borderRadius:16, overflow:'hidden', background:'rgba(10,8,16,0.94)', backdropFilter:'blur(16px)', border:'1px solid rgba(255,255,255,0.12)', boxShadow:'0 18px 50px rgba(0,0,0,0.6)', animation:'fadeIn .3s ease' }}>
+                <div style={{ display:'flex', gap:14, padding:16 }}>
+                  {/* Vignette de l'episode suivant : EpisodeMiniThumb gere deja
+                      thumbnail, extraction de frame et repli. */}
+                  <div style={{ flexShrink:0, borderRadius:8, overflow:'hidden' }}>
+                    <EpisodeMiniThumb video={nxt} color={color} />
                   </div>
-                )}
-                <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={(e) => { e.stopPropagation(); goNext() }}
-                    style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding: IS_COARSE ? '12px 0' : '9px 0', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
-                    <IcPlay size={16} /> Lire {countdown != null ? 'maintenant' : ''}
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); setEndOverlay(false); setCountdown(null) }}
-                    style={{ padding: IS_COARSE ? '12px 16px' : '9px 14px', minHeight: IS_COARSE ? 44 : undefined, borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.7)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
-                    {endReason === 'ed' ? 'Laisser le générique' : 'Annuler'}
-                  </button>
+                  <div style={{ minWidth:0, flex:1, display:'flex', flexDirection:'column' }}>
+                    {/* Sobre : l'accent est reserve au bouton et a la barre de
+                       decompte, sinon toute la carte vire au rose sur les animes
+                       a couleur saturee. */}
+                    <div style={{ fontSize:10, fontWeight:800, letterSpacing:'.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', lineHeight:1.5 }}>
+                      Épisode suivant{countdown != null ? `${' · '}${countdown}s` : ''}
+                    </div>
+                    <div style={{ fontSize:14.5, fontWeight:800, color:'#fff', lineHeight:1.35, marginTop:2, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+                      {nxtTitle || `Épisode ${nxt.episode}`}
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:'auto', paddingTop:12 }}>
+                      <button onClick={(e) => { e.stopPropagation(); goNext() }}
+                        style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, height: IS_COARSE ? 44 : 36, padding:'0 18px', flexShrink:0, whiteSpace:'nowrap', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12.5, fontWeight:800, color:'#fff', background:color, border:'none' }}>
+                        <IcPlay size={15} /> Lire
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); setEndOverlay(false); setCountdown(null) }}
+                        style={{ height: IS_COARSE ? 44 : 36, padding:'0 14px', minWidth:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', borderRadius:10, cursor:'pointer', fontFamily:'var(--body)', fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.72)', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)' }}>
+                        {endReason === 'ed' ? 'Laisser le générique' : 'Annuler'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); const n = !autoplayNext; setAutoplayNext(n); updatePreferences({ autoplayNext: n }); if (!n) setCountdown(null) }}
-                  style={{ marginTop:11, display:'flex', alignItems:'center', gap:7, width:'100%', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.55)', fontSize:11, fontWeight:600, fontFamily:'var(--body)' }}>
-                  <span style={{ width:30, height:17, borderRadius:999, background: autoplayNext ? color : 'rgba(255,255,255,0.15)', position:'relative', transition:'background .2s', flexShrink:0 }}>
+                  style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'0 16px 14px', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.5)', fontSize:11, fontWeight:600, fontFamily:'var(--body)', textAlign:'left' }}>
+                  <span style={{ width:30, height:17, borderRadius:999, background: autoplayNext ? color : 'rgba(255,255,255,0.18)', position:'relative', transition:'background .2s', flexShrink:0 }}>
                     <span style={{ position:'absolute', top:2, left: autoplayNext ? 15 : 2, width:13, height:13, borderRadius:'50%', background:'#fff', transition:'left .2s' }} />
                   </span>
                   Lecture automatique
                 </button>
+                {/* Decompte en pleine largeur, colle au bord bas de la carte */}
+                {countdown != null && (
+                  <div style={{ height:3, background:'rgba(255,255,255,0.1)' }}>
+                    <div style={{ height:'100%', background:color, width:`${(1 - countdown / cdMax) * 100}%`, transition:'width 1s linear' }} />
+                  </div>
+                )}
               </div>
-            )}
+              )
+            })()}
 
             {/* ── Sous-titres dessinés sur canvas (rAF → immunisé au throttle) ── */}
             {!subsOff && hasSubs && (
@@ -1659,6 +1678,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                   flex: 1, minWidth: 0, padding: '0 10px',
                   display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 7,
                   whiteSpace: 'nowrap', overflow: 'hidden', fontFamily: 'var(--body)',
+                  lineHeight: 1.6,
                 }}>
                   <span style={{ fontSize: IS_COARSE ? 11.5 : 13, fontWeight: 800, color: 'rgba(255,255,255,0.92)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {animeMeta.title || video?.anime || episodeLabel}
@@ -1947,7 +1967,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                           Ép. {v.episode}
                         </div>
                         {v.title && !/^episode\s/i.test(String(v.title)) && (
-                          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{v.title}</div>
+                          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: 'rgba(255,255,255,0.55)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{v.title}</div>
                         )}
                       </div>
                     </button>
