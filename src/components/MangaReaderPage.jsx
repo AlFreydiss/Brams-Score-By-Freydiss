@@ -120,7 +120,7 @@ export default function MangaReaderPage({ slug, title, color = '#8b5cf6', onClos
                     onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.borderColor=color+'66' }}
                     onMouseLeave={e => { e.currentTarget.style.transform='none'; e.currentTarget.style.borderColor=isRead?'rgba(255,255,255,.06)':color+'33' }}>
                     <div style={{ fontSize:9, fontWeight:800, letterSpacing:'.08em', textTransform:'uppercase', color: isRead ? 'rgba(255,255,255,.35)' : color, marginBottom:3 }}>Chapitre {ch.num}{isRead ? ' · lu' : ''}</div>
-                    <div style={{ fontSize:12.5, fontWeight:700, color: isRead ? 'rgba(255,255,255,.5)' : '#fff', lineHeight:1.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ch.title || `Chapitre ${ch.num}`}</div>
+                    <div style={{ fontSize:12.5, fontWeight:700, color: isRead ? 'rgba(255,255,255,.5)' : '#fff', lineHeight:1.3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ch.title || `${ch.pages?.length ?? 0} pages`}</div>
                   </button>
                 )
               })}
