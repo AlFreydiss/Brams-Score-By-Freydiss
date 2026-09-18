@@ -22,7 +22,12 @@ function EmptyState({ icon, title, desc }) {
   )
 }
 
-function ScansToolbar({ color, total, shown, query, onQuery, desc, onToggleDesc, unread, onToggleUnread, ranges, range, onRange, resume, onResume }) {
+// Libelles des deux onglets. La barre est la meme : la grille d'episodes avait
+// exactement les problemes que la grille de chapitres a resolus.
+const SCAN_LABELS  = { search: 'Numéro ou titre…', searchAria: 'Rechercher un chapitre', asc: 'Plus anciens', desc: 'Plus récents', unread: 'Non lus', noun: 'chapitres' }
+const VIDEO_LABELS = { search: 'Numéro ou titre…', searchAria: 'Rechercher un épisode', asc: 'Plus anciens', desc: 'Plus récents', unread: 'Non vus', noun: 'épisodes' }
+
+function CatalogToolbar({ color, total, shown, query, onQuery, desc, onToggleDesc, unread, onToggleUnread, ranges, range, onRange, resume, onResume, labels }) {
   const pill = (active) => ({
     height: 34, padding: '0 13px', borderRadius: 9, cursor: 'pointer', flexShrink: 0,
     fontFamily: 'var(--body)', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap',
@@ -40,30 +45,30 @@ function ScansToolbar({ color, total, shown, query, onQuery, desc, onToggleDesc,
           background: `linear-gradient(90deg, ${color}22, ${color}08)`,
           border: `1px solid ${color}44`, fontFamily: 'var(--body)',
         }}>
-          {resume.pages?.[0] && (
-            <img src={resume.pages[0]} alt="" loading="lazy"
-              style={{ width: 42, height: 56, objectFit: 'cover', objectPosition: 'center top', borderRadius: 7, flexShrink: 0 }} />
+          {resume.thumb && (
+            <img src={resume.thumb} alt="" loading="lazy"
+              style={{ width: resume.wide ? 74 : 42, height: resume.wide ? 42 : 56, objectFit: 'cover', objectPosition: resume.wide ? 'center' : 'center top', borderRadius: 7, flexShrink: 0 }} />
           )}
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', color }}>Reprendre</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Chapitre {resume.num}
+              {resume.label}
             </div>
           </div>
         </button>
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <input value={query} onChange={e => onQuery(e.target.value)} placeholder="Numéro ou titre…" aria-label="Rechercher un chapitre"
+        <input value={query} onChange={e => onQuery(e.target.value)} placeholder={labels.search} aria-label={labels.searchAria}
           style={{ height: 34, flex: '1 1 180px', maxWidth: 260, padding: '0 12px', borderRadius: 9, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: 12.5, outline: 'none', fontFamily: 'var(--body)' }} />
         <button onClick={onToggleDesc} style={pill(desc)} title="Inverser l'ordre">
-          {desc ? 'Plus récents' : 'Plus anciens'}
+          {desc ? labels.desc : labels.asc}
         </button>
-        <button onClick={onToggleUnread} style={pill(unread)}>Non lus</button>
+        <button onClick={onToggleUnread} style={pill(unread)}>{labels.unread}</button>
         {ranges.length > 1 && ranges.map((r, i) => (
           <button key={i} onClick={() => onRange(i)} style={pill(range === i)}>{r.label}</button>
         ))}
         <div style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>
-          {shown === total ? `${total} chapitres` : `${shown} / ${total}`}
+          {shown === total ? `${total} ${labels.noun}` : `${shown} / ${total}`}
         </div>
       </div>
     </div>
@@ -244,6 +249,12 @@ function VideoThumbnail({ src, episode, color }) {
       </div>
     </div>
   )
+}
+
+// Doit rester alignee sur progressKeyFor() de VideoPlayer : c'est la meme
+// entree `${namespace}_video_progress` qu'on relit ici pour marquer les cartes.
+function episodeKeyFor(video, idx) {
+  return String(video?.progressKey || video?.id || (video?.episode ?? idx + 1))
 }
 
 function tpnArcLabel(arc = '') {
@@ -545,8 +556,10 @@ function TpnHeroClean({ title, tab, readCount, chapterCount, watchedCount, episo
   )
 }
 
-function VideoCard({ video, onPlay, color, premium = false }) {
+function VideoCard({ video, onPlay, color, premium = false, status = null }) {
   const [hovered, setHovered] = useState(false)
+  const watched = Boolean(status?.done)
+  const pct     = status?.pct || 0
   const thumb = video.thumbnail || (video.id ? `https://img.youtube.com/vi/${video.id}/mqdefault.jpg` : null)
   const episodeLabel = video.episodeLabel || (video.kind === 'film' ? 'Film' : video.kind === 'ova' ? 'OAV' : video.episode)
   const typeLabel = video.kind === 'film' || video.kind === 'ova' ? String(episodeLabel).toUpperCase() : `EP ${episodeLabel}`
@@ -560,11 +573,12 @@ function VideoCard({ video, onPlay, color, premium = false }) {
         transition: premium ? 'all 0.22s ease' : 'all 0.2s',
         transform: hovered ? `translateY(-4px) scale(${premium ? 1.012 : 1})` : 'translateY(0) scale(1)',
         cursor: 'pointer',
+        opacity: watched ? 0.68 : 1,
         boxShadow: hovered ? (premium ? `0 16px 42px ${color}20` : `0 12px 36px ${color}18`) : premium ? '0 8px 24px rgba(0,0,0,0.18)' : 'none',
       }}>
       <div style={{ position: 'relative', paddingTop: premium ? '58%' : '56.25%', background: '#0a0b0d', overflow: 'hidden' }}>
         {thumb
-          ? <img loading="lazy" decoding="async" src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? (premium ? 0.9 : 0.85) : premium ? 0.82 : 0.65, transition: premium ? 'opacity 0.2s, transform .3s ease' : 'opacity 0.2s', transform: premium && hovered ? 'scale(1.035)' : 'scale(1)' }} />
+          ? <img loading="lazy" decoding="async" src={thumb} alt={video.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: hovered ? (premium ? 0.9 : 0.85) : premium ? 0.82 : 0.65, filter: watched ? 'grayscale(.5) brightness(.8)' : 'none', transition: premium ? 'opacity 0.2s, transform .3s ease' : 'opacity 0.2s', transform: premium && hovered ? 'scale(1.035)' : 'scale(1)' }} />
           : <VideoThumbnail src={video.src} episode={video.episode} color={color} />
         }
         {premium && <div style={{ position: 'absolute', inset: '45% 0 0', background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.48))', pointerEvents: 'none' }} />}
@@ -572,6 +586,17 @@ function VideoCard({ video, onPlay, color, premium = false }) {
           <div style={{ width: premium ? 42 : 46, height: premium ? 42 : 46, borderRadius: '50%', background: `${color}${premium ? 'a8' : 'b5'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: premium ? 15 : 17, backdropFilter: 'blur(6px)', transform: hovered ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.2s, opacity 0.2s', boxShadow: `0 4px 18px ${color}44`, opacity: hovered ? 1 : 0.78 }}>▶</div>
         </div>
         {video.duration && <div style={{ position: 'absolute', bottom: 8, right: 10, fontSize: 11, fontWeight: 700, background: 'rgba(0,0,0,0.8)', borderRadius: 4, padding: '2px 7px', color: '#fff' }}>{video.duration}</div>}
+        {/* Meme marquage que les cartes de chapitre : la grille d'episodes ne
+            disait pas ce qui avait deja ete vu ni ou on s'etait arrete. */}
+        {watched && <div style={{ position: 'absolute', top: 8, left: 10, width: 22, height: 22, borderRadius: '50%', background: 'rgba(52,211,153,0.22)', border: '1px solid rgba(52,211,153,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#34d399', fontWeight: 700, backdropFilter: 'blur(4px)' }}>✓</div>}
+        {!watched && pct > 0 && (
+          <>
+            <div style={{ position: 'absolute', top: 8, left: 10, fontSize: 10, fontWeight: 800, background: `${color}2e`, color: '#fff', border: `1px solid ${color}77`, borderRadius: 100, padding: '2px 8px', backdropFilter: 'blur(4px)' }}>En cours</div>
+            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.16)' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: color }} />
+            </div>
+          </>
+        )}
       </div>
       <div style={{ padding: premium ? '14px 16px 16px' : '12px 16px' }}>
         {video.arc && <div style={{ fontSize: premium ? 10 : 9, fontWeight: 850, color: premium ? '#8f86ff' : `${color}bb`, letterSpacing: '0.11em', textTransform: 'uppercase', marginBottom: 6 }}>⬥ {premium ? tpnArcLabel(video.arc) : video.arc}</div>}
@@ -609,6 +634,12 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const [scanDesc,     setScanDesc]     = useState(false)
   const [scanUnread,   setScanUnread]   = useState(false)
   const [scanRange,    setScanRange]    = useState(0)
+  // Memes filtres sur les episodes que sur les chapitres : mha en aligne 138,
+  // hxh 148, et la grille n'avait ni recherche, ni tri, ni « non vus ».
+  const [videoQuery,   setVideoQuery]   = useState('')
+  const [videoDesc,    setVideoDesc]    = useState(false)
+  const [videoUnseen,  setVideoUnseen]  = useState(false)
+  const [videoRange,   setVideoRange]   = useState(0)
   const [videoProgress,setVideoProgress]= useState(() => loadVideoProgress(namespace))
   const arcRefs = useRef({})
   const scrollRef = useRef(null)
@@ -664,22 +695,79 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     ? `${watchedCount}/${VIDEOS.length} episodes vus`
     : `${readCount}/${CHAPTERS.length} chapitres lus`
 
+  // L'index d'un episode dans VIDEOS est la cle que le lecteur recoit et qu'il
+  // reutilise pour enregistrer la progression : on le garde apres filtrage.
+  const videoIdx = useMemo(() => new Map(VIDEOS.map((v, i) => [v, i])), [VIDEOS])
+
+  const arcLabelFor = useCallback(v => (isTpn ? tpnArcLabel(v.arc) : v.arc || ''), [isTpn])
+
+  // Etat d'un episode, lu dans la meme entree que le lecteur ecrit.
+  const videoStatus = useCallback((video) => {
+    const idx = videoIdx.get(video) ?? 0
+    const entry = videoProgress?.episodes?.[episodeKeyFor(video, idx)]
+    if (!entry) return null
+    // Sans progressKey ni id, la cle est le numero d'episode — et il repart a 1
+    // a chaque saison : mha en a six, donc six episodes partagent la cle « 1 ».
+    // L'index enregistre par le lecteur tranche, sans toucher aux donnees deja
+    // stockees. Les entrees anterieures a ce champ restent prises en compte.
+    const ambigu = !video?.progressKey && !video?.id
+    if (ambigu && Number.isFinite(entry.idx) && entry.idx !== idx) return null
+    if (entry.completed) return { done: true, pct: 100 }
+    const pct = entry.duration > 0 ? Math.min(99, Math.round((entry.time / entry.duration) * 100)) : 0
+    return pct > 0 ? { done: false, pct } : null
+  }, [videoProgress, videoIdx])
+
+  // Le filtre par arc etait reserve a TPN — 12 episodes, deux arcs — alors que
+  // mha en porte 6 sur 138 episodes et hxh 7 sur 148. Il s'applique desormais a
+  // toute serie qui porte de vrais arcs, et disparait quand il n'y en a pas.
   const videoArcFilters = useMemo(() => {
     const counts = new Map()
     VIDEOS.forEach(video => {
-      const key = tpnArcLabel(video.arc)
+      const key = arcLabelFor(video)
+      if (!key) return
       counts.set(key, (counts.get(key) || 0) + 1)
     })
+    if (counts.size < 2) return []
     return [
       { key: 'all', label: 'Tous', count: VIDEOS.length },
       ...Array.from(counts.entries()).map(([key, count]) => ({ key, label: key, count })),
     ]
-  }, [VIDEOS])
+  }, [VIDEOS, arcLabelFor])
 
+  // On inverse l'ordre du JSON au lieu de trier sur le numero : films et OAV
+  // n'en ont pas, un tri numerique les jetterait en tete de liste.
   const filteredVideos = useMemo(() => {
-    if (!isTpn || videoArc === 'all') return VIDEOS
-    return VIDEOS.filter(video => tpnArcLabel(video.arc) === videoArc)
-  }, [VIDEOS, isTpn, videoArc])
+    const q = videoQuery.trim().toLowerCase()
+    let out = videoArc === 'all' ? VIDEOS : VIDEOS.filter(v => arcLabelFor(v) === videoArc)
+    if (q) out = out.filter(v => String(v.episode ?? '').includes(q) || (v.title || '').toLowerCase().includes(q))
+    if (videoUnseen) out = out.filter(v => !videoStatus(v)?.done)
+    return videoDesc ? [...out].reverse() : out
+  }, [VIDEOS, videoArc, videoQuery, videoUnseen, videoDesc, arcLabelFor, videoStatus])
+
+  // Au-dela de 120 episodes on decoupe par centaines, comme les chapitres.
+  const videoRanges = useMemo(() => {
+    if (filteredVideos.length <= 120) return []
+    const out = []
+    for (let i = 0; i < filteredVideos.length; i += 100) {
+      const part = filteredVideos.slice(i, i + 100)
+      // Meme raison : « 1–12 » pour les cent premiers episodes de mha serait
+      // faux. Les tranches sont donc numerotees par rang dans la liste.
+      out.push({ label: `${i + 1}–${i + part.length}`, videos: part })
+    }
+    return out
+  }, [filteredVideos])
+
+  const shownVideos = videoRanges.length > 1
+    ? (videoRanges[Math.min(videoRange, videoRanges.length - 1)]?.videos || [])
+    : filteredVideos
+
+  // Reprise : l'episode commence et non termine, sinon le premier non vu.
+  const resumeVideo = useMemo(() => {
+    const started = VIDEOS.find(v => { const st = videoStatus(v); return st && !st.done })
+    if (started) return started
+    const unseen = VIDEOS.find(v => !videoStatus(v)?.done)
+    return unseen && unseen !== VIDEOS[0] ? unseen : null
+  }, [VIDEOS, videoStatus])
 
   // Group chapters by arc
   const chaptersByArc = useMemo(() => {
@@ -750,38 +838,6 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
         <ChapterCard key={ch.num} ch={ch} color={color} status={progress[ch.num] || null} onClick={() => openChapter(chNumToIdx[ch.num])} />
       ))}
     </div>
-  )
-
-  const renderMainContent = () => (
-    tab === 'scans' ? (
-      CHAPTERS.length === 0
-        ? <EmptyState icon={headerEmoji} title="Scans bientÃ´t disponibles" desc={`Les chapitres de ${title} seront ajoutÃ©s prochainement.`} />
-        : chaptersByArc
-          ? chaptersByArc.map(arc => (
-              <div key={arc.name} ref={el => { if (el) arcRefs.current[arc.name] = el }}>
-                <ArcHeader arc={arc} color={color} readCount={readCountForArc(arc)} total={arc.chapters.length} />
-                {renderChapterGrid(arc.chapters)}
-              </div>
-            ))
-          : renderChapterGrid(CHAPTERS)
-    ) : (
-      VIDEOS.length === 0
-        ? <EmptyState icon="ðŸŽ¬" title="Ã‰pisodes bientÃ´t disponibles" desc="Les Ã©pisodes seront ajoutÃ©s prochainement." />
-        : <>
-            {isTpn && <ArcFilter arcs={videoArcFilters} active={videoArc} onChange={setVideoArc} color={color} />}
-            <div style={{ display: 'grid', gridTemplateColumns: isTpn ? 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: isTpn ? 20 : 18 }}>
-              {filteredVideos.map((v, i) => (
-                <VideoCard
-                  key={`${v.episode}-${i}`}
-                  video={v}
-                  color={color}
-                  premium={isTpn}
-                  onPlay={() => setPlayerIdx(VIDEOS.indexOf(v))}
-                />
-              ))}
-            </div>
-          </>
-    )
   )
 
   return (
@@ -912,15 +968,17 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
               CHAPTERS.length === 0
                 ? <EmptyState icon={headerEmoji} title="Scans bientôt disponibles" desc={`Les chapitres de ${title} seront ajoutés prochainement.`} />
                 : <>
-                    <ScansToolbar
+                    <CatalogToolbar
                       color={color}
+                      labels={SCAN_LABELS}
                       total={CHAPTERS.length}
                       shown={chaptersByArc ? CHAPTERS.length : shownChapters.length}
                       query={scanQuery} onQuery={v => { setScanQuery(v); setScanRange(0) }}
                       desc={scanDesc} onToggleDesc={() => { setScanDesc(d => !d); setScanRange(0) }}
                       unread={scanUnread} onToggleUnread={() => { setScanUnread(u => !u); setScanRange(0) }}
                       ranges={ranges} range={scanRange} onRange={setScanRange}
-                      resume={resumeChapter} onResume={() => openChapter(chNumToIdx[resumeChapter.num])}
+                      resume={resumeChapter && { thumb: resumeChapter.pages?.[0], label: `Chapitre ${resumeChapter.num}` }}
+                      onResume={() => openChapter(chNumToIdx[resumeChapter.num])}
                     />
                     {chaptersByArc
                       ? chaptersByArc.map(arc => {
@@ -941,18 +999,33 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
               VIDEOS.length === 0
                 ? <EmptyState icon="🎬" title="Épisodes bientôt disponibles" desc="Les épisodes seront ajoutés prochainement." />
                 : <>
-                    {isTpn && <ArcFilter arcs={videoArcFilters} active={videoArc} onChange={setVideoArc} color={color} />}
-                    <div style={{ display: 'grid', gridTemplateColumns: usesEpisodeLayout ? 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: usesEpisodeLayout ? 20 : 18 }}>
-                      {filteredVideos.map((v, i) => (
-                        <VideoCard
-                          key={`${v.episode}-${i}`}
-                          video={v}
-                          color={color}
-                          premium={usesEpisodeLayout}
-                          onPlay={() => setPlayerIdx(VIDEOS.indexOf(v))}
-                        />
-                      ))}
-                    </div>
+                    {videoArcFilters.length > 0 && <ArcFilter arcs={videoArcFilters} active={videoArc} onChange={a => { setVideoArc(a); setVideoRange(0) }} color={color} />}
+                    <CatalogToolbar
+                      color={color}
+                      labels={VIDEO_LABELS}
+                      total={VIDEOS.length}
+                      shown={filteredVideos.length}
+                      query={videoQuery} onQuery={v => { setVideoQuery(v); setVideoRange(0) }}
+                      desc={videoDesc} onToggleDesc={() => { setVideoDesc(d => !d); setVideoRange(0) }}
+                      unread={videoUnseen} onToggleUnread={() => { setVideoUnseen(u => !u); setVideoRange(0) }}
+                      ranges={videoRanges} range={videoRange} onRange={setVideoRange}
+                      resume={resumeVideo && { thumb: resumeVideo.thumbnail, wide: true, label: resumeVideo.title || `Épisode ${resumeVideo.episode}` }}
+                      onResume={() => setPlayerIdx(videoIdx.get(resumeVideo) ?? 0)}
+                    />
+                    {shownVideos.length ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: usesEpisodeLayout ? 'repeat(auto-fit, minmax(min(100%, 285px), 1fr))' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: usesEpisodeLayout ? 20 : 18 }}>
+                        {shownVideos.map((v, i) => (
+                          <VideoCard
+                            key={`${v.episode}-${i}`}
+                            video={v}
+                            color={color}
+                            premium={usesEpisodeLayout}
+                            status={videoStatus(v)}
+                            onPlay={() => setPlayerIdx(videoIdx.get(v) ?? 0)}
+                          />
+                        ))}
+                      </div>
+                    ) : <EmptyState icon="🔍" title="Aucun épisode" desc="Aucun épisode ne correspond à ces filtres." />}
                   </>
             )}
               </main>
