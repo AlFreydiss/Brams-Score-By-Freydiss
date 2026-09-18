@@ -5,7 +5,9 @@
 // progression localStorage, pages animes dédiées). Rollback : re-pointer
 // App.jsx sur AnimeHub.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
+import { SCANS } from '../../data/scans-catalog.js'
 import Navbar from '../Navbar.jsx'
 import { C, FONT_BODY, FONT_DISPLAY, GUTTER, RADIUS_PANEL, SHADOW_CARD, themeFor, THEME_FONT_HREF } from './tokens.js'
 import { DUR, MOTION_CSS } from '../../lib/motion.js'
@@ -143,6 +145,9 @@ export default function AnimeHubV2(props) {
     'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
     kaguya: props.onOpenKaguya, hxh: props.onOpenHxh, quintuplets: props.onOpenQuintuplets,
   })[id]
+  // Les animes s'ouvrent par callbacks passes en props ; les scans ont de
+  // vraies routes /manga/<slug>, d'ou le navigate.
+  const navigate = useNavigate()
   const openAnime = (a) => {
     logAnimeOpen(a.id, discordId) // alimente le « Top du moment » serveur (fire-and-forget)
     open(a.id)?.()
@@ -699,6 +704,33 @@ export default function AnimeHubV2(props) {
                   <BackdropCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={300}
                     progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
                 ))}
+              </AnimeRow>
+            )}
+
+            {/* ── Scans ──
+                 La section s'appelle « Animés & Scans » mais n'exposait aucun
+                 scan : ils n'apparaissaient que dans « Reprendre », et encore,
+                 uniquement si on en avait deja commence un. */}
+            {SCANS.length > 0 && (
+              <AnimeRow title="Scans" count={SCANS.length}>
+                {SCANS.map(sc => {
+                  // Affiche de l'anime quand la serie en a un, sinon la premiere
+                  // page du premier chapitre.
+                  const art = sc.animeId ? ANIMES.find(a => a.id === sc.animeId)?.coverImage : null
+                  return (
+                    <AnimeCard
+                      key={sc.slug}
+                      width={180}
+                      anime={{
+                        id: sc.slug,
+                        title: sc.title,
+                        coverImage: art || sc.cover,
+                        type: `${sc.chapters} chapitres`,
+                      }}
+                      onOpen={() => navigate(`/manga/${sc.slug}`)}
+                    />
+                  )
+                })}
               </AnimeRow>
             )}
 

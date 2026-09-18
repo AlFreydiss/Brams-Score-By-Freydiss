@@ -166,6 +166,15 @@ if (!DRY) {
   writeFileSync(dest, JSON.stringify(out, null, 2) + '\n')
   console.log(`\n\nenvoyes ${done} · deja presents ${skipped} · echecs ${failed}`)
   console.log(`ecrit ${dest.replace(ROOT, '.')} (${out.length} chapitres)`)
+  // Le catalogue du hub est regenere ici meme : Boruto avait ete televerse et
+  // lisible sur /manga/boruto sans jamais apparaitre dans « Animes & Scans »,
+  // faute d'avoir relance cette etape a la main.
+  const { execFileSync } = await import('node:child_process')
+  try {
+    execFileSync(process.execPath, [join(ROOT, 'scripts', 'gen-scans-catalog.mjs')], { stdio: 'inherit' })
+  } catch (e) {
+    console.error('catalogue du hub non regenere :', e.message)
+  }
   if (failed) { console.error('\nDes images ont echoue : relance la meme commande, les reussites sont sautees.'); process.exit(1) }
 } else {
   console.log(`\nECRIRAIT ${dest.replace(ROOT, '.')} (${out.length} chapitres)`)
