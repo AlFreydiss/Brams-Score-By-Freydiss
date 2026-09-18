@@ -1780,6 +1780,9 @@ html[data-cinema="1"] .cinema-amv { opacity: 1 !important; }
   justify-content: center;
   gap: 2px;
   min-width: 0;
+  /* Garde-fou : la colonne centrale ne deborde jamais sur la zone de droite,
+     meme si un libelle rallonge. Clipper vaut mieux que superposer. */
+  overflow: hidden;
 }
 .nav-link-premium {
   position: relative;
@@ -2207,12 +2210,21 @@ html[data-cinema="1"] .cinema-amv { opacity: 1 !important; }
    les 8 liens de nav débordaient leur colonne et percutaient « Boutique »
    (« Animés & Scans » + « Boutique » se télescopaient). On libère de la place
    AVANT que ça se chevauche : réseaux sociaux masqués + liens/boutons condensés. */
-@media (max-width: 1480px) {
+/* 1620 et non 1480 : les liens du centre commencaient a chevaucher la zone
+   Boutique des ~1500px, soit juste au-dessus de l ancien palier. */
+@media (max-width: 1620px) {
   .nav-socials-premium { display: none !important; }
   .nav-shell-premium { gap: 10px; }
   .nav-link-premium { padding: 0 8px; font-size: 11px; }
   .nav-user-button { width: 132px; }
   .nav-user-name { max-width: 70px; }
+}
+
+/* Cran supplementaire : entre 1180 et 1400 les neuf liens ne tenaient toujours
+   pas et « Animes & Scans » se faisait clipper par le garde-fou overflow. */
+@media (max-width: 1400px) {
+  .nav-link-premium { padding: 0 5px; font-size: 10.5px; letter-spacing: 0; }
+  .nav-zone-center { gap: 0; }
 }
 
 @media (max-width: 1180px) {

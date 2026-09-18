@@ -4,7 +4,9 @@
 export const C = {
   bg0:    '#0B0E14',                  // fond page (haut)
   bg1:    '#0D111A',                  // fond page (bas)
-  panel:  'rgba(13,17,26,0.85)',      // barres sticky (avec blur)
+  panel:  'rgba(13,17,26,0.97)',      // barres sticky : quasi opaque, sinon les
+                                      // titres de section restaient lisibles a
+                                      // travers en passant dessous au scroll
   text:   '#E8EAF0',                  // texte principal
   dim:    '#949AA8',                  // texte secondaire
   faint:  '#59616F',                  // texte tertiaire / placeholders
