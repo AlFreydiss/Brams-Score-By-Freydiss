@@ -4,11 +4,14 @@ import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 import EpisodeWatch from './EpisodeWatch.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
-import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/nnt-videos.json'
-import CHAPTERS from '../data/nnt-chapters.json'
 
 const VIDEOS = VIDEOS_RAW
+
+// La page n'a jamais eu de grille de chapitres : rien n'appelait setReading, et
+// les 730 ko de nnt-chapters.json ne servaient qu'a afficher ce nombre. Les URLs
+// qu'ils portaient pointaient sur le bucket Supabase vide (« NoSuchKey »).
+const CHAPTER_COUNT = 342
 
 const COLOR  = '#8e44ad'
 const COLOR2 = '#c084fc'
@@ -31,12 +34,6 @@ function loadProgress() {
 }
 function saveProgress(p) {
   try { localStorage.setItem(`${NS}_vp`, JSON.stringify(p)) } catch {}
-}
-function loadScanProgress() {
-  try { return JSON.parse(localStorage.getItem(`${NS}_progress`) || '{}') } catch { return {} }
-}
-function saveScanProgress(p) {
-  try { localStorage.setItem(`${NS}_progress`, JSON.stringify(p)) } catch {}
 }
 
 const CSS = `
@@ -180,8 +177,6 @@ export default function NntPage({ onClose }) {
   const [playerIdx, setPlayerIdx] = useState(null)
   const [detailIdx, setDetailIdx] = useState(null)
   const [progress, setProgress]   = useState(loadProgress)
-  const [scanProg, setScanProg]   = useState(loadScanProgress)
-  const [reading, setReading]     = useState(null)
   const scrollRef = useRef(null)
 
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
@@ -213,7 +208,7 @@ export default function NntPage({ onClose }) {
   const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
-  const chapterCount = CHAPTERS.length || 342
+  const chapterCount = CHAPTER_COUNT
 
   return (
     <>
@@ -274,23 +269,6 @@ export default function NntPage({ onClose }) {
                   <div style={{ fontSize:34, marginBottom:10 }}>📺</div>
                   Les épisodes arrivent bientôt — encodage et mise en ligne à venir.
                 </div>
-                {reading !== null && CHAPTERS[reading] && (
-                  <div style={{ position:'fixed', inset:0, zIndex:9999, background:'#0a0814' }}>
-                    <Reader
-                      chapter={CHAPTERS[reading]}
-                      chapterIndex={reading}
-                      onClose={() => setReading(null)}
-                      onPrevChapter={() => setReading(Math.max(0, reading-1))}
-                      onNextChapter={() => setReading(Math.min(CHAPTERS.length-1, reading+1))}
-                      totalChapters={CHAPTERS.length}
-                      onFinish={() => { const p = {...scanProg, [CHAPTERS[reading].num]: 'read'}; setScanProg(p); try{localStorage.setItem(`${NS}_progress`, JSON.stringify(p))}catch{} }}
-                      isRead={scanProg[CHAPTERS[reading]?.num] === 'read'}
-                      namespace={NS}
-                      themeColor={COLOR}
-                    />
-                  </div>
-                )}
-
                 <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
                   <span style={{ fontSize:16 }}>🐗</span>
                   <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
