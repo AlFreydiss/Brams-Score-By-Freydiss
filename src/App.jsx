@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { SCANS } from './data/scans-catalog.js'
 import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
@@ -112,7 +113,7 @@ const NMIlePage          = lazyWithReload(() => import('./features/nouveau-monde
 const NMPlayFrame        = lazyWithReload(() => import('./features/nouveau-monde/PlayFrame.jsx'))
 const ChessUniverse      = lazyWithReload(() => import('./games/chess/ChessUniverse.jsx'))
 const DraughtsUniverse   = lazyWithReload(() => import('./games/draughts/DraughtsUniverse.jsx'))
-const MangaReaderPage    = lazyWithReload(() => import('./components/MangaReaderPage.jsx'))
+const GenericMangaPage   = lazyWithReload(() => import('./components/GenericMangaPage.jsx'))
 
 // Registre des scans manga (hors One Piece qui a sa propre page ScansPage).
 const MANGA_REGISTRY = {
@@ -152,13 +153,57 @@ function AuthLoadingScreen({ zIndex = 500 }) {
   )
 }
 
+// Chapitres et episodes sont charges a la demande : kingdom.json pese 1,3 Mo,
+// mha-videos.json porte 138 episodes. import.meta.glob en fait des chunks
+// separes, rien n'entre dans le bundle principal.
+const MANGA_CHAPTERS = import.meta.glob('./data/manga/*.json')
+const ANIME_VIDEOS   = import.meta.glob('./data/*-videos.json')
+
 function MangaRoute() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const m = MANGA_REGISTRY[slug] || { title: slug, color: '#8b5cf6' }
+  const animeId = SCANS.find(s => s.slug === slug)?.animeId || null
+  const [chapters, setChapters] = useState(null)
+  const [videos, setVideos] = useState([])
+
+  useEffect(() => {
+    let alive = true
+    setChapters(null)
+    setVideos([])
+    MANGA_CHAPTERS[`./data/manga/${slug}.json`]?.()
+      .then(mod => { if (alive) setChapters(Array.isArray(mod.default) ? mod.default : []) })
+      .catch(() => { if (alive) setChapters([]) })
+    // Les episodes de l'anime quand la serie en a un : c'est ce qui fait
+    // apparaitre l'onglet « Episodes » a cote de « Scans ».
+    const vk = animeId ? `./data/${animeId}-videos.json` : null
+    if (vk && ANIME_VIDEOS[vk]) {
+      ANIME_VIDEOS[vk]()
+        .then(mod => { if (alive) setVideos(Array.isArray(mod.default) ? mod.default : []) })
+        .catch(() => {})
+    }
+    return () => { alive = false }
+  }, [slug, animeId])
+
+  if (!chapters) {
+    return <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', background: '#08070c', color: 'rgba(255,255,255,.55)', fontSize: 14 }}>Chargement…</div>
+  }
 
   // AccÃ¨s libre : plus de connexion requise pour lire les scans.
-  return <MangaReaderPage slug={slug} title={m.title} color={m.color} onClose={() => navigate('/')} />
+  return (
+    <GenericMangaPage
+      chaptersData={chapters}
+      videosData={videos}
+      color={m.color}
+      namespace={slug}
+      title={m.title}
+      headerEmoji="📖"
+      emojiList={['📖']}
+      arcsData={null}
+      initialTab="scans"
+      onClose={() => navigate('/animes-scan')}
+    />
+  )
 }
 const ProfilePageYonkou  = lazyWithReload(() => import('./components/ProfilePageYonkou.jsx'))
 const FriendsPage        = lazyWithReload(() => import('./components/FriendsPage.jsx'))

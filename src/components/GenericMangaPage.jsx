@@ -514,7 +514,7 @@ function VideoCard({ video, onPlay, color, premium = false }) {
 }
 
 
-export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, onClose }) {
+export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, initialTab, onClose }) {
   const CHAPTERS = useMemo(() => chaptersData.map((ch, i) => ({
     num:   ch.num,
     title: ch.title || `Chapitre ${ch.num}`,
@@ -527,7 +527,9 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const isOnePiece = namespace === 'onepiece'
   const usesEpisodeLayout = isTpn || isOnePiece
 
-  const [tab,          setTab]          = useState(() => videosData.length > 0 ? 'videos' : 'scans')
+  // initialTab prime : on arrive depuis la rangee « Scans » du hub, ouvrir sur
+  // les episodes serait a contre-emploi. Sans lui, ancien comportement.
+  const [tab,          setTab]          = useState(() => initialTab || (videosData.length > 0 ? 'videos' : 'scans'))
   const [reading,      setReading]      = useState(null)
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
   const [playerIdx,    setPlayerIdx]    = useState(null)

@@ -1,7 +1,7 @@
 // GENERE PAR scripts/gen-scans-catalog.mjs — NE PAS EDITER A LA MAIN.
 // Relancer apres chaque ajout de serie. Ne contient que de quoi afficher une
 // carte : les chapitres eux-memes restent dans src/data/manga/<slug>.json,
-// charges a la demande par MangaReaderPage.
+// charges a la demande par la route /manga/:slug.
 export const SCANS = [
   {
     "slug": "aot",
