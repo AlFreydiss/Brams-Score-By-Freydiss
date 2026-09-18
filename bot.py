@@ -1450,6 +1450,20 @@ class _BotTree(app_commands.CommandTree):
         await interaction.response.send_message(embed=embed)
         return False
 
+    async def on_error(self, interaction: discord.Interaction, error) -> None:
+        # Les commandes posees sur bot.tree n'ont pas de cog_app_command_error :
+        # sans ce relais, un cooldown remontait en exception non geree et le
+        # pirate ne voyait aucun message. Le reste garde le comportement par defaut.
+        if isinstance(error, app_commands.CommandOnCooldown):
+            try:
+                await interaction.response.send_message(
+                    f"⏳ Doucement moussaillon, réessaie dans {error.retry_after:.0f}s.", ephemeral=True
+                )
+            except Exception:
+                pass
+            return
+        await super().on_error(interaction, error)
+
 
 intents = discord.Intents.default()
 intents.voice_states = True
@@ -8686,6 +8700,7 @@ async def _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_
 
 @bot.tree.command(name="wrapped", description="Ouvre TON Brams Wrapped (éligible après 1 mois à bord)")
 @app_commands.guilds(*GUILD_IDS)
+@app_commands.checks.cooldown(1, 60.0)
 async def wrapped_cmd(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     uid = str(interaction.user.id)
@@ -8738,6 +8753,17 @@ async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
         return
 
     print(f"[WRAPPED] lancement : {len(eligible)} membres eligibles (1 mois+)")
+    # Le token d'interaction meurt a 15 min. Avec un DM par membre (throttle 1.1s)
+    # la boucle depasse cette limite des ~800 membres : on accuse reception tout de
+    # suite, et le bilan final part hors interaction (voir plus bas).
+    eta_min = len(eligible) * 1.1 / 60 if dm else 0.0
+    await interaction.followup.send(
+        f"🧭 Lancement sur **{len(eligible)}** membres à bord depuis 1 mois."
+        + (f" Environ **{eta_min:.0f} min** de DM." if eta_min >= 1 else "")
+        + "\nJe t'envoie le bilan en DM quand c'est fini.",
+        ephemeral=True,
+    )
+
     ok = fail_dm = 0
     for uid in eligible:
         token = await _wr_generate_one(uid, guild, now, cutoff, period, all_sessions, hours_by_uid)
@@ -8754,13 +8780,24 @@ async def wrapped_lancer_cmd(interaction: discord.Interaction, dm: bool = True):
                 except Exception as e:
                     fail_dm += 1
                     print(f"[WRAPPED] DM {uid}: {e}")
-                await asyncio.sleep(1.1)
+                await asyncio.sleep(1.1)   # throttle anti rate-limit DM Discord
     print(f"[WRAPPED] termine : {ok} snapshots, {fail_dm} DM fermes")
-    await interaction.followup.send(
+
+    # Bilan HORS interaction : la boucle a pu durer plus longtemps que les 15 min
+    # du token, auquel cas un followup.send echouerait en 401 Unknown Webhook et
+    # l'admin ne saurait jamais si la generation a abouti.
+    summary = (
         f"🧭 **Wrapped généré !** {ok} membres à bord depuis 1 mois · {fail_dm} DM fermés.\n"
-        f"Chacun peut aussi taper `/wrapped` pour régénérer le sien.",
-        ephemeral=True,
+        f"Chacun peut aussi taper `/wrapped` pour régénérer le sien."
     )
+    for target in (interaction.user, interaction.channel):
+        if target is None:
+            continue
+        try:
+            await target.send(summary)
+            break
+        except Exception as e:
+            print(f"[WRAPPED] bilan via {type(target).__name__}: {e}")
 
 
 # ── FLASHBACK : milestone + token + DM (page /flashback/:token) ───────────────

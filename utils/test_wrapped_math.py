@@ -5,6 +5,8 @@ from wrapped_math import (
     membership_ok,
     hour_vibe,
     sort_sessions,
+    group_by_channel,
+    overlap_grouped,
     MEMBERSHIP_DAYS,
 )
 
@@ -91,6 +93,27 @@ def test_sort_sessions_is_chronological():
     rows = [(300.0, 400.0, "a"), (100.0, 900.0, None), (100.0, 200.0, "b")]
     out = sort_sessions(rows)
     assert [ (r[0], r[1]) for r in out ] == [(100.0, 200.0), (100.0, 900.0), (300.0, 400.0)]
+
+
+def test_overlap_grouped_equals_overlap_same_channel():
+    # best_binome regroupait les sessions de l'appelant a chaque candidat (O(N^2)).
+    # La version pre-groupee doit rendre exactement le meme resultat.
+    a = [(0, 2 * 3600, "sunny"), (3 * 3600, 5 * 3600, "grand-line")]
+    for b in (
+        [(3600, 4 * 3600, "sunny")],
+        [(0, 6 * 3600, "grand-line")],
+        [(0, 6 * 3600, "ailleurs")],
+        [(0, 6 * 3600, None)],
+        [],
+    ):
+        assert overlap_grouped(group_by_channel(a), b) == overlap_same_channel(a, b)
+
+
+def test_best_binome_without_any_channel_returns_none():
+    # Aucune session avec salon -> aucun duo possible, sans parcourir les candidats.
+    mine = [(0, 10 * 3600, None)]
+    others = {"x": ([(0, 10 * 3600, "sunny")], "X", None)}
+    assert best_binome("me", mine, others) is None
 
 
 if __name__ == "__main__":

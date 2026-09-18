@@ -39,7 +39,7 @@ def sort_sessions(sessions: list) -> list:
     return sorted(sessions, key=lambda s: (s[0], s[1]))
 
 
-def _group_by_channel(sessions: list[tuple[float, float, object]]) -> dict[str, list[tuple[float, float]]]:
+def group_by_channel(sessions: list[tuple[float, float, object]]) -> dict[str, list[tuple[float, float]]]:
     by: dict[str, list[tuple[float, float]]] = {}
     for item in sessions:
         if len(item) < 3:
@@ -59,10 +59,15 @@ def _group_by_channel(sessions: list[tuple[float, float, object]]) -> dict[str, 
     return by
 
 
-def overlap_same_channel(a, b) -> float:
-    """Heures passées dans LE MÊME salon au même moment. 0 si aucun salon commun."""
-    ga = _group_by_channel(a)
-    gb = _group_by_channel(b)
+def overlap_grouped(ga: dict, b) -> float:
+    """overlap_same_channel avec le premier terme déjà groupé par salon.
+
+    Permet à best_binome de grouper les sessions de l'appelant UNE fois au lieu
+    d'une fois par candidat (le regroupement était refait N fois).
+    """
+    gb = group_by_channel(b)
+    if not gb:
+        return 0.0
     total = 0.0
     for ch, sa in ga.items():
         sb = gb.get(ch)
@@ -72,15 +77,23 @@ def overlap_same_channel(a, b) -> float:
     return total / 3600.0
 
 
+def overlap_same_channel(a, b) -> float:
+    """Heures passées dans LE MÊME salon au même moment. 0 si aucun salon commun."""
+    return overlap_grouped(group_by_channel(a), b)
+
+
 def best_binome(uid: str, mine, others: dict) -> dict | None:
     """others: {ouid: (sessions, name, avatar)}. Retourne le meilleur duo ou None."""
+    gmine = group_by_channel(mine)
+    if not gmine:
+        return None
     best = None
     best_ov = 0.0
     for ouid, pack in others.items():
         if str(ouid) == str(uid):
             continue
         osess, oname, oavatar = pack[0], pack[1], pack[2]
-        ov = overlap_same_channel(mine, osess)
+        ov = overlap_grouped(gmine, osess)
         if ov > best_ov:
             best_ov = ov
             best = {"username": oname, "avatar_url": oavatar, "hours": round(ov, 1)}
