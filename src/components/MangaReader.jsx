@@ -7,8 +7,27 @@ const DIRS = [
   { key: 'webtoon', icon: '↓', label: 'Webtoon' },
 ]
 
-function loadDir() {
-  try { return localStorage.getItem('manga_reading_dir') || 'rtl' } catch { return 'rtl' }
+// Les webtoons coreens se lisent en defilement vertical, les mangas japonais
+// page par page de droite a gauche. Un defaut unique se trompait pour les uns
+// ou pour les autres. Le choix explicite de l'utilisateur prime toujours.
+const WEBTOON_NATIVE = new Set(['solo-leveling', 'sl'])
+
+function loadDir(namespace) {
+  try {
+    const saved = localStorage.getItem('manga_reading_dir')
+    if (saved) return saved
+  } catch {}
+  return WEBTOON_NATIVE.has(namespace) ? 'webtoon' : 'rtl'
+}
+
+const FITS = [
+  { key: 'width',  label: 'Largeur' },
+  { key: 'height', label: 'Hauteur' },
+  { key: 'raw',    label: 'Taille réelle' },
+]
+
+function loadFit() {
+  try { return localStorage.getItem('manga_reading_fit') || 'width' } catch { return 'width' }
 }
 
 export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)' }) {
@@ -19,7 +38,8 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   const [markedRead,  setMarkedRead]  = useState(isRead)
   const [barsVisible, setBarsVisible] = useState(true)
   const [zoom,        setZoom]        = useState(1)
-  const [dir,         setDir]         = useState(loadDir)
+  const [dir,         setDir]         = useState(() => loadDir(namespace))
+  const [fit,         setFit]         = useState(loadFit)
   const [webtoonPct,  setWebtoonPct]  = useState(0)
   const touchX    = useRef(null)
   const touchY    = useRef(null)
@@ -36,12 +56,22 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
 
   const clampZoom = z => Math.round(Math.max(0.5, Math.min(3, z)) * 10) / 10
 
+  // Precharge les deux pages suivantes : en page par page, chaque tour de page
+  // attendait sinon un aller-retour reseau complet.
+  useEffect(() => {
+    if (isWebtoon) return
+    for (const i of [page + 1, page + 2]) {
+      if (i < pages.length) { const im = new Image(); im.decoding = 'async'; im.src = pages[i] }
+    }
+  }, [page, pages, isWebtoon])
+
   useEffect(() => { zoomRef.current = zoom }, [zoom])
 
   useEffect(() => {
     try { localStorage.setItem('manga_reading_dir', dir) } catch {}
+    try { localStorage.setItem('manga_reading_fit', fit) } catch {}
     scrollRef.current?.scrollTo({ top: 0 })
-  }, [dir])
+  }, [dir, fit])
 
   const showBars = useCallback(() => {
     setBarsVisible(true)
@@ -270,6 +300,27 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
           ))}
         </div>
 
+        {/* Ajustement de la page — sans objet en webtoon, ou la page occupe
+            toujours la largeur de la colonne. */}
+        {!isWebtoon && (
+          <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+            {FITS.map(f => (
+              <button
+                className="mr-dir-btn"
+                key={f.key} onClick={() => setFit(f.key)} title={`Ajuster : ${f.label}`}
+                style={{
+                  padding: '6px 12px', border: 'none', cursor: 'pointer',
+                  background: fit === f.key ? themeColor : 'rgba(255,255,255,0.04)',
+                  color: fit === f.key ? '#fff' : 'rgba(255,255,255,0.38)',
+                  transition: 'all .15s', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+                }}
+              >
+                <span className="mr-dir-label">{f.label.toUpperCase()}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="mr-chapbtns" style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <button
             onClick={handleMarkRead} disabled={markedRead}
@@ -331,11 +382,21 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
               </div>
             )}
             {pages[page] && (
-              <img loading="lazy" decoding="async"
+              <img loading="eager" decoding="async"
                 key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page + 1}`}
                 onLoad={() => setImgLoaded(true)}
                 onError={() => { setImgLoaded(true); setImgError(true) }}
-                style={{ display: imgError ? 'none' : 'block', width: '100%', height: 'auto', opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.2s' }}
+                style={{
+                  display: imgError ? 'none' : 'block',
+                  opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.2s',
+                  // Largeur : la page remplit la colonne. Hauteur : elle tient a
+                  // l'ecran sans scroll. Taille reelle : aucun redimensionnement.
+                  ...(fit === 'height'
+                    ? { height: '100vh', width: 'auto', maxWidth: '100%', margin: '0 auto' }
+                    : fit === 'raw'
+                      ? { width: 'auto', height: 'auto', maxWidth: 'none' }
+                      : { width: '100%', height: 'auto' }),
+                }}
               />
             )}
           </div>
