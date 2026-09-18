@@ -23,6 +23,7 @@ from utils.wrapped_math import (
     membership_ok as _wr_membership_ok,
     days_aboard as _wr_days_aboard,
     hour_vibe as _wr_hour_vibe,
+    sort_sessions as _wr_sort_sessions,
     MEMBERSHIP_DAYS as WRAPPED_MIN_MEMBERSHIP_DAYS,
 )
 
@@ -2561,8 +2562,13 @@ async def on_ready():
             _DIRTY.add(uid)
         else:
             if seen > jt:
-                udata.setdefault("vocal_sessions", []).append({"start": jt, "end": seen})
-                archive_voice_session(uid, jt, seen, None)
+                # Sans "channel", _group_by_channel jette la session : les heures qui
+                # traversent un redeploiement ne comptaient plus pour le binome.
+                vch = udata.get("voice_channel")
+                udata.setdefault("vocal_sessions", []).append(
+                    {"start": jt, "end": seen, "channel": vch}
+                )
+                archive_voice_session(uid, jt, seen, vch)
                 closed += 1
             # Paie le reliquat Berry du temps réellement compté (last_berry_ts → seen),
             # comme au départ vocal, AVANT de purger le marqueur (sinon sous-paiement).
@@ -2589,6 +2595,9 @@ async def on_ready():
                     user["join_time"] = _now
                     user["voice_seen"] = _now
                     user["last_berry_ts"] = _now
+                    # Memorise le salon : sinon la session rouverte ici se refermerait
+                    # sans salon au prochain restart.
+                    user["voice_channel"] = str(channel.id)
                     opened += 1
                     _DIRTY.add(uid)
 
@@ -8467,8 +8476,7 @@ def _wr_sessions(udata, cutoff, now, live_channel=None):
     if jt and now > jt:
         ch = live_channel or udata.get("voice_channel")
         out.append((max(float(jt), cutoff), now, ch))
-    out.sort()
-    return out
+    return _wr_sort_sessions(out)
 
 def _wr_live_channels(guild):
     return _ai_live_channels(guild)

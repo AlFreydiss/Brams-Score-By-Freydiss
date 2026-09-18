@@ -4,6 +4,7 @@ from wrapped_math import (
     best_binome,
     membership_ok,
     hour_vibe,
+    sort_sessions,
     MEMBERSHIP_DAYS,
 )
 
@@ -74,6 +75,22 @@ def test_night_owl():
     night = [(0, 4 * 3600, "c")]
     v = hour_vibe(night, tz_offset_hours=2)
     assert v["vibe"] == "night_owl"
+
+
+def test_sort_sessions_mixed_channel_types():
+    # Les writers ne stockent pas tous le salon pareil : fermeture au restart et
+    # /ajouter_vocal ecrivent None, le reste ecrit str, du legacy peut porter un int.
+    # A bornes egales, un tri sur le tuple entier comparait ces types -> TypeError.
+    rows = [(100.0, 500.0, None), (100.0, 500.0, "42"), (100.0, 500.0, 42)]
+    out = sort_sessions(rows)
+    assert len(out) == 3
+    assert [ (r[0], r[1]) for r in out ] == [(100.0, 500.0)] * 3
+
+
+def test_sort_sessions_is_chronological():
+    rows = [(300.0, 400.0, "a"), (100.0, 900.0, None), (100.0, 200.0, "b")]
+    out = sort_sessions(rows)
+    assert [ (r[0], r[1]) for r in out ] == [(100.0, 200.0), (100.0, 900.0), (300.0, 400.0)]
 
 
 if __name__ == "__main__":

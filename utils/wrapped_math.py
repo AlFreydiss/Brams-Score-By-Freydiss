@@ -28,6 +28,17 @@ def interval_overlap_seconds(a: list[tuple[float, float]], b: list[tuple[float, 
     return total
 
 
+def sort_sessions(sessions: list) -> list:
+    """Trie les sessions chronologiquement SANS comparer le salon.
+
+    Le salon est heterogene selon le writer (None a la fermeture apres restart,
+    str en vocal reel, int possible en legacy) : trier sur le tuple entier fait
+    participer ce 3e element des que deux sessions partagent start ET end, et
+    leve TypeError.
+    """
+    return sorted(sessions, key=lambda s: (s[0], s[1]))
+
+
 def _group_by_channel(sessions: list[tuple[float, float, object]]) -> dict[str, list[tuple[float, float]]]:
     by: dict[str, list[tuple[float, float]]] = {}
     for item in sessions:
