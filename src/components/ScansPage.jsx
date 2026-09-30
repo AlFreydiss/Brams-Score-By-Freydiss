@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import CHAPTERS_DATA from '../data/chapters-data.json'
 import { Reader } from './MangaReader.jsx'
 import { onLiveProgress } from '../lib/liveSync.js'
@@ -247,7 +248,41 @@ function ListRow({ ch, onOpen, status, highlight, cardRef, onToggleRead }) {
 
 // ── Page principale ───────────────────────────────────────────────────────────
 
-export default function ScansPage({ onClose }) {
+// chapters-data.json est vide depuis juin 2026 : les pages vivaient dans le
+// bucket Supabase « scans », vidé après le dépassement d'egress, et ne sont pas
+// (encore) sur R2. La page affichait « Aucun résultat pour "" » — un écran qui
+// ressemble à un bug. Tant que les chapitres ne sont pas remis en ligne, on le
+// dit franchement et on renvoie vers ce qui marche.
+export default function ScansPage(props) {
+  return CHAPTERS.length ? <ScansCatalog {...props} /> : <ScansUnavailable onClose={props.onClose} />
+}
+
+function ScansUnavailable({ onClose }) {
+  const navigate = useNavigate()
+  const btn = (primary) => ({
+    padding: '12px 22px', borderRadius: 10, cursor: 'pointer', fontFamily: 'var(--body)', fontSize: 14.5, fontWeight: 700,
+    background: primary ? '#D7A44A' : 'rgba(255,255,255,0.07)', color: primary ? '#14110A' : '#fff',
+    border: primary ? 'none' : '1px solid rgba(255,255,255,0.14)',
+  })
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'grid', placeItems: 'center', padding: 24, background: 'radial-gradient(900px 600px at 50% 30%, rgba(215,164,74,0.10), transparent 60%), #0b0e14', color: '#E8EAF0', fontFamily: 'var(--body)' }}>
+      <div style={{ maxWidth: 520, textAlign: 'center' }}>
+        <div aria-hidden style={{ fontSize: 54, marginBottom: 14 }}>⚓</div>
+        <h1 style={{ margin: 0, fontFamily: 'var(--display)', fontSize: 'clamp(26px, 4vw, 36px)', fontWeight: 800 }}>Les scans One Piece reviennent bientôt</h1>
+        <p style={{ margin: '14px 0 26px', fontSize: 15, lineHeight: 1.6, color: 'rgba(232,234,240,.75)' }}>
+          On les déménage sur un nouvel hébergement. En attendant, l'anime est dispo en entier, et onze autres mangas se lisent déjà.
+        </p>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button style={btn(true)} onClick={() => navigate('/animes-scan/onepiece')}>▶ Regarder One Piece</button>
+          <button style={btn(false)} onClick={() => navigate('/animes-scan?vue=scans')}>📖 Voir les autres scans</button>
+        </div>
+        {onClose && <button onClick={onClose} style={{ marginTop: 22, background: 'none', border: 'none', color: 'rgba(232,234,240,.5)', cursor: 'pointer', fontSize: 13 }}>← Retour</button>}
+      </div>
+    </div>
+  )
+}
+
+function ScansCatalog({ onClose }) {
   const [search,    setSearch]    = useState('')
   const [sort,      setSort]      = useState('asc')
   const [view,      setView]      = useState('grid')

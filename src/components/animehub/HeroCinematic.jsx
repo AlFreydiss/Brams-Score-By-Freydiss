@@ -4,6 +4,7 @@
 // Full-bleed, double scrim (bas→haut + gauche→droite), le bas FOND dans la page.
 import { useEffect, useState } from 'react'
 import { C, FONT_BODY, FONT_DISPLAY, GUTTER, themeFor, onAccent, rgba } from './tokens.js'
+import { hasKeyart, keyartSrc, keyartSrcSet } from './keyart.js'
 
 // Audit dev des keyarts : un log par fichier (largeur native + alerte < 1920px)
 const keyartLogged = new Set()
@@ -25,22 +26,31 @@ export function TitleArt({ anime, maxWidth = 560, maxHeight = 210, fallback }) {
   )
 }
 
-export default function HeroCinematic({ anime, rating = null, topRank = null, onWatch, onMyList, inList = false, onInfo }) {
-  const keyart = anime ? (anime.keyart || anime.coverImage) : null
+// active : slide affiché. Le texte des slides inactifs est masqué tout de suite
+// (sinon deux titres se superposaient pendant le fondu). load : le visuel n'est
+// demandé qu'à l'approche du slide — le hub en chargeait huit d'un coup.
+export default function HeroCinematic({ anime, rating = null, topRank = null, onWatch, onMyList, inList = false, onInfo, onRead, active = true, load = true }) {
+  const optimized = anime ? hasKeyart(anime.id) : false
+  const keyart = anime ? (optimized ? keyartSrc(anime.id, 1920) : (anime.keyart || anime.coverImage)) : null
+  const srcSet = optimized ? keyartSrcSet(anime.id) : undefined
+  // Portrait (mobile) : l'image couvre la HAUTEUR, elle s'affiche donc bien plus
+  // large que l'écran — d'où 180vh.
+  const sizes = optimized ? '(orientation: portrait) 180vh, 100vw' : undefined
   // Dimensions natives du keyart courant — pilote le fallback anti-étirement
   const [nat, setNat] = useState(null)
   useEffect(() => { setNat(null) }, [keyart])
 
-  // Preload du keyart du slide actif (le navigateur le charge en priorité)
+  // Preload du keyart du slide actif seulement, quand il n'a pas de srcset
+  // (le srcset laisse le navigateur choisir la taille, un preload la forcerait).
   useEffect(() => {
-    if (!keyart) return
+    if (!keyart || !active || srcSet) return
     const link = document.createElement('link')
     link.rel = 'preload'
     link.as = 'image'
     link.href = keyart
     document.head.appendChild(link)
     return () => { try { document.head.removeChild(link) } catch {} }
-  }, [keyart])
+  }, [keyart, active, srcSet])
 
   if (!anime) return null
 
@@ -60,7 +70,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
   // Jamais d'étirement au-delà du natif : si le fichier est trop petit pour le
   // hero (largeur < 1920 ou bandeau peu haut type bannière AniList 1900x400),
   // fond flouté + image nette centrée à sa taille max en attendant le remplacement.
-  const lowRes = nat != null && (nat.w < 1920 || nat.h < 720)
+  const lowRes = !optimized && nat != null && (nat.w < 1920 || nat.h < 720)
 
   const meta = [
     rating != null ? `★ ${Number(rating).toFixed(1)}` : null,
@@ -95,21 +105,23 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         WebkitMaskImage: 'linear-gradient(180deg, #000 45%, rgba(0,0,0,.85) 62%, rgba(0,0,0,.35) 80%, transparent 94%)',
         maskImage: 'linear-gradient(180deg, #000 45%, rgba(0,0,0,.85) 62%, rgba(0,0,0,.35) 80%, transparent 94%)',
       }}>
-        {lowRes && (
+        {load && lowRes && (
           <img loading="lazy" decoding="async"
             src={keyart} alt="" aria-hidden
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) saturate(1.05)', transform: 'scale(1.1)' }}
           />
         )}
-        <img loading="lazy" decoding="async"
-          src={keyart}
+        {load && <img decoding="async"
+          loading={active ? 'eager' : 'lazy'}
+          fetchpriority={active ? 'high' : 'low'}
+          src={keyart} srcSet={srcSet} sizes={sizes}
           alt=""
           onLoad={onKeyartLoad}
           style={lowRes ? {
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
             maxWidth: nat.w, maxHeight: '100%', width: 'auto', height: 'auto', filter: 'saturate(1.05)',
           } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
-        />
+        />}
       </div>
       {/* Scrim gauche (lisibilité du synopsis) + voile bas LÉGER (le masque fait
           le gros du fondu) + lueur d'accent au ras du contenu. */}
@@ -125,7 +137,12 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         // bottom haut : la première row vient chevaucher le bas du hero (-120px)
         position: 'absolute', left: GUTTER, right: 18, bottom: 'clamp(150px, 22vh, 220px)',
         maxWidth: 560,
-      }}>
+        // Sortie immédiate, entrée après le début du fondu d'image.
+        opacity: active ? 1 : 0,
+        transform: active ? 'none' : 'translateY(10px)',
+        transition: active ? 'opacity 420ms ease 180ms, transform 520ms cubic-bezier(.22,1,.36,1) 180ms' : 'opacity 120ms ease',
+        pointerEvents: active ? 'auto' : 'none',
+      }} className="ah2-fade" aria-hidden={!active}>
         {/* Eyebrow de marque : mark épées laiton + type (seule exception capitales espacées) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <span aria-hidden style={{ color: theme.accent, fontSize: 16, lineHeight: 1 }}>⚔</span>
@@ -207,6 +224,11 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
             onMouseLeave={e => { e.currentTarget.style.filter = 'none' }}>
             <span aria-hidden style={{ fontSize: 12 }}>▶</span> Regarder
           </button>
+          {onRead && (
+            <button style={btn(false)} onClick={() => onRead(anime)}>
+              <span aria-hidden style={{ fontSize: 13 }}>📖</span> Lire le manga
+            </button>
+          )}
           {onMyList && (
             <button style={btn(false)} onClick={() => onMyList(anime)} aria-pressed={inList}>
               {inList ? '✓ Dans ma liste' : '+ Ma liste'}

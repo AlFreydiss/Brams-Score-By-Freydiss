@@ -36,6 +36,25 @@ const ANIME_ID = {
   mha: 'mha', 'solo-leveling': 'sl', nnt: 'nnt', dbs: 'dbs', tpn: 'tpn',
 }
 
+// Fiche de chaque manga (AniList, verifiee a la main pour les auteurs) et
+// couverture officielle WebP 460 px hebergee sur R2 (manga/covers/<slug>.webp).
+// Avant, la carte prenait la premiere page du chapitre 1 : une planche en noir
+// et blanc pour Dr. Stone et Boruto, ou l'affiche de l'anime pour les autres.
+const COVERS = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/manga/covers'
+const META = {
+  aot:             { author: 'Hajime Isayama',                  year: 2009, status: 'termine', score: 84, genres: ['Action', 'Drame', 'Mystère'] },
+  'black-clover':  { author: 'Yūki Tabata',                     year: 2014, status: 'termine', score: 69, genres: ['Action', 'Comédie', 'Fantasy'] },
+  'blue-lock':     { author: 'Muneyuki Kaneshiro · Yūsuke Nomura', year: 2018, status: 'encours', score: 82, genres: ['Sport', 'Drame'] },
+  boruto:          { author: 'Masashi Kishimoto · Mikio Ikemoto', year: 2023, status: 'encours', score: 75, genres: ['Action', 'Aventure'] },
+  'dr-stone':      { author: 'Riichirō Inagaki · Boichi',       year: 2017, status: 'termine', score: 81, genres: ['Aventure', 'Science-fiction'] },
+  'fire-force':    { author: 'Atsushi Ōkubo',                   year: 2015, status: 'termine', score: 78, genres: ['Action', 'Surnaturel'] },
+  jjk:             { author: 'Gege Akutami',                    year: 2018, status: 'termine', score: 80, genres: ['Action', 'Surnaturel'] },
+  kingdom:         { author: 'Yasuhisa Hara',                   year: 2006, status: 'encours', score: 89, genres: ['Action', 'Historique'] },
+  kny:             { author: 'Koyoharu Gotōge',                 year: 2016, status: 'termine', score: 79, genres: ['Action', 'Surnaturel'] },
+  mha:             { author: 'Kōhei Horikoshi',                 year: 2014, status: 'termine', score: 78, genres: ['Action', 'Super-héros'] },
+  'solo-leveling': { author: 'Chugong · DUBU',                  year: 2018, status: 'termine', score: 84, genres: ['Action', 'Fantasy'] },
+}
+
 const out = []
 for (const f of readdirSync(MANGA_DIR).filter(f => f.endsWith('.json')).sort()) {
   const slug = basename(f, '.json')
@@ -48,9 +67,11 @@ for (const f of readdirSync(MANGA_DIR).filter(f => f.endsWith('.json')).sort()) 
     title: reg[slug]?.title || slug,
     color: reg[slug]?.color || '#8b5cf6',
     chapters: data.length,
+    first: nums.length ? Math.min(...nums) : null,
     last: nums.length ? Math.max(...nums) : null,
-    // Repli d'affiche : la premiere page du premier chapitre.
-    cover: data[0]?.pages?.[0] || null,
+    // Couverture officielle si on l'a, sinon la premiere page du chapitre 1.
+    cover: META[slug] ? `${COVERS}/${slug}.webp` : (data[0]?.pages?.[0] || null),
+    ...(META[slug] || {}),
     animeId: ANIME_ID[slug] || null,
   })
 }

@@ -5,7 +5,7 @@
 // progression localStorage, pages animes dédiées). Rollback : re-pointer
 // App.jsx sur AnimeHub.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ANIMES, SEARCH_ALIASES } from '../AnimeHub.jsx'
 import { SCANS } from '../../data/scans-catalog.js'
 import Navbar from '../Navbar.jsx'
@@ -14,32 +14,24 @@ import { DUR, MOTION_CSS } from '../../lib/motion.js'
 import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
+import ScanCard, { ScanResumeCard } from './ScanCard.jsx'
+import { readScanProgress, scanStatus, SCANS_EVENT } from '../../lib/scanProgress.js'
 import { logAnimeOpen, fetchTopWatched } from '../../lib/watchStats.js'
 import { getContinueWatching } from '../../lib/watchProgress.js'
 import { friendsWatching } from '../../lib/social.js'
-import { getStatus, setStatus, syncMyList, getScanContinue, mediaKey } from '../../lib/myList.js'
+import { getStatus, setStatus, syncMyList, mediaKey } from '../../lib/myList.js'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
 const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergarden', 'aot', 'jjk', 'reze'] // 8 à la une
-// Bannières PAYSAGE officielles (AniList, hébergées R2) pour le hero — les
-// posters portrait étirés en pleine largeur rendaient l'image méconnaissable.
-const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart'
-const HERO_KEYART = {
-  onepiece: `${KEYART_R2}/onepiece.jpg`,
-  'kaiju-no-8': `${KEYART_R2}/kaiju-no-8.jpg`,
-  bleach: `${KEYART_R2}/bleach.jpg`,
-  aot: `${KEYART_R2}/aot.jpg`,
-  jjk: `${KEYART_R2}/jjk.jpg`,
-  kaguya: `${KEYART_R2}/kaguya.jpg`,
-  'violet-evergarden': `${KEYART_R2}/violet-evergarden.jpg`,
-  reze: `${KEYART_R2}/reze.jpg`,
-}
+// Les bannières paysage du hero (et leurs variantes WebP) sont dans keyart.js.
 // Vraies nouveautés : dans les données historiques presque TOUT portait le badge
 // « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
 const NEW_IDS = new Set(['fgo-babylonia', 'quintuplets', 'kny', 'kaiju-no-8', 'fireforce', 'bleach', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
 const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+const SCAN_BY_ANIME = new Map(SCANS.filter(s => s.animeId).map(s => [s.animeId, s]))
+const TOTAL_CHAPTERS = SCANS.reduce((n, s) => n + s.chapters, 0)
 
 // ── Fond d'ambiance de l'ANCIEN hub, réincorporé tel quel : bleu nuit + deux
 // halos, étoiles scintillantes (certaines colorées), orbes dérivants, scanline.
@@ -153,6 +145,47 @@ export default function AnimeHubV2(props) {
     open(a.id)?.()
   }
 
+  // ── Vue Animés / Scans, portée par l'URL (?vue=scans) : le bouton Retour du
+  // lecteur y ramène, et le lien se partage. replace : pas une entrée
+  // d'historique par clic sur l'onglet.
+  const [params, setParams] = useSearchParams()
+  const mode = params.get('vue') === 'scans' ? 'scans' : 'animes'
+  const setMode = (m) => {
+    setParams(prev => { const n = new URLSearchParams(prev); m === 'scans' ? n.set('vue', 'scans') : n.delete('vue'); return n }, { replace: true })
+    setSeg('tous'); setGenreSel(new Set()); setSort('populaire'); setShown(21)
+    rootRef.current?.scrollTo({ top: 0 })
+  }
+  const openScan = (scan, ch = null) => navigate(`/manga/${scan.slug}${ch != null ? `?ch=${ch}` : ''}`)
+
+  // Progression des scans (localStorage du lecteur). Relue quand le lecteur
+  // signale une lecture, ou au retour sur l'onglet.
+  const [scanVer, setScanVer] = useState(0)
+  useEffect(() => {
+    const h = () => setScanVer(v => v + 1)
+    window.addEventListener(SCANS_EVENT, h)
+    window.addEventListener('storage', h)
+    window.addEventListener('focus', h)
+    return () => { window.removeEventListener(SCANS_EVENT, h); window.removeEventListener('storage', h); window.removeEventListener('focus', h) }
+  }, [])
+  const scanProg = useMemo(() => Object.fromEntries(SCANS.map(s => [s.slug, readScanProgress(s)])), [scanVer])
+  const scansResume = useMemo(() => SCANS
+    .filter(s => scanProg[s.slug].current != null && scanProg[s.slug].pct < 100)
+    .sort((a, b) => scanProg[b.slug].ts - scanProg[a.slug].ts), [scanProg])
+
+  // « / » place le curseur dans la recherche (hors champ de saisie).
+  const searchRef = useRef(null)
+  const rootRef = useRef(null)
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+      const t = e.target
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      e.preventDefault(); searchRef.current?.focus()
+    }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+  }, [])
+
   // Progression (recalculée à l'affichage — léger, ~30 lectures localStorage)
   const progress = useMemo(() => {
     const out = {}
@@ -187,22 +220,23 @@ export default function AnimeHubV2(props) {
     return p >= 100 ? 'termine' : p > 0 ? 'encours' : 'avoir'
   }
 
-  // Reprise scan One Piece (lecteur ScansPage, localStorage). Recalcul au montage
-  // et quand le lecteur pousse une progression (liveSync émet un 'storage'-like).
-  const [scanCont, setScanCont] = useState(() => getScanContinue())
-  useEffect(() => {
-    const h = () => setScanCont(getScanContinue())
-    window.addEventListener('storage', h)
-    window.addEventListener('mylist:change', h)
-    return () => { window.removeEventListener('storage', h); window.removeEventListener('mylist:change', h) }
-  }, [])
 
   // ── Hero rotatif (8 s, pause hover, crossfade, reduced-motion = statique) ──
   const slides = useMemo(() => HERO_IDS
     .map(id => ANIMES.find(a => a.id === id))
     .filter(Boolean)
-    .map(a => ({ ...a, keyart: HERO_KEYART[a.id] || a.coverImage, keyartPosition: 'center 30%' })), [])
+    .map(a => ({ ...a, keyartPosition: 'center 30%' })), [])
   const [slide, setSlide] = useState(0)
+  // Slides déjà atteints : leur visuel reste monté (retour instantané). Le
+  // suivant est chargé d'avance pour que le fondu ne tombe pas sur du vide.
+  const [visited, setVisited] = useState(() => new Set([0, 1]))
+  useEffect(() => {
+    setVisited(prev => {
+      const next = (slide + 1) % Math.max(1, slides.length)
+      if (prev.has(slide) && prev.has(next)) return prev
+      return new Set([...prev, slide, next])
+    })
+  }, [slide, slides.length])
   const [paused, setPaused] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   // Toolbar : transparente posée sur le fondu du hero, fond + blur SEULEMENT
@@ -213,7 +247,7 @@ export default function AnimeHubV2(props) {
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
   useEffect(() => {
     if (reduced || paused || slides.length < 2) return
-    const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 5000)
+    const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 7000)
     return () => clearInterval(t)
   }, [reduced, paused, slides.length])
 
@@ -256,6 +290,35 @@ export default function AnimeHubV2(props) {
     nouveautes: ANIMES.filter(a => displayBadge(a) === 'NOUVEAU').length,
     favoris: favs.size,
   }), [progress, favs])
+
+  // Scans : même barre d'outils, appliquée au catalogue manga. La recherche
+  // couvre aussi l'auteur (« Isayama », « Oda »…).
+  const scanMatches = (s, q) => NORM(`${s.title} ${s.author || ''} ${(s.genres || []).join(' ')} ${s.slug} ${(SEARCH_ALIASES[s.animeId] || []).join(' ')}`).includes(NORM(q))
+  const filteredScans = useMemo(() => {
+    let list = SCANS.filter(s => {
+      if ((seg === 'encours' || seg === 'termine' || seg === 'avoir') && scanStatus(scanProg[s.slug]) !== seg) return false
+      if (seg === 'parution' && s.status !== 'encours') return false
+      if (debounced && !scanMatches(s, debounced)) return false
+      return true
+    })
+    if (sort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title, 'fr'))
+    else if (sort === 'chapitres') list = [...list].sort((a, b) => b.chapters - a.chapters)
+    else if (sort === 'note') list = [...list].sort((a, b) => (b.score || 0) - (a.score || 0))
+    else list = [...list].sort((a, b) => (scanProg[b.slug].ts - scanProg[a.slug].ts) || ((b.score || 0) - (a.score || 0)))
+    return list
+  }, [debounced, seg, sort, scanProg])
+  // Recherche depuis la vue Animés : les scans correspondants suivent les résultats.
+  const scanHits = useMemo(() => (debounced.trim() ? SCANS.filter(s => scanMatches(s, debounced)) : []), [debounced])
+  const scanStats = useMemo(() => ({
+    encours: SCANS.filter(s => scanStatus(scanProg[s.slug]) === 'encours').length,
+    lus: SCANS.reduce((n, s) => n + scanProg[s.slug].read, 0),
+  }), [scanProg])
+  const resultsLabel = (n) => {
+    const q = debounced.trim()
+    const noun = mode === 'scans' ? 'scan' : 'résultat'
+    return q ? `${n} ${noun}${n !== 1 ? 's' : ''} pour « ${q} »` : `${n} ${noun}${n !== 1 ? 's' : ''}`
+  }
+  const clearFilters = () => { setQuery(''); setSeg('tous'); setGenreSel(new Set()); setSort('populaire') }
 
   // Rows
   const resume = ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 })
@@ -353,6 +416,7 @@ export default function AnimeHubV2(props) {
 
   return (
     <div
+      ref={rootRef}
       className="ah2-root"
       onScroll={e => {
         // throttle rAF : un seul recalcul par frame, evite le reflow (getBoundingClientRect)
@@ -434,6 +498,9 @@ export default function AnimeHubV2(props) {
            Toolbar : segmented control déroulant en ligne (scroll horizontal au
            lieu de wrap qui empile sur 3 lignes), stats masquées (place), cibles
            tactiles agrandies. Grille de cartes : pas plus serré → 3 par ligne. */
+        /* La barre porte désormais l'onglet Animés / Scans : les stats passaient
+           sur une seconde ligne sous 1700px. */
+        @media (max-width: 1700px) { .ah2-stats { display: none !important; } }
         @media (max-width: 768px) {
           /* Toolbar NON-sticky sur mobile : reste à sa place, défile avec la page
              (!important bat le position:sticky inline). Fond opaque pour rester lisible. */
@@ -450,6 +517,9 @@ export default function AnimeHubV2(props) {
           .ah2-toolbar-inner > button,
           .ah2-toolbar-inner select { min-height: 40px; }
           .ah2-stats { display: none !important; }
+          .ah2-mode { flex: 1 1 100%; }
+          .ah2-mode button { flex: 1; justify-content: center; min-height: 40px; }
+          .ah2-scanwall { grid-template-columns: repeat(5, 1fr) !important; }
           .ah2-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)) !important; gap: 12px !important; }
         }
         @media (max-width: 380px) {
@@ -458,14 +528,16 @@ export default function AnimeHubV2(props) {
       `}</style>
 
       {/* ── HERO rotatif (masqué pendant une recherche) ── */}
-      {!searching && (
+      {!searching && mode === 'animes' && (
         <div className="ah2-enter-1" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} style={{ position: 'relative' }}>
           {slides.map((a, i) => (
             <div key={a.id} className="ah2-fade" style={{
-              transition: 'opacity 600ms ease', opacity: i === slide ? 1 : 0,
+              transition: 'opacity 700ms ease', opacity: i === slide ? 1 : 0,
               position: i === slide ? 'relative' : 'absolute', inset: 0, pointerEvents: i === slide ? 'auto' : 'none',
             }}>
               <HeroCinematic anime={a} topRank={top10.findIndex(t => t.id === a.id) + 1 || null}
+                active={i === slide} load={visited.has(i)}
+                onRead={SCAN_BY_ANIME.has(a.id) ? () => openScan(SCAN_BY_ANIME.get(a.id), scanProg[SCAN_BY_ANIME.get(a.id).slug].current) : undefined}
                 onWatch={openAnime} onMyList={toggleFav} inList={favs.has(a.id)} onInfo={openAnime} />
             </div>
           ))}
@@ -482,8 +554,42 @@ export default function AnimeHubV2(props) {
         </div>
       )}
 
+      {/* ── En-tête de la vue Scans : mur de couvertures flouté ── */}
+      {!searching && mode === 'scans' && (
+        <header className="ah2-enter-1" style={{ position: 'relative', overflow: 'hidden', padding: `128px ${GUTTER} 70px` }}>
+          <div aria-hidden className="ah2-scanwall" style={{
+            position: 'absolute', inset: '-40px -40px 0', display: 'grid', gridTemplateColumns: 'repeat(11, 1fr)', gap: 10,
+            transform: 'rotate(-4deg) scale(1.15)', opacity: 0.5, filter: 'saturate(1.1)',
+            WebkitMaskImage: 'linear-gradient(180deg, #000 30%, transparent 96%)', maskImage: 'linear-gradient(180deg, #000 30%, transparent 96%)',
+          }}>
+            {[...SCANS, ...SCANS].slice(0, 22).map((s, i) => (
+              <img key={i} src={s.cover} alt="" loading="lazy" decoding="async" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', borderRadius: 8, transform: `translateY(${(i % 2) * 38}px)` }} />
+            ))}
+          </div>
+          <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(10,15,28,.94) 0%, rgba(10,15,28,.72) 45%, rgba(10,15,28,.35) 100%)' }} />
+          <div style={{ position: 'relative', maxWidth: 760 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span aria-hidden style={{ color: C.brass, fontSize: 16 }}>📖</span>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.22em', color: C.dim }}>SCANS · EN FRANÇAIS</span>
+            </div>
+            <h1 style={{ margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 'clamp(34px, 4.4vw, 60px)', lineHeight: 1.04, letterSpacing: '-0.02em' }}>
+              Lis la suite.<br /><span style={{ color: C.brass }}>Sans attendre l'anime.</span>
+            </h1>
+            <p style={{ margin: '16px 0 0', fontSize: 15.5, lineHeight: 1.55, color: 'rgba(238,240,246,.86)' }}>
+              {SCANS.length} séries · {TOTAL_CHAPTERS.toLocaleString('fr-FR')} chapitres, lecture page à page ou en défilement, reprise là où tu t'es arrêté.
+            </p>
+            {scansResume[0] && (
+              <button onClick={() => openScan(scansResume[0], scanProg[scansResume[0].slug].current)} style={{
+                marginTop: 22, display: 'inline-flex', alignItems: 'center', gap: 9, padding: '12px 22px', borderRadius: 10, cursor: 'pointer',
+                fontFamily: FONT_BODY, fontSize: 14.5, fontWeight: 600, background: C.brass, border: 'none', color: '#14110A',
+              }}>▶ Reprendre {scansResume[0].title} · ch. {Math.floor(Number(scanProg[scansResume[0].slug].current))}</button>
+            )}
+          </div>
+        </header>
+      )}
+
       {/* ── BLOC CONTENU : chevauche le bas fondu du hero (réf. Netflix) ── */}
-      <div className="ah2-enter-2" style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : -120 }}>
+      <div className="ah2-enter-2" style={{ position: 'relative', zIndex: 2, marginTop: searching ? 84 : mode === 'scans' ? 0 : -120 }}>
       {/* ── TOOLBAR (sticky desktop ; statique sur mobile : demande Freydiss, ne suit pas le scroll) ── */}
       <div ref={toolbarRef} className="ah2-toolbar" style={{
         position: 'sticky', top: 64, zIndex: 4,
@@ -496,11 +602,26 @@ export default function AnimeHubV2(props) {
         transition: 'background 200ms ease, border-color 200ms ease',
       }}>
         <div className="ah2-toolbar-inner" style={{ padding: `10px ${GUTTER}`, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {/* Vue : Animés / Scans */}
+          <div role="tablist" aria-label="Catalogue" className="ah2-mode" style={{ display: 'flex', gap: 2, padding: 3, borderRadius: 11, background: 'rgba(255,255,255,0.06)', border: `1px solid ${C.hair}` }}>
+            {[['animes', '▶ Animés', ANIMES.length], ['scans', '📖 Scans', SCANS.length]].map(([id, label, n]) => {
+              const on = mode === id
+              return (
+                <button key={id} role="tab" aria-selected={on} onClick={() => { if (!on) setMode(id) }} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                  fontFamily: FONT_BODY, fontSize: 13.5, fontWeight: 700, border: 'none', whiteSpace: 'nowrap',
+                  background: on ? C.brass : 'transparent', color: on ? '#14110A' : C.dim,
+                  transition: 'background 160ms ease, color 160ms ease',
+                }}>{label}<span style={{ fontSize: 11, fontWeight: 600, opacity: 0.7 }}>{n}</span></button>
+              )
+            })}
+          </div>
           {/* Recherche */}
           <div className="ah2-search" style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
             <span aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint, fontSize: 13 }}>⌕</span>
             <input
-              value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un animé…"
+              ref={searchRef}
+              value={query} onChange={e => setQuery(e.target.value)} placeholder={mode === 'scans' ? 'Titre, auteur…  ( / )' : 'Rechercher un animé…  ( / )'}
               aria-label="Rechercher"
               style={{
                 width: '100%', boxSizing: 'border-box', padding: '9px 12px 9px 32px', borderRadius: 9,
@@ -513,10 +634,12 @@ export default function AnimeHubV2(props) {
           </div>
           {/* Segmented */}
           <div className="ah2-seg" style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
-            {segBtn('tous', 'Tous')}{segBtn('encours', 'En cours')}{segBtn('avoir', 'À voir')}{segBtn('termine', 'Terminé')}{segBtn('favoris', 'Favoris')}
+            {mode === 'scans'
+              ? <>{segBtn('tous', 'Tous')}{segBtn('encours', 'En cours')}{segBtn('avoir', 'À lire')}{segBtn('termine', 'Lus')}{segBtn('parution', 'En parution')}</>
+              : <>{segBtn('tous', 'Tous')}{segBtn('encours', 'En cours')}{segBtn('avoir', 'À voir')}{segBtn('termine', 'Terminé')}{segBtn('favoris', 'Favoris')}</>}
           </div>
-          {/* Genres multi-select */}
-          <div style={{ position: 'relative' }}>
+          {/* Genres multi-select (animés seulement) */}
+          {mode === 'animes' && <div style={{ position: 'relative' }}>
             <button onClick={() => setGenresOpen(v => !v)} style={{
               padding: '8px 14px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13,
               background: 'rgba(255,255,255,0.05)', border: `1px solid ${genreSel.size ? C.brass : C.hair}`,
@@ -542,19 +665,29 @@ export default function AnimeHubV2(props) {
                 </div>
               </>
             )}
-          </div>
+          </div>}
           {/* Tri */}
           <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Trier" style={{
             padding: '8px 10px', borderRadius: 9, background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`,
             color: C.dim, fontSize: 13, fontFamily: FONT_BODY, cursor: 'pointer',
           }}>
-            <option value="populaire">Populaire</option>
-            <option value="recent">Récent</option>
-            <option value="az">A–Z</option>
+            {mode === 'scans' ? <>
+              <option value="populaire">Récemment lus</option>
+              <option value="note">Mieux notés</option>
+              <option value="chapitres">Plus de chapitres</option>
+              <option value="az">A–Z</option>
+            </> : <>
+              <option value="populaire">Populaire</option>
+              <option value="recent">Récent</option>
+              <option value="az">A–Z</option>
+            </>}
           </select>
           {/* Repris de l'ancien hub : anime au hasard + accès Mon Univers */}
-          <button onClick={() => { const a = ANIMES[Math.floor(Math.random() * ANIMES.length)]; openAnime(a) }}
-            title="Un animé au hasard" aria-label="Un animé au hasard" style={{
+          <button onClick={() => {
+            if (mode === 'scans') { const s = SCANS[Math.floor(Math.random() * SCANS.length)]; openScan(s, scanProg[s.slug].current); return }
+            openAnime(ANIMES[Math.floor(Math.random() * ANIMES.length)])
+          }}
+            title={mode === 'scans' ? 'Un manga au hasard' : 'Un animé au hasard'} aria-label={mode === 'scans' ? 'Un manga au hasard' : 'Un animé au hasard'} style={{
               padding: '8px 12px', borderRadius: 9, cursor: 'pointer', fontFamily: FONT_BODY, fontSize: 13,
               background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`, color: C.dim,
             }}>Surprends-moi</button>
@@ -567,7 +700,9 @@ export default function AnimeHubV2(props) {
           <span style={{ flex: 1 }} />
           {/* Stats inline */}
           <span className="ah2-stats" style={{ fontSize: 12.5, color: 'rgba(238,240,246,.78)', whiteSpace: 'nowrap', textShadow: '0 1px 8px rgba(0,0,0,.6)' }}>
-            {stats.total} séries · {stats.encours} en cours · {stats.nouveautes} nouveautés · {stats.favoris} favoris
+            {mode === 'scans'
+              ? `${SCANS.length} séries · ${TOTAL_CHAPTERS.toLocaleString('fr-FR')} chapitres · ${scanStats.encours} en cours · ${scanStats.lus} lus`
+              : `${stats.total} séries · ${stats.encours} en cours · ${stats.nouveautes} nouveautés · ${stats.favoris} favoris`}
           </span>
         </div>
       </div>
@@ -576,20 +711,68 @@ export default function AnimeHubV2(props) {
       {/* Conteneur COMMUN à toutes les sections : pleine largeur avec la
           gouttière GUTTER — la toolbar et le hero (texte) s'alignent dessus. */}
       <div style={{ padding: `24px ${GUTTER} 90px` }}>
-        {searching ? (
+        {mode === 'scans' ? (
+          searching ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 18 }}>
+                <h2 style={{ margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18 }}>{resultsLabel(filteredScans.length)}</h2>
+                <button onClick={clearFilters} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.dim, fontSize: 13, fontFamily: FONT_BODY }}>Tout effacer</button>
+              </div>
+              {filteredScans.length === 0 ? (
+                <p style={{ color: C.faint, fontSize: 14 }}>
+                  {seg === 'encours' ? "Aucun scan entamé pour l'instant — ouvre un chapitre, il apparaîtra ici."
+                    : seg === 'termine' ? 'Aucune série lue en entier. Courage.'
+                    : 'Aucun scan ne correspond. Essaie un autre titre ou un auteur.'}
+                </p>
+              ) : (
+                <div className="ah2-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+                  {filteredScans.map(s => <ScanCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {scansResume.length > 0 && (
+                <AnimeRow title="▶ Reprendre la lecture" count={scansResume.length}>
+                  {scansResume.map(s => <ScanResumeCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
+                </AnimeRow>
+              )}
+              <section style={{ padding: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '6px 0 16px' }}>
+                  <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, margin: 0 }}>Tous les scans</h2>
+                  <span style={{ fontSize: 12.5, color: C.faint, fontWeight: 400 }}>{filteredScans.length}</span>
+                  <span aria-hidden style={{ flex: 1, alignSelf: 'center', height: 1, marginLeft: 6, borderRadius: 1, background: `linear-gradient(90deg, ${C.brass}59, ${C.brass}14 45%, transparent)` }} />
+                </div>
+                <div className="ah2-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+                  {filteredScans.map(s => <ScanCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
+                </div>
+              </section>
+            </>
+          )
+        ) : searching ? (
           <>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 18 }}>
-              <h2 style={{ margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18 }}>
-                {filtered.length} résultat{filtered.length !== 1 ? 's' : ''} pour « {debounced.trim()} »
-              </h2>
-              <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.dim, fontSize: 13, fontFamily: FONT_BODY }}>Effacer</button>
+              <h2 style={{ margin: 0, fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18 }}>{resultsLabel(filtered.length)}</h2>
+              <button onClick={clearFilters} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.dim, fontSize: 13, fontFamily: FONT_BODY }}>Tout effacer</button>
             </div>
             {filtered.length === 0 ? (
-              <p style={{ color: C.faint, fontSize: 14 }}>Aucun résultat. Essaie de retirer des filtres ou de modifier la recherche.</p>
+              <p style={{ color: C.faint, fontSize: 14 }}>{scanHits.length ? 'Aucun animé, mais des scans correspondent :' : 'Aucun résultat. Essaie de retirer des filtres ou de modifier la recherche.'}</p>
             ) : (
               <div className="ah2-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
                 {filtered.map(a => card(a, undefined))}
               </div>
+            )}
+            {scanHits.length > 0 && (
+              <section style={{ padding: 0, marginTop: 34 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 16 }}>
+                  <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, margin: 0 }}>📖 Scans</h2>
+                  <span style={{ fontSize: 12.5, color: C.faint }}>{scanHits.length}</span>
+                  <span aria-hidden style={{ flex: 1, alignSelf: 'center', height: 1, marginLeft: 6, background: `linear-gradient(90deg, ${C.brass}59, ${C.brass}14 45%, transparent)` }} />
+                </div>
+                <div className="ah2-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 18 }}>
+                  {scanHits.map(s => <ScanCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
+                </div>
+              </section>
             )}
           </>
         ) : (
@@ -597,30 +780,9 @@ export default function AnimeHubV2(props) {
             {/* ── ▶ Reprendre (unifié : épisodes anime + chapitres scans) ──
                 Anime = reprise serveur (connecté). Scan One Piece = progression
                 locale du lecteur (visible même déconnecté). Masquée si tout vide. */}
-            {(continueWatch.length > 0 || scanCont) && (
-              <AnimeRow title="▶ Reprendre" count={continueWatch.length + (scanCont ? 1 : 0)}>
-                {scanCont && (() => {
-                  const opMeta = byNs.get('onepiece')
-                  const cover = opMeta?.coverImage
-                  return (
-                    <div key="cw-scan-onepiece" style={{ width: 280, flexShrink: 0 }}>
-                      <div role="button" tabIndex={0}
-                        onClick={() => props.onOpenScans?.()}
-                        onKeyDown={e => { if (e.key === 'Enter') props.onOpenScans?.() }}
-                        style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
-                        {cover && <img src={cover} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: opMeta?.coverPosition || 'center' }} />}
-                        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
-                        <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 8px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)' }}>📖 Ch.{scanCont.chapter}</span>
-                        <div style={{ position: 'absolute', left: 10, bottom: 12, right: 10 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 600 }}>One Piece — Scans</div>
-                        </div>
-                        <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
-                          <div style={{ width: `${scanCont.pct}%`, height: '100%', background: C.brass }} />
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
+            {(continueWatch.length > 0 || scansResume.length > 0) && (
+              <AnimeRow title="▶ Reprendre" count={continueWatch.length + scansResume.length}>
+                {scansResume.slice(0, 4).map(s => <ScanResumeCard key={`cs-${s.slug}`} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
                 {continueWatch.map(({ anime: a, episode, pct }) => (
                   <div key={`cw-${a.id}`} style={{ width: 280, flexShrink: 0 }}>
                     <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
@@ -707,32 +869,11 @@ export default function AnimeHubV2(props) {
               </AnimeRow>
             )}
 
-            {/* ── Scans ──
-                 La section s'appelle « Animés & Scans » mais n'exposait aucun
-                 scan : ils n'apparaissaient que dans « Reprendre », et encore,
-                 uniquement si on en avait deja commence un. */}
-            {SCANS.length > 0 && (
-              <AnimeRow title="Scans" count={SCANS.length}>
-                {SCANS.map(sc => {
-                  // Affiche de l'anime quand la serie en a un, sinon la premiere
-                  // page du premier chapitre.
-                  const art = sc.animeId ? ANIMES.find(a => a.id === sc.animeId)?.coverImage : null
-                  return (
-                    <AnimeCard
-                      key={sc.slug}
-                      width={180}
-                      anime={{
-                        id: sc.slug,
-                        title: sc.title,
-                        coverImage: art || sc.cover,
-                        type: `${sc.chapters} chapitres`,
-                      }}
-                      onOpen={() => navigate(`/manga/${sc.slug}`)}
-                    />
-                  )
-                })}
-              </AnimeRow>
-            )}
+            {/* ── Scans : couvertures officielles, progression et reprise.
+                 « Tout voir » bascule sur la vue Scans complète. */}
+            <AnimeRow title="📖 Scans · lis la suite" count={SCANS.length} onSeeAll={() => setMode('scans')}>
+              {SCANS.map(s => <ScanCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
+            </AnimeRow>
 
             {rowGenres.map(g => {
               const list = ANIMES.filter(a => (a.genres || []).includes(g))

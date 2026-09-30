@@ -5,15 +5,14 @@
 import { useState } from 'react'
 import { C, FONT_BODY, RADIUS_CARD } from './tokens.js'
 import { TitleArt } from './HeroCinematic.jsx'
-
-const KEYART_R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/keyart'
+import { hasKeyart, keyartSrc } from './keyart.js'
 
 // ── BackdropCard — carte PAYSAGE 16:9 des rows (réf. Netflix web) ────────────
-// Image backdrop (convention R2 anime/keyart/<id>.jpg, fallback affiche),
+// Image backdrop (keyart WebP 960 quand la série en a un, sinon affiche),
 // title-art ou titre en bas-gauche, badge « NOUVEL ÉPISODE » laiton si à jour.
 export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
   const [bdBroken, setBdBroken] = useState(false)
-  const backdrop = bdBroken ? (anime.coverImage) : (anime.backdropUrl || `${KEYART_R2}/${anime.id}.jpg`)
+  const backdrop = bdBroken ? (anime.coverImage) : (anime.backdropUrl || (hasKeyart(anime.id) ? keyartSrc(anime.id, 960) : anime.coverImage))
   const fresh = anime.badge === 'À JOUR' || anime.badge === 'NOUVEAU'
   return (
     <div

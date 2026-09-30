@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { SCANS } from './data/scans-catalog.js'
-import { Routes, Route, useNavigate, Navigate, useLocation, useParams } from 'react-router-dom'
+import { Routes, Route, useNavigate, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
 import { GlobalCursorLayer } from './components/CursorShop.jsx'
@@ -162,6 +162,7 @@ const ANIME_VIDEOS   = import.meta.glob('./data/*-videos.json')
 function MangaRoute() {
   const { slug } = useParams()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const m = MANGA_REGISTRY[slug] || { title: slug, color: '#8b5cf6' }
   const animeId = SCANS.find(s => s.slug === slug)?.animeId || null
   const [chapters, setChapters] = useState(null)
@@ -201,7 +202,9 @@ function MangaRoute() {
       emojiList={['📖']}
       arcsData={null}
       initialTab="scans"
-      onClose={() => navigate('/animes-scan')}
+      initialChapter={params.get('ch')}
+      topOffset={0}
+      onClose={() => navigate('/animes-scan?vue=scans')}
     />
   )
 }

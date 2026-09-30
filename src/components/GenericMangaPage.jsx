@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Reader } from './MangaReader.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
+import { recordScanOpen } from '../lib/scanProgress.js'
 
 function loadProgress(ns) {
   try { return JSON.parse(localStorage.getItem(`${ns}_progress`) || '{}') } catch { return {} }
@@ -608,7 +609,7 @@ function VideoCard({ video, onPlay, color, premium = false, status = null }) {
 }
 
 
-export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, initialTab, onClose }) {
+export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, initialTab, initialChapter, topOffset = 76, onClose }) {
   const CHAPTERS = useMemo(() => chaptersData.map((ch, i) => ({
     num:   ch.num,
     title: ch.title || `Chapitre ${ch.num}`,
@@ -677,6 +678,22 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     setReading(idx)
     if (progress[ch.num] !== 'read') markProgress(ch.num, 'reading')
   }, [CHAPTERS, progress, markProgress])
+
+  // Le hub relit ce dernier chapitre ouvert pour sa rangée « Reprendre ». Posé
+  // ici plutôt que dans openChapter : chapitre suivant / précédent passent par
+  // setReading directement.
+  useEffect(() => {
+    if (reading !== null && CHAPTERS[reading]) recordScanOpen(namespace, CHAPTERS[reading].num)
+  }, [reading, CHAPTERS, namespace])
+
+  // Lien direct /manga/<slug>?ch=N : le hub y envoie « Reprendre ch. N ».
+  const openedInitial = useRef(false)
+  useEffect(() => {
+    if (openedInitial.current || initialChapter == null) return
+    openedInitial.current = true
+    const idx = CHAPTERS.findIndex(c => Number(c.num) === Number(initialChapter))
+    if (idx >= 0) openChapter(idx)
+  }, [initialChapter, CHAPTERS, openChapter])
 
   const finishChapter = useCallback(() => {
     if (reading === null) return
@@ -873,7 +890,9 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
         position: 'fixed',
         left: 0,
         right: 0,
-        top: 76,
+        // 76 = hauteur de la Navbar quand la page s'ouvre par-dessus le site ;
+        // la route /manga/:slug n'en a pas et gardait une bande noire vide.
+        top: topOffset,
         bottom: 0,
         zIndex: 500,
         background: usesEpisodeLayout
