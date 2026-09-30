@@ -204,6 +204,7 @@ function MangaRoute() {
       initialTab="scans"
       initialChapter={params.get('ch')}
       topOffset={0}
+      series={SCANS.find(s => s.slug === slug) || null}
       onClose={() => navigate('/animes-scan?vue=scans')}
     />
   )

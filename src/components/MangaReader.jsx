@@ -84,23 +84,25 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
     return () => { if (hideTimer.current) clearTimeout(hideTimer.current) }
   }, [])
 
+  // Page mémorisée par chapitre. La sauvegarde vivait dans un effet sur
+  // [page] qui tournait dans le même rendu que la restauration, avec l'état
+  // encore à 0 : elle écrasait la page retenue, et la remise à zéro du
+  // changement de chapitre passait derrière — on repartait toujours page 1.
+  // Désormais on restaure ici, et on n'écrit qu'au tour de page (changePage).
   useEffect(() => {
-    if (total === 0 || isWebtoon) return
-    try {
-      const saved = parseInt(localStorage.getItem(`${namespace}_page_${chapter.num}`) || '0')
-      if (saved > 0 && saved < total) { setPage(saved); setImgLoaded(false); setImgError(false) }
-    } catch {}
-  }, [chapter.num, total, namespace, isWebtoon])
-
-  useEffect(() => {
-    if (total === 0 || isWebtoon) return
-    try { localStorage.setItem(`${namespace}_page_${chapter.num}`, String(page)) } catch {}
-  }, [page, chapter.num, total, namespace, isWebtoon])
-
-  useEffect(() => {
-    setPage(0); setImgLoaded(false); setImgError(false); setMarkedRead(isRead); setZoom(1)
+    let start = 0
+    if (total > 0 && !isWebtoon) {
+      try {
+        const saved = parseInt(localStorage.getItem(`${namespace}_page_${chapter.num}`) || '0', 10)
+        if (saved > 0 && saved < total) start = saved
+      } catch {}
+    }
+    setPage(start); setImgLoaded(false); setImgError(false); setZoom(1)
     scrollRef.current?.scrollTo({ top: 0 })
-  }, [chapter.num, isRead])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapter.num])
+
+  useEffect(() => { setMarkedRead(isRead) }, [isRead])
 
   useEffect(() => {
     if (isWebtoon) return
@@ -145,17 +147,22 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   }, [isWebtoon])
 
   const changePage = useCallback((newPage) => {
-    setPage(Math.max(0, Math.min(total - 1, newPage)))
+    const p = Math.max(0, Math.min(total - 1, newPage))
+    setPage(p)
     setImgLoaded(false); setImgError(false)
     scrollRef.current?.scrollTo({ top: 0 })
-  }, [total])
+    try { localStorage.setItem(`${namespace}_page_${chapter.num}`, String(p)) } catch {}
+  }, [total, namespace, chapter.num])
 
   const next = useCallback(() => {
     if (isWebtoon) return
-    if (page < total - 1) changePage(page + 1)
-    else if (chapterIndex < totalChapters - 1) { onFinish(); onNextChapter() }
+    if (page < total - 1) { changePage(page + 1); return }
+    // Chapitre fini : sa page retenue n'a plus lieu d'être (une relecture
+    // repartirait sinon de la dernière page).
+    try { localStorage.removeItem(`${namespace}_page_${chapter.num}`) } catch {}
+    if (chapterIndex < totalChapters - 1) { onFinish(); onNextChapter() }
     else { onFinish(); onClose() }
-  }, [page, total, chapterIndex, totalChapters, onNextChapter, onFinish, onClose, changePage, isWebtoon])
+  }, [page, total, chapterIndex, totalChapters, onNextChapter, onFinish, onClose, changePage, isWebtoon, namespace, chapter.num])
 
   const prev = useCallback(() => {
     if (isWebtoon) return

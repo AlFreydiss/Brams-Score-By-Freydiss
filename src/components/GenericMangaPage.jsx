@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Reader } from './MangaReader.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
 import { recordScanOpen } from '../lib/scanProgress.js'
+import MangaSeriesHero from './MangaSeriesHero.jsx'
 
 function loadProgress(ns) {
   try { return JSON.parse(localStorage.getItem(`${ns}_progress`) || '{}') } catch { return {} }
@@ -609,7 +610,7 @@ function VideoCard({ video, onPlay, color, premium = false, status = null }) {
 }
 
 
-export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, initialTab, initialChapter, topOffset = 76, onClose }) {
+export default function GenericMangaPage({ chaptersData, videosData, color, namespace, title, headerEmoji, emojiList, arcsData, initialTab, initialChapter, topOffset = 76, series = null, onClose }) {
   const CHAPTERS = useMemo(() => chaptersData.map((ch, i) => ({
     num:   ch.num,
     title: ch.title || `Chapitre ${ch.num}`,
@@ -682,8 +683,19 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   // Le hub relit ce dernier chapitre ouvert pour sa rangée « Reprendre ». Posé
   // ici plutôt que dans openChapter : chapitre suivant / précédent passent par
   // setReading directement.
+  // Il marque aussi le chapitre « en cours » : « chapitre suivant » dans le
+  // lecteur ne passait pas par openChapter, le chapitre ouvert restait « non
+  // lu » et la reprise retombait sur le chapitre 1.
   useEffect(() => {
-    if (reading !== null && CHAPTERS[reading]) recordScanOpen(namespace, CHAPTERS[reading].num)
+    if (reading === null || !CHAPTERS[reading]) return
+    const num = CHAPTERS[reading].num
+    recordScanOpen(namespace, num)
+    setProgress(prev => {
+      if (prev[num]) return prev
+      const next = { ...prev, [num]: 'reading' }
+      saveProgress(namespace, next)
+      return next
+    })
   }, [reading, CHAPTERS, namespace])
 
   // Lien direct /manga/<slug>?ch=N : le hub y envoie « Reprendre ch. N ».
@@ -843,11 +855,30 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
 
   // Reprise : le chapitre en cours, sinon le premier non lu.
   const resumeChapter = useMemo(() => {
+    // D'abord le dernier chapitre ouvert (ou le suivant non lu s'il est fini) :
+    // prendre le premier « en cours » de la liste renvoyait vers un vieux
+    // chapitre abandonné plutôt que là où on s'était arrêté.
+    let recentNum = null
+    try { recentNum = JSON.parse(localStorage.getItem('manga_recent') || '{}')[namespace]?.num ?? null } catch {}
+    if (recentNum != null) {
+      const i = CHAPTERS.findIndex(c => Number(c.num) === Number(recentNum))
+      if (i >= 0) {
+        if (progress[CHAPTERS[i].num] !== 'read') return CHAPTERS[i]
+        const nxt = CHAPTERS.slice(i + 1).find(c => progress[c.num] !== 'read')
+        if (nxt) return nxt
+      }
+    }
     const reading = CHAPTERS.find(c => progress[c.num] === 'reading')
     if (reading) return reading
     const unread = CHAPTERS.find(c => progress[c.num] !== 'read')
     return unread && unread !== CHAPTERS[0] ? unread : null
-  }, [CHAPTERS, progress])
+  // reading : recalcul à la fermeture du lecteur (manga_recent a bougé).
+  }, [CHAPTERS, progress, namespace, reading])
+
+  const resumePage = useMemo(() => {
+    if (!resumeChapter) return 0
+    try { return parseInt(localStorage.getItem(`${namespace}_page_${resumeChapter.num}`) || '0', 10) || 0 } catch { return 0 }
+  }, [resumeChapter, namespace, reading])
 
   const renderChapterGrid = (chapters) => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
@@ -932,14 +963,15 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
               {tab === 'scans' && chaptersByArc && chaptersByArc.length > 1 && (
                 <ArcNav arcs={chaptersByArc} color={color} onJump={jumpToArc} />
               )}
-              <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+              {/* Un seul onglet (manga sans anime) : rien à choisir, on n'affiche pas le sélecteur. */}
+              {CHAPTERS.length > 0 && VIDEOS.length > 0 && <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
                 {[
                   ...(CHAPTERS.length > 0 ? [['scans', '📖 Scans']] : []),
                   ...(VIDEOS.length > 0 ? [['videos', '🎬 Épisodes']] : []),
                 ].map(([t, label]) => (
                   <button key={t} onClick={() => setTab(t)} style={{ height: 38, padding: '0 18px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: tab === t ? `${color}28` : 'transparent', color: tab === t ? color : 'var(--muted)', borderRight: t === 'scans' ? '1px solid var(--border)' : 'none', transition: 'all 0.15s' }}>{label}</button>
                 ))}
-              </div>
+              </div>}
             </div>
           </div>
         </div>
@@ -987,6 +1019,17 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
               CHAPTERS.length === 0
                 ? <EmptyState icon={headerEmoji} title="Scans bientôt disponibles" desc={`Les chapitres de ${title} seront ajoutés prochainement.`} />
                 : <>
+                    {series && (
+                      <MangaSeriesHero
+                        series={series} color={color}
+                        chapterCount={CHAPTERS.length} readCount={readCount}
+                        resume={resumeChapter && { num: resumeChapter.num, page: resumePage }}
+                        first={CHAPTERS[0]?.num} last={CHAPTERS[CHAPTERS.length - 1]?.num}
+                        onResume={() => openChapter(chNumToIdx[resumeChapter.num])}
+                        onFirst={() => openChapter(0)}
+                        onLast={() => openChapter(CHAPTERS.length - 1)}
+                      />
+                    )}
                     <CatalogToolbar
                       color={color}
                       labels={SCAN_LABELS}
@@ -996,7 +1039,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
                       desc={scanDesc} onToggleDesc={() => { setScanDesc(d => !d); setScanRange(0) }}
                       unread={scanUnread} onToggleUnread={() => { setScanUnread(u => !u); setScanRange(0) }}
                       ranges={ranges} range={scanRange} onRange={setScanRange}
-                      resume={resumeChapter && { thumb: resumeChapter.pages?.[0], label: `Chapitre ${resumeChapter.num}` }}
+                      resume={!series && resumeChapter && { thumb: resumeChapter.pages?.[0], label: `Chapitre ${resumeChapter.num}` }}
                       onResume={() => openChapter(chNumToIdx[resumeChapter.num])}
                     />
                     {chaptersByArc

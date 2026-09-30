@@ -13,7 +13,7 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
   const range = scan.first != null && scan.last != null && scan.first !== scan.last
     ? `Ch. ${fmtNum(scan.first)}–${fmtNum(scan.last)}`
     : `${scan.chapters} chapitres`
-  const cta = p.current != null ? `Reprendre ch. ${fmtNum(Number(p.current))}` : 'Commencer'
+  const cta = p.current != null ? `Reprendre ch. ${fmtNum(Number(p.current))}${p.page > 0 ? ` · p. ${p.page + 1}` : ''}` : 'Commencer'
 
   return (
     <div
@@ -121,7 +121,7 @@ export function ScanResumeCard({ scan, progress, onOpen }) {
         <div style={{ position: 'absolute', left: 12, right: 12, top: 0, bottom: 15, display: 'flex', flexDirection: 'column', justifyContent: 'center', paddingLeft: 108 }}>
           <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.08em', color: C.brass }}>📖 SCAN</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: C.text, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{scan.title}</span>
-          <span style={{ fontSize: 12.5, color: C.text, marginTop: 6, fontWeight: 600 }}>Chapitre {fmtNum(Number(p.current))}</span>
+          <span style={{ fontSize: 12.5, color: C.text, marginTop: 6, fontWeight: 600 }}>Chapitre {fmtNum(Number(p.current))}{p.page > 0 ? ` · page ${p.page + 1}` : ''}</span>
           <span style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{p.read}/{scan.chapters} lus</span>
         </div>
         <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>

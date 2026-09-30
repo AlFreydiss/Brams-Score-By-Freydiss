@@ -27,7 +27,10 @@ export function readScanProgress(scan) {
   let current = recent?.num ?? null
   if (current == null && entries.length) current = Math.max(...entries.map(([n]) => Number(n)).filter(Number.isFinite))
   const pct = scan.chapters ? Math.min(100, Math.round((read / scan.chapters) * 100)) : 0
-  return { read, current, pct, ts: recent?.ts || 0, started: entries.length > 0 }
+  // Page retenue par le lecteur dans ce chapitre (0 = début), pour « ch. 13 · p. 7 ».
+  let page = 0
+  if (current != null) { try { page = parseInt(localStorage.getItem(`${scan.slug}_page_${current}`) || '0', 10) || 0 } catch {} }
+  return { read, current, page, pct, ts: recent?.ts || 0, started: entries.length > 0 }
 }
 
 // Statut dérivé, mêmes valeurs que Ma Liste côté animés.

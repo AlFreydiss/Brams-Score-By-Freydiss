@@ -521,6 +521,8 @@ export default function AnimeHubV2(props) {
           .ah2-mode button { flex: 1; justify-content: center; min-height: 40px; }
           .ah2-scanwall { grid-template-columns: repeat(5, 1fr) !important; }
           .ah2-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)) !important; gap: 12px !important; }
+          .ah2-rank { font-size: 120px !important; height: 165px !important; }
+          .ah2-top .ah2-card { width: 110px !important; }
         }
         @media (max-width: 380px) {
           .ah2-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)) !important; }
@@ -857,7 +859,19 @@ export default function AnimeHubV2(props) {
             )}
 
             <AnimeRow title={topCounts?.length ? 'Top du moment · les + regardés du serveur' : 'Top du moment'} count={10}>
-              {top10.map(a => card(a, 158))}
+              {/* Rang en chiffre géant détouré derrière l'affiche (réf. Top 10 Netflix) */}
+              {top10.map((a, i) => (
+                <div key={a.id} className="ah2-top" style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0 }}>
+                  <span aria-hidden className="ah2-rank" style={{
+                    // « 1 » est étroit : sans marge il disparaissait sous l'affiche et contre le bord.
+                    height: 213, display: 'flex', alignItems: 'flex-end', marginRight: i === 0 ? -4 : i === 9 ? -30 : -20, paddingLeft: i === 0 ? 10 : 0,
+                    fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 176, lineHeight: 0.78, letterSpacing: '-0.09em',
+                    color: C.bg0, WebkitTextStroke: `2.5px ${i < 3 ? C.brass : 'rgba(255,255,255,0.38)'}`,
+                    textShadow: i < 3 ? `0 0 34px ${C.brass}40` : 'none', userSelect: 'none',
+                  }}>{i + 1}</span>
+                  <div style={{ position: 'relative', zIndex: 1 }}>{card(a, 142)}</div>
+                </div>
+              ))}
             </AnimeRow>
 
             {news.length > 0 && (
