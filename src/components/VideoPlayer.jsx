@@ -159,6 +159,8 @@ function cleanCueText(text) {
 
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
+const DEFAULT_GAIN = 1.5
+const IS_WEBKIT = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (/Safari/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|OPR|Android/.test(navigator.userAgent)))
 
 // ── Icônes SVG inline (remplacent les emoji/glyphes : moche + rendu incohérent
 // entre OS). stroke=currentColor → héritent de la couleur du bouton. viewBox 24,
@@ -387,7 +389,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const [duration,     setDuration]    = useState(0)
   const [volume,       setVolume]      = useState(1)
   const [muted,        setMuted]       = useState(false)
-  const [speed,        setSpeed]       = useState(1)
+  // Vitesse retenue entre épisodes et sessions (elle retombait à ×1 partout).
+  const [speed,        setSpeed]       = useState(() => { try { const s = Number(localStorage.getItem('vp_speed')); return SPEEDS.includes(s) ? s : 1 } catch { return 1 } })
+  const [showKeys,     setShowKeys]    = useState(false)
   const [fullscreen,   setFullscreen]  = useState(false)
   const [cssFs,        setCssFs]       = useState(false)  // pseudo-plein-écran iOS (garde le canvas ST)
   const [showCtrl,     setShowCtrl]    = useState(true)
@@ -822,9 +826,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [countdown, goNext])
 
   // ── Appliquer la vitesse ─────────────────────────────────────────────────
+  // Changer de source remet playbackRate à 1 côté navigateur : on la
+  // réapplique à chaque épisode, et defaultPlaybackRate la garde au rechargement.
   useEffect(() => {
-    if (videoRef.current) videoRef.current.playbackRate = speed
-  }, [speed])
+    const v = videoRef.current
+    if (v) { v.defaultPlaybackRate = speed; v.playbackRate = speed }
+    try { localStorage.setItem('vp_speed', String(speed)) } catch {}
+  }, [speed, idx, mediaSrc])
 
   // ── Sync piste audio externe (VF/JP séparée) sur l'état de la vidéo ───────
   // Sans ça, l'<audio> ne suivait JAMAIS pause/seek/avance/vitesse de la vidéo
@@ -857,12 +865,20 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     }
   }, [usesExternalAudio, effectiveMediaSrc])
 
-  // ── Boost de loudness par vidéo (ex. films Violet trop bas) ───────────────
-  // Ne route dans Web Audio que les vidéos avec gain>1 → zéro risque ailleurs.
-  // Le lecteur a déjà crossOrigin='anonymous' quand il y a des sous-titres, et
-  // l'HLS passe par MSE (blob same-origin) → pas de souci de "tainted".
+  // ── Boost de loudness : 150 % par défaut sur tout le site ─────────────────
+  // Le 100 % natif d'un <video> était trop faible (demande : « 150 % partout »).
+  // Web Audio : gain → compresseur (audioBoost.js), donc les pistes déjà fortes
+  // ne saturent pas. `gain` dans le JSON garde la main pour un cas particulier.
+  // Prérequis tenus : crossOrigin='anonymous' sur la <video> (ci-dessous) et R2
+  // renvoie Access-Control-Allow-Origin: * ; l'HLS via hls.js passe par MSE.
+  // Exception : HLS sous WebKit (Safari, tout navigateur iOS) — y brancher Web
+  // Audio rend le son muet. Chrome lit aussi le HLS en natif, lui transmet bien
+  // le signal (mesuré à l'analyseur), il garde donc le boost.
   useEffect(() => {
-    if (videoRef.current) setBoost(videoRef.current, video?.gain || 1)
+    const v = videoRef.current
+    if (!v) return
+    if (IS_WEBKIT && isHlsSrc(mediaSrc)) return
+    setBoost(v, video?.gain || DEFAULT_GAIN)
   }, [mediaSrc, video?.gain])
 
   // ── Lecture HLS via hls.js (Chrome/Edge/Firefox — pas de HLS natif) ───────
@@ -990,12 +1006,43 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }
 
   // ── Raccourcis clavier ───────────────────────────────────────────────────
+  // Les actions qui dépendent d'un état (épisode, sous-titres, intro…) passent
+  // par une ref : l'écouteur n'est pas réinstallé à chaque tick de lecture.
+  const showKeysRef = useRef(false)
+  showKeysRef.current = showKeys
+  const keyActions = useRef({})
+  keyActions.current = {
+    next: () => { if (idx < videos.length - 1) goNext() },
+    prev: () => { if (idx > 0) { autoplayPendingRef.current = true; setEndOverlay(false); setCountdown(null); setIdx(i => Math.max(0, i - 1)) } },
+    subs: () => { if (hasSubs) chooseSubtitle(subIdx, !subsOff) },
+    speed: (dir) => setSpeed(s => SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, SPEEDS.indexOf(s) + dir))] ?? s),
+    skipIntro: () => {
+      const v = videoRef.current
+      if (v && opMark && v.currentTime >= opMark[0] - 1 && v.currentTime < opMark[1]) skipTo(opMark[1])
+      else if (v && edMark && v.currentTime >= edMark[0] - 1 && v.currentTime < edMark[1] && idx < videos.length - 1) goNext()
+    },
+  }
   useEffect(() => {
     const fn = e => {
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
       const v = videoRef.current
+      const A = keyActions.current
       switch (e.key) {
-        case 'Escape':      if (cssFs) { setCssFs(false); try { screen.orientation?.unlock?.() } catch {} } else onClose(); break
+        case 'Escape':      if (showKeysRef.current) { setShowKeys(false); break } if (cssFs) { setCssFs(false); try { screen.orientation?.unlock?.() } catch {} } else onClose(); break
+        case '?':           setShowKeys(s => !s); break
+        case 'k': case 'K': e.preventDefault(); v && (v.paused ? v.play() : v.pause()); break
+        case 'j': case 'J': v && (v.currentTime = Math.max(0, v.currentTime - 10)); break
+        case 'l': case 'L': v && (v.currentTime = Math.min(v.duration, v.currentTime + 10)); break
+        case 'n': case 'N': A.next(); break
+        case 'p': case 'P': A.prev(); break
+        case 'c': case 'C': A.subs(); break
+        case 's': case 'S': A.skipIntro(); break
+        case '>':           A.speed(1); break
+        case '<':           A.speed(-1); break
+        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+          if (v && v.duration) v.currentTime = v.duration * (Number(e.key) / 10)
+          break
         case ' ':           e.preventDefault(); v && (v.paused ? v.play() : v.pause()); break
         case 'ArrowLeft':   e.preventDefault(); v && (v.currentTime = Math.max(0, v.currentTime - 5)); break
         case 'ArrowRight':  e.preventDefault(); v && (v.currentTime = Math.min(v.duration, v.currentTime + 5)); break
@@ -1170,7 +1217,8 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
             <video
               ref={videoRef}
               key={effectiveMediaSrc || 'no-src'}
-              crossOrigin={hasSubs ? 'anonymous' : undefined}
+              // Toujours : le boost Web Audio (150 %) rendrait muette une vidéo « tainted ».
+              crossOrigin="anonymous"
               // CRUCIAL iOS : sans playsInline, l'iPhone force la lecture en plein
               // écran NATIF → nos contrôles custom + le canvas des sous-titres sont
               // bypassés ("pas de sous-titres + galère"). playsInline = lecture inline
@@ -1274,6 +1322,29 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                     background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.25)',
                     color: '#fff', pointerEvents: 'none',
                   }}><IcPlay size={34} /></span>
+                )}
+                {showKeys && (
+                  <div onClick={e => { e.stopPropagation(); setShowKeys(false) }} style={{
+                    position: 'absolute', inset: 0, zIndex: 40, display: 'grid', placeItems: 'center',
+                    background: 'rgba(5,6,10,0.78)', backdropFilter: 'blur(6px)',
+                  }}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: 'min(560px, 92%)', padding: '20px 22px', borderRadius: 16, background: 'rgba(18,20,28,0.96)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                        <b style={{ fontSize: 15 }}>Raccourcis clavier</b>
+                        <button onClick={() => setShowKeys(false)} aria-label="Fermer" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.6)', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px', fontSize: 13 }}>
+                        {[['Espace / K', 'Lecture / pause'], ['← / →', '5 s en arrière / avant'], ['J / L', '10 s en arrière / avant'], ['↑ / ↓', 'Volume'],
+                          ['S', "Passer l'intro / le générique"], ['N / P', 'Épisode suivant / précédent'], ['C', 'Sous-titres on / off'], ['< / >', 'Vitesse −/+'],
+                          ['0 … 9', "Aller à 0 … 90 % de l'épisode"], ['F', 'Plein écran'], ['M', 'Couper le son'], ['?', 'Cette aide']].map(([k, d]) => (
+                          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <kbd style={{ minWidth: 64, textAlign: 'center', padding: '3px 6px', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)', fontFamily: 'inherit', fontSize: 11.5, fontWeight: 700 }}>{k}</kbd>
+                            <span style={{ color: 'rgba(255,255,255,.75)' }}>{d}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {skipFlash && (
                   <span aria-hidden style={{

@@ -15,7 +15,13 @@ import HeroCinematic from './HeroCinematic.jsx'
 import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 import ScanCard, { ScanResumeCard } from './ScanCard.jsx'
+import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
+// Image des cartes 16:9 : keyart, sinon bannière officielle, sinon l'affiche
+// portrait (floue une fois étirée — c'était le cas de presque toutes).
+const wideArt = a => (hasKeyart(a.id) ? keyartSrc(a.id, 960) : bannerSrc(a.id) || a.coverImage)
 import { readScanProgress, scanStatus, SCANS_EVENT } from '../../lib/scanProgress.js'
+import { newEpisodes } from '../../lib/animeSeen.js'
+import { ANIME_COUNTS } from '../../data/anime-counts.js'
 import { logAnimeOpen, fetchTopWatched } from '../../lib/watchStats.js'
 import { getContinueWatching } from '../../lib/watchProgress.js'
 import { friendsWatching } from '../../lib/social.js'
@@ -86,20 +92,26 @@ function AmbientLegacy() {
 
 // Progression localStorage (mêmes clés que les pages de lecture : <ns>_vp /
 // <ns>_video_progress) — réimplémentation compacte de computeVideo.
+// Le total est celui du catalogue : il valait le nombre d'épisodes COMMENCÉS,
+// si bien qu'un seul épisode vu en entier donnait 1/1 = 100 % et « Terminé ».
 function readProgress(ns) {
   try {
     const structured = JSON.parse(localStorage.getItem(`${ns}_video_progress`) || 'null')
     if (structured?.episodes) {
       const eps = Object.values(structured.episodes)
-      const total = eps.length || 12
+      const total = Math.max(ANIME_COUNTS[ns] || 0, eps.length) || 12
       const done = eps.filter(e => e?.completed).length
-      return { pct: Math.round((done / total) * 100), label: `${done}/${total} épisodes` }
+      return {
+        pct: Math.round((done / total) * 100), label: `${done}/${total} épisodes`,
+        lastEpisode: structured.lastEpisode ?? null, lastTitle: structured.lastTitle || null, updatedAt: structured.updatedAt || 0,
+      }
     }
     const flat = JSON.parse(localStorage.getItem(`${ns}_vp`) || '{}')
     const keys = Object.keys(flat)
     if (!keys.length) return { pct: 0, label: '' }
     const done = keys.filter(k => flat[k]?.completed).length
-    return { pct: Math.round((done / keys.length) * 100), label: `${done}/${keys.length} épisodes` }
+    const total = Math.max(ANIME_COUNTS[ns] || 0, keys.length)
+    return { pct: Math.round((done / total) * 100), label: `${done}/${total} épisodes` }
   } catch { return { pct: 0, label: '' } }
 }
 
@@ -321,7 +333,9 @@ export default function AnimeHubV2(props) {
   const clearFilters = () => { setQuery(''); setSeg('tous'); setGenreSel(new Set()); setSort('populaire') }
 
   // Rows
-  const resume = ANIMES.filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 })
+  const resume = ANIMES
+    .filter(a => { const p = progress[a.id]?.pct || 0; return p > 0 && p < 100 })
+    .sort((a, b) => (progress[b.id]?.updatedAt || 0) - (progress[a.id]?.updatedAt || 0))
 
   // Top du moment = les plus REGARDÉS sur le serveur (7 jours glissants, table
   // anime_watch_events). Indisponible → ordre statique du catalogue.
@@ -397,8 +411,10 @@ export default function AnimeHubV2(props) {
     return () => { on = false }
   }, [discordId, byNs])
 
+  // « +30 NOUVEAUX » prime sur le badge éditorial tant que la série n'a pas été rouverte.
+  const badgeOf = (a) => { const n = newEpisodes(a.id); return n > 0 ? `+${n} NOUVEAU${n > 1 ? 'X' : ''}` : displayBadge(a) }
   const card = (a, w = 180) => (
-    <AnimeCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={w}
+    <AnimeCard key={a.id} anime={{ ...a, badge: badgeOf(a) }} width={w}
       progressPct={progress[a.id]?.pct || 0}
       onOpen={openAnime} onPlay={openAnime}
       onToggleList={toggleFav} inList={favs.has(a.id)}
@@ -790,7 +806,7 @@ export default function AnimeHubV2(props) {
                 {continueWatch.map(({ anime: a, episode, pct }) => (
                   <div key={`cw-${a.id}`} style={{ width: 280, flexShrink: 0 }}>
                     <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
-                      <img src={a.coverImage} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: a.coverPosition || 'center' }} />
+                      <img src={wideArt(a)} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: hasKeyart(a.id) || bannerSrc(a.id) ? 'center' : (a.coverPosition || 'center') }} />
                       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
                       {episode != null && (
                         <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 8px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)' }}>Ép {episode}</span>
@@ -813,7 +829,7 @@ export default function AnimeHubV2(props) {
                 {friendsRows.map(({ anime: a, friends }) => (
                   <div key={`fw-${a.id}`} style={{ width: 280, flexShrink: 0 }}>
                     <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
-                      <img src={a.coverImage} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: a.coverPosition || 'center' }} />
+                      <img src={wideArt(a)} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: hasKeyart(a.id) || bannerSrc(a.id) ? 'center' : (a.coverPosition || 'center') }} />
                       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 45%, rgba(11,14,20,0.92))' }} />
                       <div style={{ position: 'absolute', left: 10, bottom: 10, right: 10, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
                         <div style={{ minWidth: 0 }}>
@@ -840,15 +856,22 @@ export default function AnimeHubV2(props) {
               </AnimeRow>
             )}
 
-            {resume.length > 0 && (
-              <AnimeRow title="Reprendre la lecture" count={resume.length}>
-                {resume.map(a => (
+            {/* Visionnage en cours (local, visible sans compte). Les séries déjà
+                 dans « ▶ Reprendre » (reprise serveur) n'y sont pas répétées. */}
+            {resume.filter(a => !continueWatch.some(c => c.anime.id === a.id)).length > 0 && (
+              <AnimeRow title="Continuer à regarder" count={resume.filter(a => !continueWatch.some(c => c.anime.id === a.id)).length}>
+                {resume.filter(a => !continueWatch.some(c => c.anime.id === a.id)).map(a => (
                   <div key={a.id} style={{ width: 280, flexShrink: 0 }}>
                     <div role="button" tabIndex={0} onClick={() => openAnime(a)} onKeyDown={e => { if (e.key === 'Enter') openAnime(a) }} style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 12, overflow: 'hidden', cursor: 'pointer', background: 'rgba(255,255,255,0.04)' }} className="ah2-card">
-                      <img src={a.coverImage} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: a.coverPosition || 'center' }} />
+                      <img src={wideArt(a)} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: hasKeyart(a.id) || bannerSrc(a.id) ? 'center' : (a.coverPosition || 'center') }} />
                       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
                       <div style={{ position: 'absolute', left: 10, bottom: 10, right: 10 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 600 }}>{a.title}</div>
+                        {progress[a.id]?.lastTitle && (
+                          <div style={{ fontSize: 12, color: C.text, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            ▶ {progress[a.id].lastTitle}
+                          </div>
+                        )}
                         <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{progress[a.id]?.label}</div>
                       </div>
                       <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, background: 'rgba(255,255,255,0.15)' }}>
@@ -887,7 +910,7 @@ export default function AnimeHubV2(props) {
             {news.length > 0 && (
               <AnimeRow title="Nouveautés" count={news.length}>
                 {news.map(a => (
-                  <BackdropCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={300}
+                  <BackdropCard key={a.id} anime={{ ...a, badge: badgeOf(a) }} width={300}
                     progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
                 ))}
               </AnimeRow>
@@ -905,7 +928,7 @@ export default function AnimeHubV2(props) {
               return (
                 <AnimeRow key={g} title={g} count={list.length} onSeeAll={() => setGenreSel(new Set([g]))}>
                   {list.map(a => (
-                    <BackdropCard key={a.id} anime={{ ...a, badge: displayBadge(a) }} width={300}
+                    <BackdropCard key={a.id} anime={{ ...a, badge: badgeOf(a) }} width={300}
                       progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
                   ))}
                 </AnimeRow>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { SCANS } from './data/scans-catalog.js'
 import { loadManga } from './lib/mangaData.js'
+import { markAnimeSeen } from './lib/animeSeen.js'
 import { Routes, Route, useNavigate, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
@@ -541,6 +542,7 @@ export default function App() {
       else if (sub === 'mon-univers') setMonUniversOpen(true)
       else if (ANIME_SETTERS[sub]) {
         ANIME_SETTERS[sub](true)
+        markAnimeSeen(sub) // le badge « +N nouveaux » du hub disparaît une fois la série ouverte
         track('anime_view', { title: ANIME_TITLES[sub] || sub }) // point central : couvre hub, URL directe et Mon Univers
       }
       else { setAnimeHubOpen(true); setReturnToMon(false) }
