@@ -858,6 +858,14 @@ export default function AnimeHubV2(props) {
               </AnimeRow>
             )}
 
+            {/* ── Ma liste : les favoris (cœur / « + Ma liste ») n'apparaissaient
+                 que via le filtre Favoris, jamais sur l'accueil du hub. */}
+            {favs.size > 0 && (
+              <AnimeRow title="♥ Ma liste" count={favs.size} onSeeAll={() => setSeg('favoris')}>
+                {ANIMES.filter(a => favs.has(a.id)).map(a => card(a, 158))}
+              </AnimeRow>
+            )}
+
             <AnimeRow title={topCounts?.length ? 'Top du moment · les + regardés du serveur' : 'Top du moment'} count={10}>
               {/* Rang en chiffre géant détouré derrière l'affiche (réf. Top 10 Netflix) */}
               {top10.map((a, i) => (

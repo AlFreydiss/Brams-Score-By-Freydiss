@@ -1118,6 +1118,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           isRead={progress[CHAPTERS[reading]?.num] === 'read'}
           namespace={namespace}
           themeColor={color}
+          nextChapter={CHAPTERS[reading + 1] || null}
+          sharePath={series ? `/manga/${namespace}` : null}
         />
       )}
 

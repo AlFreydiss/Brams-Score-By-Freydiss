@@ -30,7 +30,9 @@ function loadFit() {
   try { return localStorage.getItem('manga_reading_fit') || 'width' } catch { return 'width' }
 }
 
-export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)' }) {
+// nextChapter : { num, title, pages } du chapitre suivant (écran de fin +
+// préchargement). sharePath : '/manga/<slug>' quand la page a une URL publique.
+export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)', nextChapter = null, sharePath = null }) {
   const pages = chapter.pages || []
   const [page,        setPage]        = useState(0)
   const [imgLoaded,   setImgLoaded]   = useState(false)
@@ -41,6 +43,12 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   const [dir,         setDir]         = useState(() => loadDir(namespace))
   const [fit,         setFit]         = useState(loadFit)
   const [webtoonPct,  setWebtoonPct]  = useState(0)
+  // Écran de fin (mode page). Avant, la dernière page enchaînait sans rien dire
+  // sur le chapitre suivant : aucun moment pour souffler, ni pour s'arrêter.
+  const [endCard,     setEndCard]     = useState(false)
+  const [autoNext,    setAutoNext]    = useState(true)
+  const [countdown,   setCountdown]   = useState(6)
+  const [copied,      setCopied]      = useState(false)
   const touchX    = useRef(null)
   const touchY    = useRef(null)
   const pinchRef  = useRef(null)   // { startDist, startZoom } pendant un pincement
@@ -98,9 +106,37 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
       } catch {}
     }
     setPage(start); setImgLoaded(false); setImgError(false); setZoom(1)
+    setEndCard(false); setAutoNext(true); setCountdown(6)
     scrollRef.current?.scrollTo({ top: 0 })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapter.num])
+
+  // Les deux premières pages du chapitre suivant partent dès l'avant-dernière
+  // page : le passage au chapitre suivant n'attend plus le réseau.
+  useEffect(() => {
+    if (!nextChapter?.pages?.length || isWebtoon || page < total - 2) return
+    for (const src of nextChapter.pages.slice(0, 2)) { const im = new Image(); im.decoding = 'async'; im.src = src }
+  }, [page, total, nextChapter, isWebtoon])
+
+  const goNextChapter = useCallback(() => { setEndCard(false); onNextChapter() }, [onNextChapter])
+
+  // Compte à rebours de l'écran de fin ; « Rester ici » l'arrête.
+  useEffect(() => {
+    if (!endCard || !autoNext || !nextChapter) return
+    if (countdown <= 0) { goNextChapter(); return }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [endCard, autoNext, countdown, nextChapter, goNextChapter])
+
+  const share = useCallback(async () => {
+    if (!sharePath) return
+    const url = `${window.location.origin}${sharePath}?ch=${chapter.num}`
+    try {
+      if (navigator.share && window.matchMedia?.('(pointer: coarse)').matches) { await navigator.share({ url, title: `Chapitre ${chapter.num}` }); return }
+      await navigator.clipboard.writeText(url)
+      setCopied(true); setTimeout(() => setCopied(false), 1800)
+    } catch {}
+  }, [sharePath, chapter.num])
 
   useEffect(() => { setMarkedRead(isRead) }, [isRead])
 
@@ -157,18 +193,20 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   const next = useCallback(() => {
     if (isWebtoon) return
     if (page < total - 1) { changePage(page + 1); return }
+    // Déjà sur l'écran de fin : « suivant » enchaîne (ou ferme au dernier).
+    if (endCard) { chapterIndex < totalChapters - 1 ? goNextChapter() : onClose(); return }
     // Chapitre fini : sa page retenue n'a plus lieu d'être (une relecture
     // repartirait sinon de la dernière page).
     try { localStorage.removeItem(`${namespace}_page_${chapter.num}`) } catch {}
-    if (chapterIndex < totalChapters - 1) { onFinish(); onNextChapter() }
-    else { onFinish(); onClose() }
-  }, [page, total, chapterIndex, totalChapters, onNextChapter, onFinish, onClose, changePage, isWebtoon, namespace, chapter.num])
+    onFinish(); setMarkedRead(true); setEndCard(true)
+  }, [page, total, chapterIndex, totalChapters, onFinish, onClose, changePage, isWebtoon, namespace, chapter.num, endCard, goNextChapter])
 
   const prev = useCallback(() => {
     if (isWebtoon) return
+    if (endCard) { setEndCard(false); return }
     if (page > 0) changePage(page - 1)
     else if (chapterIndex > 0) onPrevChapter()
-  }, [page, chapterIndex, onPrevChapter, changePage, isWebtoon])
+  }, [page, chapterIndex, onPrevChapter, changePage, isWebtoon, endCard])
 
   const handleMarkRead = useCallback(() => {
     onFinish(); setMarkedRead(true)
@@ -278,7 +316,17 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
           >✕</button>
           <div>
-            <div className="mr-title" style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{chapter.emoji} Ch.{chapter.num}</div>
+            <div className="mr-title" style={{ fontWeight: 700, color: '#fff', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              {chapter.emoji} Ch.{chapter.num}
+              {sharePath && (
+                <button onClick={share} title="Copier le lien de ce chapitre" aria-label="Partager ce chapitre" style={{
+                  padding: '2px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                  background: copied ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.07)',
+                  border: `1px solid ${copied ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                  color: copied ? '#34d399' : 'rgba(255,255,255,0.7)',
+                }}>{copied ? '✓ Lien copié' : '🔗 Partager'}</button>
+              )}
+            </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)' }}>
               {isWebtoon
                 ? `Webtoon · ${Math.round(webtoonPct * 100)}%`
@@ -405,6 +453,52 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
                       : { width: '100%', height: 'auto' }),
                 }}
               />
+            )}
+          </div>
+        </div>
+      )}
+
+      {endCard && !isWebtoon && (
+        <div role="dialog" aria-label={`Fin du chapitre ${chapter.num}`} style={{
+          position: 'absolute', inset: 0, zIndex: 5, display: 'grid', placeItems: 'center', padding: 20,
+          background: 'radial-gradient(700px 480px at 50% 45%, rgba(20,20,26,.9), rgba(6,6,8,.97))', backdropFilter: 'blur(6px)',
+        }}>
+          <div style={{ width: '100%', maxWidth: 440, textAlign: 'center', color: '#fff' }}>
+            <div style={{ width: 54, height: 54, borderRadius: '50%', margin: '0 auto 14px', display: 'grid', placeItems: 'center', fontSize: 24, color: '#34d399', background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.45)' }}>✓</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.14em', color: 'rgba(255,255,255,.5)' }}>CHAPITRE {chapter.num} TERMINÉ</div>
+            {nextChapter ? (
+              <>
+                <button onClick={goNextChapter} style={{
+                  display: 'flex', alignItems: 'center', gap: 14, width: '100%', marginTop: 22, padding: 12, borderRadius: 14, cursor: 'pointer', textAlign: 'left',
+                  background: 'rgba(255,255,255,0.05)', border: `1px solid ${themeColor}66`, color: '#fff', position: 'relative', overflow: 'hidden',
+                }}>
+                  {nextChapter.pages?.[0] && <img src={nextChapter.pages[0]} alt="" style={{ width: 64, height: 88, objectFit: 'cover', objectPosition: 'top', borderRadius: 8, flexShrink: 0 }} />}
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.1em', color: themeColor }}>SUIVANT</span>
+                    <span style={{ display: 'block', fontSize: 17, fontWeight: 800, marginTop: 3 }}>Chapitre {nextChapter.num}</span>
+                    {nextChapter.title && !/^chapitre\s*[\d.]+$/i.test(nextChapter.title) && (
+                      <span style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,.65)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nextChapter.title}</span>
+                    )}
+                  </span>
+                  <span aria-hidden style={{ marginLeft: 'auto', fontSize: 22, color: themeColor, paddingRight: 6 }}>→</span>
+                  {autoNext && (
+                    <span aria-hidden style={{ position: 'absolute', left: 0, bottom: 0, height: 3, background: themeColor, width: `${((6 - countdown) / 6) * 100}%`, transition: 'width 1s linear' }} />
+                  )}
+                </button>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16, flexWrap: 'wrap' }}>
+                  {autoNext && (
+                    <button onClick={() => setAutoNext(false)} style={{ padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', color: '#fff' }}>Rester ici ({countdown})</button>
+                  )}
+                  <button onClick={onClose} style={{ padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, background: 'transparent', border: '1px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,.75)' }}>Liste des chapitres</button>
+                  <button onClick={() => setEndCard(false)} style={{ padding: '9px 16px', borderRadius: 9, cursor: 'pointer', fontSize: 13, fontWeight: 700, background: 'transparent', border: 'none', color: 'rgba(255,255,255,.5)' }}>← Revoir la page</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 22, fontWeight: 800, marginTop: 14 }}>Tu es à jour 🎉</div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', margin: '8px 0 20px' }}>C'était le dernier chapitre disponible.</p>
+                <button onClick={onClose} style={{ padding: '11px 22px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 800, background: themeColor, border: 'none', color: '#fff' }}>Retour à la série</button>
+              </>
             )}
           </div>
         </div>

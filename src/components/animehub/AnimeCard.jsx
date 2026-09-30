@@ -44,7 +44,7 @@ export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
             <span style={{
               display: 'inline-block', marginTop: 7, padding: '3px 8px', borderRadius: 4,
               background: C.brass, color: '#14110A', fontSize: 10, fontWeight: 800, letterSpacing: '0.02em',
-            }}>NOUVEL ÉPISODE</span>
+            }}>{anime.badge === 'À JOUR' ? 'NOUVEL ÉPISODE' : 'NOUVEAU'}</span>
           )}
         </div>
         {progressPct > 0 && (
