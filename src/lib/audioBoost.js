@@ -8,6 +8,15 @@
 // et Web Audio le rend MUET. R2 (pub-*.r2.dev) renvoie bien ACAO:* sur GET.
 
 let _ctx = null
+
+// iOS : sans session « playback », l'audio Web Audio est coupé par
+// l'interrupteur silencieux. navigator.audioSession existe depuis iOS 17.
+// Renvoie false si l'API manque (l'appelant garde alors le son natif).
+export function allowPlaybackAudioSession() {
+  const s = typeof navigator !== 'undefined' ? navigator.audioSession : null
+  if (!s) return false
+  try { s.type = 'playback'; return true } catch { return false }
+}
 const _wired = new WeakMap() // element -> { gain }
 
 // URL dédiée CORS : évite la "pollution de cache" où une réponse R2 mise en

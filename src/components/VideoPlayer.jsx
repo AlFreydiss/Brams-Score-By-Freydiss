@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import EpisodeDetailOverlay from './EpisodeDetailOverlay.jsx'
 import PauseOverlay from './PauseOverlay.jsx'
 import { getAnimeMeta } from '../data/anime-meta.js'
-import { setBoost, corsUrl } from '../lib/audioBoost.js'
+import { setBoost, corsUrl, allowPlaybackAudioSession } from '../lib/audioBoost.js'
 import { saveWatchProgress, getWatchProgress } from '../lib/watchProgress.js'
 
 // Écran tactile (téléphone/tablette) : active la couche de contrôles au doigt.
@@ -161,6 +161,8 @@ function cleanCueText(text) {
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 const DEFAULT_GAIN = 1.5
 const IS_WEBKIT = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (/Safari/.test(navigator.userAgent) && !/Chrome|Chromium|CriOS|Edg|OPR|Android/.test(navigator.userAgent)))
+// iPhone/iPad (iPadOS se présente comme un Mac tactile).
+const IS_IOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1))
 
 // ── Icônes SVG inline (remplacent les emoji/glyphes : moche + rendu incohérent
 // entre OS). stroke=currentColor → héritent de la couleur du bouton. viewBox 24,
@@ -314,7 +316,7 @@ function ProgressBar({ currentTime, duration, buffered, onSeek, color, previewSr
       {hasThumb && (
         <div style={{ position: 'absolute', bottom: 24, left: `${(hoverPct ?? 0) * 100}%`, transform: 'translateX(-50%)', width: 168, overflow: 'hidden', background: 'rgba(8,9,12,0.94)', color: '#fff', fontWeight: 700, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, pointerEvents: 'none', boxShadow: '0 16px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(16px)', opacity: hoverPct !== null ? 1 : 0, transition: 'opacity .12s', zIndex: 30 }}>
           {scrubSrc ? (
-            <video ref={pvRef} src={scrubSrc} muted playsInline preload="metadata" onSeeked={onPvSeeked}
+            <video ref={pvRef} src={scrubSrc} crossOrigin="anonymous" muted playsInline preload="metadata" onSeeked={onPvSeeked}
               style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', background: '#000' }} />
           ) : (
             <img loading="lazy" decoding="async" src={previewSrc} alt="" style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block', filter: 'brightness(1.06) saturate(1.1)' }} />
@@ -349,6 +351,9 @@ function EpisodeMiniThumb({ video, color }) {
     <div style={{ position: 'relative', width: 96, height: 54, background: `${color}18`, overflow: 'hidden' }}>
       <video
         src={encSrc(video.src)}
+        // Même mode CORS que le lecteur : une réponse mise en cache sans CORS
+        // ferait échouer le <video crossOrigin> du même épisode.
+        crossOrigin="anonymous"
         muted
         playsInline
         preload="metadata"
@@ -832,7 +837,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     const v = videoRef.current
     if (v) { v.defaultPlaybackRate = speed; v.playbackRate = speed }
     try { localStorage.setItem('vp_speed', String(speed)) } catch {}
-  }, [speed, idx, mediaSrc])
+  }, [speed, idx, effectiveMediaSrc])
 
   // ── Sync piste audio externe (VF/JP séparée) sur l'état de la vidéo ───────
   // Sans ça, l'<audio> ne suivait JAMAIS pause/seek/avance/vitesse de la vidéo
@@ -877,9 +882,13 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   useEffect(() => {
     const v = videoRef.current
     if (!v) return
-    if (IS_WEBKIT && isHlsSrc(mediaSrc)) return
+    if (!effectiveMediaSrc) return
+    if (IS_WEBKIT && isHlsSrc(effectiveMediaSrc)) return
+    // iOS : Web Audio suit l'interrupteur silencieux (un <video> natif non).
+    // Sans audioSession (iOS < 17) on garde le son natif plutôt que le boost.
+    if (IS_IOS && !allowPlaybackAudioSession()) return
     setBoost(v, video?.gain || DEFAULT_GAIN)
-  }, [mediaSrc, video?.gain])
+  }, [effectiveMediaSrc, video?.gain])
 
   // ── Lecture HLS via hls.js (Chrome/Edge/Firefox — pas de HLS natif) ───────
   // We only initialize HLS once the user has started playback (effectiveMediaSrc).

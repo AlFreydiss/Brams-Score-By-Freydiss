@@ -172,7 +172,8 @@ export default function HxhPage({ onClose }) {
     })
   }, [])
 
-  const watchedCount = useMemo(() => VIDEOS.filter(v => progress[keyOf(v)]?.completed).length, [progress])
+  // Progression en épisodes seulement : les 2 films ne bloquent pas « ✓ Terminé ».
+  const watchedCount = useMemo(() => VIDEOS.filter(v => v.kind !== 'film' && progress[keyOf(v)]?.completed).length, [progress])
   const resumeIdx = useMemo(() => { const i = VIDEOS.findIndex(v => !progress[keyOf(v)]?.completed); return i >= 0 ? i : 0 }, [progress])
   const openDetail = useCallback((idx) => {
     setDetailIdx(idx)
@@ -192,7 +193,7 @@ export default function HxhPage({ onClose }) {
     return out
   }, [])
 
-  const total = VIDEOS.length
+  const total = EPISODE_COUNT
 
   return (
     <>

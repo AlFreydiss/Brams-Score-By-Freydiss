@@ -21,7 +21,7 @@ import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
 const wideArt = a => (hasKeyart(a.id) ? keyartSrc(a.id, 960) : bannerSrc(a.id) || a.coverImage)
 import { readScanProgress, scanStatus, SCANS_EVENT } from '../../lib/scanProgress.js'
 import { newEpisodes } from '../../lib/animeSeen.js'
-import { ANIME_COUNTS } from '../../data/anime-counts.js'
+import { ANIME_COUNTS, ANIME_FILM_COUNTS } from '../../data/anime-counts.js'
 import { logAnimeOpen, fetchTopWatched } from '../../lib/watchStats.js'
 import { getContinueWatching } from '../../lib/watchProgress.js'
 import { friendsWatching } from '../../lib/social.js'
@@ -94,12 +94,16 @@ function AmbientLegacy() {
 // <ns>_video_progress) — réimplémentation compacte de computeVideo.
 // Le total est celui du catalogue : il valait le nombre d'épisodes COMMENCÉS,
 // si bien qu'un seul épisode vu en entier donnait 1/1 = 100 % et « Terminé ».
+// Progression en épisodes : les films rangés dans la liste (HxH) n'en font pas partie.
+const episodeCount = (ns) => (ANIME_COUNTS[ns] || 0) - (ANIME_FILM_COUNTS[ns] || 0)
+const isFilmKey = (k) => /(^|-)film-/.test(k)
+
 function readProgress(ns) {
   try {
     const structured = JSON.parse(localStorage.getItem(`${ns}_video_progress`) || 'null')
     if (structured?.episodes) {
       const eps = Object.values(structured.episodes)
-      const total = Math.max(ANIME_COUNTS[ns] || 0, eps.length) || 12
+      const total = Math.max(episodeCount(ns), eps.length) || 12
       const done = eps.filter(e => e?.completed).length
       return {
         pct: Math.round((done / total) * 100), label: `${done}/${total} épisodes`,
@@ -107,10 +111,10 @@ function readProgress(ns) {
       }
     }
     const flat = JSON.parse(localStorage.getItem(`${ns}_vp`) || '{}')
-    const keys = Object.keys(flat)
+    const keys = Object.keys(flat).filter(k => !isFilmKey(k))
     if (!keys.length) return { pct: 0, label: '' }
     const done = keys.filter(k => flat[k]?.completed).length
-    const total = Math.max(ANIME_COUNTS[ns] || 0, keys.length)
+    const total = Math.max(episodeCount(ns), keys.length)
     return { pct: Math.round((done / total) * 100), label: `${done}/${total} épisodes` }
   } catch { return { pct: 0, label: '' } }
 }
