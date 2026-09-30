@@ -30,4 +30,4 @@ export const BANNER_IDS = new Set([
   'bunny-girl', 'rent-girlfriend', 'bc', 'mha', 'fireforce', 'bluelock', 'fate-zero', 'your-lie',
   'fgo-babylonia', 'quintuplets', 'hxh', 'bubble', 'koe-no-katachi',
 ])
-export const bannerSrc = id => (BANNER_IDS.has(id) ? `${R2}/banner/${id}.webp` : null)
+export const bannerSrc = id => (BANNER_IDS.has(id) ? `${R2}/banner/${id}.webp?v=2` : null)
