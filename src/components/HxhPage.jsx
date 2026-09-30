@@ -6,6 +6,9 @@ import EpisodeWatch from './EpisodeWatch.jsx'
 
 // VOSTFR : le player applique la préférence du membre (défaut ja + sous-titres fr).
 const VIDEOS = VIDEOS_RAW
+// Les deux films (Phantom Rouge, The Last Mission) vivent dans la même liste : on
+// ne les compte pas comme des épisodes.
+const EPISODE_COUNT = VIDEOS.filter(v => v.kind !== 'film').length
 
 const COLOR  = '#2dd181'
 const COLOR2 = '#86efac'
@@ -67,7 +70,7 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
         <div style={{ position:'absolute',bottom:8,left:8, fontSize:9,fontWeight:800,background:'rgba(45,209,129,.18)',color:COLOR2,border:`1px solid rgba(45,209,129,.28)`,borderRadius:100,padding:'2px 7px' }}>{video.badge || 'VOSTFR'}</div>
       </div>
       <div style={{ padding:'10px 13px 13px' }}>
-        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{`EPISODE ${video.episode}`}</div>
+        <div style={{ fontSize:9.5,fontWeight:800,color:COLOR2,letterSpacing:'.1em',marginBottom:4 }}>{video.kind === 'film' ? 'FILM' : `EPISODE ${video.episode}`}</div>
         <div style={{ fontSize:13.5,fontWeight:700,color:'#fff',lineHeight:1.28 }}>{video.title}</div>
       </div>
     </div>
@@ -108,7 +111,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:String(VIDEOS.length || 148), dot:COLOR2 },
+            { label:'Épisodes', value:String(EPISODE_COUNT || 148), dot:COLOR2 },
             { label:'Arcs', value:'7', dot:'#34d399' },
             { label:'Audio', value:'VOSTFR', dot:'#fbbf24' },
             { label:'Note', value:'★ 9.0', dot:'#f97316' },
@@ -245,7 +248,7 @@ export default function HxhPage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{total} épisodes · 7 arcs · VOSTFR</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{EPISODE_COUNT} épisodes · 7 arcs · 2 films · VOSTFR</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(45,209,129,.08)',border:'1px solid rgba(45,209,129,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:watchedCount===total?'#34d399':COLOR,animation:watchedCount<total&&watchedCount>0?'hxhPulse 2s infinite':'none' }} />

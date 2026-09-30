@@ -9,13 +9,15 @@ import FILMS from '../data/films-videos.json'
 const FILM_COLORS = {
   bubble: ['#5ec8e0', '#9be3f0'],
   reze:   ['#e0524a', '#ff8a7a'],
+  'koe-no-katachi': ['#6fb7e8', '#f6c1d4'],
 }
 // Motifs flottants du fond animé (comme Vivy/Violet) par film
 const FILM_MOTIFS = {
   bubble: ['🫧', '💧', '🌊', '✨'],
   reze:   ['🔪', '💥', '🩸', '☔'],
+  'koe-no-katachi': ['🌸', '🤟', '🍞', '🎆'],
 }
-const SLUG_TO_KEY = { bubble: 'film-bubble', reze: 'film-reze' }
+const SLUG_TO_KEY = { bubble: 'film-bubble', reze: 'film-reze', 'koe-no-katachi': 'film-koe-no-katachi' }
 
 export default function FilmPage({ slug = 'bubble', onClose }) {
   const film = FILMS.find(f => f.progressKey === SLUG_TO_KEY[slug]) || FILMS.find(f => (f.title || '').toLowerCase().includes(slug)) || FILMS[0]

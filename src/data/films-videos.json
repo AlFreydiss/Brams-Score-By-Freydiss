@@ -66,5 +66,39 @@
       }
     ],
     "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/reze/reze.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "A Silent Voice (Koe no Katachi)",
+    "kind": "film",
+    "episodeLabel": "Film",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/koe-no-katachi/koe-no-katachi-vf.mp4",
+    "season": "Film",
+    "arc": "Film",
+    "badge": "MULTI",
+    "preferredAudioLang": "fr",
+    "progressKey": "film-koe-no-katachi",
+    "year": 2016,
+    "synopsis": "Au primaire, Shoya harcelait Shoko, une camarade sourde, jusqu’à la faire changer d’école. Devenu un lycéen isolé, il cherche à la revoir pour réparer ce qui peut l’être. Kyoto Animation, réalisé par Naoko Yamada.",
+    "audio": [
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "default": true
+      },
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/koe-no-katachi/koe-no-katachi-vostfr.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/koe-no-katachi/koe-no-katachi-fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/films/koe-no-katachi/koe-no-katachi.jpg"
   }
 ]

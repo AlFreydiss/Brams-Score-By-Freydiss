@@ -405,7 +405,7 @@ const ANIME_TITLES = {
   'kaiju-no-8': 'Kaiju No. 8', bluelock: 'Blue Lock', 'fate-zero': 'Fate/Zero', 'your-name': 'Your Name',
   'your-lie': 'Your Lie in April', 'fgo-babylonia': 'Fate/Grand Order Babylonia', kaguya: 'Kaguya-sama: Love is War', hxh: 'Hunter x Hunter',
   quintuplets: 'The Quintessential Quintuplets',
-  bubble: 'Bubble', reze: 'Chainsaw Man — Reze Arc',
+  bubble: 'Bubble', reze: 'Chainsaw Man — Reze Arc', 'koe-no-katachi': 'A Silent Voice',
 }
 
 export default function App() {
@@ -461,6 +461,7 @@ export default function App() {
   const [yourNameOpen,     setYourNameOpen]      = useState(false)
   const [bubbleOpen,       setBubbleOpen]        = useState(false)
   const [rezeOpen,         setRezeOpen]          = useState(false)
+  const [koeOpen,          setKoeOpen]           = useState(false)
   const [monUniversOpen,   setMonUniversOpen]    = useState(false)
   const [returnToMon,      setReturnToMon]       = useState(false)
   const [treeOpen,         setTreeOpen]          = useState(false)
@@ -513,7 +514,7 @@ export default function App() {
     setTpnOpen(false); setDrstoneOpen(false); setJjkOpen(false); setKingdomOpen(false)
     setAotOpen(false); setKnyOpen(false); setNntOpen(false); setSlOpen(false); setDbsOpen(false)
     setVioletOpen(false); setVivyOpen(false); setDomesticOpen(false); setKoiOpen(false); setLovePrismOpen(false); setCaroleTuesdayOpen(false); setBunnyGirlOpen(false); setRentGirlOpen(false); setBcOpen(false); setMhaOpen(false)
-    setFireforcOpen(false); setBleachOpen(false); setKaijuOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setBubbleOpen(false); setRezeOpen(false); setYourLieOpen(false); setFgoBabyloniaOpen(false); setQuintupletsOpen(false); setKaguyaOpen(false); setHxhOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
+    setFireforcOpen(false); setBleachOpen(false); setKaijuOpen(false); setBluelockOpen(false); setFateZeroOpen(false); setYourNameOpen(false); setBubbleOpen(false); setRezeOpen(false); setKoeOpen(false); setYourLieOpen(false); setFgoBabyloniaOpen(false); setQuintupletsOpen(false); setKaguyaOpen(false); setHxhOpen(false); setMonUniversOpen(false); setTreeOpen(false); setUploadOpen(false)
   }, [])
 
   // Slug d'URL d'un anime â†’ setter d'overlay correspondant
@@ -524,7 +525,7 @@ export default function App() {
     'carole-tuesday': setCaroleTuesdayOpen, 'bunny-girl': setBunnyGirlOpen, 'rent-girlfriend': setRentGirlOpen,
     bc: setBcOpen, mha: setMhaOpen, fireforce: setFireforcOpen, bleach: setBleachOpen, 'kaiju-no-8': setKaijuOpen, bluelock: setBluelockOpen,
     'fate-zero': setFateZeroOpen, 'your-name': setYourNameOpen, 'your-lie': setYourLieOpen, 'fgo-babylonia': setFgoBabyloniaOpen, quintuplets: setQuintupletsOpen, kaguya: setKaguyaOpen, hxh: setHxhOpen,
-    bubble: setBubbleOpen, reze: setRezeOpen,
+    bubble: setBubbleOpen, reze: setRezeOpen, 'koe-no-katachi': setKoeOpen,
   }
 
   // â”€â”€ URL = source de vÃ©ritÃ© des overlays anime/scan â”€â”€
@@ -594,13 +595,13 @@ export default function App() {
     return () => entries.forEach(([ev, fn]) => document.removeEventListener(ev, fn))
   }, [navigate])
 
-  const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || kaijuOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || fgoBabyloniaOpen || quintupletsOpen || kaguyaOpen || hxhOpen || monUniversOpen
+  const mediaOverlayOpen = scansOpen || onepieceOpen || animeHubOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || kaijuOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || koeOpen || yourLieOpen || fgoBabyloniaOpen || quintupletsOpen || kaguyaOpen || hxhOpen || monUniversOpen
 
   // Pages animÃ©/film individuelles ouvertes par URL directe (/animes-scan/<slug>).
   // Le Hub et les Scans sont dÃ©jÃ  derriÃ¨re AuthGuard, mais ces overlays-lÃ  Ã©taient
   // rendus sans contrÃ´le â†’ un visiteur non connectÃ© accÃ©dait au catalogue via le
   // lien direct. On les passe donc aussi derriÃ¨re AuthGuard (gating Discord).
-  const animeIndividualOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || kaijuOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || yourLieOpen || fgoBabyloniaOpen || quintupletsOpen || kaguyaOpen || hxhOpen || monUniversOpen
+  const animeIndividualOpen = onepieceOpen || tpnOpen || drstoneOpen || jjkOpen || kingdomOpen || aotOpen || knyOpen || nntOpen || slOpen || dbsOpen || violetOpen || vivyOpen || domesticOpen || koiOpen || lovePrismOpen || caroleTuesdayOpen || bunnyGirlOpen || rentGirlOpen || bcOpen || mhaOpen || fireforcOpen || bleachOpen || kaijuOpen || bluelockOpen || fateZeroOpen || yourNameOpen || bubbleOpen || rezeOpen || koeOpen || yourLieOpen || fgoBabyloniaOpen || quintupletsOpen || kaguyaOpen || hxhOpen || monUniversOpen
 
   const mainContent = (
     <>
@@ -818,6 +819,7 @@ export default function App() {
             onOpenHxh={() => navigate('/animes-scan/hxh')}
             onOpenBubble={() => navigate('/animes-scan/bubble')}
             onOpenReze={() => navigate('/animes-scan/reze')}
+            onOpenKoe={() => navigate('/animes-scan/koe-no-katachi')}
             onOpenMonUnivers={() => navigate('/animes-scan/mon-univers')}
           />
       )}
@@ -856,6 +858,7 @@ export default function App() {
             {yourNameOpen  && <YourNamePage  onClose={closeMedia} />}
             {bubbleOpen    && <FilmPage slug="bubble" onClose={closeMedia} />}
             {rezeOpen      && <FilmPage slug="reze"   onClose={closeMedia} />}
+            {koeOpen       && <FilmPage slug="koe-no-katachi" onClose={closeMedia} />}
             {monUniversOpen && (
               <MonUniversPage
                 onClose={() => navigate('/animes-scan')}

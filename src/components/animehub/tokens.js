@@ -56,6 +56,7 @@ export const ANIME_THEMES = {
   // Shōnen / action
   onepiece:            { accent: '#E0524A', accent2: '#F5B04A', font: F_PIRATA },
   reze:                { accent: '#E63946', accent2: '#FF9A8C', font: F_BEBAS },
+  'koe-no-katachi':    { accent: '#6FB7E8', accent2: '#F6C1D4', font: F_QUICK },
   bleach:              { accent: '#FF7A1A', accent2: '#FFE0B8', font: F_BUNGEE },
   jjk:                 { accent: '#8B6CFF', accent2: '#4AC6FF', font: F_BEBAS },
   kny:                 { accent: '#3EC1A8', accent2: '#F2788F', font: F_BEBAS },

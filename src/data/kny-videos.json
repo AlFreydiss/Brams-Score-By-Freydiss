@@ -883,5 +883,845 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 34,
+    "title": "Enflamme ton cœur",
+    "episodeLabel": "S02E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S02E07-vostfr.mp4",
+    "season": "S02",
+    "arc": "Arc du Train de l’Infini",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S02E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S02E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S02E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 35,
+    "title": "Épisode 1",
+    "episodeLabel": "S03E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E01-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 36,
+    "title": "Épisode 2",
+    "episodeLabel": "S03E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E02-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 37,
+    "title": "Épisode 3",
+    "episodeLabel": "S03E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E03-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 38,
+    "title": "Épisode 4",
+    "episodeLabel": "S03E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E04-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 39,
+    "title": "Épisode 5",
+    "episodeLabel": "S03E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E05-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 40,
+    "title": "Épisode 6",
+    "episodeLabel": "S03E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E06-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 41,
+    "title": "Épisode 7",
+    "episodeLabel": "S03E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E07-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 42,
+    "title": "Épisode 8",
+    "episodeLabel": "S03E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E08-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 43,
+    "title": "Épisode 9",
+    "episodeLabel": "S03E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E09-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 44,
+    "title": "Épisode 10",
+    "episodeLabel": "S03E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E10-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 45,
+    "title": "Épisode 11",
+    "episodeLabel": "S03E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E11-vostfr.mp4",
+    "season": "S03",
+    "arc": "Arc du Quartier des plaisirs",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S03E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S03E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S03E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 46,
+    "title": "Épisode 1",
+    "episodeLabel": "S04E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E01-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 47,
+    "title": "Épisode 2",
+    "episodeLabel": "S04E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E02-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 48,
+    "title": "Épisode 3",
+    "episodeLabel": "S04E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E03-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 49,
+    "title": "Épisode 4",
+    "episodeLabel": "S04E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E04-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 50,
+    "title": "Épisode 5",
+    "episodeLabel": "S04E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E05-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 51,
+    "title": "Épisode 6",
+    "episodeLabel": "S04E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E06-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 52,
+    "title": "Épisode 7",
+    "episodeLabel": "S04E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E07-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E07-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 53,
+    "title": "Épisode 8",
+    "episodeLabel": "S04E08",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E08-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E08",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E08.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E08-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 54,
+    "title": "Épisode 9",
+    "episodeLabel": "S04E09",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E09-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E09",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E09.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E09-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 55,
+    "title": "Épisode 10",
+    "episodeLabel": "S04E10",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E10-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E10",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E10.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E10-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 56,
+    "title": "Épisode 11",
+    "episodeLabel": "S04E11",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E11-vostfr.mp4",
+    "season": "S04",
+    "arc": "Arc du Village des forgerons",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S04E11",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S04E11.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S04E11-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 57,
+    "title": "Épisode 1",
+    "episodeLabel": "S05E01",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E01-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E01",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E01.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E01-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 58,
+    "title": "Épisode 2",
+    "episodeLabel": "S05E02",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E02-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E02",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E02.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E02-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 59,
+    "title": "Épisode 3",
+    "episodeLabel": "S05E03",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E03-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E03",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E03.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E03-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 60,
+    "title": "Épisode 4",
+    "episodeLabel": "S05E04",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E04-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E04",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E04.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E04-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 61,
+    "title": "Épisode 5",
+    "episodeLabel": "S05E05",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E05-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E05",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E05.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E05-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 62,
+    "title": "Épisode 6",
+    "episodeLabel": "S05E06",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E06-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E06",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E06.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E06-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 63,
+    "title": "Épisode 7",
+    "episodeLabel": "S05E07",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E07-vostfr.mp4",
+    "season": "S05",
+    "arc": "Arc de l’Entraînement des Piliers",
+    "preferredAudioLang": "ja",
+    "progressKey": "kny-S05E07",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/thumbnails/S05E07.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/kny/S05E07-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]

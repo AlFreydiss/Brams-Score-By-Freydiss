@@ -26,7 +26,7 @@ const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergard
 // Les bannières paysage du hero (et leurs variantes WebP) sont dans keyart.js.
 // Vraies nouveautés : dans les données historiques presque TOUT portait le badge
 // « NOUVEAU » (27/29) — on le réserve aux derniers ajouts réels du catalogue.
-const NEW_IDS = new Set(['fgo-babylonia', 'quintuplets', 'kny', 'kaiju-no-8', 'fireforce', 'bleach', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
+const NEW_IDS = new Set(['koe-no-katachi', 'fgo-babylonia', 'quintuplets', 'kny', 'kaiju-no-8', 'fireforce', 'bleach', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
 const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -134,7 +134,7 @@ export default function AnimeHubV2(props) {
     bc: props.onOpenBc, mha: props.onOpenMha, fireforce: props.onOpenFireforce, bleach: props.onOpenBleach,
     'kaiju-no-8': props.onOpenKaiju, bluelock: props.onOpenBluelock, 'fate-zero': props.onOpenFateZero,
     'your-name': props.onOpenYourName, 'your-lie': props.onOpenYourLie, 'fgo-babylonia': props.onOpenFgoBabylonia, 'domestic-na-kanojo': props.onOpenDomestic,
-    'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze,
+    'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze, 'koe-no-katachi': props.onOpenKoe,
     kaguya: props.onOpenKaguya, hxh: props.onOpenHxh, quintuplets: props.onOpenQuintuplets,
   })[id]
   // Les animes s'ouvrent par callbacks passes en props ; les scans ont de

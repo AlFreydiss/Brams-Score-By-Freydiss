@@ -4142,5 +4142,67 @@
         "default": true
       }
     ]
+  },
+  {
+    "episode": 149,
+    "title": "Phantom Rouge",
+    "kind": "film",
+    "episodeLabel": "Film",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/film-phantom-rouge-vostfr.mp4",
+    "season": "Films",
+    "arc": "Films",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-film-phantom-rouge",
+    "badge": "VOSTFR",
+    "year": 2013,
+    "synopsis": "Kurapika affronte Omokage, ancien membre de la Brigade Fantôme qui lui a volé ses yeux écarlates. Premier film de la série 2011.",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/film-phantom-rouge.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/film-phantom-rouge-fr.vtt",
+        "default": true
+      }
+    ]
+  },
+  {
+    "episode": 150,
+    "title": "The Last Mission",
+    "kind": "film",
+    "episodeLabel": "Film",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/film-last-mission-vostfr.mp4",
+    "season": "Films",
+    "arc": "Films",
+    "preferredAudioLang": "ja",
+    "progressKey": "hxh-film-last-mission",
+    "badge": "VOSTFR",
+    "year": 2013,
+    "synopsis": "Pendant l’élection du président de l’Association, un ancien Hunter banni revient se venger de Netero avec l’On, l’envers du Nen.",
+    "audio": [
+      {
+        "label": "VOSTFR",
+        "srclang": "ja",
+        "default": true
+      }
+    ],
+    "hq": true,
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/thumbnails/film-last-mission.jpg",
+    "subtitles": [
+      {
+        "label": "Français",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/hxh/film-last-mission-fr.vtt",
+        "default": true
+      }
+    ]
   }
 ]

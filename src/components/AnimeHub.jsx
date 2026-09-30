@@ -95,6 +95,7 @@ export const ANIMES = [
     id: 'your-name',
     title: 'Your Name',
     subtitle: 'Kimi no Na wa',
+    type: 'Film',
     emoji: '☄️',
     color: '#7cc4e0',
     colorDark: '#1d3a4a',
@@ -115,6 +116,7 @@ export const ANIMES = [
     id: 'bubble',
     title: 'Bubble',
     subtitle: 'Film · Wit Studio',
+    type: 'Film', // carte « 2016 · Film » et hero « FILM » (affichaient « Série »)
     emoji: '🫧',
     color: '#5ec8e0',
     colorDark: '#16384a',
@@ -135,6 +137,7 @@ export const ANIMES = [
     id: 'reze',
     title: 'Chainsaw Man — Reze Arc',
     subtitle: 'Film · MAPPA',
+    type: 'Film', // carte « 2016 · Film » et hero « FILM » (affichaient « Série »)
     emoji: '🔪',
     color: '#e0524a',
     colorDark: '#4a1714',
@@ -149,6 +152,28 @@ export const ANIMES = [
     action: '▶ Regarder',
     badge: 'NOUVEAU',
     badgeColor: '#e0524a',
+  },
+  {
+    id: 'koe-no-katachi',
+    title: 'A Silent Voice',
+    subtitle: 'Film · Kyoto Animation',
+    type: 'Film', // carte « 2016 · Film » et hero « FILM » (affichaient « Série »)
+    emoji: '🌸',
+    color: '#6fb7e8',
+    colorDark: '#173347',
+    coverImage: 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/covers/koe-no-katachi.jpg',
+    coverPosition: 'center top',
+    year: 2016,
+    genres: ['Drame', 'Romance'],
+    description: "Au primaire, Shoya harcelait Shoko, une camarade sourde, jusqu'à la faire changer d'école. Devenu un lycéen isolé, il cherche à la revoir pour réparer ce qui peut l'être. Kyoto Animation, réalisé par Naoko Yamada.",
+    stats: [
+      { label: 'Type', value: 'Film' },
+      { label: 'Audio', value: 'VF + VOSTFR' },
+      { label: 'Statut', value: 'Disponible' },
+    ],
+    action: '▶ Regarder',
+    badge: 'NOUVEAU',
+    badgeColor: '#6fb7e8',
   },
   // Dr. Stone retiré d'Anime & Scan le 2026-06-13 (demande). Page + routing conservés.
   {
@@ -662,6 +687,7 @@ export const ANIMES = [
 ]
 
 export const SEARCH_ALIASES = {
+  'koe-no-katachi': ['koe no katachi', 'silent voice', 'a silent voice', 'shoko', 'shoya', 'kyoani', 'kyoto animation'],
   onepiece: ['op', 'one piece', 'luffy', 'mugiwara', 'elbaf', 'pirate'],
   tpn: ['promised neverland', 'the promised neverland', 'neverland', 'emma', 'norman', 'ray'],
   drstone: ['dr stone', 'dr. stone', 'doctor stone', 'senku', 'science'],
