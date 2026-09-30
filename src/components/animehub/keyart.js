@@ -19,3 +19,15 @@ export const keyartSrcSet = id => [960, 1920, 2560].map(w => `${keyartSrc(id, w)
 
 // Couvertures officielles des mangas (AniList, 460 px, WebP), sous manga/covers.
 export const mangaCover = slug => `https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/manga/covers/${slug}.webp`
+
+// Repli des cartes paysage pour les séries sans keyart : la bannière officielle
+// AniList (1900×400) recadrée au centre en 16:9, soit 711×400 px — assez pour
+// une carte de 300 px en écran dense. Avant, la carte étirait l'affiche
+// portrait 460 px : DBS, Vivy, Bunny Girl… étaient flous. Dr. Stone n'en a pas
+// (sa bannière ne montre que du feu).
+export const BANNER_IDS = new Set([
+  'tpn', 'kny', 'sl', 'dbs', 'vivy', 'domestic-na-kanojo', 'koi-ameagari', 'love-prism', 'carole-tuesday',
+  'bunny-girl', 'rent-girlfriend', 'bc', 'mha', 'fireforce', 'bluelock', 'fate-zero', 'your-lie',
+  'fgo-babylonia', 'quintuplets', 'hxh', 'bubble', 'koe-no-katachi',
+])
+export const bannerSrc = id => (BANNER_IDS.has(id) ? `${R2}/banner/${id}.webp?v=2` : null)

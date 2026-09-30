@@ -5,15 +5,15 @@
 import { useState } from 'react'
 import { C, FONT_BODY, RADIUS_CARD } from './tokens.js'
 import { TitleArt } from './HeroCinematic.jsx'
-import { hasKeyart, keyartSrc } from './keyart.js'
+import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
 
 // ── BackdropCard — carte PAYSAGE 16:9 des rows (réf. Netflix web) ────────────
 // Image backdrop (keyart WebP 960 quand la série en a un, sinon affiche),
 // title-art ou titre en bas-gauche, badge « NOUVEL ÉPISODE » laiton si à jour.
 export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
   const [bdBroken, setBdBroken] = useState(false)
-  const backdrop = bdBroken ? (anime.coverImage) : (anime.backdropUrl || (hasKeyart(anime.id) ? keyartSrc(anime.id, 960) : anime.coverImage))
-  const fresh = anime.badge === 'À JOUR' || anime.badge === 'NOUVEAU'
+  const backdrop = bdBroken ? (anime.coverImage) : (anime.backdropUrl || (hasKeyart(anime.id) ? keyartSrc(anime.id, 960) : bannerSrc(anime.id) || anime.coverImage))
+  const fresh = anime.badge === 'À JOUR' || anime.badge === 'NOUVEAU' || /^\+\d+ NOUVEAU/.test(anime.badge || '')
   return (
     <div
       role="button" tabIndex={0} aria-label={anime.title} className="ah2-card"
@@ -44,7 +44,7 @@ export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
             <span style={{
               display: 'inline-block', marginTop: 7, padding: '3px 8px', borderRadius: 4,
               background: C.brass, color: '#14110A', fontSize: 10, fontWeight: 800, letterSpacing: '0.02em',
-            }}>{anime.badge === 'À JOUR' ? 'NOUVEL ÉPISODE' : 'NOUVEAU'}</span>
+            }}>{anime.badge === 'À JOUR' ? 'NOUVEL ÉPISODE' : /^\+\d+/.test(anime.badge || '') ? anime.badge : 'NOUVEAU'}</span>
           )}
         </div>
         {progressPct > 0 && (
