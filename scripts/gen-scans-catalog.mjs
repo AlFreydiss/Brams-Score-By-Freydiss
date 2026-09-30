@@ -41,6 +41,14 @@ const ANIME_ID = {
 // Avant, la carte prenait la premiere page du chapitre 1 : une planche en noir
 // et blanc pour Dr. Stone et Boruto, ou l'affiche de l'anime pour les autres.
 const COVERS = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/manga/covers'
+// Où l'anime s'arrête : « tu as fini l'anime ? continue au ch. N ». Seulement
+// les fins de saison sûres — un mauvais numéro gâcherait la suite à quelqu'un.
+const ANIME_END = {
+  jjk:             { season: 'Saison 2 · Incident de Shibuya', last: 136, next: 137 },
+  kny:             { season: 'Saison 4 · Entraînement des Piliers', last: 139, next: 140 },
+  'solo-leveling': { season: 'Saison 2', last: 110, next: 111 },
+}
+
 const META = {
   aot:             { author: 'Hajime Isayama',                  year: 2009, status: 'termine', score: 84, genres: ['Action', 'Drame', 'Mystère'] },
   'black-clover':  { author: 'Yūki Tabata',                     year: 2014, status: 'termine', score: 69, genres: ['Action', 'Comédie', 'Fantasy'] },
@@ -72,6 +80,7 @@ for (const f of readdirSync(MANGA_DIR).filter(f => f.endsWith('.json')).sort()) 
     // Couverture officielle si on l'a, sinon la premiere page du chapitre 1.
     cover: META[slug] ? `${COVERS}/${slug}.webp` : (data[0]?.pages?.[0] || null),
     ...(META[slug] || {}),
+    ...(ANIME_END[slug] ? { animeEnd: ANIME_END[slug] } : {}),
     animeId: ANIME_ID[slug] || null,
   })
 }

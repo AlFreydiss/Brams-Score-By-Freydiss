@@ -12,12 +12,21 @@ const DIRS = [
 // ou pour les autres. Le choix explicite de l'utilisateur prime toujours.
 const WEBTOON_NATIVE = new Set(['solo-leveling', 'sl'])
 
+// Le sens est retenu PAR SÉRIE. Il était global : passer Solo Leveling en
+// webtoon faisait ouvrir Jujutsu Kaisen en webtoon, et remettre JJK en page par
+// page renvoyait Solo Leveling en page par page. L'ancienne clé globale n'est
+// plus lue : elle portait justement ce mélange.
+const dirKey = ns => `manga_reading_dir:${ns}`
 function loadDir(namespace) {
   try {
-    const saved = localStorage.getItem('manga_reading_dir')
+    const saved = localStorage.getItem(dirKey(namespace))
     if (saved) return saved
   } catch {}
   return WEBTOON_NATIVE.has(namespace) ? 'webtoon' : 'rtl'
+}
+
+function loadSpread() {
+  try { return localStorage.getItem('manga_spread') !== '0' } catch { return true }
 }
 
 const FITS = [
@@ -32,7 +41,7 @@ function loadFit() {
 
 // nextChapter : { num, title, pages } du chapitre suivant (écran de fin +
 // préchargement). sharePath : '/manga/<slug>' quand la page a une URL publique.
-export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)', nextChapter = null, sharePath = null }) {
+export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)', nextChapter = null, sharePath = null, seriesTitle = null }) {
   const pages = chapter.pages || []
   const [page,        setPage]        = useState(0)
   const [imgLoaded,   setImgLoaded]   = useState(false)
@@ -49,6 +58,9 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   const [autoNext,    setAutoNext]    = useState(true)
   const [countdown,   setCountdown]   = useState(6)
   const [copied,      setCopied]      = useState(false)
+  const [spreadPref,  setSpreadPref]  = useState(loadSpread)
+  const [isFs,        setIsFs]        = useState(false)
+  const [tapHint,     setTapHint]     = useState(false)
   const touchX    = useRef(null)
   const touchY    = useRef(null)
   const pinchRef  = useRef(null)   // { startDist, startZoom } pendant un pincement
@@ -57,10 +69,23 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   const zoomRef   = useRef(1)
   const isMobile  = useMobile()
   const total     = pages.length
-  const atStart   = page === 0 && chapterIndex === 0
-  const atEnd     = page === total - 1 && chapterIndex === totalChapters - 1
   const isWebtoon = dir === 'webtoon'
   const isRtl     = dir === 'rtl'
+  // Double page (grand écran, mode page) : couverture seule, puis 2-3, 4-5…
+  // comme un volume relié. `page` reste l'index retenu ; la paire affichée en
+  // découle, ce qui garde la sauvegarde de page et la barre compatibles.
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1100 && window.innerWidth > window.innerHeight)
+  useEffect(() => {
+    const onResize = () => setWide(window.innerWidth >= 1100 && window.innerWidth > window.innerHeight)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const spreadOn  = spreadPref && wide && !isMobile && !isWebtoon && total > 2
+  const start     = spreadOn ? (page === 0 ? 0 : page % 2 === 1 ? page : page - 1) : page
+  const shown     = spreadOn && start > 0 && start + 1 < total ? [start, start + 1] : [start]
+  const lastShown = shown[shown.length - 1]
+  const atStart   = start === 0 && chapterIndex === 0
+  const atEnd     = lastShown >= total - 1 && chapterIndex === totalChapters - 1
 
   const clampZoom = z => Math.round(Math.max(0.5, Math.min(3, z)) * 10) / 10
 
@@ -68,15 +93,54 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   // attendait sinon un aller-retour reseau complet.
   useEffect(() => {
     if (isWebtoon) return
-    for (const i of [page + 1, page + 2]) {
+    for (const i of [lastShown + 1, lastShown + 2, lastShown + 3]) {
       if (i < pages.length) { const im = new Image(); im.decoding = 'async'; im.src = pages[i] }
     }
-  }, [page, pages, isWebtoon])
+  }, [lastShown, pages, isWebtoon])
+
+  useEffect(() => { try { localStorage.setItem('manga_spread', spreadPref ? '1' : '0') } catch {} }, [spreadPref])
+
+  // Plein écran : l'API du navigateur, pas un simple overlay — les barres du
+  // système disparaissent aussi (touche F, bouton dans la barre).
+  useEffect(() => {
+    const h = () => setIsFs(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', h)
+    return () => {
+      document.removeEventListener('fullscreenchange', h)
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
+    }
+  }, [])
+  const toggleFs = useCallback(() => {
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
+    else document.documentElement.requestFullscreen?.().catch(() => {})
+  }, [])
+
+  // Titre d'onglet : « Jujutsu Kaisen · Ch. 12 » plutôt que le titre générique
+  // du site (onglets, historique, aperçu quand on colle le lien).
+  const prevTitle = useRef(null)
+  useEffect(() => {
+    if (!seriesTitle) return
+    if (prevTitle.current == null) prevTitle.current = document.title
+    document.title = `${seriesTitle} · Ch. ${chapter.num} — Brams`
+  }, [seriesTitle, chapter.num])
+  useEffect(() => () => { if (prevTitle.current != null) document.title = prevTitle.current }, [])
+
+  // Première lecture sur mobile : montrer les zones tactiles une fois.
+  useEffect(() => {
+    if (!isMobile || isWebtoon) return
+    try {
+      if (localStorage.getItem('mr_tap_hint')) return
+      localStorage.setItem('mr_tap_hint', '1')
+    } catch { return }
+    setTapHint(true)
+    const t = setTimeout(() => setTapHint(false), 5000)
+    return () => clearTimeout(t)
+  }, [isMobile, isWebtoon])
 
   useEffect(() => { zoomRef.current = zoom }, [zoom])
 
   useEffect(() => {
-    try { localStorage.setItem('manga_reading_dir', dir) } catch {}
+    try { localStorage.setItem(dirKey(namespace), dir) } catch {}
     try { localStorage.setItem('manga_reading_fit', fit) } catch {}
     scrollRef.current?.scrollTo({ top: 0 })
   }, [dir, fit])
@@ -114,9 +178,9 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   // Les deux premières pages du chapitre suivant partent dès l'avant-dernière
   // page : le passage au chapitre suivant n'attend plus le réseau.
   useEffect(() => {
-    if (!nextChapter?.pages?.length || isWebtoon || page < total - 2) return
+    if (!nextChapter?.pages?.length || isWebtoon || lastShown < total - 2) return
     for (const src of nextChapter.pages.slice(0, 2)) { const im = new Image(); im.decoding = 'async'; im.src = src }
-  }, [page, total, nextChapter, isWebtoon])
+  }, [lastShown, total, nextChapter, isWebtoon])
 
   const goNextChapter = useCallback(() => { setEndCard(false); onNextChapter() }, [onNextChapter])
 
@@ -192,21 +256,21 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
 
   const next = useCallback(() => {
     if (isWebtoon) return
-    if (page < total - 1) { changePage(page + 1); return }
+    if (lastShown < total - 1) { changePage(lastShown + 1); return }
     // Déjà sur l'écran de fin : « suivant » enchaîne (ou ferme au dernier).
     if (endCard) { chapterIndex < totalChapters - 1 ? goNextChapter() : onClose(); return }
     // Chapitre fini : sa page retenue n'a plus lieu d'être (une relecture
     // repartirait sinon de la dernière page).
     try { localStorage.removeItem(`${namespace}_page_${chapter.num}`) } catch {}
     onFinish(); setMarkedRead(true); setEndCard(true)
-  }, [page, total, chapterIndex, totalChapters, onFinish, onClose, changePage, isWebtoon, namespace, chapter.num, endCard, goNextChapter])
+  }, [lastShown, total, chapterIndex, totalChapters, onFinish, onClose, changePage, isWebtoon, namespace, chapter.num, endCard, goNextChapter])
 
   const prev = useCallback(() => {
     if (isWebtoon) return
     if (endCard) { setEndCard(false); return }
-    if (page > 0) changePage(page - 1)
+    if (start > 0) changePage(spreadOn ? (start <= 1 ? 0 : start - 2) : start - 1)
     else if (chapterIndex > 0) onPrevChapter()
-  }, [page, chapterIndex, onPrevChapter, changePage, isWebtoon, endCard])
+  }, [start, spreadOn, chapterIndex, onPrevChapter, changePage, isWebtoon, endCard])
 
   const handleMarkRead = useCallback(() => {
     onFinish(); setMarkedRead(true)
@@ -221,6 +285,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
       if (e.key === '+' || e.key === '=') { setZoom(z => clampZoom(z + 0.1)); return }
       if (e.key === '-') { setZoom(z => clampZoom(z - 0.1)); return }
       if (e.key === '0') { setZoom(1); return }
+      if (e.key === 'f' || e.key === 'F') { toggleFs(); return }
       if (isWebtoon) return
       if (isRtl) {
         if (e.key === 'ArrowLeft'  || e.key === 'ArrowDown')  { e.preventDefault(); next(); showBars() }
@@ -232,7 +297,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
     }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [next, prev, onClose, showBars, isRtl, isWebtoon])
+  }, [next, prev, onClose, showBars, isRtl, isWebtoon, toggleFs])
 
   const touchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
 
@@ -330,7 +395,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)' }}>
               {isWebtoon
                 ? `Webtoon · ${Math.round(webtoonPct * 100)}%`
-                : `Page ${page + 1} / ${total || '?'}${zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}`}
+                : `${shown.length > 1 ? `Pages ${start + 1}-${start + 2}` : `Page ${start + 1}`} / ${total || '?'}${zoom !== 1 ? ` · ${Math.round(zoom * 100)}%` : ''}`}
             </div>
           </div>
         </div>
@@ -373,10 +438,27 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
                 <span className="mr-dir-label">{f.label.toUpperCase()}</span>
               </button>
             ))}
+            {wide && !isMobile && total > 2 && (
+              <button
+                className="mr-dir-btn" onClick={() => setSpreadPref(v => !v)} title="Double page (comme un volume relié)"
+                aria-pressed={spreadPref}
+                style={{
+                  padding: '6px 12px', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                  background: spreadPref ? themeColor : 'rgba(255,255,255,0.04)',
+                  color: spreadPref ? '#fff' : 'rgba(255,255,255,0.38)',
+                  transition: 'all .15s', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em',
+                }}
+              ><span className="mr-dir-label">2 PAGES</span></button>
+            )}
           </div>
         )}
 
         <div className="mr-chapbtns" style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          {document.fullscreenEnabled && (
+            <button onClick={toggleFs} title={isFs ? 'Quitter le plein écran (F)' : 'Plein écran (F)'} aria-label="Plein écran"
+              style={{ padding: '6px 10px', borderRadius: 8, fontSize: 14, lineHeight: 1, cursor: 'pointer', background: isFs ? `${themeColor}33` : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', color: '#fff' }}
+            >{isFs ? '🗗' : '⛶'}</button>
+          )}
           <button
             onClick={handleMarkRead} disabled={markedRead}
             style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: markedRead ? 'default' : 'pointer', border: `1px solid ${markedRead ? 'rgba(52,211,153,0.4)' : 'rgba(52,211,153,0.22)'}`, background: markedRead ? 'rgba(52,211,153,0.18)' : 'rgba(52,211,153,0.07)', color: markedRead ? '#34d399' : 'rgba(52,211,153,0.65)', transition: 'all 0.15s' }}
@@ -419,7 +501,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
         <div ref={scrollRef} className="mr-scroll" style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', touchAction: zoom !== 1 ? 'pan-x pan-y' : 'pan-y', WebkitOverflowScrolling: 'touch' }}
           onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
         >
-          <div style={{ position: 'relative', width: '100%', maxWidth: Math.round(850 * zoom), minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'max-width 0.15s ease' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: Math.round((shown.length > 1 ? 1700 : 850) * zoom), minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'max-width 0.15s ease' }}>
             {!imgLoaded && !imgError && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
@@ -436,9 +518,22 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
                   style={{ padding: '8px 18px', borderRadius: 9, background: 'rgba(255,255,255,0.09)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer' }}>Réessayer</button>
               </div>
             )}
-            {pages[page] && (
+            {shown.length > 1 && !imgError && (
+              <div style={{ display: 'flex', flexDirection: isRtl ? 'row-reverse' : 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 2, width: '100%' }}>
+                {shown.map(i => (
+                  <img key={`${chapter.num}-${i}`} loading="eager" decoding="async" src={pages[i]} alt={`Ch.${chapter.num} p.${i + 1}`}
+                    onLoad={() => setImgLoaded(true)}
+                    onError={() => { setImgLoaded(true); setImgError(true) }}
+                    style={{
+                      display: 'block', opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.2s',
+                      height: `calc((100vh - 120px) * ${zoom})`, width: 'auto', maxWidth: `${50 * zoom}%`, objectFit: 'contain',
+                    }} />
+                ))}
+              </div>
+            )}
+            {shown.length === 1 && pages[page] && (
               <img loading="eager" decoding="async"
-                key={`${chapter.num}-${page}`} src={pages[page]} alt={`Ch.${chapter.num} p.${page + 1}`}
+                key={`${chapter.num}-${start}`} src={pages[start]} alt={`Ch.${chapter.num} p.${start + 1}`}
                 onLoad={() => setImgLoaded(true)}
                 onError={() => { setImgLoaded(true); setImgError(true) }}
                 style={{
@@ -455,6 +550,16 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
               />
             )}
           </div>
+        </div>
+      )}
+
+      {tapHint && (
+        <div onClick={() => setTapHint(false)} aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 6, display: 'flex', background: 'rgba(0,0,0,0.55)' }}>
+          {[isRtl ? 'Page suivante' : 'Page précédente', 'Afficher / masquer le menu', isRtl ? 'Page précédente' : 'Page suivante'].map((label, i) => (
+            <div key={i} style={{ flex: i === 1 ? 4 : 3, display: 'grid', placeItems: 'center', padding: 10, textAlign: 'center', color: '#fff', fontSize: 13, fontWeight: 700, borderLeft: i ? '1px dashed rgba(255,255,255,0.35)' : 'none', background: i === 1 ? 'transparent' : `${themeColor}22` }}>
+              <span>{i === 0 ? '◀' : i === 2 ? '▶' : '☰'}<br />{label}</span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -533,7 +638,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
             }}
           >
             <div style={{ flex: 1, height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', direction: isRtl ? 'rtl' : 'ltr', width: '100%' }}>
-              <div style={{ height: '100%', background: themeColor, borderRadius: 3, width: total ? `${((page + 1) / total) * 100}%` : '0%', transition: 'width 0.2s' }} />
+              <div style={{ height: '100%', background: themeColor, borderRadius: 3, width: total ? `${((lastShown + 1) / total) * 100}%` : '0%', transition: 'width 0.2s' }} />
             </div>
           </div>
 

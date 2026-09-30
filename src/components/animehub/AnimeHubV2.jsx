@@ -539,7 +539,9 @@ export default function AnimeHubV2(props) {
             }}>
               <HeroCinematic anime={a} topRank={top10.findIndex(t => t.id === a.id) + 1 || null}
                 active={i === slide} load={visited.has(i)}
-                onRead={SCAN_BY_ANIME.has(a.id) ? () => openScan(SCAN_BY_ANIME.get(a.id), scanProg[SCAN_BY_ANIME.get(a.id).slug].current) : undefined}
+                // Depuis la fiche d'un anime, « Lire le manga » reprend la lecture en cours,
+                // sinon là où l'anime s'arrête (JJK S2 → ch. 137) plutôt qu'au chapitre 1.
+                onRead={SCAN_BY_ANIME.has(a.id) ? () => { const sc = SCAN_BY_ANIME.get(a.id); openScan(sc, scanProg[sc.slug].current ?? sc.animeEnd?.next ?? null) } : undefined}
                 onWatch={openAnime} onMyList={toggleFav} inList={favs.has(a.id)} onInfo={openAnime} />
             </div>
           ))}

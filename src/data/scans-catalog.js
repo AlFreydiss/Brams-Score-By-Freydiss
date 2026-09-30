@@ -129,6 +129,11 @@ export const SCANS = [
       "Action",
       "Surnaturel"
     ],
+    "animeEnd": {
+      "season": "Saison 2 · Incident de Shibuya",
+      "last": 136,
+      "next": 137
+    },
     "animeId": "jjk"
   },
   {
@@ -165,6 +170,11 @@ export const SCANS = [
       "Action",
       "Surnaturel"
     ],
+    "animeEnd": {
+      "season": "Saison 4 · Entraînement des Piliers",
+      "last": 139,
+      "next": 140
+    },
     "animeId": "kny"
   },
   {
@@ -201,6 +211,11 @@ export const SCANS = [
       "Action",
       "Fantasy"
     ],
+    "animeEnd": {
+      "season": "Saison 2",
+      "last": 110,
+      "next": 111
+    },
     "animeId": "sl"
   }
 ]

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { SCANS } from './data/scans-catalog.js'
+import { loadManga } from './lib/mangaData.js'
 import { Routes, Route, useNavigate, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { lazyWithReload } from './lib/lazyWithReload.js'
 import GlobalStyles from './components/GlobalStyles.jsx'
@@ -156,7 +157,8 @@ function AuthLoadingScreen({ zIndex = 500 }) {
 // Chapitres et episodes sont charges a la demande : kingdom.json pese 1,3 Mo,
 // mha-videos.json porte 138 episodes. import.meta.glob en fait des chunks
 // separes, rien n'entre dans le bundle principal.
-const MANGA_CHAPTERS = import.meta.glob('./data/manga/*.json')
+// Les chapitres passent par lib/mangaData.js, partagé avec le hub (préchargement
+// au survol des cartes).
 const ANIME_VIDEOS   = import.meta.glob('./data/*-videos.json')
 
 function MangaRoute() {
@@ -172,8 +174,10 @@ function MangaRoute() {
     let alive = true
     setChapters(null)
     setVideos([])
-    MANGA_CHAPTERS[`./data/manga/${slug}.json`]?.()
-      .then(mod => { if (alive) setChapters(Array.isArray(mod.default) ? mod.default : []) })
+    // Slug inconnu : [] (écran « bientôt disponibles ») au lieu d'un
+    // « Chargement… » éternel, ce que faisait l'appel optionnel sur le glob.
+    loadManga(slug)
+      .then(list => { if (alive) setChapters(list) })
       .catch(() => { if (alive) setChapters([]) })
     // Les episodes de l'anime quand la serie en a un : c'est ce qui fait
     // apparaitre l'onglet « Episodes » a cote de « Scans ».

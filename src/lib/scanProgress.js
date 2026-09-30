@@ -33,5 +33,21 @@ export function readScanProgress(scan) {
   return { read, current, page, pct, ts: recent?.ts || 0, started: entries.length > 0 }
 }
 
+// Chapitres vus à la dernière visite de la série : « +N nouveaux » quand le
+// catalogue en a ajouté depuis. Rien tant que la série n'a jamais été ouverte.
+const SEEN_KEY = 'manga_seen_count'
+export function newChaptersSince(scan) {
+  const seen = readJSON(SEEN_KEY, {})[scan.slug]
+  return seen != null && scan.chapters > seen ? scan.chapters - seen : 0
+}
+export function markSeen(slug, count) {
+  const all = readJSON(SEEN_KEY, {})
+  all[slug] = count
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(all)) } catch {}
+}
+export function seenCount(slug) {
+  return readJSON(SEEN_KEY, {})[slug] ?? null
+}
+
 // Statut dérivé, mêmes valeurs que Ma Liste côté animés.
 export const scanStatus = p => (!p.started ? 'avoir' : p.pct >= 100 ? 'termine' : 'encours')

@@ -4,6 +4,8 @@
 // chapitres disponibles, progression et reprise au dernier chapitre ouvert.
 import { useState } from 'react'
 import { C, FONT_BODY, RADIUS_CARD } from './tokens.js'
+import { prefetchManga } from '../../lib/mangaData.js'
+import { newChaptersSince } from '../../lib/scanProgress.js'
 
 const fmtNum = n => (Number.isInteger(n) ? String(n) : String(Math.floor(n)))
 
@@ -13,6 +15,7 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
   const range = scan.first != null && scan.last != null && scan.first !== scan.last
     ? `Ch. ${fmtNum(scan.first)}–${fmtNum(scan.last)}`
     : `${scan.chapters} chapitres`
+  const fresh = newChaptersSince(scan)
   const cta = p.current != null ? `Reprendre ch. ${fmtNum(Number(p.current))}${p.page > 0 ? ` · p. ${p.page + 1}` : ''}` : 'Commencer'
 
   return (
@@ -20,6 +23,8 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
       role="button" tabIndex={0} aria-label={`${scan.title} — scans`} className="ah2-card"
       onClick={() => onOpen?.(scan, p.current)}
       onKeyDown={e => { if (e.key === 'Enter') onOpen?.(scan, p.current) }}
+      onMouseEnter={() => prefetchManga(scan.slug)}
+      onFocus={() => prefetchManga(scan.slug)}
       style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none' }}
     >
       <div className="ah2-art" style={{
@@ -49,6 +54,12 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
             background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)',
             boxShadow: `inset 0 -2px 0 ${scan.color}`,
           }}>SCAN</span>
+          {fresh > 0 && (
+            <span title="Ajoutés depuis ta dernière visite" style={{
+              padding: '3px 7px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+              background: C.brass, color: '#14110A',
+            }}>+{fresh} NOUVEAU{fresh > 1 ? 'X' : ''}</span>
+          )}
           {scan.status === 'encours' && (
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -69,6 +80,11 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
           {scan.author && (
             <div style={{ fontSize: 11, color: C.dim, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {scan.author}
+            </div>
+          )}
+          {scan.animeEnd && p.current == null && (
+            <div style={{ fontSize: 11, color: C.brassHi, marginBottom: 4, fontWeight: 600 }}>
+              Fini l'anime ? Suite au ch. {scan.animeEnd.next}
             </div>
           )}
           <div style={{ fontSize: 11.5, color: C.dim, display: 'flex', gap: 6, marginBottom: 8 }}>

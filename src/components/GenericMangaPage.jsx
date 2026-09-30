@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Reader } from './MangaReader.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
-import { recordScanOpen } from '../lib/scanProgress.js'
+import { recordScanOpen, newChaptersSince, markSeen } from '../lib/scanProgress.js'
 import MangaSeriesHero from './MangaSeriesHero.jsx'
 
 function loadProgress(ns) {
@@ -77,7 +77,16 @@ function CatalogToolbar({ color, total, shown, query, onQuery, desc, onToggleDes
   )
 }
 
-function ChapterCard({ ch, status, onClick, color }) {
+// ~18 s par page : moyenne d'une lecture de manga sans relire les bulles.
+export const SECONDS_PER_PAGE = 18
+export const fmtDuration = (sec) => {
+  const m = Math.max(1, Math.round(sec / 60))
+  if (m < 60) return `${m} min`
+  const h = Math.floor(m / 60), r = m % 60
+  return r && h < 10 ? `${h} h ${String(r).padStart(2, '0')}` : `${h} h`
+}
+
+function ChapterCard({ ch, status, onClick, color, isNew = false, onMarkUpTo }) {
   const [hovered, setHovered] = useState(false)
   const isRead    = status === 'read'
   const isReading = status === 'reading'
@@ -98,6 +107,17 @@ function ChapterCard({ ch, status, onClick, color }) {
     }}>
       {isRead && <div style={{ position: 'absolute', top: 10, right: 10, width: 20, height: 20, borderRadius: '50%', background: 'rgba(52,211,153,0.2)', border: '1px solid rgba(52,211,153,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#34d399', fontWeight: 700 }}>✓</div>}
       {isReading && <div style={{ position: 'absolute', top: 10, right: 10, fontSize: 10, fontWeight: 700, background: `${color}22`, color, border: `1px solid ${color}55`, borderRadius: 100, padding: '2px 8px' }}>En cours</div>}
+      {isNew && !isRead && !isReading && <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 2, fontSize: 10, fontWeight: 800, background: '#D7A44A', color: '#14110A', borderRadius: 100, padding: '2px 8px' }}>NOUVEAU</div>}
+      {/* « Lu jusqu'ici » : pour qui a déjà lu ailleurs — marque ce chapitre et
+          tous les précédents d'un coup, au lieu de les ouvrir un par un. */}
+      {hovered && !isRead && onMarkUpTo && (
+        <span role="button" tabIndex={0}
+          onClick={e => { e.stopPropagation(); onMarkUpTo(ch.num) }}
+          onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onMarkUpTo(ch.num) } }}
+          title="Marquer ce chapitre et tous les précédents comme lus"
+          style={{ position: 'absolute', top: 16, left: 16, zIndex: 3, fontSize: 10.5, fontWeight: 800, padding: '4px 8px', borderRadius: 7, background: 'rgba(10,10,12,0.85)', color: '#34d399', border: '1px solid rgba(52,211,153,0.5)', backdropFilter: 'blur(4px)' }}
+        >✓ Lu jusqu'ici</span>
+      )}
       {/* Vignette = premiere page du chapitre. Elle est deja dans le JSON, donc
           gratuite : un emoji repete ne disait rien du contenu. */}
       <div style={{ position: 'relative', aspectRatio: '3 / 4', borderRadius: 9, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', marginBottom: 10 }}>
@@ -110,7 +130,7 @@ function ChapterCard({ ch, status, onClick, color }) {
         <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 45%, rgba(8,7,12,.92))' }} />
         <div style={{ position: 'absolute', left: 8, right: 8, bottom: 7, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
           <span style={{ fontSize: 15, fontWeight: 900, color: '#fff', textShadow: '0 2px 8px rgba(0,0,0,.8)', lineHeight: 1.1 }}>#{ch.num}</span>
-          {pageCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.72)', textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{pageCount} p.</span>}
+          {pageCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.72)', textShadow: '0 2px 8px rgba(0,0,0,.8)' }}>{pageCount} p. · {fmtDuration(pageCount * SECONDS_PER_PAGE)}</span>}
         </div>
       </div>
       {/* Titre affiche seulement s'il en est un : sinon « Chapitre 12 » repetait
@@ -628,6 +648,9 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const [tab,          setTab]          = useState(() => initialTab || (videosData.length > 0 ? 'videos' : 'scans'))
   const [reading,      setReading]      = useState(null)
   const [progress,     setProgress]     = useState(() => loadProgress(namespace))
+  // Nouveaux chapitres depuis la dernière visite : lus AVANT de noter la visite.
+  const [freshCount]  = useState(() => (series ? newChaptersSince(series) : 0))
+  useEffect(() => { if (series && chaptersData.length) markSeen(namespace, chaptersData.length) }, [series, namespace, chaptersData.length])
   const [playerIdx,    setPlayerIdx]    = useState(null)
   const [videoArc,     setVideoArc]     = useState('all')
   // Filtres de la grille de chapitres. Kingdom en compte 874 : sans recherche,
@@ -706,6 +729,22 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     const idx = CHAPTERS.findIndex(c => Number(c.num) === Number(initialChapter))
     if (idx >= 0) openChapter(idx)
   }, [initialChapter, CHAPTERS, openChapter])
+
+  const markUpTo = useCallback((num) => {
+    const n = Number(num)
+    const count = CHAPTERS.filter(c => Number(c.num) <= n && progress[c.num] !== 'read').length
+    if (count > 25 && !window.confirm(`Marquer ${count} chapitres comme lus (jusqu'au ch. ${num}) ?`)) return
+    setProgress(prev => {
+      const next = { ...prev }
+      for (const c of CHAPTERS) if (Number(c.num) <= n) next[c.num] = 'read'
+      saveProgress(namespace, next)
+      return next
+    })
+    recordScanOpen(namespace, num)
+  }, [CHAPTERS, progress, namespace])
+
+  const freshNums = useMemo(() => new Set(freshCount ? CHAPTERS.slice(-freshCount).map(c => c.num) : []), [CHAPTERS, freshCount])
+  const remainingSec = useMemo(() => CHAPTERS.reduce((s, c) => s + (progress[c.num] === 'read' ? 0 : (c.pages?.length || 0) * SECONDS_PER_PAGE), 0), [CHAPTERS, progress])
 
   const finishChapter = useCallback(() => {
     if (reading === null) return
@@ -883,7 +922,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
   const renderChapterGrid = (chapters) => (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
       {chapters.map(ch => (
-        <ChapterCard key={ch.num} ch={ch} color={color} status={progress[ch.num] || null} onClick={() => openChapter(chNumToIdx[ch.num])} />
+        <ChapterCard key={ch.num} ch={ch} color={color} status={progress[ch.num] || null} onClick={() => openChapter(chNumToIdx[ch.num])}
+          isNew={freshNums.has(ch.num)} onMarkUpTo={series ? markUpTo : undefined} />
       ))}
     </div>
   )
@@ -1028,6 +1068,11 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
                         onResume={() => openChapter(chNumToIdx[resumeChapter.num])}
                         onFirst={() => openChapter(0)}
                         onLast={() => openChapter(CHAPTERS.length - 1)}
+                        freshCount={freshCount}
+                        remaining={remainingSec > 0 ? fmtDuration(remainingSec) : null}
+                        onAnimeNext={series.animeEnd && chNumToIdx[series.animeEnd.next] != null ? () => openChapter(chNumToIdx[series.animeEnd.next]) : null}
+                        onMarkUpTo={markUpTo}
+                        hasChapter={n => chNumToIdx[n] != null}
                       />
                     )}
                     <CatalogToolbar
@@ -1120,6 +1165,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           themeColor={color}
           nextChapter={CHAPTERS[reading + 1] || null}
           sharePath={series ? `/manga/${namespace}` : null}
+          seriesTitle={title}
         />
       )}
 
