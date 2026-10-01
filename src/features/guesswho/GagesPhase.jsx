@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { type } from '../../styles/typography.js'
-import { C } from '../garticphone/theme.js'
-import { Btn, PhaseFrame, LiveRoster } from '../garticphone/ui.jsx'
+import { type } from './manga.jsx'
+import { C } from './manga.jsx'
+import { Btn, PhaseFrame, LiveRoster } from './manga.jsx'
 
 export const roster = (g, ids) => new Set(g.players.filter((p) => (ids || []).includes(p.user_id)).map((p) => p.seat))
 
@@ -23,8 +23,8 @@ export default function GagesPhase({ g }) {
         <>
           <textarea value={text} maxLength={140} onChange={(e) => setText(e.target.value)} rows={3}
             placeholder="Ex. : chanter l'opening de One Piece en vocal"
-            style={{ width: '100%', borderRadius: 14, padding: 14, fontSize: 16, background: 'rgba(255,255,255,0.05)',
-              color: C.text, border: '1px solid rgba(255,255,255,0.14)', resize: 'vertical', boxSizing: 'border-box' }} />
+            className="gw-focus" style={{ width: '100%', borderRadius: 0, padding: 14, fontSize: 17, background: C.paper, ...type.body,
+              color: C.ink, border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, resize: 'vertical', boxSizing: 'border-box' }} />
           <div style={{ ...type.small, color: C.textMut, textAlign: 'right' }}>{text.length}/140 {sent && '· ✓ envoyé'}</div>
         </>
       ) : <p style={{ ...type.body, color: C.textMut }}>Les joueurs écrivent leur gage…</p>}

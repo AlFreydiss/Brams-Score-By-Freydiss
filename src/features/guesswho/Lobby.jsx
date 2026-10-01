@@ -1,8 +1,8 @@
 // Guess Who — salle d'attente : code à partager, joueurs, lancement (hôte, 3 min.).
 import { useState } from 'react'
-import { type } from '../../styles/typography.js'
-import { C } from '../garticphone/theme.js'
-import { Btn, PhaseFrame, PlayerChip } from '../garticphone/ui.jsx'
+import { type } from './manga.jsx'
+import { C } from './manga.jsx'
+import { Btn, PhaseFrame, PlayerChip } from './manga.jsx'
 
 export default function Lobby({ code, g }) {
   const [busy, setBusy] = useState(false)

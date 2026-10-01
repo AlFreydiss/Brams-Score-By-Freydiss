@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { type } from '../../styles/typography.js'
-import { C } from '../garticphone/theme.js'
-import { Btn, PhaseFrame } from '../garticphone/ui.jsx'
+import { type } from './manga.jsx'
+import { C } from './manga.jsx'
+import { Btn, PhaseFrame } from './manga.jsx'
 import { ClipPlayer } from './ui.jsx'
 
 export default function ListenPhase({ g }) {
