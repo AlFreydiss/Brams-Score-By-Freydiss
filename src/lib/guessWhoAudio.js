@@ -4,6 +4,7 @@
 // invité ou R2 en panne → data URL inline plafonnée (le serveur la plafonne aussi).
 import { getAccessToken } from './supabaseRest.js'
 import { baseMime, pickRecorderMime, blobToDataUrl } from '../features/guesswho/logic/audioData.js'
+import { micConstraints } from '../features/guesswho/logic/mic.js'
 
 const MIME = typeof MediaRecorder !== 'undefined' ? pickRecorderMime((m) => MediaRecorder.isTypeSupported(m)) : ''
 
@@ -11,14 +12,61 @@ export function canRecord() {
   return typeof MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
 }
 
+// ── Choix du micro (mémorisé sur l'appareil) ──────────────────────────────────
+const MIC_KEY = 'gw_mic'
+export function getMicId() {
+  try { return localStorage.getItem(MIC_KEY) || '' } catch { return '' }
+}
+export function setMicId(id) {
+  try { if (id) localStorage.setItem(MIC_KEY, id); else localStorage.removeItem(MIC_KEY) } catch {}
+}
+
+// Micros disponibles. Les noms ne sont fournis qu'après une autorisation micro.
+export async function listMics() {
+  if (!navigator.mediaDevices?.enumerateDevices) return []
+  const all = await navigator.mediaDevices.enumerateDevices()
+  return all.filter((d) => d.kind === 'audioinput')
+}
+
+// Ouvre le micro choisi (repli sur le micro par défaut s'il a disparu). Borné à
+// 10 s : sans réponse du navigateur, le bouton ne doit pas rester sans effet.
+export async function openMic(deviceId = getMicId()) {
+  const ask = (id) => Promise.race([
+    navigator.mediaDevices.getUserMedia({ audio: micConstraints(id) }),
+    new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error('timeout'), { name: 'TimeoutError' })), 10000)),
+  ])
+  try {
+    return await ask(deviceId)
+  } catch (e) {
+    if (deviceId && (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError' || e?.name === 'NotReadableError')) {
+      setMicId('')
+      return ask('')
+    }
+    throw e
+  }
+}
+
+export function micError(e) {
+  if (e?.name === 'NotFoundError') return 'no_mic'
+  if (e?.name === 'NotReadableError') return 'mic_busy'
+  if (e?.name === 'TimeoutError') return 'mic_timeout'
+  return 'mic_denied'
+}
+
 export async function startRecording(maxMs) {
   let stream
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false } })
+    stream = await openMic()
   } catch (e) {
-    throw new Error(e?.name === 'NotFoundError' ? 'no_mic' : 'mic_denied')
+    throw new Error(micError(e))
   }
-  const rec = new MediaRecorder(stream, { ...(MIME ? { mimeType: MIME } : {}), audioBitsPerSecond: 32000 })
+  let rec
+  try {
+    rec = new MediaRecorder(stream, { ...(MIME ? { mimeType: MIME } : {}), audioBitsPerSecond: 32000 })
+  } catch {
+    stream.getTracks().forEach((t) => t.stop())
+    throw new Error('mic_denied')
+  }
   const chunks = []
   const t0 = performance.now()
   rec.ondataavailable = (e) => { if (e.data?.size) chunks.push(e.data) }

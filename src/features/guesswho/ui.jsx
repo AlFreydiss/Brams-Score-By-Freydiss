@@ -1,5 +1,5 @@
 // Guess Who — briques d'interface (vies, avatar, lecteur de son, carte d'imitation), style manga.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { C, FONT_BODY, FONT_DISPLAY, SPRING_POP } from './manga.jsx'
 
@@ -36,15 +36,31 @@ export function ClipPlayer({ url, label, autoPlay = false, onError, big = false 
   const ref = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [pct, setPct] = useState(0)
+  // Lecture auto refusée par le navigateur (fréquent sur téléphone) : on le dit
+  // clairement au lieu de laisser un écran muet.
+  const [blocked, setBlocked] = useState(false)
+  useEffect(() => {
+    if (!autoPlay) return
+    const a = ref.current
+    if (!a) return
+    a.play().then(() => setBlocked(false)).catch(() => setBlocked(true))
+  }, [autoPlay, url])
   const toggle = () => {
     const a = ref.current
     if (!a) return
+    setBlocked(false)
     if (a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(() => {}) } else a.pause()
   }
   const s = big ? 84 : 50
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%' }}>
-      <audio ref={ref} src={url} autoPlay={autoPlay} preload="auto"
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', flexWrap: 'wrap' }}>
+      {blocked && (
+        <button type="button" className="gw-btn" onClick={toggle} style={{
+          width: '100%', minHeight: 56, cursor: 'pointer', background: C.yellow, color: C.ink,
+          border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, fontFamily: FONT_DISPLAY, fontSize: 18,
+        }}>🔊 Appuie pour écouter le son</button>
+      )}
+      <audio ref={ref} src={url} preload="auto"
         onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => { setPlaying(false); setPct(1) }}
         onTimeUpdate={(e) => setPct(e.currentTarget.duration ? e.currentTarget.currentTime / e.currentTarget.duration : 0)}
         onError={onError} />

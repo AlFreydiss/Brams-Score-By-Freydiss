@@ -5,10 +5,13 @@ import { Btn, PhaseFrame, LiveRoster } from './manga.jsx'
 import { ClipPlayer } from './ui.jsx'
 import { roster } from './GagesPhase.jsx'
 import { canRecord, startRecording, uploadTake } from '../../lib/guessWhoAudio.js'
+import MicSetup from './MicSetup.jsx'
 
 const MESSAGES = {
   mic_denied: "Micro refusé. Autorise le micro pour ce site (icône 🔒 à côté de l'adresse), puis recharge la page.",
-  no_mic: 'Aucun micro détecté sur cet appareil.',
+  no_mic: 'Aucun micro détecté. Branche un micro, ou choisis-en un autre avec « Problème de micro ? ».',
+  mic_busy: 'Ce micro est utilisé par une autre appli (Discord, OBS…). Choisis-en un autre avec « Problème de micro ? ».',
+  mic_timeout: "Le navigateur ne répond pas pour le micro. Ouvre « Problème de micro ? » et teste-le.",
   too_big: 'Enregistrement trop long pour être envoyé sans compte. Fais plus court ou connecte-toi.',
   upload_failed: "L'envoi a échoué. Réessaie.",
   phase: 'Trop tard, le vote a commencé.',
@@ -21,6 +24,7 @@ export default function RecordPhase({ g }) {
   const [take, setTake] = useState(null)     // { blob, duration, preview }
   const [state, setState] = useState('idle') // idle | recording | sending | sent
   const [err, setErr] = useState(null)
+  const [showMic, setShowMic] = useState(false)
   const previewRef = useRef(null)
   // Nettoyage au démontage seulement (micro coupé, URL d'aperçu libérée).
   useEffect(() => () => {
@@ -90,6 +94,13 @@ export default function RecordPhase({ g }) {
         )}
         {state === 'sent' && <p style={{ ...type.body, color: C.ok, margin: 0 }}>Envoyé. Tu peux encore recommencer et renvoyer avant la fin du chrono.</p>}
         {err && <p style={{ ...type.body, color: C.danger, margin: 0 }}>{err}</p>}
+        {state !== 'recording' && (
+          <button type="button" className="gw-focus" onClick={() => setShowMic((v) => !v)}
+            style={{ justifySelf: 'start', background: 'none', border: 'none', padding: 0, cursor: 'pointer', ...type.small, color: C.ink, textDecoration: 'underline' }}>
+            {showMic ? 'Fermer le réglage du micro' : 'Problème de micro ?'}
+          </button>
+        )}
+        {showMic && state !== 'recording' && <MicSetup compact />}
       </div>
       <LiveRoster players={g.players} submittedSeats={roster(g, g.prog?.took)} meUserId={g.me?.user_id} />
     </PhaseFrame>

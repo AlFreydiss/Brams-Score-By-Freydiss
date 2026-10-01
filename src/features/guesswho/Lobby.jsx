@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { type } from './manga.jsx'
 import { C } from './manga.jsx'
 import { Btn, PhaseFrame, PlayerChip } from './manga.jsx'
+import MicSetup from './MicSetup.jsx'
 
 export default function Lobby({ code, g }) {
   const [busy, setBusy] = useState(false)
@@ -30,6 +31,8 @@ export default function Lobby({ code, g }) {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {g.players.map((p) => <PlayerChip key={p.user_id} player={p} host={p.is_host} me={p.user_id === g.me?.user_id} />)}
       </div>
+      {/* Avant de jouer : choisir et tester son micro (le défaut est souvent le mauvais). */}
+      {g.me && <div style={{ marginTop: 18 }}><MicSetup /></div>}
       {msg && <p style={{ ...type.body, color: C.danger }}>{msg}</p>}
     </PhaseFrame>
   )

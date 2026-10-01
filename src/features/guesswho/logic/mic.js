@@ -1,0 +1,25 @@
+// Guess Who — choix du micro et niveau d'entrée (logique PURE, testée).
+
+// Contraintes getUserMedia : le micro choisi par le joueur, sinon celui du système.
+export function micConstraints(deviceId) {
+  return {
+    echoCancellation: true,
+    noiseSuppression: false,
+    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+  }
+}
+
+// Niveau 0..1 à partir d'échantillons temporels 8 bits (AnalyserNode.getByteTimeDomainData).
+export function levelOf(samples) {
+  if (!samples?.length) return 0
+  let sum = 0
+  for (let i = 0; i < samples.length; i++) {
+    const v = (samples[i] - 128) / 128
+    sum += v * v
+  }
+  return Math.min(1, Math.sqrt(sum / samples.length))
+}
+
+export function micLabel(device, index) {
+  return device?.label || `Micro ${index + 1}`
+}
