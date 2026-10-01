@@ -141,9 +141,23 @@ for (const [i, job] of jobs.entries()) {
   const thumbKey = job.thumbKey || `${dir(job.key)}/thumbnails/${base(job.key)}.jpg`
   if (!(await exists(thumbKey))) {
     const out = join(TMP, `${base(job.key)}.jpg`)
-    await run(['-ss', String(Math.round(dur * (job.thumbAt ?? 0.4))), '-i', job.src, '-frames:v', '1', '-vf', 'scale=640:-2', '-q:v', '3', out])
-    await put(thumbKey, out, 'image/jpeg'); unlinkSync(out)
-    console.log(`     ✓ ${thumbKey}`)
+    // 0:V:0 = vraie piste vidéo (ignore les images de couverture des MKV, qui
+    // faisaient échouer l'extraction). Repli à 10 %, puis on continue sans
+    // miniature plutôt que d'arrêter tout l'encodage.
+    let ok = false
+    for (const at of [job.thumbAt ?? 0.4, 0.1]) {
+      try {
+        await run(['-ss', String(Math.round(dur * at)), '-i', job.src, '-map', '0:V:0', '-frames:v', '1', '-vf', 'scale=640:-2', '-q:v', '3', out])
+        ok = true
+        break
+      } catch { /* essai suivant */ }
+    }
+    if (ok) {
+      await put(thumbKey, out, 'image/jpeg'); unlinkSync(out)
+      console.log(`     ✓ ${thumbKey}`)
+    } else {
+      console.log(`     ✗ miniature impossible pour ${job.key} (épisode quand même en ligne)`)
+    }
   }
 }
 console.log(`\nterminé : ${n} job(s)`)
