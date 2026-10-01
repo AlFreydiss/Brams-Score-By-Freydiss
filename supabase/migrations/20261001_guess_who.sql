@@ -187,8 +187,123 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+create or replace function _gw_set_phase(p_room uuid, p_phase text)
+  returns void language plpgsql security definer set search_path = public as $$
+declare v_dur int := _gw_duration(p_phase);
+begin
+  update guesswho_rooms set phase = p_phase,
+    phase_ends_at = case when v_dur > 0 then now() + make_interval(secs => v_dur) else null end,
+    updated_at = now()
+  where id = p_room;
+end $$;
+
+-- Lance (ou relance après la fin) : sièges, vies, gages et tours remis à zéro.
+create or replace function guesswho_start(p_code text, p_token uuid)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pl guesswho_players; v_room guesswho_rooms; v_n int;
+begin
+  select * into v_pl from _gw_player(p_code, p_token);
+  if v_pl.id is null or not v_pl.is_host then return jsonb_build_object('error', 'unauthorized'); end if;
+  select * into v_room from guesswho_rooms where id = v_pl.room_id for update;
+  if v_room.phase not in ('lobby', 'end') then return jsonb_build_object('error', 'phase'); end if;
+  select count(*) into v_n from guesswho_players where room_id = v_room.id;
+  if v_n < 3 then return jsonb_build_object('error', 'not_enough_players'); end if;
+  with o as (select id, row_number() over (order by joined_at) - 1 as rn
+             from guesswho_players where room_id = v_room.id)
+  update guesswho_players p set seat = o.rn, lives = 2, total_votes = 0, gage = null
+    from o where p.id = o.id;
+  delete from guesswho_takes where room_id = v_room.id;
+  delete from guesswho_votes where room_id = v_room.id;
+  update guesswho_rooms set status = 'playing', round = 0, clip = null, used_clips = '{}',
+    tied = '{}', last_result = null, gage_result = null where id = v_room.id;
+  perform _gw_set_phase(v_room.id, 'gages');
+  return jsonb_build_object('ok', true, 'players', v_n);
+end $$;
+
+create or replace function guesswho_submit_gage(p_code text, p_token uuid, p_text text)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pl guesswho_players; v_text text := left(btrim(coalesce(p_text, '')), 140);
+begin
+  select * into v_pl from _gw_player(p_code, p_token);
+  if v_pl.id is null or v_pl.seat is null then return jsonb_build_object('error', 'unauthorized'); end if;
+  if (select phase from guesswho_rooms where id = v_pl.room_id) <> 'gages' then
+    return jsonb_build_object('error', 'phase'); end if;
+  if v_text = '' then return jsonb_build_object('error', 'empty'); end if;
+  update guesswho_players set gage = v_text where id = v_pl.id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function guesswho_submit_take(p_code text, p_token uuid, p_url text, p_duration real, p_round int)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pl guesswho_players; v_room guesswho_rooms;
+begin
+  select * into v_pl from _gw_player(p_code, p_token);
+  if v_pl.id is null or v_pl.seat is null or v_pl.lives <= 0 then
+    return jsonb_build_object('error', 'unauthorized'); end if;
+  select * into v_room from guesswho_rooms where id = v_pl.room_id;
+  if v_room.phase <> 'record' or v_room.round <> p_round then
+    return jsonb_build_object('error', 'phase'); end if;
+  if p_url is null or not (p_url like 'https://%' or p_url like 'data:audio/%') then
+    return jsonb_build_object('error', 'bad_url'); end if;
+  if length(p_url) > 200000 then return jsonb_build_object('error', 'too_big'); end if;
+  insert into guesswho_takes(room_id, round, user_id, audio_url, duration)
+    values (v_room.id, v_room.round, v_pl.user_id, p_url, p_duration)
+    on conflict (room_id, round, user_id)
+    do update set audio_url = excluded.audio_url, duration = excluded.duration, created_at = now();
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function guesswho_vote(p_code text, p_token uuid, p_target text)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pl guesswho_players; v_room guesswho_rooms;
+begin
+  select * into v_pl from _gw_player(p_code, p_token);
+  if v_pl.id is null or v_pl.seat is null then return jsonb_build_object('error', 'unauthorized'); end if;
+  select * into v_room from guesswho_rooms where id = v_pl.room_id;
+  if v_room.phase not in ('vote', 'revote') then return jsonb_build_object('error', 'phase'); end if;
+  if p_target = v_pl.user_id then return jsonb_build_object('error', 'self'); end if;
+  if not exists (select 1 from guesswho_takes where room_id = v_room.id and round = v_room.round and user_id = p_target)
+     or (v_room.phase = 'revote' and not (p_target = any(v_room.tied))) then
+    return jsonb_build_object('error', 'invalid_target');
+  end if;
+  insert into guesswho_votes(room_id, round, stage, voter, target)
+    values (v_room.id, v_room.round, v_room.phase, v_pl.user_id, p_target)
+    on conflict (room_id, round, stage, voter) do update set target = excluded.target, created_at = now();
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function guesswho_progress(p_code text)
+  returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare r guesswho_rooms;
+begin
+  select * into r from guesswho_rooms where code = upper(p_code);
+  if r.id is null then return jsonb_build_object('error', 'introuvable'); end if;
+  return jsonb_build_object('phase', r.phase, 'round', r.round,
+    'took', coalesce((select jsonb_agg(user_id) from guesswho_takes where room_id = r.id and round = r.round), '[]'::jsonb),
+    'voted', coalesce((select jsonb_agg(voter) from guesswho_votes where room_id = r.id and round = r.round and stage = r.phase), '[]'::jsonb),
+    'gaged', coalesce((select jsonb_agg(user_id) from guesswho_players where room_id = r.id and gage is not null), '[]'::jsonb));
+end $$;
+
+create or replace function guesswho_takes(p_code text, p_round int)
+  returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare r guesswho_rooms;
+begin
+  select * into r from guesswho_rooms where code = upper(p_code);
+  if r.id is null then return jsonb_build_object('error', 'introuvable'); end if;
+  if not (p_round < r.round or (p_round = r.round and r.phase in ('vote', 'revote', 'result', 'gage', 'end'))) then
+    return jsonb_build_object('error', 'hidden');
+  end if;
+  return jsonb_build_object('takes', coalesce((
+    select jsonb_agg(jsonb_build_object('user_id', user_id, 'audio_url', audio_url, 'duration', duration) order by created_at)
+    from guesswho_takes where room_id = r.id and round = p_round), '[]'::jsonb));
+end $$;
+
 -- ── Droits ───────────────────────────────────────────────────────────────────
-revoke execute on function _gw_duration(text), _gw_player(text, uuid) from public, anon, authenticated;
+revoke execute on function _gw_duration(text), _gw_player(text, uuid), _gw_set_phase(uuid, text)
+  from public, anon, authenticated;
 grant execute on function guesswho_now(), guesswho_create(text, text, text, text),
   guesswho_join(text, text, text, text, uuid), guesswho_room_state(text),
-  guesswho_touch(text, uuid), guesswho_promote_host(text, uuid) to anon, authenticated;
+  guesswho_touch(text, uuid), guesswho_promote_host(text, uuid),
+  guesswho_start(text, uuid), guesswho_submit_gage(text, uuid, text),
+  guesswho_submit_take(text, uuid, text, real, int), guesswho_vote(text, uuid, text),
+  guesswho_progress(text), guesswho_takes(text, int) to anon, authenticated;
