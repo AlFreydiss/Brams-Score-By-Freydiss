@@ -9,6 +9,9 @@ import BarreJeu from '../../components/BarreJeu.jsx'
 import { createRoom, guestId } from '../../lib/guessWhoRooms.js'
 import { useGuessWhoRoom } from './useGuessWhoRoom.js'
 import Lobby from './Lobby.jsx'
+import GagesPhase from './GagesPhase.jsx'
+import ListenPhase from './ListenPhase.jsx'
+import RecordPhase from './RecordPhase.jsx'
 
 function useIdentity() {
   const auth = useAuth()
@@ -65,7 +68,10 @@ function Room({ code, identity }) {
     <>
       {g.spectator && <p style={{ ...type.small, color: C.warn, textAlign: 'center' }}>{REASONS[g.reason] || 'Mode spectateur.'}</p>}
       {phase === 'lobby' && <Lobby code={code} g={g} />}
-      {phase !== 'lobby' && <PhaseFrame prompt="Partie en cours…" />}
+      {phase === 'gages' && <GagesPhase g={g} />}
+      {phase === 'listen' && <ListenPhase g={g} />}
+      {phase === 'record' && <RecordPhase g={g} />}
+      {!['lobby', 'gages', 'listen', 'record'].includes(phase) && <PhaseFrame prompt="Partie en cours…" />}
     </>
   )
 }
