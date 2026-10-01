@@ -16,6 +16,7 @@ import VotePhase from './VotePhase.jsx'
 import ResultPhase from './ResultPhase.jsx'
 import GageWheel from './GageWheel.jsx'
 import EndScreen from './EndScreen.jsx'
+import { useReactions, ReactionBar, FloatingReactions } from './Reactions.jsx'
 
 function useIdentity() {
   const auth = useAuth()
@@ -97,6 +98,7 @@ const banner = { fontFamily: FONT_BODY, fontWeight: 800, textAlign: 'center', ma
 
 function Room({ code, identity }) {
   const g = useGuessWhoRoom({ code, identity })
+  const reactions = useReactions(code, g.status === 'ready')
   if (g.status === 'joining') return <Waiting label="Connexion au salon…" />
   if (g.status === 'error') {
     return (
@@ -123,6 +125,12 @@ function Room({ code, identity }) {
       {phase === 'result' && <ResultPhase g={g} />}
       {phase === 'gage' && <GageWheel g={g} />}
       {phase === 'end' && <EndScreen g={g} />}
+      {['vote', 'revote', 'result', 'gage', 'end'].includes(phase) && (
+        <>
+          <FloatingReactions items={reactions.items} />
+          <ReactionBar onSend={reactions.send} />
+        </>
+      )}
     </>
   )
 }
@@ -137,7 +145,7 @@ export default function GuessWhoPage() {
       <div style={{ position: 'relative', zIndex: 1 }}>
         <BarreJeu titre="Guess Who" skin="manga" />
       </div>
-      <div style={{ position: 'relative', zIndex: 1, marginTop: 22, paddingBottom: 40 }}>
+      <div style={{ position: 'relative', zIndex: 1, marginTop: 22, paddingBottom: 120 }}>
         {code ? <Room code={code.toUpperCase()} identity={identity} /> : <Home identity={identity} />}
       </div>
     </div>

@@ -79,6 +79,7 @@ export async function startRecording(maxMs) {
   rec.start(250)
   const timer = setTimeout(() => { if (rec.state !== 'inactive') rec.stop() }, maxMs)
   return {
+    stream,
     finished,
     stop: () => { clearTimeout(timer); if (rec.state !== 'inactive') rec.stop(); return finished },
     cancel: () => { clearTimeout(timer); if (rec.state !== 'inactive') rec.stop() },

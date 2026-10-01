@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as api from '../../lib/guessWhoRooms.js'
 import { PHASE_TOTAL, remainingSec, shouldAdvance, isDone } from './logic/clock.js'
 import { takeNotice } from './logic/notices.js'
+import { addHighlight } from './logic/highlights.js'
 
 export function useGuessWhoRoom({ code, identity }) {
   const [status, setStatus] = useState('joining')
@@ -14,6 +15,7 @@ export function useGuessWhoRoom({ code, identity }) {
   const [prog, setProg] = useState(null)
   const [takes, setTakes] = useState([])
   const [notice, setNotice] = useState(null)
+  const [highlights, setHighlights] = useState([])
   const [now, setNow] = useState(Date.now())
   const offset = useRef(0)
   const advancing = useRef(false)
@@ -71,10 +73,22 @@ export function useGuessWhoRoom({ code, identity }) {
   const phase = room?.phase
   const round = room?.round
   useEffect(() => {
-    if (!['vote', 'revote', 'result', 'gage'].includes(phase)) { setTakes([]); return }
+    if (!['vote', 'revote', 'result', 'gage'].includes(phase)) {
+      setTakes([])
+      if (phase === 'gages') setHighlights([]) // nouvelle partie
+      return
+    }
     let alive = true
-    api.fetchTakes(code, round).then((t) => { if (alive) setTakes(t) })
+    // Instantané du verdict au moment où la phase commence (résultat + son du tour).
+    const res = room?.last_result
+    const clipTitle = room?.clip?.title
+    api.fetchTakes(code, round).then((t) => {
+      if (!alive) return
+      setTakes(t)
+      if (phase === 'result') setHighlights((h) => addHighlight(h, res, t, clipTitle))
+    })
     return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, phase, round])
 
   // Reprise d'hôte si l'hôte a disparu
@@ -94,7 +108,7 @@ export function useGuessWhoRoom({ code, identity }) {
   }, [code, me, isHost, phase, round, endsAtMs, now, done, refresh])
 
   const act = useMemo(() => ({
-    start: async () => { const r = await api.startGame(code); await refresh(); return r },
+    start: async (settings) => { const r = await api.startGame(code, settings); await refresh(); return r },
     gage: async (text) => { const r = await api.submitGage(code, text); await refresh(); return r },
     take: async (url, duration) => {
       const r = await api.submitTake(code, url, duration, round)
@@ -108,8 +122,11 @@ export function useGuessWhoRoom({ code, identity }) {
 
   return {
     status, error, spectator: join.spectator, reason: join.reason,
-    room, players, me, isHost, prog, takes, notice, clearNotice: () => setNotice(null),
-    remaining: remainingSec(room?.phase_ends_at, now), total: PHASE_TOTAL[phase] || null,
+    room, players, me, isHost, prog, takes, notice, highlights, clearNotice: () => setNotice(null),
+    remaining: remainingSec(room?.phase_ends_at, now),
+    // chrono rapide : durées × 0,6 (sauf l'écriture des gages), comme le serveur
+    total: PHASE_TOTAL[phase] ? Math.round(PHASE_TOTAL[phase] * (room?.settings?.speed === 'fast' && phase !== 'gages' ? 0.6 : 1)) : null,
+    maxLives: room?.settings?.lives || 2,
     refresh, act,
   }
 }

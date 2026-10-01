@@ -6,6 +6,7 @@ import { ClipPlayer } from './ui.jsx'
 import { roster } from './GagesPhase.jsx'
 import { canRecord, startRecording, uploadTake } from '../../lib/guessWhoAudio.js'
 import MicSetup from './MicSetup.jsx'
+import LiveWave from './LiveWave.jsx'
 
 const MESSAGES = {
   mic_denied: "Micro refusé. Autorise le micro pour ce site (icône 🔒 à côté de l'adresse), puis recharge la page.",
@@ -25,6 +26,7 @@ export default function RecordPhase({ g }) {
   const [state, setState] = useState('idle') // idle | recording | sending | sent
   const [err, setErr] = useState(null)
   const [showMic, setShowMic] = useState(false)
+  const [liveStream, setLiveStream] = useState(null)
   const previewRef = useRef(null)
   // Nettoyage au démontage seulement (micro coupé, URL d'aperçu libérée).
   useEffect(() => () => {
@@ -48,12 +50,14 @@ export default function RecordPhase({ g }) {
     try {
       const session = await startRecording(maxMs)
       recRef.current = session
+      setLiveStream(session.stream)
       setState('recording')
       // `finished` se résout à l'arrêt manuel OU automatique (durée max atteinte).
       session.finished.then((res) => {
         if (previewRef.current) URL.revokeObjectURL(previewRef.current)
         previewRef.current = URL.createObjectURL(res.blob)
         recRef.current = null
+        setLiveStream(null)
         setTake({ ...res, preview: previewRef.current }); setState('idle')
       })
     } catch (e) { setErr(MESSAGES[e.message] || MESSAGES.mic_denied) }
@@ -86,6 +90,7 @@ export default function RecordPhase({ g }) {
         <div style={{ ...type.small, color: C.textMut }}>Original</div>
         {clip && <ClipPlayer url={clip.url} label={clip.title} />}
         {state === 'recording' && <p style={{ ...type.h3, color: C.ember, margin: 0 }}>● Enregistrement… (max {Math.round(maxMs / 1000)} s)</p>}
+        {state === 'recording' && liveStream && <LiveWave stream={liveStream} />}
         {take && state !== 'recording' && (
           <>
             <div style={{ ...type.small, color: C.textMut }}>Ton imitation ({take.duration.toFixed(1)} s)</div>

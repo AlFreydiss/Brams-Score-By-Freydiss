@@ -59,6 +59,11 @@ const gage = await a.getByText(/^« gage numéro [01] »$/).count()
 await a.getByText(/Meilleur imitateur|Fin du chapitre/).first().waitFor({ timeout: 30000 })
 await a.screenshot({ path: `${OUT}/gw-end.png` })
 
-console.log(JSON.stringify({ errors, gageFromOthers: gage === 1 }))
+// Réactions en direct : Alice envoie 🔥, Bob la voit s'envoler.
+await a.getByRole('button', { name: 'Réagir 🔥' }).click()
+await b.waitForTimeout(900)
+const reactionSeen = await b.evaluate(() => [...document.querySelectorAll('span')].some((el) => el.textContent === '🔥' && !el.closest('button')))
+
+console.log(JSON.stringify({ errors, gageFromOthers: gage === 1, reactionSeen }))
 await browser.close()
-process.exit(errors.length || gage !== 1 ? 1 : 0)
+process.exit(errors.length || gage !== 1 || !reactionSeen ? 1 : 0)

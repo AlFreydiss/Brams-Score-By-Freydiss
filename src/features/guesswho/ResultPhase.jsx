@@ -28,7 +28,7 @@ export default function ResultPhase({ g }) {
               <span style={{ ...type.h3, color: C.ink, fontVariantNumeric: 'tabular-nums' }}>
                 {res.stage === 'auto' ? '—' : `${n} vote${n > 1 ? 's' : ''}`}
               </span>
-              <Lives lives={p.lives} />
+              <Lives lives={p.lives} max={g.maxLives} />
               {lost && (
                 <motion.span aria-label="perd une vie"
                   initial={{ scale: 3, rotate: -30, opacity: 0 }} animate={{ scale: 1, rotate: -12, opacity: 1 }}

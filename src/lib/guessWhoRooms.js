@@ -62,7 +62,16 @@ export async function fetchTakes(code, round) {
   return Array.isArray(out?.takes) ? out.takes : []
 }
 
-export const startGame = (code) => rpc('guesswho_start', withToken(code))
+// Avec réglages (migration 20261002). Si la base n'a pas encore cette version
+// (fonction introuvable), on relance avec l'ancienne signature : la partie
+// démarre quand même, avec les règles par défaut.
+export async function startGame(code, settings = {}) {
+  const out = await rpc('guesswho_start', withToken(code, { p_settings: settings }))
+  if (out?.ok === false && /guesswho_start|function|PGRST20/i.test(String(out.error || ''))) {
+    return rpc('guesswho_start', withToken(code))
+  }
+  return out
+}
 export const submitGage = (code, text) => rpc('guesswho_submit_gage', withToken(code, { p_text: text }))
 export const submitTake = (code, url, duration, round) =>
   rpc('guesswho_submit_take', withToken(code, { p_url: url, p_duration: duration, p_round: round }))
