@@ -373,7 +373,7 @@ function EpisodeMiniThumb({ video, color }) {
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
-export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null, autoStart = false, embedded = false, hideDetail = false }) {
+export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce7', storageKey = null, onProgressUpdate = null, autoStart = false, embedded = false, hideDetail = false, onEpisodeChange = null }) {
   const { userId } = useAuth()
   const videoRef     = useRef(null)
   const audioRef     = useRef(null)
@@ -753,7 +753,9 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
     setSubIdx(nextSubIdx)
     setSubsOff(hasSubs ? Boolean(prefs.subtitlesOff) : true)
     setAudioIdx(nextAudioIdx)
-    setSubtitleStyle(prefs.subtitleStyle)
+    // Pas de rechargement du style des sous-titres ici : c'est une préférence du
+    // membre, pas de l'épisode. Le relire du stockage à chaque épisode pouvait
+    // ramener une ancienne valeur (clé d'appareil vs clé du membre).
     setAudioTrackState(hasAudioChoices ? 'pending' : 'none')
     setMediaSrc(audioOptions[nextAudioIdx]?.mediaSrc || video?.src || '')
     pendingSourceRef.current = null
@@ -810,11 +812,42 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   }, [idx, storageKey, video, userId])
 
   // ── Trio lecteur : avance épisode + compte à rebours autoplay ────────────
-  const goNext = useCallback(() => {
-    autoplayPendingRef.current = true          // jouer dès que le prochain épisode est prêt
+  // Changer d'épisode = TOUJOURS enchaîner en lecture. Un simple setIdx repassait
+  // le lecteur en « fiche avant lecture » ; en mode intégré (hideDetail) cette
+  // fiche est masquée → lecteur bloqué sans vidéo après « Épisode suivant ».
+  const jumpTo = useCallback((target) => {
+    const next = Math.max(0, Math.min(videos.length - 1, target))
+    autoplayPendingRef.current = true          // jouer dès que l'épisode est prêt
     setEndOverlay(false); setCountdown(null)
-    setIdx(i => Math.min(videos.length - 1, i + 1))
+    setIdx(next)
   }, [videos.length])
+  const goNext = useCallback(() => {
+    setIdx(i => {
+      autoplayPendingRef.current = true
+      return Math.min(videos.length - 1, i + 1)
+    })
+    setEndOverlay(false); setCountdown(null)
+  }, [videos.length])
+
+  // Page parente (EpisodeWatch) : elle suit l'épisode joué (titre, synopsis,
+  // avis), et ses propres boutons pilotent le lecteur SANS le remonter → le
+  // plein écran et le style des sous-titres restent en place.
+  const idxRef = useRef(idx)
+  const reportedIdxRef = useRef(startIdx)
+  const onEpisodeChangeRef = useRef(onEpisodeChange)
+  useEffect(() => { onEpisodeChangeRef.current = onEpisodeChange }, [onEpisodeChange])
+  useEffect(() => {
+    idxRef.current = idx
+    if (idx !== reportedIdxRef.current) {
+      reportedIdxRef.current = idx
+      onEpisodeChangeRef.current?.(idx)
+    }
+  }, [idx])
+  useEffect(() => {
+    if (startIdx == null || startIdx === idxRef.current) return
+    reportedIdxRef.current = startIdx
+    jumpTo(startIdx)
+  }, [startIdx, jumpTo])
 
   // Smart skip : on saute à une position précise (fin d'OP/ED), jamais un offset fixe.
   const skipTo = useCallback((t) => {
@@ -1022,7 +1055,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
   const keyActions = useRef({})
   keyActions.current = {
     next: () => { if (idx < videos.length - 1) goNext() },
-    prev: () => { if (idx > 0) { autoplayPendingRef.current = true; setEndOverlay(false); setCountdown(null); setIdx(i => Math.max(0, i - 1)) } },
+    prev: () => { if (idx > 0) jumpTo(idx - 1) },
     subs: () => { if (hasSubs) chooseSubtitle(subIdx, !subsOff) },
     speed: (dir) => setSpeed(s => SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, SPEEDS.indexOf(s) + dir))] ?? s),
     skipIntro: () => {
@@ -1779,7 +1812,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 <div style={{ display: 'flex', alignItems: 'center', gap: IS_COARSE ? 10 : 6, flexShrink: 0 }}>
 
                 {/* Épisode suivant */}
-                <Btn onClick={() => setIdx(i => Math.min(videos.length - 1, i + 1))} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}><IcNext /></Btn>
+                <Btn onClick={goNext} disabled={idx === videos.length - 1} title="Épisode suivant" color={color}><IcNext /></Btn>
 
                 {/* Liste des épisodes → panneau latéral */}
                 {videos.length > 1 && (
@@ -2027,7 +2060,7 @@ export default function VideoPlayer({ videos, startIdx, onClose, color = '#6c5ce
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {videos.map((v, i) => (
-                    <button key={i} onClick={() => { setIdx(i); setShowEpisodes(false) }}
+                    <button key={i} onClick={() => { if (i !== idx) jumpTo(i); setShowEpisodes(false) }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10, padding: 6, textAlign: 'left', flexShrink: 0,
                         borderRadius: 10, cursor: 'pointer',

@@ -187,7 +187,10 @@ export default function EpisodeWatch({
       <div className="ew-grid">
         {/* Lecteur — haut gauche (sticky/pleine largeur sur mobile/tablette) */}
         <div className="ew-player">
-          <VideoPlayer key={startIdx} videos={videos} startIdx={startIdx} onClose={onClose} color={color} storageKey={storageKey} autoStart embedded hideDetail />
+          {/* Pas de key={startIdx} : le lecteur suit startIdx lui-même et remonte
+              l'épisode joué via onEpisodeChange → page et lecteur restent
+              synchronisés, sans remontage (plein écran conservé). */}
+          <VideoPlayer videos={videos} startIdx={startIdx} onClose={onClose} color={color} storageKey={storageKey} autoStart embedded hideDetail onEpisodeChange={onSelect} />
         </div>
 
         {/* Infos — droite (passe sous le lecteur sur mobile/tablette) */}
