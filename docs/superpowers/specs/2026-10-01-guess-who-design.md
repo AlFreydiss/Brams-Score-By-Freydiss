@@ -57,8 +57,10 @@ Après `result`, si personne n'est à 0 vie → nouveau tour avec un nouveau son
 ### Règles de calcul (côté serveur)
 
 - Score d'un joueur au tour = nombre de votes reçus en `vote`.
-- Joueur sans imitation envoyée → score 0, et il n'apparaît pas comme choix de vote.
-- Perdant(s) = score minimal. Plusieurs ex aequo → `revote` entre eux.
+- Joueur sans imitation → il n'apparaît pas comme choix de vote et **perd
+  d'office une vie**, sans revote (validé avec l'utilisateur au plan).
+- Sinon : perdant(s) = score minimal. Plusieurs ex aequo → `revote` entre eux.
+- Au lancement, seuls les joueurs encore connectés reçoivent une place.
 - En `revote`, le(s) moins voté(s) perd(ent) 1 vie. Encore égalité → tous les
   ex aequo du revote perdent 1 vie.
 - Si un seul joueur a envoyé une imitation, personne d'autre n'ayant de choix
