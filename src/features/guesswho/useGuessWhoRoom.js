@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as api from '../../lib/guessWhoRooms.js'
 import { PHASE_TOTAL, remainingSec, shouldAdvance, isDone } from './logic/clock.js'
+import { takeNotice } from './logic/notices.js'
 
 export function useGuessWhoRoom({ code, identity }) {
   const [status, setStatus] = useState('joining')
@@ -12,6 +13,7 @@ export function useGuessWhoRoom({ code, identity }) {
   const [state, setState] = useState({ room: null, players: [] })
   const [prog, setProg] = useState(null)
   const [takes, setTakes] = useState([])
+  const [notice, setNotice] = useState(null)
   const [now, setNow] = useState(Date.now())
   const offset = useRef(0)
   const advancing = useRef(false)
@@ -94,14 +96,19 @@ export function useGuessWhoRoom({ code, identity }) {
   const act = useMemo(() => ({
     start: async () => { const r = await api.startGame(code); await refresh(); return r },
     gage: async (text) => { const r = await api.submitGage(code, text); await refresh(); return r },
-    take: async (url, duration) => { const r = await api.submitTake(code, url, duration, round); await refresh(); return r },
+    take: async (url, duration) => {
+      const r = await api.submitTake(code, url, duration, round)
+      setNotice(takeNotice(r))
+      await refresh()
+      return r
+    },
     vote: async (target) => { const r = await api.castVote(code, target); await refresh(); return r },
     skip: async () => { const r = await api.skipClip(code); await refresh(); return r },
   }), [code, round, refresh])
 
   return {
     status, error, spectator: join.spectator, reason: join.reason,
-    room, players, me, isHost, prog, takes,
+    room, players, me, isHost, prog, takes, notice, clearNotice: () => setNotice(null),
     remaining: remainingSec(room?.phase_ends_at, now), total: PHASE_TOTAL[phase] || null,
     refresh, act,
   }

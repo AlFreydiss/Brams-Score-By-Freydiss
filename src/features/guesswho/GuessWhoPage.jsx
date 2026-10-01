@@ -71,6 +71,11 @@ function Room({ code, identity }) {
   return (
     <>
       {g.spectator && <p style={{ ...type.small, color: C.warn, textAlign: 'center' }}>{REASONS[g.reason] || 'Mode spectateur.'}</p>}
+      {g.notice && (
+        <p role="alert" onClick={g.clearNotice} style={{ ...type.body, color: C.warn, textAlign: 'center', cursor: 'pointer', margin: '0 0 12px' }}>
+          {g.notice} <span style={{ color: C.textMut }}>(✕)</span>
+        </p>
+      )}
       {phase === 'lobby' && <Lobby code={code} g={g} />}
       {phase === 'gages' && <GagesPhase g={g} />}
       {phase === 'listen' && <ListenPhase g={g} />}

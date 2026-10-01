@@ -23,7 +23,7 @@ async function toRecord(n = 3) {
   await next(db, g) // listen → record
   return { db, g }
 }
-const take = (db, g, i) => call(db, 'guesswho_submit_take', g.code, g.players[i].token, `https://r2.test/${i}.webm`, 2, 1)
+const take = (db, g, i) => call(db, 'guesswho_submit_take', g.code, g.players[i].token, `https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/${i}.webm`, 2, 1)
 const vote = (db, g, i, target) => call(db, 'guesswho_vote', g.code, g.players[i].token, target)
 const lives = async (db, g) => Object.fromEntries((await state(db, g.code)).players.map((p) => [p.user_id, p.lives]))
 

@@ -206,8 +206,13 @@ begin
   if v_pl.id is null or not v_pl.is_host then return jsonb_build_object('error', 'unauthorized'); end if;
   select * into v_room from guesswho_rooms where id = v_pl.room_id for update;
   if v_room.phase not in ('lobby', 'end') then return jsonb_build_object('error', 'phase'); end if;
-  select count(*) into v_n from guesswho_players where room_id = v_room.id;
+  -- Seuls les joueurs encore là jouent : un onglet fermé ne doit pas recevoir de
+  -- place (il perdrait d'office chaque tour et fausserait toute la partie).
+  select count(*) into v_n from guesswho_players
+    where room_id = v_room.id and last_seen > now() - interval '22 seconds';
   if v_n < 3 then return jsonb_build_object('error', 'not_enough_players'); end if;
+  delete from guesswho_players
+    where room_id = v_room.id and last_seen <= now() - interval '22 seconds' and not is_host;
   with o as (select id, row_number() over (order by joined_at) - 1 as rn
              from guesswho_players where room_id = v_room.id)
   update guesswho_players p set seat = o.rn, lives = 2, total_votes = 0, gage = null
@@ -243,7 +248,10 @@ begin
   select * into v_room from guesswho_rooms where id = v_pl.room_id;
   if v_room.phase <> 'record' or v_room.round <> p_round then
     return jsonb_build_object('error', 'phase'); end if;
-  if p_url is null or not (p_url like 'https://%' or p_url like 'data:audio/%') then
+  -- Uniquement R2 du site ou audio inline : une URL externe ferait charger le
+  -- serveur d'un tricheur à tous les votants (fuite de leurs adresses IP).
+  if p_url is null or not (p_url like 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/%'
+                           or p_url like 'data:audio/%') then
     return jsonb_build_object('error', 'bad_url'); end if;
   if length(p_url) > 200000 then return jsonb_build_object('error', 'too_big'); end if;
   insert into guesswho_takes(room_id, round, user_id, audio_url, duration)
