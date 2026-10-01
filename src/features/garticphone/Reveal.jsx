@@ -58,7 +58,7 @@ async function renderAlbumPng(album, players) {
   const ctx = cv.getContext('2d')
   ctx.fillStyle = '#0a1018'; ctx.fillRect(0, 0, cw, h)
   ctx.fillStyle = '#d7a829'; ctx.font = '800 30px ' + fonts.display
-  ctx.fillText('🏴‍☠️ Freydiss Phone — Album', pad, pad + 30)
+  ctx.fillText('🏴‍☠️ Frds Phone — Album', pad, pad + 30)
   ctx.fillStyle = 'rgba(243,239,226,0.5)'; ctx.font = '500 14px ' + fonts.body
   ctx.fillText(`Carnet de ${authorName(cards[0])}`, pad, pad + 52)
   let y = pad + 70
@@ -340,7 +340,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
       if (navigator.share && navigator.canShare) {
         const blob = await (await fetch(url)).blob()
         const file = new File([blob], a.download, { type: 'image/png' })
-        if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Freydiss Phone' }).catch(() => {})
+        if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'Frds Phone' }).catch(() => {})
       }
     } catch {}
     setSharing(false)
@@ -350,7 +350,7 @@ export default function Reveal({ room, players, n, isHost, allPages, onReplay, u
   const exportJson = () => {
     try {
       const data = {
-        game: 'Freydiss Phone', code: room?.code,
+        game: 'Frds Phone', code: room?.code,
         players: (players || []).map((p) => ({ name: p.display_name, seat: p.seat })),
         albums: albums.map((a) => ({
           book: a.book, author: authorName(a.pages[0]),

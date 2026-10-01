@@ -29,7 +29,7 @@ const GAMES = [
   { to: '/monopoly/', external: true, emoji: '🎩', title: 'Bramsopoly', tag: 'Plateau', accent: '#BFA46A',
     desc: "Le Monopoly du serveur : château de la Reine Amel, palais du Prince Charles, cachot de Carton… et le Bourreau Freydiss qui t'attend au coin maudit. Loyers, forteresses, bots IA, faillites.",
     caps: ['IA', '2 joueurs'] },
-  { to: '/brams-phone', emoji: '🎨', title: 'Freydiss Phone', tag: 'Multijoueur', accent: '#2f9e8c',
+  { to: '/brams-phone', emoji: '🎨', title: 'Frds Phone', tag: 'Multijoueur', accent: '#2f9e8c',
     desc: "Téléphone arabe version pirate. Une phrase → un dessin → une devinette… la chaîne dérive entre potes, en direct. Canvas complet, reveal cinématique et réactions emojis en live.",
     caps: ['2 joueurs'] },
   { to: '/jeux/dames', emoji: '🔴', title: 'Dames',      tag: 'Classé · ELO', accent: '#6f8fb0',

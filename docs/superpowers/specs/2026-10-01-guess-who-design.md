@@ -154,7 +154,8 @@ le script du pack. Le serveur tire un son actif non encore utilisé.
 ## 5. Front
 
 - Routes : `/guess-who` (créer / rejoindre) et `/guess-who/:code` (salon).
-  Entrée ajoutée au menu des jeux.
+  Entrée « Guess Who » dans la barre de navigation, juste après « Frds Phone »
+  (ex-« Freydiss Phone », renommé), et carte dans la page des jeux.
 - `src/lib/guessWhoRooms.js` : appels REST directs aux fonctions (bornés à
   10 s, comme `garticRooms.js`) + abonnement temps réel au salon.
 - `src/lib/guessWhoAudio.js` : enregistrement (réutilise `CAN_RECORD` /

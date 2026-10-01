@@ -158,7 +158,7 @@ export default function Lobby({ room, players, me, isHost, spectator, onStart, o
             <div data-bp-anim style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: radius * 1.12, height: radius * 1.12, borderRadius: '50%', border: `1px dashed ${C.hair}`, background: `radial-gradient(circle, ${alpha(C.sea, 0.16)}, ${alpha(C.gold, 0.05)} 55%, transparent 72%)`, boxShadow: `inset 0 0 40px ${alpha(C.sea, 0.14)}`, display: 'grid', placeItems: 'center', animation: 'bp-tablebob 5s ease-in-out infinite' }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 32, filter: `drop-shadow(0 4px 16px ${alpha(C.gold, 0.4)})` }} data-bp-anim>🏴‍☠️</div>
-                <div style={{ ...type.eyebrow, color: C.gold, marginTop: 4 }}>Freydiss Phone</div>
+                <div style={{ ...type.eyebrow, color: C.gold, marginTop: 4 }}>Frds Phone</div>
               </div>
             </div>
             {sortedPlayers.map((p, i) => (

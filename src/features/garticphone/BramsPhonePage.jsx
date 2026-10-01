@@ -20,7 +20,7 @@ import BarreJeu from '../../components/BarreJeu.jsx'
 
 const Shell = ({ children }) => (
   <div className="bp-page" style={{ minHeight: '100vh', background: C.bg, color: C.text, paddingTop: 0, paddingBottom: 'max(56px, env(safe-area-inset-bottom))', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)', position: 'relative', overflowX: 'hidden', fontFamily: fonts.body }}>
-    <BarreJeu titre="Freydiss Phone" />
+    <BarreJeu titre="Frds Phone" />
     <style>{KEYFRAMES}</style>
     <style>{`
       .bp-page :focus-visible{ outline:2px solid ${C.gold}; outline-offset:2px; border-radius:10px }
