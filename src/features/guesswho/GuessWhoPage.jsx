@@ -12,6 +12,10 @@ import Lobby from './Lobby.jsx'
 import GagesPhase from './GagesPhase.jsx'
 import ListenPhase from './ListenPhase.jsx'
 import RecordPhase from './RecordPhase.jsx'
+import VotePhase from './VotePhase.jsx'
+import ResultPhase from './ResultPhase.jsx'
+import GageWheel from './GageWheel.jsx'
+import EndScreen from './EndScreen.jsx'
 
 function useIdentity() {
   const auth = useAuth()
@@ -71,7 +75,10 @@ function Room({ code, identity }) {
       {phase === 'gages' && <GagesPhase g={g} />}
       {phase === 'listen' && <ListenPhase g={g} />}
       {phase === 'record' && <RecordPhase g={g} />}
-      {!['lobby', 'gages', 'listen', 'record'].includes(phase) && <PhaseFrame prompt="Partie en cours…" />}
+      {(phase === 'vote' || phase === 'revote') && <VotePhase key={`${g.room.round}-${phase}`} g={g} />}
+      {phase === 'result' && <ResultPhase g={g} />}
+      {phase === 'gage' && <GageWheel g={g} />}
+      {phase === 'end' && <EndScreen g={g} />}
     </>
   )
 }
