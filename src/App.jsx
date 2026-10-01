@@ -100,6 +100,7 @@ const HigherLowerPage    = lazyWithReload(() => import('./components/HigherLower
 const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipperPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
+const GuessWhoPage       = lazyWithReload(() => import('./features/guesswho/GuessWhoPage.jsx'))
 import GarticErrorBoundary from './features/garticphone/GarticErrorBoundary.jsx'
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const EchecsPage         = lazyWithReload(() => import('./features/echecs/EchecsPage.jsx'))
@@ -735,6 +736,8 @@ export default function App() {
         {/* Freydiss Phone (Gartic Phone) — écran de jeu immersif (hors PageLayout) */}
         <Route path="/brams-phone"        element={<GarticErrorBoundary><GameLayout><BramsPhonePage /></GameLayout></GarticErrorBoundary>} />
         <Route path="/brams-phone/:code"  element={<GarticErrorBoundary><GameLayout><BramsPhonePage /></GameLayout></GarticErrorBoundary>} />
+        <Route path="/guess-who"        element={<GameLayout><GuessWhoPage /></GameLayout>} />
+        <Route path="/guess-who/:code"  element={<GameLayout><GuessWhoPage /></GameLayout>} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />

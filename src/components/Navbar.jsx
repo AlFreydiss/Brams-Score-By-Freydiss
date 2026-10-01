@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: 'Classement',      href: '#classement', action: null,           gated: false, isRoute: false },
   { label: 'Le Fil',          href: '/fil',        action: null,           gated: false, isRoute: true  },
   { label: '🎨 Frds Phone', href: '/brams-phone', action: null,          gated: false, isRoute: true  },
+  { label: '🎤 Guess Who',   href: '/guess-who',   action: null,          gated: false, isRoute: true  },
   { label: 'Blind Test',      href: '/blind-test', action: null,           gated: false, isRoute: true  },
   { label: 'Tournoi',         href: '/tournoi',    action: null,           gated: false, isRoute: true  },
   { label: '🔮 Akinator',     href: '/akinator',   action: null,           gated: false, isRoute: true  },
