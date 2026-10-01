@@ -8,7 +8,7 @@
     "prebuild": "node ./scripts/check-no-supabase-storage.mjs",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "preview": "vite preview",
-    "test": "node --test src/lib/dames/*.test.js src/features/dames/engine/*.test.js src/features/garticphone/logic/*.test.js"
+    "test": "node --test src/lib/dames/*.test.js src/features/dames/engine/*.test.js src/features/garticphone/logic/*.test.js src/features/guesswho/sql/*.test.js src/features/guesswho/logic/*.test.js scripts/guesswho/*.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1047.0",
@@ -73,6 +73,7 @@
   },
   "devDependencies": {
     "@aws-sdk/lib-storage": "^3.1048.0",
+    "@electric-sql/pglite": "^0.2.17",
     "@tailwindcss/vite": "^4.3.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
