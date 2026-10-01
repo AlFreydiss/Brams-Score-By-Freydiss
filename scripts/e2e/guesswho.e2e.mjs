@@ -56,7 +56,7 @@ await a.getByText(/doit faire un gage|doivent faire un gage/).waitFor({ timeout:
 await a.waitForTimeout(3000)
 await a.screenshot({ path: `${OUT}/gw-gage.png` })
 const gage = await a.getByText(/^« gage numéro [01] »$/).count()
-await a.getByText(/meilleur imitateur|Fin de partie/).waitFor({ timeout: 30000 })
+await a.getByText(/meilleur imitateur|Fin de partie/).first().waitFor({ timeout: 30000 })
 await a.screenshot({ path: `${OUT}/gw-end.png` })
 
 console.log(JSON.stringify({ errors, gageFromOthers: gage === 1 }))

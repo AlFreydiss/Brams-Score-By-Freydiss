@@ -92,11 +92,16 @@ export default function GuessWhoPage() {
   const { code } = useParams()
   const identity = useIdentity()
   return (
-    <div style={{ ...pageBg, minHeight: '100dvh', padding: 'clamp(12px,3vw,32px)' }}>
+    // Fond en calques séparés : pageBg/dotGrid ont pointerEvents:none ; appliqués
+    // au conteneur, ils rendaient toute la page incliquable.
+    <div style={{ position: 'relative', minHeight: '100dvh', padding: 'clamp(12px,3vw,32px)' }}>
       <style>{KEYFRAMES}</style>
+      <div aria-hidden style={pageBg} />
       <div aria-hidden style={dotGrid} />
-      <BarreJeu titre="Guess Who" />
-      <div style={{ position: 'relative', marginTop: 18 }}>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <BarreJeu titre="Guess Who" />
+      </div>
+      <div style={{ position: 'relative', zIndex: 1, marginTop: 18 }}>
         {code ? <Room code={code.toUpperCase()} identity={identity} /> : <Home identity={identity} />}
       </div>
     </div>
