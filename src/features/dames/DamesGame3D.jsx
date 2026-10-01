@@ -397,7 +397,7 @@ export default function DamesGame3D() {
             : hud.winner === P ? `${SIDE_LBL[M]} n'a plus aucun coup légal.` : `${SIDE_LBL[P]} est à court de coups.`}
           stats={[['Coups', moves.length], ['Prises', Math.max(0, 40 - hud.pir - hud.mar)]]}
           onRematch={newGame}
-          onQuit={() => navigate('/jeux')}
+          onQuit={() => navigate('/jeux/dames')}
           onAnalyse={G.current.history.some(h => h.mv) ? openAnalyse : null}
           rematchLabel="Revanche"
         />

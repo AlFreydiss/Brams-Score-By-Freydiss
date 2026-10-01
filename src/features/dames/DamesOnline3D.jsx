@@ -272,7 +272,7 @@ export default function DamesOnline3D() {
               eloDelta={typeof result.myDelta === 'number' ? result.myDelta : null}
               promoted={promoted}
               onRematch={leave}
-              onQuit={() => navigate('/jeux')}
+              onQuit={() => navigate('/jeux/dames')}
               rematchLabel="Revanche"
             />
           )

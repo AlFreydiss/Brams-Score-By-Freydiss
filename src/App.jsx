@@ -105,7 +105,6 @@ import GarticErrorBoundary from './features/garticphone/GarticErrorBoundary.jsx'
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const EchecsPage         = lazyWithReload(() => import('./features/echecs/EchecsPage.jsx'))
 const DamesPage          = lazyWithReload(() => import('./features/dames/DamesPage.jsx'))
-const GamesHubPage       = lazyWithReload(() => import('./components/GamesHubPage.jsx'))
 const FredisuPage        = lazyWithReload(() => import('./components/FredisuPage.jsx'))
 const NouveauMondeLayout = lazyWithReload(() => import('./features/nouveau-monde/NouveauMondeLayout.jsx'))
 const NMCartePage        = lazyWithReload(() => import('./features/nouveau-monde/pages/CartePage.jsx'))
@@ -758,7 +757,8 @@ export default function App() {
         <Route path="/akinator"    element={<AkinatorPage      />} />
         <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
         <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />
-        <Route path="/jeux"        element={<PageLayout><GamesHubPage /></PageLayout>} />
+        {/* Page des jeux supprimée : les anciens liens retombent sur l'accueil. */}
+        <Route path="/jeux"        element={<Navigate to="/" replace />} />
         <Route path="/jeux/plus-ou-moins" element={<PageLayout><HigherLowerPage /></PageLayout>} />
         {/* Univers de jeu autonomes plein écran (2D stricte, onglets Jouer/Règles/Classement/Paramètres) */}
         <Route path="/jeux/echecs"       element={<Suspense fallback={null}><ChessUniverse /></Suspense>} />

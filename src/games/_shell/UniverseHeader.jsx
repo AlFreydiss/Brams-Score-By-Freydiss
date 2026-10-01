@@ -12,8 +12,8 @@ export default function UniverseHeader({ title, accent, tabs, active, onSelect, 
       padding: `0 ${ui.space.lg}px`, background: ui.bgElev,
       boxShadow: `0 1px 0 ${ui.line}, 0 8px 24px -16px rgba(0,0,0,.6)`, zIndex: 5,
     }}>
-      <button type="button" onClick={() => navigate('/jeux')}
-        className="gu-back" aria-label="Retour aux jeux Brams"
+      <button type="button" onClick={() => navigate('/')}
+        className="gu-back" aria-label="Retour à l'accueil Brams"
         style={{
           appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '7px 12px', borderRadius: ui.radius.pill, border: `1px solid ${ui.line}`,

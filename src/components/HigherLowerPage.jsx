@@ -327,12 +327,12 @@ export default function HigherLowerPage() {
             >
               {copied ? 'Copié ✓' : 'Copier le résultat'}
             </button>
-            <Link to="/jeux" style={{
+            <Link to="/" style={{
               padding: '14px 30px', borderRadius: 12, textDecoration: 'none',
               background: 'rgba(255,255,255,.06)', color: 'rgba(255,255,255,.8)',
               fontSize: 15, border: '1px solid rgba(255,255,255,.1)',
             }}>
-              Retour aux jeux
+              Retour à l'accueil
             </Link>
           </div>
         </div>
@@ -351,10 +351,10 @@ export default function HigherLowerPage() {
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
         }}>
-          <Link to="/jeux" style={{
+          <Link to="/" style={{
             fontSize: 11, letterSpacing: '.18em', color: 'rgba(255,255,255,.35)', textDecoration: 'none',
           }}>
-            ← JEUX
+            ← ACCUEIL
           </Link>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <button
