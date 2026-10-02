@@ -6,6 +6,7 @@ import { AvatarName, ClipPlayer, Lives, avatarUrl } from './ui.jsx'
 import { Confetti } from './fx.jsx'
 import { play } from './sfx.js'
 import { bestHighlight } from './logic/highlights.js'
+import { startErrorText } from './logic/startError.js'
 
 const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`
 // Noms des ex aequo sur un critère (au plus 2, puis « +N »).
@@ -87,7 +88,13 @@ export default function EndScreen({ g }) {
       else await navigator.clipboard?.writeText(top.audio_url.startsWith('https://') ? `${text} ${top.audio_url}` : text)
     } catch { /* partage annulé */ }
   }
-  const replay = async () => { setBusy(true); await g.act.start(g.room?.settings); setBusy(false) }
+  const [replayErr, setReplayErr] = useState(null)
+  const replay = async () => {
+    setBusy(true); setReplayErr(null)
+    const r = await g.act.start(g.room?.settings)
+    setReplayErr(startErrorText(r))
+    setBusy(false)
+  }
   const voted = rows.length ? leaders(rows, (p) => p.total_votes) : null
   const lost = rows.length ? leaders(rows, livesLost) : null
   const alive = rows.length ? leaders(rows, (p) => p.lives) : null
@@ -115,6 +122,9 @@ export default function EndScreen({ g }) {
           : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>En attente de l'hôte pour rejouer…</span>}
         <Btn variant="ghost" onClick={() => navigate('/guess-who')}>Quitter</Btn>
       </div>
+      {replayErr && (
+        <div role="alert" style={{ margin: '-8px 0 18px', fontFamily: FONT_BODY, fontWeight: 800, fontSize: 15, color: '#c8102e' }}>{replayErr}</div>
+      )}
 
       {stats.length > 0 && (
         <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', marginBottom: 18 }}>

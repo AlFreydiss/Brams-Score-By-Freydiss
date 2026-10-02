@@ -6,6 +6,7 @@ import { C, FONT_BODY, FONT_DISPLAY, SPRING_POP, type, Btn, PhaseFrame, PlayerCh
 import MicSetup from './MicSetup.jsx'
 import { SoundToggle } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
+import { startErrorText } from './logic/startError.js'
 
 const MAX_PLAYERS = 8
 const MIN_PLAYERS = 3
@@ -161,7 +162,7 @@ export default function Lobby({ code, g }) {
   const start = async () => {
     setBusy(true); setMsg(null)
     const r = await g.act.start(cleanSettings(settings, options))
-    if (r?.error) setMsg(r.error === 'not_enough_players' ? 'Il faut au moins 3 joueurs.' : 'Lancement impossible, réessaie.')
+    setMsg(startErrorText(r))
     setBusy(false)
   }
   const canShare = typeof navigator !== 'undefined' && !!navigator.share
