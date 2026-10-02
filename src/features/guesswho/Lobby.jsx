@@ -6,6 +6,7 @@ import { C, FONT_BODY, FONT_DISPLAY, SPRING_POP, type, Btn, PhaseFrame, PlayerCh
 import MicSetup from './MicSetup.jsx'
 import { SoundToggle } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
+import { inAppBrowser, openInBrowserHint } from './logic/recordFlow.js'
 import { startErrorText } from './logic/startError.js'
 import { logEvent } from '../../lib/guessWhoLog.js'
 
@@ -113,6 +114,15 @@ export default function Lobby({ code, g }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [copied, setCopied] = useState(false)
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+  const [inAppHidden, setInAppHidden] = useState(() => {
+    try { return sessionStorage.getItem('gw_inapp_hidden') === '1' } catch { return false }
+  })
+  const showInApp = inAppBrowser(ua) && !inAppHidden
+  const hideInApp = () => {
+    setInAppHidden(true)
+    try { sessionStorage.setItem('gw_inapp_hidden', '1') } catch { /* stockage indisponible */ }
+  }
   const [qr, setQr] = useState(false)
   const [settings, setSettings] = useState(loadSettings)
   const changeSettings = (next) => {
@@ -172,6 +182,18 @@ export default function Lobby({ code, g }) {
   const seats = n >= MAX_PLAYERS ? 0 : Math.max(MIN_PLAYERS - n, 1)
   return (
     <PhaseFrame eyebrow="Guess Who · Salle d'attente" prompt="Invite ta bande">
+      {showInApp && (
+        <div role="alert" style={{ border: `3px solid ${C.ink}`, background: C.yellow, color: C.ink, padding: '12px 14px', marginBottom: 16, display: 'grid', gap: 8 }}>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18 }}>🎙️ Le micro ne marche pas ici</div>
+          <div style={{ ...type.body, fontWeight: 700 }}>
+            Tu es dans le navigateur de l'appli. Ouvre le salon dans ton navigateur. {openInBrowserHint(ua)}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Btn onClick={copy}>{copied ? 'Lien copié ✓' : 'Copier le lien'}</Btn>
+            <Btn variant="ghost" onClick={hideInApp}>J'ai compris</Btn>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'grid', justifyItems: 'center', gap: 14, marginBottom: 20 }}>
         <div style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 14, color: C.textMut }}>Code du salon · appuie pour copier</div>
         <BigCode code={code} onCopy={copy} />
