@@ -189,6 +189,7 @@ export default function AnimeHubV2(props) {
     'your-name': props.onOpenYourName, 'your-lie': props.onOpenYourLie, 'fgo-babylonia': props.onOpenFgoBabylonia, 'domestic-na-kanojo': props.onOpenDomestic,
     'koi-ameagari': props.onOpenKoi, bubble: props.onOpenBubble, reze: props.onOpenReze, 'koe-no-katachi': props.onOpenKoe,
     kaguya: props.onOpenKaguya, hxh: props.onOpenHxh, quintuplets: props.onOpenQuintuplets,
+    'tokyo-revengers': props.onOpenTokyoRevengers,
   })[id]
   // Les animes s'ouvrent par callbacks passes en props ; les scans ont de
   // vraies routes /manga/<slug>, d'ou le navigate.

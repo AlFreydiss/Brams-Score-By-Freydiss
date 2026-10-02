@@ -175,6 +175,27 @@ export const ANIMES = [
     badge: 'NOUVEAU',
     badgeColor: '#6fb7e8',
   },
+  {
+    id: 'tokyo-revengers',
+    title: 'Tokyo Revengers',
+    subtitle: 'Voyage dans le temps · Gangs',
+    emoji: '🏍️',
+    color: '#e11d48',
+    colorDark: '#4c0519',
+    coverImage: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx120120-cWDmnmeEntSe.jpg',
+    coverPosition: 'center top',
+    year: 2021,
+    genres: ['Action', 'Drame'],
+    description: "Takemichi remonte douze ans en arrière pour sauver Hinata, tuée à cause du Tokyo Manji Gang. Les 4 saisons, leurs bandes-annonces et où les regarder légalement.",
+    stats: [
+      { label: 'Saisons', value: '4' },
+      { label: 'Studio', value: 'LIDENFILMS' },
+      { label: 'Statut', value: 'Saison 4 en cours' },
+    ],
+    action: '▶ Bandes-annonces',
+    badge: 'NOUVELLE SAISON',
+    badgeColor: '#e11d48',
+  },
   // Dr. Stone retiré d'Anime & Scan le 2026-06-13 (demande). Page + routing conservés.
   {
     id: 'jjk',
