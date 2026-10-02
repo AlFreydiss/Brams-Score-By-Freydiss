@@ -4,12 +4,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase.js'
-import { C } from './manga.jsx'
+import { T, LINE, RADIUS, SHADOW } from './theme.js'
 import { SoundToggle } from './fx.jsx'
 import { vibrate } from './sfx.js'
 
 export const EMOJIS = ['😂', '🔥', '💀', '👏', '😱']
-const LIFE_MS = 2200
+const LIFE_MS = 2860 // montée plus lente et plus douce (identité sobre)
 const MIN_GAP_MS = 300   // anti-spam à l'envoi (par joueur)
 const MAX_ON_SCREEN = 22 // au-delà, les plus anciennes disparaissent
 
@@ -54,18 +54,19 @@ export function ReactionBar({ onSend }) {
   return (
     <div role="group" aria-label="Réagir" style={{
       position: 'fixed', left: '50%', bottom: 'max(12px, env(safe-area-inset-bottom))', transform: 'translateX(-50%)',
-      zIndex: 55, display: 'flex', alignItems: 'center', gap: 5, padding: 5, background: C.paper,
-      border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, maxWidth: 'calc(100vw - 24px)', boxSizing: 'border-box',
+      zIndex: 55, display: 'flex', alignItems: 'center', gap: 2, padding: 4, background: 'rgba(30,30,32,0.92)',
+      backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+      border: LINE, borderRadius: RADIUS.pill, boxShadow: SHADOW.lift, maxWidth: 'calc(100vw - 24px)', boxSizing: 'border-box',
     }}>
       {EMOJIS.map((e) => (
-        <motion.button key={e} type="button" className="gw-btn" onClick={() => onSend(e)} whileTap={{ scale: 0.75, rotate: -12 }}
+        <motion.button key={e} type="button" className="gw-btn" onClick={() => onSend(e)} whileTap={{ scale: 0.85 }}
           aria-label={`Réagir ${e}`}
-          style={{ width: 46, height: 46, fontSize: 24, cursor: 'pointer', background: C.paper, border: `2px solid ${C.ink}`, lineHeight: 1, padding: 0 }}>
+          style={{ width: 44, height: 44, fontSize: 22, cursor: 'pointer', background: 'transparent', border: 'none', borderRadius: '50%', lineHeight: 1, padding: 0 }}>
           {e}
         </motion.button>
       ))}
-      <span aria-hidden style={{ width: 2, alignSelf: 'stretch', background: C.ink, margin: '0 2px' }} />
-      <SoundToggle />
+      <span aria-hidden style={{ width: 1, alignSelf: 'stretch', background: T.line, margin: '6px 4px' }} />
+      <SoundToggle style={{ border: 'none' }} />
     </div>
   )
 }
@@ -75,8 +76,8 @@ export function FloatingReactions({ items }) {
     <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 54, overflow: 'hidden', contain: 'strict' }}>
       {items.map((r) => (
         <span key={r.id} className="gw-anim" style={{
-          position: 'absolute', left: `${r.x}%`, bottom: 78, fontSize: r.mine ? 46 : 40, lineHeight: 1,
-          textShadow: `3px 3px 0 ${C.ink}`, willChange: 'transform, opacity',
+          position: 'absolute', left: `${r.x}%`, bottom: 78, fontSize: r.mine ? 30 : 26, lineHeight: 1,
+          willChange: 'transform, opacity',
           '--rot': `${r.rot}deg`, '--dx': `${r.dx}px`,
           animation: `gw-float-up ${LIFE_MS}ms cubic-bezier(.2,.7,.3,1) both`,
         }}>{r.emoji}</span>

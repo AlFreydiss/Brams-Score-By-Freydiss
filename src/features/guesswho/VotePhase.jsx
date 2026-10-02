@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { C, FONT_BODY, FONT_DISPLAY, type, Btn, PhaseFrame, LiveRoster } from './manga.jsx'
+import { C, type, Btn, PhaseFrame, LiveRoster } from './manga.jsx'
+import { T, F, LINE, RADIUS, label } from './theme.js'
 import { ClipPlayer, TakeCard, PLAY_EVT } from './ui.jsx'
 import { roster } from './GagesPhase.jsx'
 import { votableTakes } from './logic/clock.js'
@@ -80,30 +81,30 @@ export default function VotePhase({ g }) {
     <PhaseFrame wide tick eyebrow={revote ? 'Égalité !' : `Tour ${g.room.round} · Vote`}
       prompt={revote ? 'Départage les ex aequo' : 'Qui a fait la meilleure imitation ?'} remaining={g.remaining} total={g.total}>
       {/* Bandeau d'état : quoi faire maintenant. */}
-      <motion.div key={mine ? 'ok' : 'todo'} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+      <motion.div key={mine ? 'ok' : 'todo'} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
-          padding: '10px 14px', marginBottom: 16, border: `3px solid ${C.ink}`,
-          background: mine ? C.ink : C.yellow, color: mine ? C.yellow : C.ink,
+          padding: '12px 16px', marginBottom: 16, borderRadius: RADIUS.md,
+          border: `1px solid ${mine ? T.accent : T.line}`, background: mine ? 'rgba(199,168,105,0.08)' : T.deep, color: T.textHi,
         }}>
-        <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16 }}>
+        <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 16.5 }}>
           {!canVote ? 'Les joueurs votent…'
             : mine ? `✓ Vote pour ${byId[mine]?.display_name || '…'} — modifiable jusqu'à la fin`
-            : '👂 Écoute, puis vote pour ton préféré'}
+            : 'Écoute, puis vote pour ton préféré'}
         </span>
-        <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 14 }}>
+        <span style={{ fontFamily: F.ui, fontWeight: 600, fontSize: 13.5, color: T.textMute }}>
           {left === 0 ? 'Tout le monde a voté !' : `Encore ${left} vote${left > 1 ? 's' : ''} attendu${left > 1 ? 's' : ''}`}
         </span>
       </motion.div>
       {err && <p role="alert" style={{ ...type.body, color: C.danger, marginTop: 0 }}>{err}</p>}
 
       <div style={{
-        display: 'grid', gap: 10, marginBottom: 18, padding: 12, border: `3px solid ${C.ink}`,
-        background: pl.idx === 0 && clip ? '#FFE3E8' : C.paper,
+        display: 'grid', gap: 12, marginBottom: 18, padding: 14, borderRadius: RADIUS.md,
+        border: `1px solid ${pl.idx === 0 && clip ? T.accent : T.line}`, background: T.deep,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-          <div style={{ ...type.small, color: C.ink, minWidth: 0 }}>
-            <span style={{ background: C.ink, color: C.paper, padding: '1px 8px', marginRight: 8, fontFamily: FONT_DISPLAY, fontSize: 12 }}>ORIGINAL</span>
+          <div style={{ ...type.small, color: T.textHi, minWidth: 0 }}>
+            <span style={label({ color: T.accent, marginRight: 10 })}>Original</span>
             {clip?.title}
           </div>
           <Btn variant={pl.idx != null ? 'ghost' : 'sea'} onClick={pl.idx != null ? pl.stop : pl.start} style={{ minHeight: 46, fontSize: 14, padding: '0 14px' }}>

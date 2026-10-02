@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { C, FONT_BODY, FONT_DISPLAY, PhaseFrame, SPRING_POP, type } from './manga.jsx'
+import { C, PhaseFrame, SPRING_POP, type } from './manga.jsx'
+import { T, F, LINE, RADIUS, SHADOW, plate } from './theme.js'
 import { AvatarName, Lives } from './ui.jsx'
 import { Confetti, CountUp } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
@@ -44,19 +45,19 @@ export default function ResultPhase({ g }) {
   return (
     <PhaseFrame eyebrow={`Tour ${res.round}${g.roundsMax ? `/${g.roundsMax}` : ''} · Verdict`} prompt={title} remaining={g.remaining} total={g.total} tilt={0.6}>
       {g.isLastRound && !final.length && (
-        <p style={{ ...type.small, margin: '0 0 14px', color: C.ink }}>
-          🏁 Dernier tour : sans éliminé, le joueur avec le moins de vies prendra le gage.
+        <p style={{ ...type.small, margin: '0 0 14px', color: T.accentLit }}>
+          Dernier tour : sans éliminé, le joueur avec le moins de vies prendra le gage.
         </p>
       )}
       {final.length > 0 && (
-        <p role="status" style={{ margin: '0 0 14px', padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.yellow, fontFamily: FONT_BODY, fontWeight: 800, color: C.ink }}>
-          🏁 Verdict final : {final.map(nameOf).join(' & ')} {final.length > 1 ? 'prennent' : 'prend'} le gage (moins de vies).
+        <p role="status" style={{ margin: '0 0 14px', padding: '10px 14px', border: `1px solid ${T.accent}`, borderRadius: RADIUS.md, background: 'rgba(199,168,105,0.08)', fontFamily: F.ui, fontWeight: 600, color: T.textHi }}>
+          Verdict final : {final.map(nameOf).join(' & ')} {final.length > 1 ? 'prennent' : 'prend'} le gage (moins de vies).
         </p>
       )}
       {step >= 1 && topScore > 0 && <Confetti count={34} />}
       <motion.div
-        animate={step === 2 && losers.size && !reduce ? { x: [0, -10, 9, -6, 4, 0] } : { x: 0 }}
-        transition={{ duration: 0.45 }}
+        animate={{ x: 0 }}
+        transition={{ duration: 0.2 }}
         style={{ display: 'grid', gap: 12 }}>
         {rows.map((p, i) => {
           const lost = losers.has(p.user_id)
@@ -68,41 +69,43 @@ export default function ResultPhase({ g }) {
           const shownLives = lost && step < 2 ? Math.min(g.maxLives, p.lives + 1) : p.lives
           return (
             <motion.div key={p.user_id}
-              initial={reduce ? { opacity: 0 } : { y: -40, opacity: 0, rotate: i % 2 ? 2 : -2 }}
-              animate={{ y: 0, opacity: 1, rotate: 0, scale: best ? 1.02 : 1 }}
+              initial={reduce ? { opacity: 0 } : { y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: ko ? 0.72 : 1, scale: best ? 1.01 : 1 }}
               transition={{ ...SPRING_POP, delay: reduce ? 0 : (FIRST_MS + i * GAP_MS) / 1000 }}
               style={{
-                position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                border: `3px solid ${C.ink}`, boxShadow: `${best ? 6 : 4}px ${best ? 6 : 4}px 0 ${ko ? C.red : C.ink}`,
-                background: ko ? '#FFE3E8' : best ? C.yellow : C.paper, transition: 'background .25s',
+                ...plate({ borderRadius: RADIUS.md }),
+                position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                border: `1px solid ${best ? T.accent : ko ? T.danger : T.line}`,
+                boxShadow: best ? `0 0 0 4px ${T.glow}, 0 0 28px rgba(199,168,105,0.18), ${SHADOW.soft}` : plate().boxShadow,
+                transition: 'border-color .4s, box-shadow .4s, opacity .6s',
               }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <AvatarName player={p} sub={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 2 }}><Lives lives={shownLives} max={g.maxLives} size={18} />{me && 'Toi'}</span>} />
               </div>
-              <span style={{ ...type.h3, color: C.ink, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'center', display: 'grid', lineHeight: 1, flex: '0 0 auto' }}>
+              <span style={{ ...type.h3, color: best ? T.accentLit : T.textHi, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'center', display: 'grid', lineHeight: 1, flex: '0 0 auto' }}>
                 {auto ? '—' : (
                   <>
                     <span style={{ fontSize: 28 }}>
                       <CountUp to={n} delay={reduce ? 0 : FIRST_MS + i * GAP_MS + 150} step={Math.max(45, Math.min(110, 320 / Math.max(1, n)))} />
                     </span>
-                    <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 12 }}>vote{n > 1 ? 's' : ''}</span>
+                    <span style={{ fontFamily: F.ui, fontWeight: 600, fontSize: 11.5, color: T.textMute, marginTop: 2 }}>vote{n > 1 ? 's' : ''}</span>
                   </>
                 )}
               </span>
               {best && (
                 <motion.span aria-label="meilleure imitation du tour"
-                  initial={{ y: -30, scale: 0, rotate: -40 }} animate={{ y: 0, scale: 1, rotate: -16 }}
-                  transition={{ type: 'spring', stiffness: 520, damping: 11 }}
-                  style={{ position: 'absolute', left: -12, top: -20, fontSize: 30, filter: `drop-shadow(2px 2px 0 ${C.ink})` }}>👑</motion.span>
+                  initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ position: 'absolute', left: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase', color: T.onAccent, background: T.accent, borderRadius: RADIUS.pill, padding: '2px 9px' }}>Meilleure</motion.span>
               )}
               {ko && (
                 <motion.span aria-label="perd une vie"
-                  initial={{ scale: 3.2, rotate: -30, opacity: 0 }} animate={{ scale: 1, rotate: -12, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 640, damping: 12 }}
+                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
                   style={{
-                    position: 'absolute', right: 10, top: -16, fontFamily: FONT_DISPLAY, fontSize: 22, color: '#fff',
-                    background: C.red, border: `3px solid ${C.ink}`, padding: '2px 12px', boxShadow: `3px 3px 0 ${C.ink}`,
-                  }}>K.O.</motion.span>
+                    position: 'absolute', right: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase',
+                    color: T.danger, background: T.bg, border: `1px solid ${T.danger}`, borderRadius: RADIUS.pill, padding: '2px 9px',
+                  }}>− 1 vie</motion.span>
               )}
             </motion.div>
           )
@@ -110,15 +113,15 @@ export default function ResultPhase({ g }) {
       </motion.div>
       {step === 2 && meLost && (
         <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={SPRING_POP}
-          style={{ margin: '18px 0 0', textAlign: 'center', fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.2rem,4vw,1.6rem)', color: C.red }}>
-          {g.me.lives > 0 ? `Aïe… il te reste ${g.me.lives} vie${g.me.lives > 1 ? 's' : ''} 💔` : 'Plus de vie : place au gage ! 😈'}
+          style={{ margin: '18px 0 0', textAlign: 'center', fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.15rem,4vw,1.5rem)', color: T.danger }}>
+          {g.me.lives > 0 ? `Aïe… il te reste ${g.me.lives} vie${g.me.lives > 1 ? 's' : ''}.` : 'Plus de vie : place au gage.'}
         </motion.p>
       )}
       {step >= 1 && ballots.length > 0 && (
         <motion.ul initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_POP} aria-label="Détail des votes"
-          style={{ listStyle: 'none', margin: '18px 0 0', padding: '10px 12px', border: `3px dashed ${C.ink}`, display: 'grid', gap: 4 }}>
+          style={{ listStyle: 'none', margin: '18px 0 0', padding: '12px 16px', border: LINE, borderRadius: RADIUS.md, display: 'grid', gap: 6 }}>
           {ballots.map((v) => (
-            <li key={`${v.voter}-${v.stage}`} style={{ ...type.small, color: C.ink, overflowWrap: 'anywhere' }}>
+            <li key={`${v.voter}-${v.stage}`} style={{ ...type.small, fontWeight: 500, color: T.textMute, overflowWrap: 'anywhere' }}>
               {v.voter === g.me?.user_id ? <b>Tu</b> : <b>{nameOf(v.voter)}</b>} {v.voter === g.me?.user_id ? 'as' : 'a'} voté pour <b>{nameOf(v.target)}</b>
             </li>
           ))}
