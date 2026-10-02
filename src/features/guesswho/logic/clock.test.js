@@ -8,11 +8,12 @@ test('remainingSec', () => {
   assert.equal(remainingSec(new Date(10_000).toISOString(), 12_000), 0)
 })
 
-test('shouldAdvance : hôte à échéance ou si tout le monde a fini ; autres après +6 s', () => {
+test('shouldAdvance : tout le monde a fini → tous ; échéance → hôte, autres après +6 s', () => {
   assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 9_000, isHost: true, done: false }), false)
   assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 9_000, isHost: true, done: true }), true)
   assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 10_000, isHost: true, done: false }), true)
-  assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 15_000, isHost: false, done: true }), false)
+  assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 9_000, isHost: false, done: true }), true)
+  assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 15_000, isHost: false, done: false }), false)
   assert.equal(shouldAdvance({ endsAtMs: 10_000, nowMs: 16_000, isHost: false, done: false }), true)
   assert.equal(shouldAdvance({ endsAtMs: null, nowMs: 99_000, isHost: true, done: true }), false)
 })

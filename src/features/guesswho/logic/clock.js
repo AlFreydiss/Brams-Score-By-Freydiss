@@ -22,7 +22,8 @@ export function phaseTotal(room) {
 // à échéance + 5 s. On prend 6 s côté client pour éviter un refus « too_early ».
 export function shouldAdvance({ endsAtMs, nowMs, isHost, done }) {
   if (endsAtMs == null) return false
-  if (isHost) return done || nowMs >= endsAtMs
+  if (done) return true // le serveur accepte n'importe quel joueur quand tout le monde a fini
+  if (isHost) return nowMs >= endsAtMs
   return nowMs >= endsAtMs + 6000
 }
 

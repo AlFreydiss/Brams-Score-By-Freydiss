@@ -87,3 +87,46 @@ test('migration 20261003 recollée deux fois : sans erreur', async () => {
   const { readFileSync } = await import('node:fs')
   await db.exec(readFileSync(new URL('../../../../supabase/migrations/20261003_guess_who_revanche.sql', import.meta.url), 'utf8'))
 })
+
+// ── Avance anticipée par n'importe quel joueur ──────────────────────────────
+async function inRecord() {
+  const db = await freshDb()
+  await seedClips(db)
+  const g = await setupRoom(db, 3)
+  await call(db, 'guesswho_start', g.code, g.players[0].token, {})
+  for (const p of g.players) await call(db, 'guesswho_submit_gage', g.code, p.token, `gage de ${p.user}`)
+  for (const ph of ['gages', 'listen']) {
+    await expirePhase(db, g.code)
+    await call(db, 'guesswho_advance', g.code, g.players[0].token, ph, (await room(db)).round)
+  }
+  return { db, g }
+}
+const R2 = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/'
+
+test('avance : un non-hôte avance quand tout le monde a fini', async () => {
+  const { db, g } = await inRecord()
+  const r0 = await room(db)
+  for (let i = 0; i < 3; i++) await call(db, 'guesswho_submit_take', g.code, g.players[i].token, `${R2}${i}.webm`, 2, r0.round)
+  const r = await call(db, 'guesswho_advance', g.code, g.players[2].token, 'record', r0.round)
+  assert.equal(r.ok, true)
+  assert.equal((await room(db)).phase, 'vote')
+})
+
+test('avance : un non-hôte reste refusé trop tôt', async () => {
+  const { db, g } = await inRecord()
+  const r0 = await room(db)
+  const r = await call(db, 'guesswho_advance', g.code, g.players[2].token, 'record', r0.round)
+  assert.equal(r.reason, 'too_early')
+  assert.equal((await room(db)).phase, 'record')
+})
+
+test('avance : deux joueurs en même temps → une seule transition', async () => {
+  const { db, g } = await inRecord()
+  const r0 = await room(db)
+  for (let i = 0; i < 3; i++) await call(db, 'guesswho_submit_take', g.code, g.players[i].token, `${R2}${i}.webm`, 2, r0.round)
+  const a = await call(db, 'guesswho_advance', g.code, g.players[1].token, 'record', r0.round)
+  const b = await call(db, 'guesswho_advance', g.code, g.players[2].token, 'record', r0.round)
+  assert.equal(a.ok, true)
+  assert.equal(b.reason, 'stale')
+  assert.equal((await room(db)).phase, 'vote')
+})

@@ -86,3 +86,29 @@ end $$;
 
 revoke execute on function _gw_step(uuid) from public, anon, authenticated;
 grant execute on function guesswho_start(text, uuid, jsonb) to anon, authenticated;
+
+-- ── Avance anticipée par n'importe quel joueur ───────────────────────────────
+-- Tout le monde a fini : n'importe quel joueur peut avancer (l'hôte en veille ne
+-- bloque plus la partie). À l'échéance : l'hôte, puis tout le monde à +5 s.
+create or replace function guesswho_advance(p_code text, p_token uuid, p_expected_phase text, p_expected_round int)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pl guesswho_players; r guesswho_rooms; v_due boolean; v_late boolean;
+begin
+  select * into v_pl from _gw_player(p_code, p_token);
+  if v_pl.id is null then return jsonb_build_object('error', 'unauthorized'); end if;
+  select * into r from guesswho_rooms where id = v_pl.room_id for update;
+  if r.phase <> p_expected_phase or r.round <> p_expected_round then
+    return jsonb_build_object('ok', false, 'reason', 'stale');
+  end if;
+  if r.phase in ('lobby', 'end') then return jsonb_build_object('error', 'phase'); end if;
+  v_due  := r.phase_ends_at is not null and now() >= r.phase_ends_at;
+  v_late := r.phase_ends_at is not null and now() >= r.phase_ends_at + interval '5 seconds';
+  if not ((v_pl.is_host and v_due) or _gw_all_done(r.id) or v_late) then
+    return jsonb_build_object('ok', false, 'reason', 'too_early',
+      'wait_ms', greatest(0, round(extract(epoch from (r.phase_ends_at - now())) * 1000)));
+  end if;
+  perform _gw_step(r.id);
+  return jsonb_build_object('ok', true, 'phase', (select phase from guesswho_rooms where id = r.id));
+end $$;
+
+grant execute on function guesswho_advance(text, uuid, text, int) to anon, authenticated;
