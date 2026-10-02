@@ -7,6 +7,8 @@ test('micConstraints : micro choisi en exact, sinon micro par défaut', () => {
   assert.equal(micConstraints(null).deviceId, undefined)
   assert.equal(micConstraints('').deviceId, undefined)
   assert.equal(micConstraints('abc').echoCancellation, true)
+  assert.equal(micConstraints('').autoGainControl, false)
+  assert.equal(micConstraints('').noiseSuppression, false)
 })
 
 test('levelOf : 0 pour du silence, proche de 1 pour un signal fort', () => {
