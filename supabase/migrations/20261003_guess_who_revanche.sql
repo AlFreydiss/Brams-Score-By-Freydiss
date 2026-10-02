@@ -112,3 +112,38 @@ begin
 end $$;
 
 grant execute on function guesswho_advance(text, uuid, text, int) to anon, authenticated;
+
+-- ── Journal d'erreurs ────────────────────────────────────────────────────────
+-- Lu seulement par le staff dans Supabase (docs/sql/guess-who-events.sql).
+-- Pas d'audio, pas d'IP, pas de pseudo.
+create table if not exists guesswho_events (
+  id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  room_code text,
+  user_id text,
+  kind text not null,
+  detail text,
+  device text
+);
+create index if not exists guesswho_events_at_idx on guesswho_events (at);
+create index if not exists guesswho_events_room_at_idx on guesswho_events (room_code, at);
+alter table guesswho_events enable row level security; -- aucune policy : illisible côté site
+revoke all on guesswho_events from anon, authenticated;
+
+create or replace function guesswho_log(p_code text, p_user text, p_kind text, p_detail text default null, p_device text default null)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_code text := upper(left(coalesce(p_code, ''), 8));
+begin
+  if p_kind is null or p_kind not in ('mic_error', 'upload_failed', 'start_refused', 'offline', 'record_timeout') then
+    return jsonb_build_object('error', 'kind');
+  end if;
+  if (select count(*) from guesswho_events where room_code = v_code and at > now() - interval '1 minute') >= 20 then
+    return jsonb_build_object('error', 'rate');
+  end if;
+  delete from guesswho_events where at < now() - interval '30 days';
+  insert into guesswho_events (room_code, user_id, kind, detail, device)
+    values (v_code, left(p_user, 64), p_kind, left(p_detail, 500), left(p_device, 80));
+  return jsonb_build_object('ok', true);
+end $$;
+
+grant execute on function guesswho_log(text, text, text, text, text) to anon, authenticated;
