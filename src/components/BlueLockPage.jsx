@@ -140,7 +140,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 
         <button className="bl-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(21,101,192,.14)`,border:`1px solid rgba(21,101,192,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {chapterCount > 0 ? (readCount === 0 ? `Commencer scans (${chapterCount} ch.)` : readCount === chapterCount ? 'Scans terminés — relire' : `Reprendre lecture scans`) : (pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`)}
+          {chapterCount > 0 ? (readCount === 0 ? `Commencer scans (${chapterCount} ch.)` : readCount === chapterCount ? 'Scans terminés — relire' : `Reprendre lecture scans`) : (pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.kind === 'film' ? 'Film' : nextVideo?.kind === 'ova' ? 'OAV' : `Ép. ${nextVideo?.episode}`}${nextVideo?.title ? ` · ${nextVideo.title}` : ''}`)}
         </button>
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>

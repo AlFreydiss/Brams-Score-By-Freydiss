@@ -185,7 +185,7 @@ export default function TpnPage({ onClose }) {
             <span style={{ fontFamily: "'Pirata One',cursive", fontSize: 17, fontWeight: 900, color: '#fff' }}>{detailIdx !== null ? (VIDEOS[detailIdx]?.title || `Épisode ${VIDEOS[detailIdx]?.episode}`) : 'The Promised Neverland'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,.28)', fontWeight: 700 }}>{watchedCount}/{VIDEOS.length} vus</div>
+            <div className="ap-hdr-count" style={{ fontSize: 10.5, color: 'rgba(255,255,255,.28)', fontWeight: 700 }}>{watchedCount}/{VIDEOS.length} vus</div>
             <div style={{ width: 56, height: 5, borderRadius: 999, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}><div style={{ width: `${Math.round(watchedCount / VIDEOS.length * 100)}%`, height: '100%', background: `linear-gradient(90deg,${COLOR},${COLOR2})`, borderRadius: 999, transition: 'width .4s' }} /></div>
           </div>
         </div>

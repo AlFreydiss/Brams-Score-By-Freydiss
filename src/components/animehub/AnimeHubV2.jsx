@@ -261,6 +261,8 @@ export default function AnimeHubV2(props) {
   const toolbarRef = useRef(null)
   const scrollRaf = useRef(0)
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
+  // Le raccourci « / » n'existe qu'avec un clavier : pas de hint sur écran tactile
+  const kbdHint = useMemo(() => (window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ? '  ( / )' : ''), [])
   useEffect(() => {
     if (reduced || paused || slides.length < 2) return
     const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 7000)
@@ -645,7 +647,7 @@ export default function AnimeHubV2(props) {
             <span aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint, fontSize: 13 }}>⌕</span>
             <input
               ref={searchRef}
-              value={query} onChange={e => setQuery(e.target.value)} placeholder={mode === 'scans' ? 'Titre, auteur…  ( / )' : 'Rechercher un animé…  ( / )'}
+              value={query} onChange={e => setQuery(e.target.value)} placeholder={(mode === 'scans' ? 'Titre, auteur…' : 'Rechercher un animé…') + kbdHint}
               aria-label="Rechercher"
               style={{
                 width: '100%', boxSizing: 'border-box', padding: '9px 12px 9px 32px', borderRadius: 9,

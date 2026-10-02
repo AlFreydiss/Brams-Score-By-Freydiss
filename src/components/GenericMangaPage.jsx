@@ -66,13 +66,21 @@ function CatalogToolbar({ color, total, shown, query, onQuery, desc, onToggleDes
           {desc ? labels.desc : labels.asc}
         </button>
         <button onClick={onToggleUnread} style={pill(unread)}>{labels.unread}</button>
-        {ranges.length > 1 && ranges.map((r, i) => (
-          <button key={i} onClick={() => onRange(i)} style={pill(range === i)}>{r.label}</button>
-        ))}
         <div style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>
           {shown === total ? `${total} ${labels.noun}` : `${shown} / ${total}`}
         </div>
       </div>
+      {/* Tranches sur une seule ligne qui défile : les 9 tranches de Kingdom
+          prenaient trois lignes sur téléphone avant d'arriver aux chapitres. */}
+      {ranges.length > 1 && (
+        <div className="gm-ranges" role="tablist" aria-label="Tranches de chapitres" style={{ display: 'flex', gap: 6, marginTop: 10, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          {ranges.map((r, i) => (
+            <button key={i} role="tab" aria-selected={range === i}
+              onClick={e => { onRange(i); e.currentTarget.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }) }}
+              style={pill(range === i)}>{r.label}</button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -730,6 +738,20 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
     if (idx >= 0) openChapter(idx)
   }, [initialChapter, CHAPTERS, openChapter])
 
+  // L'URL suit le chapitre ouvert (?ch=N), et le perd à la fermeture : un
+  // rechargement ou un lien collé retombe sur le bon chapitre, pas sur le
+  // premier ouvert. replaceState : pas une entrée d'historique par chapitre.
+  useEffect(() => {
+    if (!series || (reading === null && initialChapter == null && !openedInitial.current)) return
+    try {
+      const url = new URL(window.location.href)
+      const num = reading !== null ? CHAPTERS[reading]?.num : null
+      if (num != null) url.searchParams.set('ch', String(num))
+      else url.searchParams.delete('ch')
+      if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url)
+    } catch {}
+  }, [reading, CHAPTERS, series, initialChapter])
+
   const markUpTo = useCallback((num) => {
     const n = Number(num)
     const count = CHAPTERS.filter(c => Number(c.num) <= n && progress[c.num] !== 'read').length
@@ -1140,7 +1162,7 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           </div>
         </div>
 
-        <div style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '8px 20px', background: 'rgba(17,18,20,0.9)', display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div className="gm-kbd-hints" style={{ flexShrink: 0, borderTop: '1px solid var(--border)', padding: '8px 20px', background: 'rgba(17,18,20,0.9)', display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
           {[['←→', 'Naviguer'], ['Échap', 'Retour hub']].map(([k, label]) => (
             <span key={k} style={{ fontSize: 11, color: 'var(--muted)' }}>
               <kbd style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 4, padding: '1px 6px', fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.6)', marginRight: 5 }}>{k}</kbd>
@@ -1159,6 +1181,8 @@ export default function GenericMangaPage({ chaptersData, videosData, color, name
           onClose={() => setReading(null)}
           onPrevChapter={() => setReading(i => Math.max(0, i - 1))}
           onNextChapter={() => setReading(i => Math.min(CHAPTERS.length - 1, i + 1))}
+          chapters={CHAPTERS}
+          onJumpChapter={i => setReading(Math.max(0, Math.min(CHAPTERS.length - 1, i)))}
           onFinish={finishChapter}
           isRead={progress[CHAPTERS[reading]?.num] === 'read'}
           namespace={namespace}

@@ -125,7 +125,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, episodeCount
 
         <button className="aot-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(124,196,224,.14)`,border:`1px solid rgba(124,196,224,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`}
+          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.kind === 'film' ? 'Film' : nextVideo?.kind === 'ova' ? 'OAV' : `Ép. ${nextVideo?.episode}`}${nextVideo?.title ? ` · ${nextVideo.title}` : ''}`}
         </button>
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
@@ -226,7 +226,7 @@ export default function YourNamePage({ onClose }) {
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-            <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus</div>
+            <div className="ap-hdr-count" style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${Math.round(watchedCount/VIDEOS.length*100)}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
             </div>

@@ -124,14 +124,14 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <button className="ds-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(0,184,148,.14)`,border:`1px solid rgba(0,184,148,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`}
+          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.kind === 'film' ? 'Film' : nextVideo?.kind === 'ova' ? 'OAV' : `Ép. ${nextVideo?.episode}`}${nextVideo?.title ? ` · ${nextVideo.title}` : ''}`}
         </button>
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'13', dot:COLOR2 },
-            { label:'OAV', value:'0', dot:'#fbbf24' },
-            { label:'Films', value:'0', dot:'#34d399' },
+            { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
+            { label:'OAV', value:String(VIDEOS.filter(v=>v.kind==='ova').length), dot:'#fbbf24' },
+            { label:'Films', value:String(VIDEOS.filter(v=>v.kind==='film').length), dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 8.2', dot:'#f97316' },
           ].map(s => (
@@ -225,7 +225,7 @@ export default function DrStonePage({ onClose }) {
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-            <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus</div>
+            <div className="ap-hdr-count" style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${Math.round(watchedCount/VIDEOS.length*100)}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
             </div>
@@ -252,7 +252,7 @@ export default function DrStonePage({ onClose }) {
                 <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
                   <div>
                     <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Saison 1 · {episodes.length} épisodes · VF + VO</div>
+                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>{(n => n > 1 ? `${n} saisons` : 'Saison 1')(new Set(episodes.map(e => e.v.season || 'S01')).size)} · {episodes.length} épisodes · VF + VO</div>
                   </div>
                   <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(0,184,148,.08)',border:'1px solid rgba(0,184,148,.18)' }}>
                     <div style={{ width:6,height:6,borderRadius:'50%',background:watchedCount===VIDEOS.length?'#34d399':COLOR,animation:watchedCount<VIDEOS.length&&watchedCount>0?'dsPulse 2s infinite':'none' }} />

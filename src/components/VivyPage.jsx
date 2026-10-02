@@ -174,7 +174,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'13', dot:COLOR2 },
+            { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
             { label:'Statut', value:'Terminé', dot:'#34d399' },
             { label:'Audio', value:'VOSTFR', dot:'#fbbf24' },
             { label:'Note', value:'★ 8.7', dot:'#f97316' },

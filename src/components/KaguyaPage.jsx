@@ -108,7 +108,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'37 + Film + OVA', dot:COLOR2 },
+            { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
             { label:'Statut', value:'3 saisons', dot:'#34d399' },
             { label:'Audio', value:'VOSTFR', dot:'#fbbf24' },
             { label:'Note', value:'★ 8.4', dot:'#f97316' },
@@ -210,7 +210,7 @@ export default function KaguyaPage({ onClose }) {
             </span>
           </div>
           <div style={{ display:'flex',alignItems:'center',gap:8 }}>
-            <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{total} vus</div>
+            <div className="ap-hdr-count" style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{total} vus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${total ? Math.round(watchedCount/total*100) : 0}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
             </div>

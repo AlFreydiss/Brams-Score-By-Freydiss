@@ -205,7 +205,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
 
         <button className="ff-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(244,81,30,.14)`,border:`1px solid rgba(244,81,30,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.title || `Ép. ${nextVideo?.episode}`}`}
+          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.kind === 'film' ? 'Film' : nextVideo?.kind === 'ova' ? 'OAV' : `Ép. ${nextVideo?.episode}`}${nextVideo?.title ? ` · ${nextVideo.title}` : ''}`}
         </button>
 
         <div style={{ display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'9px 0',borderRadius:12,background:'rgba(52,211,153,.08)',border:'1px solid rgba(52,211,153,.28)' }}>

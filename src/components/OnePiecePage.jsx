@@ -291,7 +291,7 @@ export default function OnePiecePage({ onClose }) {
           </div>
 
           <div className="op-header-right" style={{ display:'flex',alignItems:'center',gap:8 }}>
-            <div style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{availableCount} vus</div>
+            <div className="ap-hdr-count" style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{availableCount} vus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${availableCount>0?Math.round(watchedCount/availableCount*100):0}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
             </div>

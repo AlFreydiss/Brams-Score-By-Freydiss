@@ -113,7 +113,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         )}
         {load && <img decoding="async"
           loading={active ? 'eager' : 'lazy'}
-          fetchpriority={active ? 'high' : 'low'}
+          fetchPriority={active ? 'high' : 'low'}
           src={keyart} srcSet={srcSet} sizes={sizes}
           alt=""
           onLoad={onKeyartLoad}

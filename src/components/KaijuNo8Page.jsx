@@ -182,7 +182,7 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
           {[
-            { label:'Épisodes', value:'12', dot:COLOR2 },
+            { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
             { label:'Statut', value:'Saison 1', dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#fbbf24' },
             { label:'Note', value:'★ 7.8', dot:'#f97316' },

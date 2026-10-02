@@ -41,7 +41,9 @@ function loadFit() {
 
 // nextChapter : { num, title, pages } du chapitre suivant (écran de fin +
 // préchargement). sharePath : '/manga/<slug>' quand la page a une URL publique.
-export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)', nextChapter = null, sharePath = null, seriesTitle = null }) {
+// chapters + onJumpChapter (optionnels) : liste déroulante pour sauter à
+// n'importe quel chapitre sans repasser par la page série.
+export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextChapter, totalChapters, onFinish, isRead, namespace = 'manga', themeColor = 'var(--accent)', nextChapter = null, sharePath = null, seriesTitle = null, chapters = null, onJumpChapter = null }) {
   const pages = chapter.pages || []
   const [page,        setPage]        = useState(0)
   const [imgLoaded,   setImgLoaded]   = useState(false)
@@ -234,6 +236,31 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
     return () => el.removeEventListener('wheel', fn)
   }, [isWebtoon])
 
+  // Webtoon : la position était perdue à chaque fermeture (seul le mode page
+  // retenait sa page). On retient la page en haut de l'écran, par chapitre.
+  const wtKey = `${namespace}_wt_${chapter.num}`
+  const wtSaved = useRef(-1)
+  const wtWarmed = useRef(null)
+  useEffect(() => {
+    if (!isWebtoon) return
+    const el = scrollRef.current
+    if (!el) return
+    wtSaved.current = -1
+    let saved = 0
+    try { saved = parseInt(localStorage.getItem(wtKey) || '0', 10) || 0 } catch {}
+    if (saved > 0 && saved < total) {
+      // Les images au-dessus n'ont pas encore de hauteur : on recale quand la
+      // cible a chargé, puis une seconde fois quand ses voisines ont poussé.
+      const img = el.querySelectorAll('img')[saved]
+      const jump = () => img?.scrollIntoView({ block: 'start' })
+      jump()
+      if (img && !img.complete) img.addEventListener('load', jump, { once: true })
+      const t = setTimeout(jump, 900)
+      return () => { clearTimeout(t); img?.removeEventListener('load', jump) }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWebtoon, chapter.num])
+
   useEffect(() => {
     if (!isWebtoon) return
     const el = scrollRef.current
@@ -241,10 +268,43 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
     const fn = () => {
       const scrollable = el.scrollHeight - el.clientHeight
       setWebtoonPct(scrollable > 0 ? Math.min(1, el.scrollTop / scrollable) : 1)
+      const imgs = el.querySelectorAll('img')
+      const top = el.getBoundingClientRect().top + 1
+      let idx = 0
+      for (let i = 0; i < imgs.length; i++) {
+        if (imgs[i].getBoundingClientRect().bottom > top) { idx = i; break }
+      }
+      if (idx !== wtSaved.current) {
+        wtSaved.current = idx
+        try { idx > 0 ? localStorage.setItem(wtKey, String(idx)) : localStorage.removeItem(wtKey) } catch {}
+      }
     }
     el.addEventListener('scroll', fn, { passive: true })
     return () => el.removeEventListener('scroll', fn)
-  }, [isWebtoon])
+  }, [isWebtoon, wtKey])
+
+  // Webtoon : arrivé en bas, le chapitre compte comme lu sans avoir à cliquer,
+  // et les premières pages du suivant partent en avance.
+  useEffect(() => {
+    if (!isWebtoon) return
+    if (webtoonPct > 0.8 && nextChapter?.pages?.length && wtWarmed.current !== chapter.num) {
+      wtWarmed.current = chapter.num
+      for (const src of nextChapter.pages.slice(0, 3)) { const im = new Image(); im.decoding = 'async'; im.src = src }
+    }
+    // Mesure en direct, pas l'état : au changement de chapitre l'état garde le
+    // % du précédent, et tant que les images n'ont pas chargé la colonne est
+    // courte (donc « en bas »). Il faut voir la dernière page, chargée.
+    const el = scrollRef.current
+    const imgs = el?.querySelectorAll('img')
+    const last = imgs?.[imgs.length - 1]
+    const atBottom = !!last && last.complete && last.naturalHeight > 0 &&
+      last.getBoundingClientRect().top < el.getBoundingClientRect().bottom
+    if (atBottom && !markedRead && total > 0) {
+      onFinish(); setMarkedRead(true)
+      try { localStorage.removeItem(wtKey) } catch {}
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWebtoon, webtoonPct, chapter.num])
 
   const changePage = useCallback((newPage) => {
     const p = Math.max(0, Math.min(total - 1, newPage))
@@ -280,7 +340,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
   useEffect(() => {
     const fn = e => {
       const tag = e.target.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       if (e.key === 'Escape') { onClose(); return }
       if (e.key === '+' || e.key === '=') { setZoom(z => clampZoom(z + 0.1)); return }
       if (e.key === '-') { setZoom(z => clampZoom(z - 0.1)); return }
@@ -382,7 +442,23 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
           >✕</button>
           <div>
             <div className="mr-title" style={{ fontWeight: 700, color: '#fff', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              {chapter.emoji} Ch.{chapter.num}
+              {chapters?.length > 1 && onJumpChapter ? (
+                <select
+                  value={chapterIndex} onChange={e => { onJumpChapter(Number(e.target.value)); e.target.blur() }}
+                  aria-label="Aller au chapitre" title="Aller au chapitre"
+                  style={{
+                    maxWidth: isMobile ? 120 : 260, padding: '3px 6px', borderRadius: 6, cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)',
+                    color: '#fff', fontWeight: 700, fontSize: 'inherit', fontFamily: 'inherit', colorScheme: 'dark',
+                  }}
+                >
+                  {chapters.map((c, i) => (
+                    <option key={i} value={i}>
+                      {`Ch. ${c.num}`}{c.title && !/^(chapitre\s*)?[\d.]+$/i.test(String(c.title).trim()) ? ` · ${c.title}` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : <>{chapter.emoji} Ch.{chapter.num}</>}
               {sharePath && (
                 <button onClick={share} title="Copier le lien de ce chapitre" aria-label="Partager ce chapitre" style={{
                   padding: '2px 8px', borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 700,

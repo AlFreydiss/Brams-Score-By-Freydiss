@@ -171,3 +171,15 @@ html.low-end * {
     scroll-behavior: auto !important;
   }
 }
+
+/* Pages anime : le compteur « x/y vus » de l'en-tête chevauchait le titre
+   centré sur téléphone. La barre de progression à côté suffit. */
+@media (max-width: 560px) {
+  .ap-hdr-count { display: none; }
+}
+
+/* Page série des scans : les raccourcis clavier n'ont pas de sens au doigt. */
+@media (hover: none) and (pointer: coarse) {
+  .gm-kbd-hints { display: none !important; }
+}
+.gm-ranges::-webkit-scrollbar { display: none; }
