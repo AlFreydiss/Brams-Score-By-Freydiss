@@ -137,6 +137,17 @@ function Sidebar({ active, setActive, badge }) {
             </button>
           )
         })}
+        {/* Outils sur leur propre page (pas des onglets du panel). */}
+        <div style={{ margin: '14px 12px 6px', fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase', color: C.muted }}>Outils</div>
+        {[['/staff/contenus', 'Épisodes & chapitres'], ['/staff/sakuga', 'Découpe Sakuga']].map(([to, txt]) => (
+          <button key={to} onClick={() => navigate(to)} onMouseEnter={() => setHov(to)} onMouseLeave={() => setHov(null)}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit', border: 'none',
+              background: hov === to ? 'rgba(255,255,255,0.03)' : 'transparent', color: hov === to ? C.text : C.sub, fontWeight: 500 }}>
+            <span style={{ width: 5, flexShrink: 0 }} />
+            <span style={{ flex: 1 }}>{txt}</span>
+            <span aria-hidden style={{ color: C.muted }}>↗</span>
+          </button>
+        ))}
       </nav>
       <div style={{ padding: '14px 16px', borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 9 }}>
         <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.pos, boxShadow: `0 0 7px ${C.pos}`, animation: 'pulse 2s ease-in-out infinite', flexShrink: 0 }} />

@@ -32,6 +32,7 @@ import Footer from './components/Footer.jsx'
 import QuoteSection from './components/QuoteSection.jsx'
 import { useInView } from './hooks/useInView.js'
 import { useAnalytics, setAnalyticsUser, track } from './lib/analytics.js'
+import { prepareAnime } from './lib/mediaAdditions.js'
 import { TeleportProvider } from './features/nouveau-monde/transition/TeleportTransition.jsx'
 
 // Lazy â€” chargÃ©s uniquement quand ouverts
@@ -89,6 +90,7 @@ const BerryShop          = lazyWithReload(() => import('./components/BerryShop.j
 const SupportPage        = lazyWithReload(() => import('./components/SupportPage.jsx'))
 const BramsTraitorPage   = lazyWithReload(() => import('./components/BramsTraitorPage.jsx'))
 const StaffPanel         = lazyWithReload(() => import('./components/StaffPanel.jsx'))
+const MediaAdminPage     = lazyWithReload(() => import('./components/MediaAdminPage.jsx'))
 const BlindTestPage      = lazyWithReload(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazyWithReload(() => import('./components/BlindTestLeaderboard.jsx'))
 const TierListPage       = lazyWithReload(() => import('./components/TierListPage.jsx'))
@@ -534,8 +536,11 @@ export default function App() {
   // â”€â”€ URL = source de vÃ©ritÃ© des overlays anime/scan â”€â”€
   // /animes-scan â†’ Hub Â· /animes-scan/<id> â†’ page anime Â· /animes-scan/mon-univers
   // Â· /scans â†’ lecteur de scans. Reload, partage de lien et bouton retour marchent.
+  const animeOpenToken = useRef(0)
   useEffect(() => {
     const path = location.pathname
+    // Chaque navigation invalide une ouverture d'animé encore en attente.
+    const token = ++animeOpenToken.current
     if (path === '/scans') { closeAllOverlays(); setScansOpen(true); return }
     if (path === '/animes-scan' || path.startsWith('/animes-scan/')) {
       const sub = decodeURIComponent(path.replace(/^\/animes-scan\/?/, '')).replace(/\/+$/, '')
@@ -543,7 +548,9 @@ export default function App() {
       if (!sub) { setAnimeHubOpen(true); setReturnToMon(false) }
       else if (sub === 'mon-univers') setMonUniversOpen(true)
       else if (ANIME_SETTERS[sub]) {
-        ANIME_SETTERS[sub](true)
+        // Épisodes ajoutés par le staff : fusionnés dans la liste avant que la
+        // page ne la lise (1,5 s max, sinon on ouvre sans eux).
+        prepareAnime(sub).finally(() => { if (animeOpenToken.current === token) ANIME_SETTERS[sub](true) })
         markAnimeSeen(sub) // le badge « +N nouveaux » du hub disparaît une fois la série ouverte
         track('anime_view', { title: ANIME_TITLES[sub] || sub }) // point central : couvre hub, URL directe et Mon Univers
       }
@@ -756,6 +763,8 @@ export default function App() {
         <Route path="/studio-doublage"  element={<PageLayout><DoublageStudioPage /></PageLayout>} />
         {/* Outil staff pour découper les extraits du tournoi Sakuga. */}
         <Route path="/staff/sakuga" element={<SakugaClipperPage />} />
+        {/* Outil staff : publier un épisode ou un chapitre sans redéployer. */}
+        <Route path="/staff/contenus" element={<MediaAdminPage />} />
         <Route path="/akinator"    element={<AkinatorPage      />} />
         <Route path="/echecs"      element={<GameLayout><EchecsPage /></GameLayout>} />
         <Route path="/dames"       element={<GameLayout><DamesPage /></GameLayout>} />

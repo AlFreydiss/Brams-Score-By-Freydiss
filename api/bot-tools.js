@@ -13,6 +13,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { OPENING_BACKGROUNDS } from '../src/data/opening-backgrounds.js'
+import { isStaff } from '../src/lib/roles.js'
 import { openingBgPriceCents } from '../src/lib/openingBgPricing.js'
 import { generateMoves as damesLegal, applyMove as damesApply, gameStatus as damesStatus, opp as damesOpp, rulesFromVariante as damesRules, P as DAMES_P, M as DAMES_M } from '../src/features/dames/engine/draughts-engine.js'
 
@@ -299,6 +300,7 @@ function r2SanitizeKey(name) {
 }
 // Types autorisés pour les pièces jointes DM (uploads par utilisateur connecté)
 const R2_DM_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'audio/webm', 'audio/wav', 'audio/mpeg', 'audio/ogg', 'audio/mp4', 'video/webm', 'video/mp4', 'video/quicktime', 'application/pdf']
+const R2_STAFF_TYPES = ['video/mp4', 'video/webm', 'image/jpeg', 'image/png', 'image/webp', 'text/vtt']
 const R2_ANON = process.env.SUPABASE_ANON_KEY
   || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplcWV0cm11bHFuZHh1Z2Zib2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzUxNzksImV4cCI6MjA5MTk1MTE3OX0.HQbMRJnT_FAFfA8kYi-DYgjOuPnGpQU5zkeRAGb8Qso'
 function r2ResolveDiscord(user) {
@@ -334,6 +336,27 @@ async function r2Presign(req, res) {
       if (!r.ok) return res.status(401).json({ error: 'Session invalide.' })
       user = await r.json()
     } catch { return res.status(500).json({ error: 'Vérification auth impossible.' }) }
+    // 3) Staff qui ajoute un épisode / chapitre (page /staff/contenus) :
+    //    clé contenus/<anime|manga>/<série>/, vidéo, image ou sous-titres.
+    const area = req.body?.area
+    if (area === 'anime' || area === 'manga') {
+      if (!isStaff(r2ResolveDiscord(user), user?.id)) return res.status(403).json({ error: 'Réservé au staff.' })
+      if (!series || !/^[a-z0-9-]{1,48}$/.test(String(series))) return res.status(400).json({ error: 'Série invalide.' })
+      if (contentType && !R2_STAFF_TYPES.includes(contentType)) return res.status(400).json({ error: 'Type de fichier non autorisé (MP4, WebM, image ou VTT).' })
+      if (size && Number(size) > 5 * 1024 * 1024 * 1024) return res.status(400).json({ error: 'Fichier trop volumineux (max 5 Go).' })
+      const key = `contenus/${area}/${series}/${Date.now()}-${r2SanitizeKey(filename)}`
+      const client = new S3Client({
+        region: 'auto', endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: { accessKeyId: ACCESS_KEY, secretAccessKey: SECRET_KEY },
+      })
+      try {
+        const uploadUrl = await getSignedUrl(client, new PutObjectCommand({ Bucket: BUCKET, Key: key, ContentType: contentType || 'application/octet-stream' }), { expiresIn: 3 * 3600 })
+        return res.status(200).json({ uploadUrl, publicUrl: `${R2_PUBLIC_BASE}/${key}`, key })
+      } catch (err) {
+        console.error('[r2-presign staff]', err?.message || err)
+        return res.status(500).json({ error: err?.message || 'presign_failed' })
+      }
+    }
     if (contentType && !R2_DM_TYPES.includes(contentType)) return res.status(400).json({ error: 'Type de fichier non autorisé.' })
     // Vidéos (stories) : plafond plus haut — l'egress R2 est gratuit, seul le stockage compte.
     const isVideoUpload = String(contentType || '').startsWith('video/')
@@ -353,6 +376,81 @@ async function r2Presign(req, res) {
     console.error('[r2-presign]', err?.message || err)
     return res.status(500).json({ error: err?.message || 'presign_failed' })
   }
+}
+
+// ── Épisodes / chapitres ajoutés par le staff ────────────────────────────────
+// POST : crée ou remplace une fiche (même série + saison + numéro).
+// DELETE ?id=<uuid> : retire une fiche (le fichier reste sur R2).
+// La lecture se fait directement en REST anon (RLS select publique).
+const MEDIA_URL_RE = /^https:\/\/[^\s"'<>]+$/
+function cleanMediaData(kind, data) {
+  const d = data && typeof data === 'object' ? data : {}
+  const url = (u) => (typeof u === 'string' && MEDIA_URL_RE.test(u) && u.length < 1000 ? u : null)
+  if (kind === 'chapter') {
+    const pages = Array.isArray(d.pages) ? d.pages.map(url).filter(Boolean).slice(0, 600) : []
+    return pages.length ? { pages } : null
+  }
+  const src = url(d.src)
+  if (!src) return null
+  const out = { src }
+  if (url(d.thumbnail)) out.thumbnail = url(d.thumbnail)
+  if (typeof d.duration === 'string' && /^\d{1,2}(:\d{2}){1,2}$/.test(d.duration)) out.duration = d.duration
+  if (typeof d.audioLabel === 'string') out.audioLabel = d.audioLabel.slice(0, 30)
+  if (typeof d.audioLang === 'string' && /^[a-z]{2}$/.test(d.audioLang)) out.audioLang = d.audioLang
+  if (url(d.subtitles)) out.subtitles = url(d.subtitles)
+  if (typeof d.label === 'string' && d.label.trim()) out.label = d.label.trim().slice(0, 40)
+  return out
+}
+async function mediaAdditions(req, res) {
+  if (req.method !== 'POST' && req.method !== 'DELETE') return res.status(405).json({ error: 'Method not allowed' })
+  const token = (req.headers['authorization'] || '').replace(/^Bearer\s+/i, '').trim()
+  if (!token) return res.status(401).json({ error: 'Connexion requise.' })
+  let user
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { Authorization: `Bearer ${token}`, apikey: R2_ANON } })
+    if (!r.ok) return res.status(401).json({ error: 'Session invalide.' })
+    user = await r.json()
+  } catch { return res.status(500).json({ error: 'Vérification auth impossible.' }) }
+  const discordId = String(r2ResolveDiscord(user))
+  if (!isStaff(discordId, user?.id)) return res.status(403).json({ error: 'Réservé au staff.' })
+
+  let headers
+  try { headers = getServiceHeaders() } catch (e) { return res.status(500).json({ error: e.message }) }
+
+  if (req.method === 'DELETE') {
+    const id = String(req.query?.id || '')
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return res.status(400).json({ error: 'id invalide' })
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/media_additions?id=eq.${id}`, { method: 'DELETE', headers })
+    if (!r.ok) return res.status(502).json({ error: `Suppression refusée (${r.status})` })
+    return res.status(200).json({ ok: true })
+  }
+
+  const b = req.body || {}
+  const kind = b.kind
+  if (kind !== 'episode' && kind !== 'chapter') return res.status(400).json({ error: 'kind invalide' })
+  const series = String(b.series || '')
+  if (!/^[a-z0-9-]{1,48}$/.test(series)) return res.status(400).json({ error: 'Série invalide.' })
+  const num = Number(b.num)
+  if (!Number.isFinite(num) || num < 0 || num > 100000) return res.status(400).json({ error: 'Numéro invalide.' })
+  const season = kind === 'episode' ? String(b.season || 'S01').slice(0, 20) : ''
+  if (!/^[A-Za-z0-9 _-]*$/.test(season)) return res.status(400).json({ error: 'Saison invalide.' })
+  const title = typeof b.title === 'string' ? b.title.trim().slice(0, 200) : ''
+  const data = cleanMediaData(kind, b.data)
+  if (!data) return res.status(400).json({ error: kind === 'chapter' ? 'Aucune page valide.' : 'Lien vidéo manquant.' })
+
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/media_additions?on_conflict=kind,series,season,num`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify({ kind, series, num, season, title: title || null, data, created_by: discordId }),
+  })
+  const out = await r.json().catch(() => null)
+  if (!r.ok) {
+    const msg = out?.message || ''
+    return res.status(502).json({ error: /media_additions/.test(msg) && /does not exist|schema cache/.test(msg)
+      ? 'Table media_additions absente : colle supabase/migrations/20261003_media_additions.sql dans Supabase.'
+      : `Enregistrement refusé (${r.status}) ${msg}`.trim() })
+  }
+  return res.status(200).json({ ok: true, row: Array.isArray(out) ? out[0] : out })
 }
 
 // ── Aperçu de lien (OpenGraph) ────────────────────────────────────────────────
@@ -1515,6 +1613,7 @@ export default async function handler(req, res) {
   if (tool === 'sync-bot')              return syncBot(req, res)
   if (tool === 'akinator')              return akinator(req, res)
   if (tool === 'r2-presign')            return r2Presign(req, res)
+  if (tool === 'media-additions')       return mediaAdditions(req, res)
   if (tool === 'og')                    return ogPreview(req, res)
   if (tool === 'turn-credentials')      return turnCredentials(req, res)
   if (tool === 'stripe-checkout')       return stripeCheckout(req, res)

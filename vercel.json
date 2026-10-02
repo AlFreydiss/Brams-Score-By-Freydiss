@@ -21,6 +21,10 @@
       "destination": "/api/bot-tools?tool=r2-presign"
     },
     {
+      "source": "/api/media-additions",
+      "destination": "/api/bot-tools?tool=media-additions"
+    },
+    {
       "source": "/api/og",
       "destination": "/api/bot-tools?tool=og"
     },
