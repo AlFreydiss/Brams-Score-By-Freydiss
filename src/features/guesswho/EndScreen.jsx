@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { C, FONT_BODY, FONT_DISPLAY, Btn, PhaseFrame, SPRING_POP } from './manga.jsx'
+import { Btn, PhaseFrame, SPRING_POP } from './manga.jsx'
+import { T, F, LINE, RADIUS, SHADOW, plate, pill, label } from './theme.js'
 import { AvatarName, ClipPlayer, Lives, avatarUrl } from './ui.jsx'
 import { Confetti } from './fx.jsx'
 import { play } from './sfx.js'
@@ -18,49 +19,54 @@ function leaders(rows, score) {
   return { max, names: top.length > 2 ? `${names} +${top.length - 2}` : names }
 }
 
-// Podium : 2e · 1er · 3e, marches de hauteurs différentes qui montent l'une après l'autre.
+// Podium : 2e · 1er · 3e, plaques de hauteurs différentes, médailles patinées.
+const MEDAL = { 1: T.medal.gold, 2: T.medal.silver, 3: T.medal.bronze }
 function Podium({ rows }) {
   const reduce = useReducedMotion()
-  const order = [[rows[1], 2, 92], [rows[0], 1, 128], [rows[2], 3, 70]]
+  const order = [[rows[1], 2, 90], [rows[0], 1, 120], [rows[2], 3, 70]]
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'end', gap: 8, margin: '6px auto 22px', maxWidth: 560 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'end', gap: 10, margin: '6px auto 24px', maxWidth: 560 }}>
       {order.map(([p, rank, h]) => (
-        <div key={rank} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 0 }}>
+        <div key={rank} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0 }}>
           {p && (
-            <motion.div initial={reduce ? false : { y: -30, opacity: 0, scale: 0.6 }} animate={{ y: 0, opacity: 1, scale: 1 }}
-              transition={{ ...SPRING_POP, delay: reduce ? 0 : 0.35 + (3 - rank) * 0.35 }}
+            <motion.div initial={reduce ? false : { y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, delay: reduce ? 0 : 0.35 + (3 - rank) * 0.3 }}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0, maxWidth: '100%' }}>
-              {rank === 1 && <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: `drop-shadow(2px 2px 0 ${C.ink})` }}>👑</span>}
-              <img src={avatarUrl(p)} alt="" width={rank === 1 ? 72 : 56} height={rank === 1 ? 72 : 56} style={{
-                width: rank === 1 ? 72 : 56, height: rank === 1 ? 72 : 56, borderRadius: '50%', objectFit: 'cover',
-                border: `3px solid ${C.ink}`, background: C.paper, boxShadow: rank === 1 ? `0 0 0 4px ${C.yellow}, 0 0 0 7px ${C.ink}` : 'none',
+              <img src={avatarUrl(p)} alt="" width={rank === 1 ? 68 : 54} height={rank === 1 ? 68 : 54} style={{
+                width: rank === 1 ? 68 : 54, height: rank === 1 ? 68 : 54, borderRadius: '50%', objectFit: 'cover', background: T.raised,
+                border: `1px solid ${rank === 1 ? T.accent : T.line}`, boxShadow: rank === 1 ? `0 0 0 4px ${T.glow}, 0 0 28px rgba(199,168,105,0.22)` : 'none',
               }} />
-              <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT_DISPLAY, fontSize: rank === 1 ? 17 : 14, color: C.ink }}>
+              <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: F.ui, fontWeight: 600, fontSize: rank === 1 ? 16 : 14, color: T.textHi }}>
                 {p.display_name || 'Invité'}
               </span>
-              <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 13, color: C.textMut }}>{plural(p.total_votes, 'vote')}</span>
+              <span style={{ fontFamily: F.ui, fontWeight: 500, fontSize: 12.5, color: T.textMute }}>{plural(p.total_votes, 'vote')}</span>
             </motion.div>
           )}
           <motion.div initial={reduce ? false : { scaleY: 0 }} animate={{ scaleY: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: reduce ? 0 : (3 - rank) * 0.3 }}
+            transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1], delay: reduce ? 0 : (3 - rank) * 0.25 }}
             style={{
-              width: '100%', height: h, transformOrigin: 'bottom', display: 'grid', placeItems: 'start center', paddingTop: 8,
-              background: rank === 1 ? C.yellow : rank === 2 ? C.paper : C.tone, border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`,
-              fontFamily: FONT_DISPLAY, fontSize: rank === 1 ? 40 : 30, color: C.ink, opacity: p ? 1 : 0.35, boxSizing: 'border-box',
-            }}>{rank}</motion.div>
+              ...plate({ borderRadius: `${RADIUS.md}px ${RADIUS.md}px 4px 4px` }),
+              width: '100%', height: h, transformOrigin: 'bottom', display: 'grid', placeItems: 'start center', paddingTop: 12,
+              opacity: p ? 1 : 0.35, boxSizing: 'border-box',
+            }}>
+            <span style={{
+              width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: MEDAL[rank],
+              color: T.onAccent, fontFamily: F.display, fontWeight: 600, fontSize: 15, boxShadow: `inset 0 1px 0 rgba(255,255,255,.35), ${SHADOW.soft}`,
+            }}>{rank}</span>
+          </motion.div>
         </div>
       ))}
     </div>
   )
 }
 
-function Stat({ icon, label, value, detail, i }) {
+function Stat({ icon, label: text, value, detail, i }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_POP, delay: 1.3 + i * 0.12 }}
-      style={{ border: `3px solid ${C.ink}`, background: C.paper, padding: '10px 12px', boxShadow: `3px 3px 0 ${C.ink}`, minWidth: 0 }}>
-      <div style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 12.5, color: C.textMut }}>{icon} {label}</div>
-      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 17, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
-      {detail && <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 12.5, color: C.ink }}>{detail}</div>}
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 1.2 + i * 0.1 }}
+      style={{ ...plate({ borderRadius: RADIUS.md }), padding: '12px 14px', minWidth: 0 }}>
+      <div style={label({ display: 'flex', alignItems: 'center', gap: 6 })}><span aria-hidden style={{ letterSpacing: 0 }}>{icon}</span>{text}</div>
+      <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 18, color: T.textHi, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+      {detail && <div style={{ fontFamily: F.ui, fontWeight: 500, fontSize: 12.5, color: T.textMute }}>{detail}</div>}
     </motion.div>
   )
 }
@@ -126,7 +132,7 @@ export default function EndScreen({ g }) {
     played > 0 && { icon: '📖', label: 'Tours joués', value: `${played}` },
   ].filter(Boolean)
   return (
-    <PhaseFrame eyebrow="Fin du chapitre" prompt="Le classement final" tilt={0.4}>
+    <PhaseFrame eyebrow="Fin de partie" prompt="Le classement final">
       <Confetti count={48} duration={3000} />
       <Podium rows={rows} />
       {/* Actions en haut : pas besoin de défiler pour relancer. */}
@@ -141,16 +147,16 @@ export default function EndScreen({ g }) {
           ? <Btn onClick={replay} disabled={busy} style={{ flex: '1 1 220px', minHeight: 60, fontSize: 20 }}>
               {busy ? 'Relance…' : showReady ? `🔁 Revanche (${readyCount}/${seated.length} prêts)` : '🔁 Rejouer'}
             </Btn>
-          : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
+          : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: F.ui, fontWeight: 600, color: T.textMute, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
               {showReady ? `${readyCount}/${seated.length} prêts · l'hôte lance la revanche…` : "En attente de l'hôte pour rejouer…"}
             </span>}
         <Btn variant="ghost" onClick={() => navigate('/guess-who')}>Quitter</Btn>
       </div>
       {replayErr && (
-        <div role="alert" style={{ margin: '-8px 0 18px', fontFamily: FONT_BODY, fontWeight: 800, fontSize: 15, color: '#c8102e' }}>{replayErr}</div>
+        <div role="alert" style={{ margin: '-8px 0 18px', fontFamily: F.ui, fontWeight: 600, fontSize: 15, color: T.danger }}>{replayErr}</div>
       )}
       {showReady && readyCount > 0 && (
-        <div style={{ margin: '-6px 0 16px', fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.ink }}>
+        <div style={{ margin: '-6px 0 16px', fontFamily: F.ui, fontWeight: 500, fontSize: 14, color: T.textMute }}>
           ✓ Prêts : {seated.filter((p) => p.ready).map((p) => p.display_name || 'Invité').join(', ')}
         </div>
       )}
@@ -162,16 +168,16 @@ export default function EndScreen({ g }) {
       )}
 
       {top && (
-        <div style={{ border: `3px solid ${C.ink}`, background: C.ink, color: C.paper, padding: 16, marginBottom: 14, display: 'grid', gap: 12 }}>
-          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.3rem,3.5vw,1.8rem)', color: C.yellow }}>🔁 L'imitation de la partie</div>
-          <div style={{ fontFamily: FONT_BODY, fontWeight: 700 }}>
-            {topPlayer?.display_name || 'Un joueur'} sur « {top.clip} » · tour {top.round} · {plural(top.votes, 'vote')}
+        <div style={{ ...plate({ borderRadius: RADIUS.lg }), border: `1px solid ${T.accent}`, padding: 18, marginBottom: 14, display: 'grid', gap: 12 }}>
+          <div style={label({ color: T.accent })}>L'imitation de la partie</div>
+          <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.2rem,3.4vw,1.6rem)', color: T.textHi, lineHeight: 1.2 }}>
+            {topPlayer?.display_name || 'Un joueur'} <span style={{ color: T.textMute, fontFamily: F.ui, fontWeight: 500, fontSize: 15 }}>sur « {top.clip} » · tour {top.round} · {plural(top.votes, 'vote')}</span>
           </div>
-          <div style={{ background: C.paper, padding: 10, border: `3px solid ${C.ink}` }}><ClipPlayer url={top.audio_url} label="l'imitation de la partie" big /></div>
+          <ClipPlayer url={top.audio_url} label="l'imitation de la partie" big />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <a href={top.audio_url} download={`guesswho-${(topPlayer?.display_name || 'imitation').replace(/[^a-z0-9]+/gi, '-')}.${top.audio_url.includes('mp4') ? 'm4a' : 'webm'}`}
-              className="gw-btn" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 48, padding: '0 18px', background: C.yellow, color: C.ink, border: `3px solid ${C.paper}`, fontFamily: FONT_DISPLAY, textDecoration: 'none' }}>Télécharger</a>
-            <Btn variant="sea" onClick={share}>Partager</Btn>
+              className="gw-btn" style={{ ...pill('ghost'), display: 'inline-flex', alignItems: 'center', minHeight: 48, padding: '0 20px', fontFamily: F.ui, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>Télécharger</a>
+            <Btn variant="ghost" onClick={share}>Partager</Btn>
           </div>
         </div>
       )}
@@ -179,11 +185,11 @@ export default function EndScreen({ g }) {
       {rest.length > 0 && (
         <div style={{ display: 'grid', gap: 8 }}>
           {rest.map((p, i) => (
-            <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.paper }}>
-              <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, color: C.ink, width: 24 }}>{i + 4}</span>
+            <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', border: LINE, borderRadius: RADIUS.md, background: T.deep }}>
+              <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 15, color: T.textMute, width: 22 }}>{i + 4}</span>
               <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={p} size={36} /></div>
-              {p.ready && <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.ok }}>✓ prêt</span>}
-              <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, whiteSpace: 'nowrap' }}>{plural(p.total_votes, 'vote')}</span>
+              {p.ready && <span style={{ fontFamily: F.ui, fontWeight: 600, color: T.ok }}>✓ prêt</span>}
+              <span style={{ fontFamily: F.ui, fontWeight: 500, color: T.textMute, whiteSpace: 'nowrap' }}>{plural(p.total_votes, 'vote')}</span>
               <Lives lives={p.lives} max={g.maxLives} size={16} />
             </div>
           ))}
