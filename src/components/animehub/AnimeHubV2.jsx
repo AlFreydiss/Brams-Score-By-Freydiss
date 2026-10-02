@@ -119,6 +119,43 @@ function readProgress(ns) {
   } catch { return { pct: 0, label: '' } }
 }
 
+// L'appui long des cartes (Ma liste, statut) ne se devine pas : on le dit une
+// fois, aux écrans tactiles seulement, puis plus jamais.
+const LP_HINT_KEY = 'ah2_longpress_hint'
+function LongPressHint({ active }) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    if (!active) return
+    if (!window.matchMedia?.('(hover: none) and (pointer: coarse)').matches) return
+    try { if (localStorage.getItem(LP_HINT_KEY)) return } catch { return }
+    const t1 = setTimeout(() => {
+      setShow(true)
+      try { localStorage.setItem(LP_HINT_KEY, '1') } catch {}
+    }, 2500)
+    return () => clearTimeout(t1)
+  }, [active])
+  useEffect(() => {
+    if (!show) return
+    const t = setTimeout(() => setShow(false), 7000)
+    return () => clearTimeout(t)
+  }, [show])
+  if (!show) return null
+  return (
+    <div role="status" onClick={() => setShow(false)} style={{
+      position: 'fixed', left: 16, right: 16, bottom: 'calc(96px + env(safe-area-inset-bottom))', zIndex: 80,
+      maxWidth: 420, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12,
+      padding: '12px 14px', borderRadius: 12, background: 'rgba(16,19,27,0.96)', border: `1px solid ${C.brass}66`,
+      boxShadow: '0 12px 32px -10px rgba(0,0,0,.8)', backdropFilter: 'blur(10px)',
+      fontFamily: FONT_BODY, fontSize: 13.5, color: C.text, lineHeight: 1.35, animation: 'ah2HintIn .35s ease-out',
+    }}>
+      <style>{'@keyframes ah2HintIn { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: none } }'}</style>
+      <span aria-hidden style={{ fontSize: 22 }}>👆</span>
+      <span><b style={{ color: C.brass }}>Astuce :</b> appui long sur une affiche pour l'ajouter à ta liste ou la marquer vue.</span>
+      <span aria-hidden style={{ marginLeft: 'auto', color: C.dim, fontSize: 16 }}>✕</span>
+    </div>
+  )
+}
+
 export default function AnimeHubV2(props) {
   const { discordId } = useAuth()
 
@@ -968,6 +1005,7 @@ export default function AnimeHubV2(props) {
         )}
       </div>
       </div>{/* fin bloc contenu chevauchant */}
+      <LongPressHint active={mode === 'animes' && !searching} />
     </div>
   )
 }

@@ -118,6 +118,18 @@ export default function Lobby({ code, g }) {
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)) } catch { /* stockage indisponible */ }
   }
   const link = `${location.origin}/guess-who/${code}`
+  // QR dessiné dans le navigateur : il dépendait d'api.qrserver.com (lien du
+  // salon envoyé à un tiers, et plus de QR si ce service tombait).
+  const [qrSrc, setQrSrc] = useState(null)
+  useEffect(() => {
+    if (!qr || qrSrc) return
+    let alive = true
+    import('qrcode')
+      .then((m) => m.toDataURL(link, { margin: 0, width: 400, errorCorrectionLevel: 'M', color: { dark: C.ink, light: '#ffffff' } }))
+      .then((src) => { if (alive) setQrSrc(src) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [qr, qrSrc, link])
   const n = g.players.length
   const enough = n >= MIN_PLAYERS
   // Petit « pop » quand quelqu'un arrive (pas au premier rendu).
@@ -171,8 +183,9 @@ export default function Lobby({ code, g }) {
             <motion.div initial={{ scale: 0.7, opacity: 0, rotate: -4 }} animate={{ scale: 1, opacity: 1, rotate: -1 }} exit={{ scale: 0.7, opacity: 0 }}
               transition={SPRING_POP}
               style={{ padding: 10, background: C.paper, border: `3px solid ${C.ink}`, boxShadow: `5px 5px 0 ${C.ink}`, textAlign: 'center' }}>
-              <img alt={`QR code du salon ${code}`} width={200} height={200} style={{ display: 'block', width: 200, height: 200 }}
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=0&data=${encodeURIComponent(link)}`} />
+              {qrSrc
+                ? <img alt={`QR code du salon ${code}`} width={200} height={200} style={{ display: 'block', width: 200, height: 200 }} src={qrSrc} />
+                : <div aria-label="QR code en préparation" style={{ width: 200, height: 200, display: 'grid', placeItems: 'center', ...type.small, color: C.textMut }}>…</div>}
               <div style={{ ...type.small, marginTop: 6, color: C.ink }}>Scanne avec ton téléphone</div>
             </motion.div>
           )}
