@@ -34,6 +34,9 @@ export function vibrate(pattern) {
   try { if (!muted) navigator.vibrate?.(pattern) } catch { /* non supporté (iOS) */ }
 }
 
+// Volume général des effets (identité sobre : un cran plus doux qu'avant).
+const MASTER = 0.7
+
 // Note brève : forme, fréquence (avec glissando), durée, volume, départ.
 function tone(c, { type = 'square', f = 440, to, d = 0.1, v = 0.12, at = 0 }) {
   const t = c.currentTime + at
@@ -43,7 +46,7 @@ function tone(c, { type = 'square', f = 440, to, d = 0.1, v = 0.12, at = 0 }) {
   o.frequency.setValueAtTime(f, t)
   if (to) o.frequency.exponentialRampToValueAtTime(to, t + d)
   g.gain.setValueAtTime(0.0001, t)
-  g.gain.exponentialRampToValueAtTime(v, t + 0.008)
+  g.gain.exponentialRampToValueAtTime(v * MASTER, t + 0.008)
   g.gain.exponentialRampToValueAtTime(0.0001, t + d)
   o.connect(g).connect(c.destination)
   o.start(t)
@@ -64,7 +67,7 @@ function noise(c, { d = 0.3, v = 0.18, f = 1200, to = 300, at = 0 }) {
   flt.frequency.setValueAtTime(f, t)
   flt.frequency.exponentialRampToValueAtTime(to, t + d)
   const g = c.createGain()
-  g.gain.setValueAtTime(v, t)
+  g.gain.setValueAtTime(v * MASTER, t)
   g.gain.exponentialRampToValueAtTime(0.0001, t + d)
   src.connect(flt).connect(g).connect(c.destination)
   src.start(t)
