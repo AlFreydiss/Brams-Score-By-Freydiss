@@ -1,10 +1,11 @@
 // Guess Who — point d'entrée : /guess-who (créer / rejoindre) ou /guess-who/:code (salon).
-// Identité « planche de manga » : voir manga.jsx.
+// Identité Brams (encre chaude + champagne) : voir theme.js et manga.jsx.
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { C, FONT_BODY, FONT_DISPLAY, GLOBAL_CSS, Btn, PhaseFrame, Waiting, MangaBackdrop } from './manga.jsx'
+import { C, FONT_BODY, GLOBAL_CSS, Btn, PhaseFrame, Waiting, MangaBackdrop } from './manga.jsx'
+import { T, F, LINE, RADIUS, pill, label } from './theme.js'
 import BarreJeu from '../../components/BarreJeu.jsx'
 import { createRoom, guestId } from '../../lib/guessWhoRooms.js'
 import { useGuessWhoRoom } from './useGuessWhoRoom.js'
@@ -79,63 +80,65 @@ function Home({ identity }) {
     else navigate(`/guess-who/${r.code}`)
   }
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', display: 'grid', gap: 26 }}>
-      {/* Couverture : le titre EST l'image. */}
-      <motion.h1
-        initial={{ scale: 0.6, rotate: -8, opacity: 0 }}
-        animate={{ scale: 1, rotate: -3, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 14 }}
-        style={{
-          margin: '10px 0 0', textAlign: 'center', fontFamily: FONT_DISPLAY, fontWeight: 400, lineHeight: 0.92,
-          fontSize: 'clamp(3.6rem, 13vw, 8.5rem)', color: C.yellow, WebkitTextStroke: `4px ${C.ink}`,
-          paintOrder: 'stroke fill', textShadow: `7px 7px 0 ${C.ink}`, letterSpacing: '-0.01em',
-        }}>
-        Guess<br />Who<span style={{ color: C.red }}>!</span>
-      </motion.h1>
+    <div style={{ maxWidth: 880, margin: '0 auto', display: 'grid', gap: 22 }}>
+      {/* Couverture : titre gravé, sobre. */}
+      <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+        style={{ textAlign: 'center', padding: 'clamp(10px,4vw,34px) 0 4px' }}>
+        <div style={label({ color: T.accent, marginBottom: 12 })}>Brams · Jeu de soirée</div>
+        <h1 style={{
+          margin: 0, fontFamily: F.display, fontWeight: 500, lineHeight: 0.95, letterSpacing: '-0.025em',
+          fontSize: 'clamp(3rem, 11vw, 6.2rem)', color: T.textHi,
+        }}>Guess Who<span style={{ color: T.accent }}>.</span></h1>
+        <p style={{ margin: '14px auto 0', maxWidth: 460, fontFamily: F.ui, fontSize: 16, lineHeight: 1.55, color: T.textMute }}>
+          Imite un son d'anime, votez pour la meilleure imitation. Le moins voté perd une vie.
+        </p>
+      </motion.header>
 
       {last && (
-        <button onClick={() => navigate(`/guess-who/${last}`)} className="gw-focus" style={{
-          justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-          padding: '10px 18px', border: `3px solid ${C.ink}`, background: C.yellow, color: C.ink,
-          boxShadow: `4px 4px 0 ${C.ink}`, transform: 'rotate(-1deg)', fontFamily: FONT_BODY, fontWeight: 800, fontSize: 16,
+        <button onClick={() => navigate(`/guess-who/${last}`)} className="gw-focus gw-btn" style={{
+          ...pill('ghost'), justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+          minHeight: 44, padding: '0 18px', fontFamily: F.ui, fontWeight: 600, fontSize: 15,
         }}>
-          ↩ Revenir au salon <span style={{ fontFamily: FONT_DISPLAY, fontWeight: 400, letterSpacing: '0.14em' }}>{last}</span>
+          ↩ Revenir au salon <span style={{ fontFamily: F.display, fontWeight: 500, letterSpacing: '0.2em', color: T.accentLit }}>{last}</span>
         </button>
       )}
 
-      <PhaseFrame tilt={0.5}>
-        <ul aria-label="En bref" style={{ listStyle: 'none', margin: '0 0 16px', padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(150px, 45%), max-content))', gap: 8 }}>
-          {FACTS.map(([icon, label]) => (
-            <li key={label} style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', border: `2px solid ${C.ink}`,
-              background: C.paper, fontFamily: FONT_BODY, fontWeight: 800, fontSize: 'clamp(12.5px, 3.4vw, 14px)', lineHeight: 1.2, color: C.ink,
-            }}><span aria-hidden>{icon}</span>{label}</li>
+      <PhaseFrame>
+        <ul aria-label="En bref" style={{ listStyle: 'none', margin: '0 0 18px', padding: 0, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {FACTS.map(([icon, text]) => (
+            <li key={text} style={{
+              ...pill('ghost'), display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+              fontFamily: F.ui, fontWeight: 600, fontSize: 13.5, lineHeight: 1.2, color: T.text,
+            }}><span aria-hidden>{icon}</span>{text}</li>
           ))}
         </ul>
-        <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           {RULES.map(([title, text], i) => (
-            <li key={title} style={{ border: `3px solid ${C.ink}`, padding: '12px 14px', background: i === 2 ? C.yellow : C.paper }}>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: C.ink }}>{i + 1}. {title}</div>
-              <p style={{ margin: '6px 0 0', fontFamily: FONT_BODY, fontWeight: 500, fontSize: 15, lineHeight: 1.45, color: C.ink }}>{text}</p>
+            <li key={title} style={{ border: LINE, borderRadius: RADIUS.md, padding: '14px 16px', background: i === 2 ? 'rgba(199,168,105,0.06)' : 'transparent' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 15, color: T.accent }}>{String(i + 1).padStart(2, '0')}</span>
+                <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 19, color: T.textHi }}>{title}</span>
+              </div>
+              <p style={{ margin: '6px 0 0', fontFamily: F.ui, fontWeight: 400, fontSize: 14.5, lineHeight: 1.5, color: T.textMute }}>{text}</p>
             </li>
           ))}
         </ol>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 22 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 22, paddingTop: 20, borderTop: LINE }}>
           <Btn onClick={create} disabled={busy || !identity}>{busy ? 'Création…' : 'Créer un salon'}</Btn>
-          <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.textMut }}>ou</span>
+          <span style={{ fontFamily: F.ui, fontWeight: 500, color: T.textFaint }}>ou</span>
           <input className="gw-focus" value={code} onChange={(e) => setCode(cleanCode(e.target.value))}
             onKeyDown={(e) => { if (e.key === 'Enter') join() }}
             placeholder="CODE" aria-label="Code du salon" autoCapitalize="characters" autoComplete="off" spellCheck={false}
             style={{
-              width: 130, minHeight: 50, border: `3px solid ${C.ink}`, borderRadius: 6, padding: '0 12px',
-              fontFamily: FONT_DISPLAY, fontSize: 22, letterSpacing: '0.18em', textAlign: 'center',
-              background: C.paper, color: C.ink, boxSizing: 'border-box',
+              width: 140, minHeight: 48, border: LINE, borderRadius: RADIUS.pill, padding: '0 14px', outline: 'none',
+              fontFamily: F.display, fontWeight: 500, fontSize: 20, letterSpacing: '0.3em', textAlign: 'center',
+              background: T.deep, color: T.textHi, boxSizing: 'border-box',
             }} />
           <Btn variant="ghost" disabled={code.length !== 4} onClick={join}>Rejoindre</Btn>
         </div>
-        {err && <p style={{ fontFamily: FONT_BODY, fontWeight: 700, color: C.red }}>{err}</p>}
+        {err && <p style={{ fontFamily: F.ui, fontWeight: 600, color: T.danger }}>{err}</p>}
         {identity && identity.userId.startsWith('guest_') && (
-          <p style={{ margin: '14px 0 0', fontFamily: FONT_BODY, fontWeight: 600, fontSize: 14, color: C.textMut }}>
+          <p style={{ margin: '14px 0 0', fontFamily: F.ui, fontWeight: 400, fontSize: 14, color: T.textMute }}>
             Pas besoin de compte : tu joues en invité. Connecte-toi avec Discord pour garder ton pseudo et ton avatar.
           </p>
         )}

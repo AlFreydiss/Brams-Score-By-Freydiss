@@ -1,8 +1,9 @@
-// Guess Who — salle d'attente : code géant à partager (copier, partager, QR),
+// Guess Who — salle d'attente : code gravé à partager (copier, partager, QR),
 // joueurs qui débarquent, réglages et lancement (hôte, 3 min.).
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { C, FONT_BODY, FONT_DISPLAY, SPRING_POP, type, Btn, PhaseFrame, PlayerChip } from './manga.jsx'
+import { C, type, Btn, PhaseFrame, PlayerChip } from './manga.jsx'
+import { T, F, LINE, RADIUS, plate, pill, label } from './theme.js'
 import MicSetup from './MicSetup.jsx'
 import { SoundToggle } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
@@ -38,28 +39,28 @@ function cleanSettings(value, options) {
   return out
 }
 
-// Réglages de partie (hôte) : boutons segmentés encrés, qui passent à la ligne sur mobile.
+// Réglages de partie (hôte) : contrôles segmentés sobres, qui passent à la ligne sur mobile.
 function Settings({ value, onChange, options }) {
   return (
-    <div style={{ display: 'grid', gap: 12, marginTop: 18, border: `3px solid ${C.ink}`, padding: 14, background: C.yellow }}>
-      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: C.ink }}>Règles de la partie</div>
-      {options.map(([key, label, opts]) => (
-        <div key={key} role="radiogroup" aria-label={label} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+    <div style={{ display: 'grid', gap: 14, marginTop: 18, border: LINE, borderRadius: RADIUS.md, padding: 16, background: T.deep }}>
+      <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 18, color: T.textHi }}>Règles de la partie</div>
+      {options.map(([key, text, opts]) => (
+        <div key={key} role="radiogroup" aria-label={text} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {/* libellé sur sa propre ligne : les boutons gardent toute la largeur sur mobile */}
-          <span style={{ fontFamily: FONT_BODY, fontWeight: 800, flex: '1 0 100%', color: C.ink }}>{label}</span>
-          {opts.map(([v, text]) => {
+          <span style={label({ flex: '1 0 100%' })}>{text}</span>
+          {opts.map(([v, t]) => {
             const on = value[key] === v
             return (
               <button key={String(v)} type="button" role="radio" aria-checked={on} className="gw-btn"
                 onClick={() => onChange({ ...value, [key]: v })}
-                style={{ minHeight: 44, minWidth: 44, padding: '0 12px', cursor: 'pointer', fontFamily: FONT_DISPLAY, fontSize: 14,
-                  border: `3px solid ${C.ink}`, background: on ? C.ink : C.paper, color: on ? C.yellow : C.ink }}>{text}</button>
+                style={{ ...pill(on ? 'primary' : 'ghost'), minHeight: 44, minWidth: 44, padding: '0 14px', cursor: 'pointer',
+                  fontFamily: F.ui, fontWeight: on ? 700 : 500, fontSize: 14, color: on ? T.onAccent : T.text }}>{t}</button>
             )
           })}
         </div>
       ))}
       {options === FULL && (
-        <div style={{ ...type.small, color: C.ink }}>
+        <div style={{ ...type.small, fontWeight: 500, color: T.textMute }}>
           {value.rounds ? `Au tour ${value.rounds}, s'il n'y a pas d'éliminé, le joueur avec le moins de vies prend le gage.` : 'Tours illimités : on joue jusqu\'au premier éliminé.'}
         </div>
       )}
@@ -78,33 +79,29 @@ async function copyText(text) {
   } catch { return false }
 }
 
-// Code du salon en tuiles géantes, chacune légèrement de travers ; un tap copie le lien.
+// Code du salon en grand, gravé ; un tap copie le lien.
 function BigCode({ code, onCopy }) {
   return (
     <button type="button" className="gw-btn" onClick={onCopy} aria-label={`Code du salon ${code.split('').join(' ')}, appuie pour copier le lien`}
-      style={{ display: 'flex', gap: 'clamp(6px,2vw,12px)', justifyContent: 'center', background: 'none', border: 0, padding: 0, cursor: 'pointer' }}>
+      style={{ ...plate({ borderRadius: RADIUS.lg }), display: 'flex', gap: 'clamp(10px,3vw,22px)', justifyContent: 'center', padding: 'clamp(14px,3vw,22px) clamp(22px,6vw,40px)', cursor: 'pointer' }}>
       {code.split('').map((ch, i) => (
-        <motion.span key={i} initial={{ y: -24, opacity: 0, rotate: 0 }} animate={{ y: 0, opacity: 1, rotate: i % 2 ? 4 : -4 }}
-          transition={{ ...SPRING_POP, delay: 0.1 + i * 0.07 }}
-          style={{
-            width: 'clamp(58px, 17vw, 86px)', height: 'clamp(70px, 20vw, 100px)', display: 'grid', placeItems: 'center',
-            background: i % 2 ? C.paper : C.yellow, border: `4px solid ${C.ink}`, boxShadow: `5px 5px 0 ${C.ink}`,
-            fontFamily: FONT_DISPLAY, fontSize: 'clamp(2.4rem, 11vw, 3.8rem)', color: C.ink, lineHeight: 1,
-          }}>{ch}</motion.span>
+        <motion.span key={i} initial={{ y: 6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.05 + i * 0.06 }}
+          style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(2.6rem, 11vw, 4rem)', color: T.textHi, lineHeight: 1 }}>{ch}</motion.span>
       ))}
     </button>
   )
 }
 
-// Place vide : silhouette en pointillés qui attend un joueur.
+// Place vide : cercle pointillé qui attend un joueur.
 function EmptySeat() {
   return (
-    <div aria-hidden style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: 92, opacity: 0.5 }}>
+    <div aria-hidden style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: 90, opacity: 0.6 }}>
       <span style={{
-        width: 56, height: 56, borderRadius: '50%', border: `3px dashed ${C.ink}`, display: 'grid', placeItems: 'center',
-        fontFamily: FONT_DISPLAY, fontSize: 22, color: C.ink, boxSizing: 'border-box',
-      }}>?</span>
-      <span style={{ fontWeight: 800, fontSize: 13, fontFamily: FONT_BODY, color: C.textMut }}>Libre</span>
+        width: 54, height: 54, borderRadius: '50%', border: `1px dashed ${T.textFaint}`, display: 'grid', placeItems: 'center',
+        fontFamily: F.display, fontSize: 18, color: T.textFaint, boxSizing: 'border-box',
+      }}>+</span>
+      <span style={{ fontWeight: 500, fontSize: 13, fontFamily: F.ui, color: T.textFaint }}>Libre</span>
     </div>
   )
 }
@@ -137,7 +134,7 @@ export default function Lobby({ code, g }) {
     if (!qr || qrSrc) return
     let alive = true
     import('qrcode')
-      .then((m) => m.toDataURL(link, { margin: 0, width: 400, errorCorrectionLevel: 'M', color: { dark: C.ink, light: '#ffffff' } }))
+      .then((m) => m.toDataURL(link, { margin: 0, width: 400, errorCorrectionLevel: 'M', color: { dark: '#0B0B0C', light: '#EDEAE3' } }))
       .then((src) => { if (alive) setQrSrc(src) })
       .catch(() => {})
     return () => { alive = false }
@@ -183,9 +180,9 @@ export default function Lobby({ code, g }) {
   return (
     <PhaseFrame eyebrow="Guess Who · Salle d'attente" prompt="Invite ta bande">
       {showInApp && (
-        <div role="alert" style={{ border: `3px solid ${C.ink}`, background: C.yellow, color: C.ink, padding: '12px 14px', marginBottom: 16, display: 'grid', gap: 8 }}>
-          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18 }}>🎙️ Le micro ne marche pas ici</div>
-          <div style={{ ...type.body, fontWeight: 700 }}>
+        <div role="alert" style={{ ...plate({ borderRadius: RADIUS.md }), border: `1px solid ${T.accent}`, padding: '14px 16px', marginBottom: 18, display: 'grid', gap: 10 }}>
+          <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 18, color: T.textHi }}>Le micro ne marche pas ici</div>
+          <div style={{ ...type.body, color: T.text }}>
             Tu es dans le navigateur de l'appli. Ouvre le salon dans ton navigateur. {openInBrowserHint(ua)}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -195,31 +192,31 @@ export default function Lobby({ code, g }) {
         </div>
       )}
       <div style={{ display: 'grid', justifyItems: 'center', gap: 14, marginBottom: 20 }}>
-        <div style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 14, color: C.textMut }}>Code du salon · appuie pour copier</div>
+        <div style={label()}>Code du salon · appuie pour copier</div>
         <BigCode code={code} onCopy={copy} />
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Btn variant={copied ? 'sea' : 'ghost'} onClick={copy}>{copied ? '✓ Lien copié !' : '🔗 Copier le lien'}</Btn>
-          {canShare && <Btn variant="ghost" onClick={share}>📤 Partager</Btn>}
-          <Btn variant="ghost" onClick={() => setQr((v) => !v)} aria-expanded={qr}>{qr ? 'Masquer le QR' : '📱 QR code'}</Btn>
-          <SoundToggle style={{ width: 50, height: 50, border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, borderRadius: 6 }} />
+          <Btn variant={copied ? 'sea' : 'ghost'} onClick={copy}>{copied ? '✓ Lien copié' : 'Copier le lien'}</Btn>
+          {canShare && <Btn variant="ghost" onClick={share}>Partager</Btn>}
+          <Btn variant="ghost" onClick={() => setQr((v) => !v)} aria-expanded={qr}>{qr ? 'Masquer le QR' : 'QR code'}</Btn>
+          <SoundToggle style={{ width: 48, height: 48 }} />
         </div>
         <AnimatePresence>
           {qr && (
-            <motion.div initial={{ scale: 0.7, opacity: 0, rotate: -4 }} animate={{ scale: 1, opacity: 1, rotate: -1 }} exit={{ scale: 0.7, opacity: 0 }}
-              transition={SPRING_POP}
-              style={{ padding: 10, background: C.paper, border: `3px solid ${C.ink}`, boxShadow: `5px 5px 0 ${C.ink}`, textAlign: 'center' }}>
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+              transition={{ duration: 0.2 }}
+              style={{ padding: 12, background: '#EDEAE3', borderRadius: RADIUS.md, textAlign: 'center' }}>
               {qrSrc
                 ? <img alt={`QR code du salon ${code}`} width={200} height={200} style={{ display: 'block', width: 200, height: 200 }} src={qrSrc} />
                 : <div aria-label="QR code en préparation" style={{ width: 200, height: 200, display: 'grid', placeItems: 'center', ...type.small, color: C.textMut }}>…</div>}
-              <div style={{ ...type.small, marginTop: 6, color: C.ink }}>Scanne avec ton téléphone</div>
+              <div style={{ ...type.small, marginTop: 6, color: '#3A3833' }}>Scanne avec ton téléphone</div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', borderTop: `3px dashed ${C.ink}`, paddingTop: 14, marginBottom: 12 }}>
-        <span style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: C.ink }}>Joueurs</span>
-        <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 14, color: enough ? C.ok : C.textMut }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', borderTop: LINE, paddingTop: 16, marginBottom: 14 }}>
+        <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 19, color: T.textHi }}>Joueurs</span>
+        <span style={{ fontFamily: F.ui, fontWeight: 600, fontSize: 14, color: enough ? T.ok : T.textMute }}>
           {n}/{MAX_PLAYERS} {enough ? '· prêt à lancer ✓' : `· ${MIN_PLAYERS} minimum`}
         </span>
       </div>
@@ -227,8 +224,8 @@ export default function Lobby({ code, g }) {
         <AnimatePresence initial={false}>
           {g.players.map((p) => (
             <motion.div key={p.user_id} layout={!reduce}
-              initial={reduce ? { opacity: 0 } : { scale: 0, rotate: -25, y: -20 }} animate={{ scale: 1, rotate: 0, y: 0, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }} transition={{ type: 'spring', stiffness: 520, damping: 14 }}>
+              initial={reduce ? { opacity: 0 } : { scale: 0.85, y: 6, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 26 }}>
               <PlayerChip player={p} host={p.is_host} me={p.user_id === g.me?.user_id} submitted={showReady && !!p.ready} />
             </motion.div>
           ))}

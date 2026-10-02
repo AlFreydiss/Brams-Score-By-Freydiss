@@ -1,7 +1,8 @@
 // Guess Who — rendu d'un salon à partir de l'état `g` (useGuessWhoRoom) :
 // bannières, écran de la phase en cours, réactions. Utilisé par la vraie page
 // et par la page de démo (DEV) avec un état factice.
-import { C, FONT_BODY, FONT_DISPLAY, SfxBurst } from './manga.jsx'
+import { SfxBurst } from './manga.jsx'
+import { T, F, LINE, RADIUS } from './theme.js'
 import Lobby from './Lobby.jsx'
 import GagesPhase from './GagesPhase.jsx'
 import ListenPhase from './ListenPhase.jsx'
@@ -22,20 +23,21 @@ const REASONS = {
 // Phases d'un tour où l'on affiche « Dernier tour ! ».
 const LAST_ROUND_PHASES = ['listen', 'record', 'vote', 'revote', 'result']
 
-const banner = { fontFamily: FONT_BODY, fontWeight: 800, textAlign: 'center', margin: '0 auto 14px', maxWidth: 820,
-  background: C.yellow, border: `3px solid ${C.ink}`, padding: '8px 14px', color: C.ink }
+// Bannière : pilule sombre à filet fin, centrée au-dessus de la carte de phase.
+const banner = { fontFamily: F.ui, fontWeight: 600, fontSize: 14.5, textAlign: 'center', margin: '0 auto 14px', maxWidth: 820,
+  background: T.raised, border: LINE, borderRadius: RADIUS.md, padding: '10px 16px', color: T.text, boxSizing: 'border-box' }
 
 export default function RoomView({ g, code, reactions }) {
   const phase = g.room?.phase
   return (
     <>
       <SfxBurst phase={phase} round={g.room?.round} />
-      {connectionNotice(g.connection) && <p role="status" style={{ ...banner, background: C.paper }}>{connectionNotice(g.connection)}</p>}
+      {connectionNotice(g.connection) && <p role="status" style={banner}>{connectionNotice(g.connection)}</p>}
       {g.spectator && <p style={banner}>{REASONS[g.reason] || 'Mode spectateur.'}</p>}
       {g.isLastRound && LAST_ROUND_PHASES.includes(phase) && (
-        <p role="status" style={{ ...banner, background: C.red, color: '#fff', fontFamily: FONT_DISPLAY, fontWeight: 400,
-          width: 'fit-content', transform: 'rotate(-2deg)', boxShadow: `4px 4px 0 ${C.ink}` }}>
-          🏁 Dernier tour ! ({g.roundsMax}/{g.roundsMax})
+        <p role="status" style={{ ...banner, width: 'fit-content', border: `1px solid ${T.accent}`, color: T.accentLit,
+          fontFamily: F.display, fontWeight: 500, fontSize: 17 }}>
+          Dernier tour · {g.roundsMax}/{g.roundsMax}
         </p>
       )}
       {g.notice && (

@@ -3,7 +3,8 @@
 // micro virtuel Discord/OBS…) : on laisse le joueur choisir et vérifier.
 // Même micro partagé que l'enregistrement : tester ne coupe pas la prise suivante.
 import { useEffect, useRef, useState } from 'react'
-import { C, FONT_BODY, FONT_DISPLAY, Btn } from './manga.jsx'
+import { Btn } from './manga.jsx'
+import { T, F, LINE, RADIUS } from './theme.js'
 import { acquireMic, audioCtx, getMicId, listMics, micError, releaseMic, setMicId, unlockAudio } from '../../lib/guessWhoAudio.js'
 import { levelOf, micLabel } from './logic/mic.js'
 
@@ -61,7 +62,7 @@ export default function MicSetup({ compact = false, onError }) {
         peak = Math.max(peak, v)
         if (bar.current) {
           bar.current.style.width = `${Math.min(100, v * 260)}%`
-          if (v > 0.06) bar.current.style.background = C.cyan
+          if (v > 0.06) bar.current.style.background = T.accent
         }
         if (v > 0.06 && !gotSound) { gotSound = true; setHeard(true) }
         live.current.raf = requestAnimationFrame(tick)
@@ -88,9 +89,9 @@ export default function MicSetup({ compact = false, onError }) {
   }
 
   return (
-    <div style={{ border: `3px solid ${C.ink}`, background: C.paper, padding: compact ? 12 : 16, display: 'grid', gap: 12, fontFamily: FONT_BODY, color: C.ink }}>
+    <div style={{ border: LINE, borderRadius: RADIUS.md, background: T.deep, padding: compact ? 12 : 16, display: 'grid', gap: 12, fontFamily: F.ui, color: T.text }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: FONT_DISPLAY, fontSize: 18 }}>🎤 Ton micro</span>
+        <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 18, color: T.textHi }}>Ton micro</span>
         {status !== 'live' && (
           <Btn variant="sea" onClick={() => start()} disabled={status === 'asking'} style={{ minHeight: 42 }}>
             {status === 'asking' ? 'Autorise le micro…' : 'Tester mon micro'}
@@ -102,10 +103,10 @@ export default function MicSetup({ compact = false, onError }) {
       </div>
 
       {devices.length > 0 && (
-        <label style={{ display: 'grid', gap: 6, fontWeight: 700, fontSize: 14 }}>
+        <label style={{ display: 'grid', gap: 6, fontWeight: 600, fontSize: 13.5, color: T.textMute }}>
           Micro utilisé
           <select className="gw-focus" value={micId} onChange={(e) => choose(e.target.value)}
-            style={{ minHeight: 44, border: `3px solid ${C.ink}`, background: C.paper, color: C.ink, fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16, padding: '0 10px' }}>
+            style={{ minHeight: 44, border: LINE, borderRadius: RADIUS.sm, background: T.surface, color: T.textHi, fontFamily: F.ui, fontWeight: 500, fontSize: 16, padding: '0 10px' }}>
             {!micId && <option value="">Micro par défaut</option>}
             {devices.map((d, i) => <option key={d.deviceId || i} value={d.deviceId}>{micLabel(d, i)}</option>)}
           </select>
@@ -114,15 +115,15 @@ export default function MicSetup({ compact = false, onError }) {
 
       {status === 'live' && (
         <>
-          <div aria-label="Niveau du micro" style={{ height: 18, border: `3px solid ${C.ink}`, background: C.paper, overflow: 'hidden' }}>
-            <div ref={bar} style={{ width: 0, height: '100%', background: C.tone, transition: 'width 60ms linear' }} />
+          <div aria-label="Niveau du micro" style={{ height: 6, borderRadius: RADIUS.pill, background: T.line, overflow: 'hidden' }}>
+            <div ref={bar} style={{ width: 0, height: '100%', borderRadius: RADIUS.pill, background: T.textFaint, transition: 'width 60ms linear' }} />
           </div>
-          <p role="status" style={{ margin: 0, fontWeight: 800, fontSize: 14.5, color: heard ? C.ok : silent ? C.red : C.textMut }}>
+          <p role="status" style={{ margin: 0, fontWeight: 600, fontSize: 14.5, color: heard ? T.ok : silent ? T.danger : T.textMute }}>
             {heard ? 'Ton micro capte bien ✓' : silent ? "Aucun son capté : parle plus fort ou choisis un autre micro dans la liste." : 'Parle ou crie un coup pour tester…'}
           </p>
         </>
       )}
-      {error && <p role="alert" style={{ margin: 0, fontWeight: 800, color: C.red }}>{error}</p>}
+      {error && <p role="alert" style={{ margin: 0, fontWeight: 600, color: T.danger }}>{error}</p>}
     </div>
   )
 }
