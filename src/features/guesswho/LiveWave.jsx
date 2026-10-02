@@ -3,10 +3,10 @@
 //   pendant la prise, une « bande » qui se remplit de gauche à droite jusqu'à la
 //   durée max (on voit le temps qui reste) ;
 // - WavePlayer : lecteur avec l'onde du son (original ou ta prise), touche pour
-//   avancer, progression en rouge.
+//   avancer, progression en champagne.
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { C, FONT_BODY, FONT_DISPLAY } from './manga.jsx'
+import { T, F, LINE, RADIUS, SHADOW, pill } from './theme.js'
 import { audioCtx, justUnblocked, onSound, pauseSound, playSound, seekSound, setSoundLoop, soundProgress, soundState } from '../../lib/guessWhoAudio.js'
 import { levelOf } from './logic/mic.js'
 
@@ -43,9 +43,9 @@ export default function LiveWave({ stream, startedAt = null, maxMs = 8000, heigh
     const draw = () => {
       const { w, h, dpr } = fit(cv)
       const { startedAt: t0, maxMs: max } = props.current
-      g.fillStyle = C.yellow
+      g.fillStyle = T.deep
       g.fillRect(0, 0, w, h)
-      g.fillStyle = C.ink
+      g.fillStyle = T.accent
       if (t0 == null) {
         // Avant la prise : barres de fréquences au centre.
         tapeStart = null
@@ -68,15 +68,15 @@ export default function LiveWave({ stream, startedAt = null, maxMs = 8000, heigh
           const bh = Math.max(2 * dpr, tape[i] * h * 0.9)
           g.fillRect(i * bw + bw * 0.15, (h - bh) / 2, bw * 0.7, bh)
         }
-        g.fillStyle = 'rgba(20,18,26,0.12)'
+        g.fillStyle = 'rgba(255,255,255,0.03)'
         g.fillRect(p * w, 0, w - p * w, h)
-        g.fillStyle = C.red
-        g.fillRect(p * w - dpr * 1.5, 0, dpr * 3, h)
+        g.fillStyle = T.danger
+        g.fillRect(p * w - dpr, 0, dpr * 2, h)
         // temps écoulé / max, en coin
-        g.font = `800 ${13 * dpr}px ${FONT_BODY}`
+        g.font = `600 ${12 * dpr}px ${F.ui}`
         g.textAlign = 'right'
         g.textBaseline = 'top'
-        g.fillStyle = C.ink
+        g.fillStyle = T.textMute
         g.fillText(`${((p * max) / 1000).toFixed(1)} / ${Math.round(max / 1000)} s`, w - 8 * dpr, 6 * dpr)
       }
       raf = requestAnimationFrame(draw)
@@ -86,7 +86,7 @@ export default function LiveWave({ stream, startedAt = null, maxMs = 8000, heigh
   }, [stream])
   return (
     <canvas ref={canvas} aria-hidden
-      style={{ width: '100%', height, display: 'block', border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, background: C.yellow }} />
+      style={{ width: '100%', height, display: 'block', border: LINE, borderRadius: RADIUS.md, background: T.deep }} />
   )
 }
 
@@ -104,7 +104,7 @@ export function useSound(id) {
   return s
 }
 
-export function WavePlayer({ id, src, peaks, label, big = false, loop = false, autoPlay = false, disabled = false, onError, accent = C.red }) {
+export function WavePlayer({ id, src, peaks, label, big = false, loop = false, autoPlay = false, disabled = false, onError, accent = T.accent }) {
   const canvas = useRef(null)
   const s = useSound(id)
   const data = useRef({ peaks, playing: false, accent })
@@ -131,23 +131,23 @@ export function WavePlayer({ id, src, peaks, label, big = false, loop = false, a
       const { w, h, dpr } = fit(cv)
       const { peaks: pk, playing, accent: ac } = data.current
       const p = soundProgress(id)
-      g.fillStyle = C.paper
+      g.fillStyle = T.deep
       g.fillRect(0, 0, w, h)
       if (pk?.length) {
         const bw = w / pk.length
         for (let i = 0; i < pk.length; i++) {
           const bh = Math.max(2 * dpr, pk[i] * h * 0.86)
-          g.fillStyle = (i + 0.5) / pk.length <= p ? ac : C.ink
+          g.fillStyle = (i + 0.5) / pk.length <= p ? ac : 'rgba(237,234,227,0.24)'
           g.fillRect(i * bw + bw * 0.18, (h - bh) / 2, Math.max(dpr, bw * 0.64), bh)
         }
       } else {
-        // sans onde (son non décodable) : simple barre de progression tramée
-        g.fillStyle = C.tone
+        // sans onde (son non décodable) : simple barre de progression
+        g.fillStyle = 'rgba(255,255,255,0.08)'
         g.fillRect(0, h / 2 - 2 * dpr, w, 4 * dpr)
         g.fillStyle = ac
         g.fillRect(0, h / 2 - 4 * dpr, w * p, 8 * dpr)
       }
-      if (p > 0 && p < 1) { g.fillStyle = C.ink; g.fillRect(p * w - dpr, 0, 2 * dpr, h) }
+      if (p > 0 && p < 1) { g.fillStyle = T.textHi; g.fillRect(p * w - dpr * 0.5, 0, dpr, h) }
       if (playing) raf = requestAnimationFrame(draw)
     }
     draw()
@@ -170,30 +170,30 @@ export function WavePlayer({ id, src, peaks, label, big = false, loop = false, a
     if (soundState(id).playing) seekSound(id, ratio)
     else playSound(id, src, { loop, from: ratio })
   }
-  const size = big ? 76 : 50
+  const size = big ? 72 : 48
   return (
     <div style={{ display: 'grid', gap: 10, width: '100%' }}>
       {s.blocked && (
         <button type="button" className="gw-btn" onClick={() => { if (!soundState(id).playing) playSound(id, src, { loop }) }} style={{
-          width: '100%', minHeight: 56, cursor: 'pointer', background: C.yellow, color: C.ink,
-          border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, fontFamily: FONT_DISPLAY, fontSize: 18,
-        }}>🔊 Appuie pour écouter le son</button>
+          ...pill('primary'), width: '100%', minHeight: 52, cursor: 'pointer', fontFamily: F.ui, fontWeight: 700, fontSize: 16,
+        }}>Appuie pour écouter le son</button>
       )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', opacity: disabled ? 0.45 : 1 }}>
         <motion.button type="button" className="gw-btn" onClick={toggle} whileTap={disabled ? undefined : { scale: 0.9 }}
           disabled={disabled || !src} aria-label={s.playing ? 'Pause' : `Écouter ${label || ''}`}
           style={{
             width: size, height: size, borderRadius: '50%', cursor: disabled ? 'default' : 'pointer', flex: '0 0 auto',
-            background: s.playing ? C.yellow : accent, color: s.playing ? C.ink : '#fff',
-            border: `3px solid ${C.ink}`, boxShadow: `3px 3px 0 ${C.ink}`,
-            fontFamily: FONT_DISPLAY, fontSize: big ? 28 : 18, touchAction: 'manipulation',
+            display: 'grid', placeItems: 'center',
+            background: s.playing ? 'transparent' : accent, color: s.playing ? accent : T.onAccent,
+            border: `1px solid ${accent}`, boxShadow: s.playing ? `0 0 0 6px ${T.glow}` : SHADOW.soft,
+            fontFamily: F.ui, fontWeight: 800, fontSize: big ? 22 : 15, touchAction: 'manipulation', transition: 'background .2s, color .2s',
           }}>
-          {s.playing ? '❚❚' : '▶'}
+          {s.playing ? '❚❚' : <span style={{ marginLeft: big ? 4 : 2 }}>▶</span>}
         </motion.button>
         <canvas ref={canvas} onClick={seek} role="presentation"
           style={{
             flex: 1, minWidth: 0, height: big ? 70 : 46, display: 'block', cursor: disabled ? 'default' : 'pointer',
-            border: `3px solid ${C.ink}`, background: C.paper, touchAction: 'manipulation',
+            border: LINE, borderRadius: RADIUS.sm, background: T.deep, touchAction: 'manipulation',
           }} />
       </div>
     </div>

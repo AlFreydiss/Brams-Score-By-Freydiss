@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { type } from './manga.jsx'
-import { C, FONT_DISPLAY } from './manga.jsx'
+import { C } from './manga.jsx'
+import { T, F } from './theme.js'
 import { Btn, PhaseFrame, LiveRoster } from './manga.jsx'
 import { roster } from './GagesPhase.jsx'
 import {
@@ -194,10 +195,10 @@ export default function RecordPhase({ g }) {
   const sentThis = take && sentId === take.id
   const late = g.remaining != null && g.remaining <= AUTO_SEND_S
   let mainBtn
-  if (rec === 'recording') mainBtn = <Btn variant="ember" onClick={stop}>■ Arrêter</Btn>
+  if (rec === 'recording') mainBtn = <Btn variant="danger" onClick={stop} style={{ minHeight: 56 }}>■ Arrêter</Btn>
   else if (rec === 'countdown' || rec === 'arming') mainBtn = <Btn variant="ghost" onClick={cancel}>{rec === 'arming' ? 'Autorise le micro…' : 'Annuler'}</Btn>
   else if (rec === 'processing') mainBtn = <Btn variant="ghost" disabled>Préparation…</Btn>
-  else mainBtn = <Btn variant={take ? 'ghost' : 'ember'} onClick={begin} disabled={sending || late}>{take ? '↺ Recommencer' : '● Enregistrer'}</Btn>
+  else mainBtn = <Btn variant={take ? 'ghost' : 'ember'} onClick={begin} disabled={sending || late} style={{ minHeight: 56, padding: '0 26px' }}>{take ? '↺ Recommencer' : '● Enregistrer'}</Btn>
 
   return (
     <PhaseFrame eyebrow={`Tour ${g.room.round} · À toi`} prompt={`Imite : ${clip?.title || ''}`} remaining={g.remaining} total={g.total}
@@ -227,8 +228,8 @@ export default function RecordPhase({ g }) {
                   transition={{ duration: 0.22 }}
                   style={{
                     position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none',
-                    fontFamily: FONT_DISPLAY, fontSize: 64, color: C.red, WebkitTextStroke: `3px ${C.ink}`, paintOrder: 'stroke fill',
-                    textShadow: `4px 4px 0 ${C.ink}`,
+                    fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(72px, 20vw, 120px)', lineHeight: 1, color: T.accentLit,
+                    textShadow: '0 4px 30px rgba(0,0,0,.6)',
                   }}>
                   {count}
                 </motion.div>
@@ -237,13 +238,13 @@ export default function RecordPhase({ g }) {
           </div>
         )}
         {rec === 'countdown' && <p role="status" style={{ ...type.h3, color: C.ink, margin: 0 }}>Prépare-toi…</p>}
-        {rec === 'recording' && <p role="status" style={{ ...type.h3, color: C.ember, margin: 0 }}>● À toi ! Appuie sur Arrêter quand tu as fini.</p>}
+        {rec === 'recording' && <p role="status" style={{ ...type.h3, color: T.textHi, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}><span aria-hidden className="gw-anim" style={{ width: 10, height: 10, borderRadius: '50%', background: T.danger, animation: 'gw-blink 1.2s ease-in-out infinite' }} />À toi ! Appuie sur Arrêter quand tu as fini.</p>}
         {rec === 'processing' && <p role="status" style={{ ...type.small, color: C.textMut, margin: 0 }}>On nettoie ta prise (silences coupés, volume réglé)…</p>}
 
         {take && !busy && (
           <>
             <div style={{ ...type.small, color: C.textMut }}>Ton imitation ({take.duration.toFixed(1)} s){sentThis ? '' : " — réécoute-la avant d'envoyer"}</div>
-            <WavePlayer id={`take:${take.id}`} src={take.preview} peaks={take.peaks} label="ton imitation" accent={C.cyan} />
+            <WavePlayer id={`take:${take.id}`} src={take.preview} peaks={take.peaks} label="ton imitation" accent={T.accentHi} />
             {take.silent && (
               <p role="alert" style={{ ...type.body, color: C.warn, margin: 0 }}>
                 On n'entend presque rien sur cette prise. Rapproche-toi du micro, ou vérifie-le avec « Problème de micro ? ».

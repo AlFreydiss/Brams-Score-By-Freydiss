@@ -11,7 +11,7 @@ test('styleViolations : détecte et ignore les commentaires', () => {
 })
 
 // Fichiers repris : la liste s'allonge à chaque tâche, jusqu'à tous les .jsx (Task 9).
-const DONE = ['manga.jsx', 'ui.jsx', 'fx.jsx', 'DemoPage.jsx', 'GuessWhoPage.jsx', 'RoomView.jsx', 'Lobby.jsx', 'MicSetup.jsx']
+const DONE = ['manga.jsx', 'ui.jsx', 'fx.jsx', 'DemoPage.jsx', 'GuessWhoPage.jsx', 'RoomView.jsx', 'Lobby.jsx', 'MicSetup.jsx', 'GagesPhase.jsx', 'ListenPhase.jsx', 'RecordPhase.jsx', 'LiveWave.jsx']
 
 test('fichiers repris : aucun style manga', () => {
   const dir = new URL('./', import.meta.url)

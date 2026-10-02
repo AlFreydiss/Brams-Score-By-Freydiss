@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { C, FONT_DISPLAY, SPRING_POP, type, Btn, PhaseFrame, LiveRoster } from './manga.jsx'
+import { C, type, Btn, PhaseFrame, LiveRoster } from './manga.jsx'
+import { T, F, LINE, RADIUS, pill } from './theme.js'
 import { play, vibrate } from './sfx.js'
 
 export const roster = (g, ids) => new Set(g.players.filter((p) => (ids || []).includes(p.user_id)).map((p) => p.seat))
@@ -45,15 +46,15 @@ export default function GagesPhase({ g }) {
           <textarea value={text} maxLength={140} onChange={(e) => edit(e.target.value)} rows={3}
             placeholder="Ex. : chanter l'opening de One Piece en vocal" aria-label="Ton gage"
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && text.trim()) send() }}
-            className="gw-focus" style={{ width: '100%', borderRadius: 0, padding: 14, background: C.paper, ...type.body, fontSize: 17,
-              color: C.ink, border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, resize: 'vertical', boxSizing: 'border-box' }} />
+            className="gw-focus" style={{ width: '100%', borderRadius: RADIUS.md, padding: 16, background: T.deep, ...type.body, fontSize: 17,
+              color: T.textHi, border: LINE, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
           {sent && (
-            <motion.span key="stamp" aria-label="gage envoyé" initial={{ scale: 2.4, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: -10 }}
-              transition={{ type: 'spring', stiffness: 600, damping: 13 }}
+            <motion.span key="stamp" aria-label="gage envoyé" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
               style={{
-                position: 'absolute', right: 10, top: -16, background: C.red, color: '#fff', border: `3px solid ${C.ink}`,
-                fontFamily: FONT_DISPLAY, fontSize: 15, padding: '2px 10px', boxShadow: `3px 3px 0 ${C.ink}`, pointerEvents: 'none',
-              }}>ENVOYÉ !</motion.span>
+                ...pill('primary'), position: 'absolute', right: 12, top: -12, fontFamily: F.ui, fontWeight: 700, fontSize: 12.5,
+                padding: '3px 12px', pointerEvents: 'none',
+              }}>✓ Envoyé</motion.span>
           )}
           <div style={{ ...type.small, color: text.length > 125 ? C.danger : C.textMut, textAlign: 'right', marginTop: 6 }}>{text.length}/140</div>
           {!text && (
@@ -61,10 +62,10 @@ export default function GagesPhase({ g }) {
               <span style={{ ...type.small, color: C.textMut, alignSelf: 'center' }}>En panne d'idée ?</span>
               {ideas.map((t, i) => (
                 <motion.button key={t} type="button" className="gw-btn" onClick={() => edit(t)}
-                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_POP, delay: i * 0.06 }}
+                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: i * 0.05 }}
                   style={{
-                    minHeight: 44, padding: '6px 12px', cursor: 'pointer', textAlign: 'left', ...type.small, color: C.ink,
-                    background: C.paper, border: `2px dashed ${C.ink}`,
+                    ...pill('ghost'), minHeight: 44, padding: '6px 14px', cursor: 'pointer', textAlign: 'left', ...type.small, fontWeight: 500,
+                    color: T.text, borderStyle: 'dashed',
                   }}>{t}</motion.button>
               ))}
             </div>

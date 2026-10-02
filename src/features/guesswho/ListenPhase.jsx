@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { type } from './manga.jsx'
 import { C } from './manga.jsx'
+import { F, pill as pillOf } from './theme.js'
 import { Btn, PhaseFrame } from './manga.jsx'
 import { WavePlayer } from './LiveWave.jsx'
 import { loadClip } from '../../lib/guessWhoAudio.js'
@@ -26,8 +27,8 @@ export function useClip(url) {
 }
 
 const pill = (on) => ({
-  minHeight: 40, padding: '0 14px', cursor: 'pointer', border: `3px solid ${C.ink}`, borderRadius: 6,
-  background: on ? C.ink : C.paper, color: on ? C.yellow : C.ink, ...type.small, touchAction: 'manipulation',
+  ...pillOf(on ? 'primary' : 'ghost'), minHeight: 44, padding: '0 16px', cursor: 'pointer',
+  ...type.small, fontFamily: F.ui, touchAction: 'manipulation',
 })
 
 export default function ListenPhase({ g }) {
