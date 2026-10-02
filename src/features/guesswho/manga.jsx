@@ -4,6 +4,7 @@
 // Waiting, C) pour que les écrans changent de peau sans changer de logique.
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { play, vibrate } from './sfx.js'
 
 export const FONT_DISPLAY = "'Dela Gothic One', 'Arial Black', system-ui, sans-serif"
 export const FONT_BODY = "'M PLUS 1p', 'Segoe UI', system-ui, sans-serif"
@@ -32,7 +33,14 @@ export const GLOBAL_CSS = `
 .gw-btn:focus-visible, .gw-focus:focus-visible { outline: 3px solid ${C.cyan}; outline-offset: 3px; }
 @keyframes gw-spin { to { transform: rotate(360deg) } }
 @keyframes gw-shake { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,-2px)} }
-@media (prefers-reduced-motion: reduce) { .gw-shake { animation: none !important } }
+@keyframes gw-confetti { 0% { transform: translate3d(0,-10vh,0) rotate(0) } 100% { transform: translate3d(var(--dx),110vh,0) rotate(var(--rot)) } }
+@keyframes gw-pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.12) } }
+@keyframes gw-beat { 0% { transform: scale(1.35) } 100% { transform: scale(1) } }
+@keyframes gw-blink { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+@keyframes gw-float-up { 0% { transform: translate3d(0,0,0) scale(.4); opacity: 0 } 15% { transform: translate3d(0,-60px,0) scale(1.45) rotate(var(--rot)); opacity: 1 } 75% { opacity: 1 } 100% { transform: translate3d(var(--dx),-380px,0) scale(1) rotate(var(--rot)); opacity: 0 } }
+@keyframes gw-flash { 0% { opacity: .9 } 100% { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .gw-shake, .gw-anim { animation: none !important } }
+.gw-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 `
 
 // Fond de planche : trame de points + lignes de vitesse depuis le centre.
@@ -80,38 +88,51 @@ export function Btn({ children, variant = 'gold', disabled, full, style, ...prop
   )
 }
 
-// Chrono : bulle d'encre ronde ; sous 5 s elle vire au rouge et tremble.
-export function Timer({ remaining, total }) {
-  if (remaining == null) return null
-  const r = Math.max(0, Math.ceil(remaining))
-  const crit = r <= 5
+// Chrono : bulle d'encre ronde ; sous 5 s elle vire au rouge, bat à chaque
+// seconde et tremble. `tick` : petit clic + vibration (jamais pendant l'enregistrement).
+export function Timer({ remaining, total, tick = false }) {
+  const r = remaining == null ? null : Math.max(0, Math.ceil(remaining))
+  const crit = r != null && r <= 5 && r > 0
+  const last = useRef(r)
+  useEffect(() => {
+    if (r === last.current) return
+    last.current = r
+    if (!tick || r == null || r > 5) return
+    if (r > 0) { play(r <= 3 ? 'tickHi' : 'tick'); vibrate(r <= 3 ? 40 : 20) } else vibrate([60, 40, 60])
+  }, [r, tick])
+  if (r == null) return null
   const pct = total ? Math.max(0, Math.min(1, remaining / total)) : 1
   return (
-    <div className={crit ? 'gw-shake' : undefined} aria-label={`${r} secondes`}
+    <div className={crit ? 'gw-shake' : undefined} role="timer" aria-label={`${r} secondes`}
       style={{
         width: 70, height: 70, borderRadius: '50%', flex: '0 0 auto', display: 'grid', placeItems: 'center',
-        border: `3px solid ${C.ink}`, boxShadow: `3px 3px 0 ${C.ink}`,
-        background: `conic-gradient(${crit ? C.red : C.ink} ${pct * 360}deg, ${C.paper} 0)`,
+        border: `3px solid ${C.ink}`, boxShadow: `3px 3px 0 ${crit ? C.red : C.ink}`,
+        background: `conic-gradient(${crit ? C.red : C.ink} ${pct * 360}deg, ${crit ? C.yellow : C.paper} 0)`,
         animation: crit ? 'gw-shake .25s linear infinite' : 'none',
       }}>
-      <span style={{
-        width: 50, height: 50, borderRadius: '50%', background: C.paper, display: 'grid', placeItems: 'center',
-        fontFamily: FONT_DISPLAY, fontSize: 22, color: crit ? C.red : C.ink, fontVariantNumeric: 'tabular-nums',
+      <span key={crit ? r : 'n'} className={crit ? 'gw-anim' : undefined} style={{
+        width: 50, height: 50, borderRadius: '50%', background: crit ? C.red : C.paper, display: 'grid', placeItems: 'center',
+        fontFamily: FONT_DISPLAY, fontSize: crit ? 26 : 22, color: crit ? '#fff' : C.ink, fontVariantNumeric: 'tabular-nums',
+        animation: crit ? 'gw-beat .35s cubic-bezier(.3,1.6,.5,1) both' : 'none',
       }}>{r}</span>
     </div>
   )
 }
 
 // Case de manga : bord épais, ombre pleine, légère inclinaison alternée.
-export function PhaseFrame({ eyebrow, prompt, remaining, total, children, footer, wide, tilt = -0.6 }) {
+// Entrée « page qui tourne » : la case pivote depuis sa reliure gauche.
+export function PhaseFrame({ eyebrow, prompt, remaining, total, children, footer, wide, tilt = -0.6, tick = false }) {
+  const reduce = useReducedMotion()
+  const crit = remaining != null && remaining > 0 && remaining <= 5
   return (
     <motion.section
-      initial={{ opacity: 0, rotate: tilt * 3, scale: 0.96 }}
-      animate={{ opacity: 1, rotate: tilt, scale: 1 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, rotateY: -62, rotate: tilt * 3, x: 30 }}
+      animate={reduce ? { opacity: 1, rotate: tilt } : { opacity: 1, rotateY: 0, rotate: tilt, x: 0 }}
+      transition={reduce ? { duration: 0.2 } : { type: 'spring', stiffness: 260, damping: 26, mass: 0.9 }}
       style={{
+        transformPerspective: 1400, transformOrigin: 'left center',
         position: 'relative', width: '100%', maxWidth: wide ? 1120 : 820, margin: '0 auto', boxSizing: 'border-box',
-        background: C.paper, border: `3px solid ${C.ink}`, boxShadow: `8px 8px 0 ${C.ink}`,
+        background: C.paper, border: `3px solid ${C.ink}`, boxShadow: `8px 8px 0 ${crit ? C.red : C.ink}`, transition: 'box-shadow .3s',
         padding: 'clamp(18px,3vw,30px)', display: 'flex', flexDirection: 'column', gap: 18,
         fontFamily: FONT_BODY, color: C.ink,
       }}
@@ -131,7 +152,7 @@ export function PhaseFrame({ eyebrow, prompt, remaining, total, children, footer
             }}>{prompt}</h2>
           )}
         </div>
-        <Timer remaining={remaining} total={total} />
+        <Timer remaining={remaining} total={total} tick={tick} />
       </header>
       <div>{children}</div>
       {footer && <footer style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>{footer}</footer>}
@@ -143,8 +164,9 @@ const avatarOf = (p) => p?.avatar_url || `https://api.dicebear.com/8.x/thumbs/sv
 
 export function PlayerChip({ player, host, submitted, me, compact }) {
   const size = compact ? 38 : 56
+  const away = player?.connected === false
   return (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: compact ? 70 : 92 }}>
+    <div title={away ? 'Déconnecté' : undefined} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: compact ? 70 : 92, opacity: away ? 0.4 : 1, filter: away ? 'grayscale(1)' : 'none' }}>
       <span style={{ position: 'relative' }}>
         <img src={avatarOf(player)} alt="" width={size} height={size} style={{
           width: size, height: size, borderRadius: '50%', objectFit: 'cover', background: C.paper,
@@ -161,19 +183,19 @@ export function PlayerChip({ player, host, submitted, me, compact }) {
       <span style={{
         maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         fontWeight: 800, fontSize: compact ? 12 : 13.5, color: C.ink, fontFamily: FONT_BODY,
-      }}>{player?.display_name || 'Invité'}</span>
+      }}>{me ? 'Toi' : (player?.display_name || 'Invité')}</span>
     </div>
   )
 }
 
-export function LiveRoster({ players, submittedSeats, meUserId }) {
+export function LiveRoster({ players, submittedSeats, meUserId, label = 'ont envoyé' }) {
   const list = (players || []).filter((p) => p.seat != null)
   if (!list.length) return null
   const done = list.filter((p) => submittedSeats?.has?.(p.seat)).length
   return (
     <div style={{ marginTop: 18, borderTop: `3px dashed ${C.ink}`, paddingTop: 14 }}>
       <div style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 14, marginBottom: 10, color: C.ink }}>
-        {done}/{list.length} ont envoyé
+        {done}/{list.length} {label}
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         {list.map((p) => (
@@ -218,6 +240,8 @@ export function SfxBurst({ phase, round }) {
     if (first.current) { first.current = false; return }
     if (!SFX[phase] || reduce) return
     setShown(key)
+    // pas de bruit à l'ouverture du micro : l'imitation ne doit rien capter
+    if (phase !== 'record') play(phase === 'gage' || phase === 'result' ? 'boom' : 'whoosh')
     const t = setTimeout(() => setShown(null), 1100)
     return () => clearTimeout(t)
   }, [key, phase, reduce])
@@ -235,7 +259,13 @@ export function SfxBurst({ phase, round }) {
             position: 'fixed', inset: 0, zIndex: 60, pointerEvents: 'none', display: 'grid', placeItems: 'center',
           }}
         >
-          <div style={{ textAlign: 'center' }}>
+          <div aria-hidden style={{
+            position: 'absolute', inset: '-30%', opacity: 0.5,
+            background: `repeating-conic-gradient(from 0deg at 50% 50%, ${C.ink} 0deg 0.6deg, transparent 0.6deg 5deg)`,
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 22%, #000 60%)',
+            maskImage: 'radial-gradient(circle at 50% 50%, transparent 22%, #000 60%)',
+          }} />
+          <div style={{ textAlign: 'center', position: 'relative' }}>
             <div style={{
               fontFamily: FONT_DISPLAY, fontSize: 'clamp(4.5rem, 16vw, 11rem)', lineHeight: 1, color: C.yellow,
               WebkitTextStroke: `5px ${C.ink}`, paintOrder: 'stroke fill', textShadow: `8px 8px 0 ${C.ink}`,

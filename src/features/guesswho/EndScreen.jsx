@@ -1,15 +1,77 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { C, FONT_BODY, FONT_DISPLAY, Btn, PhaseFrame } from './manga.jsx'
-import { AvatarName, ClipPlayer, Lives } from './ui.jsx'
+import { motion, useReducedMotion } from 'framer-motion'
+import { C, FONT_BODY, FONT_DISPLAY, Btn, PhaseFrame, SPRING_POP } from './manga.jsx'
+import { AvatarName, ClipPlayer, Lives, avatarUrl } from './ui.jsx'
+import { Confetti } from './fx.jsx'
+import { play } from './sfx.js'
 import { bestHighlight } from './logic/highlights.js'
 
-// Dernière page du chapitre : le meilleur imitateur en couverture, le reste en liste.
+const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`
+// Noms des ex aequo sur un critère (au plus 2, puis « +N »).
+function leaders(rows, score) {
+  const max = Math.max(...rows.map(score))
+  const top = rows.filter((p) => score(p) === max)
+  const names = top.slice(0, 2).map((p) => p.display_name || 'Invité').join(' & ')
+  return { max, names: top.length > 2 ? `${names} +${top.length - 2}` : names }
+}
+
+// Podium : 2e · 1er · 3e, marches de hauteurs différentes qui montent l'une après l'autre.
+function Podium({ rows }) {
+  const reduce = useReducedMotion()
+  const order = [[rows[1], 2, 92], [rows[0], 1, 128], [rows[2], 3, 70]]
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', alignItems: 'end', gap: 8, margin: '6px auto 22px', maxWidth: 560 }}>
+      {order.map(([p, rank, h]) => (
+        <div key={rank} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          {p && (
+            <motion.div initial={reduce ? false : { y: -30, opacity: 0, scale: 0.6 }} animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ ...SPRING_POP, delay: reduce ? 0 : 0.35 + (3 - rank) * 0.35 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0, maxWidth: '100%' }}>
+              {rank === 1 && <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: `drop-shadow(2px 2px 0 ${C.ink})` }}>👑</span>}
+              <img src={avatarUrl(p)} alt="" width={rank === 1 ? 72 : 56} height={rank === 1 ? 72 : 56} style={{
+                width: rank === 1 ? 72 : 56, height: rank === 1 ? 72 : 56, borderRadius: '50%', objectFit: 'cover',
+                border: `3px solid ${C.ink}`, background: C.paper, boxShadow: rank === 1 ? `0 0 0 4px ${C.yellow}, 0 0 0 7px ${C.ink}` : 'none',
+              }} />
+              <span style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: FONT_DISPLAY, fontSize: rank === 1 ? 17 : 14, color: C.ink }}>
+                {p.display_name || 'Invité'}
+              </span>
+              <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 13, color: C.textMut }}>{plural(p.total_votes, 'vote')}</span>
+            </motion.div>
+          )}
+          <motion.div initial={reduce ? false : { scaleY: 0 }} animate={{ scaleY: 1 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: reduce ? 0 : (3 - rank) * 0.3 }}
+            style={{
+              width: '100%', height: h, transformOrigin: 'bottom', display: 'grid', placeItems: 'start center', paddingTop: 8,
+              background: rank === 1 ? C.yellow : rank === 2 ? C.paper : C.tone, border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`,
+              fontFamily: FONT_DISPLAY, fontSize: rank === 1 ? 40 : 30, color: C.ink, opacity: p ? 1 : 0.35, boxSizing: 'border-box',
+            }}>{rank}</motion.div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function Stat({ icon, label, value, detail, i }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_POP, delay: 1.3 + i * 0.12 }}
+      style={{ border: `3px solid ${C.ink}`, background: C.paper, padding: '10px 12px', boxShadow: `3px 3px 0 ${C.ink}`, minWidth: 0 }}>
+      <div style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 12.5, color: C.textMut }}>{icon} {label}</div>
+      <div style={{ fontFamily: FONT_DISPLAY, fontSize: 17, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+      {detail && <div style={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 12.5, color: C.ink }}>{detail}</div>}
+    </motion.div>
+  )
+}
+
+// Dernière page du chapitre : podium, stats fun, l'imitation de la partie, rejouer.
 export default function EndScreen({ g }) {
   const navigate = useNavigate()
-  const rows = [...g.players].filter((p) => p.seat != null).sort((a, b) => b.total_votes - a.total_votes)
-  const [best, ...rest] = rows
+  const [busy, setBusy] = useState(false)
+  const rows = [...g.players].filter((p) => p.seat != null).sort((a, b) => b.total_votes - a.total_votes || b.lives - a.lives)
+  const rest = rows.slice(3)
   const top = bestHighlight(g.highlights)
   const topPlayer = top && g.players.find((p) => p.user_id === top.user_id)
+  useEffect(() => { const t = setTimeout(() => play('fanfare'), 900); return () => clearTimeout(t) }, [])
   const share = async () => {
     const text = `🎤 Meilleure imitation de la partie Guess Who : ${topPlayer?.display_name} sur « ${top.clip} »`
     try {
@@ -17,48 +79,62 @@ export default function EndScreen({ g }) {
       else await navigator.clipboard?.writeText(top.audio_url.startsWith('https://') ? `${text} ${top.audio_url}` : text)
     } catch { /* partage annulé */ }
   }
+  const replay = async () => { setBusy(true); await g.act.start(g.room?.settings); setBusy(false) }
+  const voted = rows.length ? leaders(rows, (p) => p.total_votes) : null
+  const lost = rows.length ? leaders(rows, (p) => g.maxLives - p.lives) : null
+  const alive = rows.length ? leaders(rows, (p) => p.lives) : null
+  const stats = [
+    top && { icon: '🎤', label: 'Imitation de la partie', value: topPlayer?.display_name || 'Un joueur', detail: `« ${top.clip} » · ${plural(top.votes, 'vote')}` },
+    voted && voted.max > 0 && { icon: '🗳️', label: 'Le plus voté', value: voted.names, detail: plural(voted.max, 'vote') },
+    lost && lost.max > 0 && { icon: '💔', label: 'Cœurs brisés', value: lost.names, detail: `${plural(lost.max, 'vie')} perdue${lost.max > 1 ? 's' : ''}` },
+    alive && alive.max > 0 && { icon: '🛡️', label: 'Le plus solide', value: alive.names, detail: `${plural(alive.max, 'vie')} restante${alive.max > 1 ? 's' : ''}` },
+    g.room?.round > 0 && { icon: '📖', label: 'Tours joués', value: `${g.room.round}` },
+  ].filter(Boolean)
   return (
-    <PhaseFrame eyebrow="Fin du chapitre" prompt="Meilleur imitateur" tilt={0.4}
-      footer={
-        <>
-          <Btn variant="ghost" onClick={() => navigate('/guess-who')}>Quitter</Btn>
-          {g.isHost && <Btn onClick={() => g.act.start(g.room?.settings)}>Rejouer</Btn>}
-        </>
-      }>
-      {best && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: 16, marginBottom: 14,
-          background: C.yellow, border: `3px solid ${C.ink}`, boxShadow: `6px 6px 0 ${C.ink}`,
-        }}>
-          <span aria-hidden style={{ fontSize: 44 }}>🏆</span>
-          <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={best} size={64} /></div>
-          <span style={{ fontFamily: FONT_DISPLAY, fontSize: 26, color: C.ink }}>{best.total_votes} vote{best.total_votes > 1 ? 's' : ''}</span>
+    <PhaseFrame eyebrow="Fin du chapitre" prompt="Le classement final" tilt={0.4}>
+      <Confetti count={48} duration={3000} />
+      <Podium rows={rows} />
+      {/* Actions en haut : pas besoin de défiler pour relancer. */}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+        {g.isHost
+          ? <Btn onClick={replay} disabled={busy} style={{ flex: '1 1 220px', minHeight: 60, fontSize: 20 }}>{busy ? 'Relance…' : '🔁 Rejouer'}</Btn>
+          : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>En attente de l'hôte pour rejouer…</span>}
+        <Btn variant="ghost" onClick={() => navigate('/guess-who')}>Quitter</Btn>
+      </div>
+
+      {stats.length > 0 && (
+        <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))', marginBottom: 18 }}>
+          {stats.map((s, i) => <Stat key={s.label} i={i} {...s} />)}
         </div>
       )}
+
       {top && (
         <div style={{ border: `3px solid ${C.ink}`, background: C.ink, color: C.paper, padding: 16, marginBottom: 14, display: 'grid', gap: 12 }}>
           <div style={{ fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.3rem,3.5vw,1.8rem)', color: C.yellow }}>🔁 L'imitation de la partie</div>
           <div style={{ fontFamily: FONT_BODY, fontWeight: 700 }}>
-            {topPlayer?.display_name || 'Un joueur'} sur « {top.clip} » · tour {top.round} · {top.votes} vote{top.votes > 1 ? 's' : ''}
+            {topPlayer?.display_name || 'Un joueur'} sur « {top.clip} » · tour {top.round} · {plural(top.votes, 'vote')}
           </div>
           <div style={{ background: C.paper, padding: 10, border: `3px solid ${C.ink}` }}><ClipPlayer url={top.audio_url} label="l'imitation de la partie" big /></div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <a href={top.audio_url} download={`guesswho-${(topPlayer?.display_name || 'imitation').replace(/[^a-z0-9]+/gi, '-')}.${top.audio_url.includes('mp4') ? 'm4a' : 'webm'}`}
-              className="gw-btn" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 46, padding: '0 18px', background: C.yellow, color: C.ink, border: `3px solid ${C.paper}`, fontFamily: FONT_DISPLAY, textDecoration: 'none' }}>Télécharger</a>
+              className="gw-btn" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 48, padding: '0 18px', background: C.yellow, color: C.ink, border: `3px solid ${C.paper}`, fontFamily: FONT_DISPLAY, textDecoration: 'none' }}>Télécharger</a>
             <Btn variant="sea" onClick={share}>Partager</Btn>
           </div>
         </div>
       )}
-      <div style={{ display: 'grid', gap: 8 }}>
-        {rest.map((p) => (
-          <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.paper }}>
-            <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={p} size={36} /></div>
-            <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.ink }}>{p.total_votes} vote{p.total_votes > 1 ? 's' : ''}</span>
-            <Lives lives={p.lives} max={g.maxLives} />
-          </div>
-        ))}
-      </div>
-      {!g.isHost && <p style={{ fontFamily: FONT_BODY, fontWeight: 700, color: C.textMut }}>L'hôte peut relancer une partie.</p>}
+
+      {rest.length > 0 && (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {rest.map((p, i) => (
+            <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.paper }}>
+              <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, color: C.ink, width: 24 }}>{i + 4}</span>
+              <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={p} size={36} /></div>
+              <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, whiteSpace: 'nowrap' }}>{plural(p.total_votes, 'vote')}</span>
+              <Lives lives={p.lives} max={g.maxLives} size={16} />
+            </div>
+          ))}
+        </div>
+      )}
     </PhaseFrame>
   )
 }

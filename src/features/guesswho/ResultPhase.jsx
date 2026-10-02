@@ -1,47 +1,103 @@
-import { motion } from 'framer-motion'
-import { C, FONT_DISPLAY, PhaseFrame, SPRING_POP, type } from './manga.jsx'
+import { useEffect, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { C, FONT_BODY, FONT_DISPLAY, PhaseFrame, SPRING_POP, type } from './manga.jsx'
 import { AvatarName, Lives } from './ui.jsx'
+import { Confetti, CountUp } from './fx.jsx'
+import { play, vibrate } from './sfx.js'
 
-// Verdict du tour : classement en cases, le perdant prend un tampon « K.O. ».
+// Rythme de la révélation (le verdict ne dure que 8 s).
+const FIRST_MS = 350
+const GAP_MS = 420
+
+// Verdict du tour : les cases tombent une à une, les votes montent,
+// puis couronne + confettis pour le meilleur et cœur brisé + « K.O. » pour le(s) perdant(s).
 export default function ResultPhase({ g }) {
+  const reduce = useReducedMotion()
   const res = g.room.last_result || {}
+  const auto = res.stage === 'auto'
   const losers = new Set(res.losers || [])
   const scores = res.stage === 'revote' ? res.revote_scores || {} : res.scores || {}
   const rows = [...g.players].filter((p) => p.seat != null).sort((a, b) => (scores[b.user_id] || 0) - (scores[a.user_id] || 0))
+  const topScore = auto ? 0 : Math.max(0, ...rows.map((p) => scores[p.user_id] || 0))
+  const revealMs = reduce ? 0 : FIRST_MS + rows.length * GAP_MS + 250
+  const [step, setStep] = useState(reduce ? 2 : 0) // 0 révélation · 1 couronne · 2 K.O.
+  useEffect(() => {
+    if (reduce) return
+    const t1 = setTimeout(() => { setStep(1); if (topScore > 0) play('fanfare') }, revealMs)
+    const t2 = setTimeout(() => {
+      setStep(2)
+      if (losers.size) { play('boom'); setTimeout(() => play('heartbreak'), 120); vibrate([80, 50, 140]) }
+    }, revealMs + (topScore > 0 ? 700 : 100))
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [res.round, res.stage, reduce])
   const title = losers.size === 0 ? 'Personne ne perd de vie'
-    : res.stage === 'auto' ? "Ceux qui n'ont rien envoyé perdent une vie"
+    : auto ? "Pas d'imitation = une vie en moins"
     : losers.size > 1 ? 'Égalité : les ex aequo perdent une vie' : 'Le moins voté perd une vie'
+  const meLost = g.me && losers.has(g.me.user_id)
   return (
     <PhaseFrame eyebrow={`Tour ${res.round} · Verdict`} prompt={title} remaining={g.remaining} total={g.total} tilt={0.6}>
-      <div style={{ display: 'grid', gap: 10 }}>
+      {step >= 1 && topScore > 0 && <Confetti count={34} />}
+      <motion.div
+        animate={step === 2 && losers.size && !reduce ? { x: [0, -10, 9, -6, 4, 0] } : { x: 0 }}
+        transition={{ duration: 0.45 }}
+        style={{ display: 'grid', gap: 12 }}>
         {rows.map((p, i) => {
           const lost = losers.has(p.user_id)
           const n = scores[p.user_id] || 0
+          const best = step >= 1 && !auto && n === topScore && n > 0
+          const ko = step === 2 && lost
+          const me = p.user_id === g.me?.user_id
+          // le cœur perdu est encore entier jusqu'au K.O.
+          const shownLives = lost && step < 2 ? Math.min(g.maxLives, p.lives + 1) : p.lives
           return (
             <motion.div key={p.user_id}
-              initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ ...SPRING_POP, delay: i * 0.08 }}
+              initial={reduce ? { opacity: 0 } : { y: -40, opacity: 0, rotate: i % 2 ? 2 : -2 }}
+              animate={{ y: 0, opacity: 1, rotate: 0, scale: best ? 1.02 : 1 }}
+              transition={{ ...SPRING_POP, delay: reduce ? 0 : (FIRST_MS + i * GAP_MS) / 1000 }}
               style={{
-                position: 'relative', display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px',
-                border: `3px solid ${C.ink}`, background: lost ? '#FFE3E8' : C.paper, boxShadow: `4px 4px 0 ${C.ink}`,
+                position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                border: `3px solid ${C.ink}`, boxShadow: `${best ? 6 : 4}px ${best ? 6 : 4}px 0 ${ko ? C.red : C.ink}`,
+                background: ko ? '#FFE3E8' : best ? C.yellow : C.paper, transition: 'background .25s',
               }}>
-              <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={p} /></div>
-              <span style={{ ...type.h3, color: C.ink, fontVariantNumeric: 'tabular-nums' }}>
-                {res.stage === 'auto' ? '—' : `${n} vote${n > 1 ? 's' : ''}`}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <AvatarName player={p} sub={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 2 }}><Lives lives={shownLives} max={g.maxLives} size={18} />{me && 'Toi'}</span>} />
+              </div>
+              <span style={{ ...type.h3, color: C.ink, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'center', display: 'grid', lineHeight: 1, flex: '0 0 auto' }}>
+                {auto ? '—' : (
+                  <>
+                    <span style={{ fontSize: 28 }}>
+                      <CountUp to={n} delay={reduce ? 0 : FIRST_MS + i * GAP_MS + 150} step={Math.max(45, Math.min(110, 320 / Math.max(1, n)))} />
+                    </span>
+                    <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 12 }}>vote{n > 1 ? 's' : ''}</span>
+                  </>
+                )}
               </span>
-              <Lives lives={p.lives} max={g.maxLives} />
-              {lost && (
+              {best && (
+                <motion.span aria-label="meilleure imitation du tour"
+                  initial={{ y: -30, scale: 0, rotate: -40 }} animate={{ y: 0, scale: 1, rotate: -16 }}
+                  transition={{ type: 'spring', stiffness: 520, damping: 11 }}
+                  style={{ position: 'absolute', left: -12, top: -20, fontSize: 30, filter: `drop-shadow(2px 2px 0 ${C.ink})` }}>👑</motion.span>
+              )}
+              {ko && (
                 <motion.span aria-label="perd une vie"
-                  initial={{ scale: 3, rotate: -30, opacity: 0 }} animate={{ scale: 1, rotate: -12, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 600, damping: 12, delay: 0.4 + i * 0.08 }}
+                  initial={{ scale: 3.2, rotate: -30, opacity: 0 }} animate={{ scale: 1, rotate: -12, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 640, damping: 12 }}
                   style={{
-                    position: 'absolute', right: 12, top: -14, fontFamily: FONT_DISPLAY, fontSize: 20, color: '#fff',
-                    background: C.red, border: `3px solid ${C.ink}`, padding: '2px 10px',
+                    position: 'absolute', right: 10, top: -16, fontFamily: FONT_DISPLAY, fontSize: 22, color: '#fff',
+                    background: C.red, border: `3px solid ${C.ink}`, padding: '2px 12px', boxShadow: `3px 3px 0 ${C.ink}`,
                   }}>K.O.</motion.span>
               )}
             </motion.div>
           )
         })}
-      </div>
+      </motion.div>
+      {step === 2 && meLost && (
+        <motion.p initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={SPRING_POP}
+          style={{ margin: '18px 0 0', textAlign: 'center', fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.2rem,4vw,1.6rem)', color: C.red }}>
+          {g.me.lives > 0 ? `Aïe… il te reste ${g.me.lives} vie${g.me.lives > 1 ? 's' : ''} 💔` : 'Plus de vie : place au gage ! 😈'}
+        </motion.p>
+      )}
     </PhaseFrame>
   )
 }
