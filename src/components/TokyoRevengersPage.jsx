@@ -1,7 +1,12 @@
-// Tokyo Revengers — fiche série sans épisodes hébergés : présentation, les
-// quatre saisons avec leurs bandes-annonces officielles (YouTube, chargées au
-// clic) et les plateformes où la série se regarde légalement.
-import { useEffect, useState } from 'react'
+// Tokyo Revengers — fiche série : présentation, les quatre saisons avec leurs
+// bandes-annonces officielles (YouTube, chargées au clic), les plateformes où
+// la série se regarde légalement, et les épisodes publiés par le staff depuis
+// /staff/contenus (fusionnés dans VIDEOS par prepareAnime avant l'ouverture).
+import { useEffect, useMemo, useState } from 'react'
+import EpisodeWatch from './EpisodeWatch.jsx'
+import VIDEOS from '../data/tokyo-revengers-videos.json'
+
+const NS = 'tokyo-revengers'
 
 const COLOR  = '#e11d48'
 const COLOR2 = '#fb7185'
@@ -46,6 +51,8 @@ const CSS = `
   .tr-play:focus-visible { outline: 3px solid ${COLOR2}; outline-offset: -3px; }
   .tr-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 16px; border-radius: 11px; font-weight: 800; font-size: 14px; text-decoration: none; color: #fff; transition: transform .15s, filter .15s; }
   .tr-btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  .tr-ep { transition: transform .2s, border-color .2s; }
+  .tr-ep:hover, .tr-ep:focus-visible { transform: translateY(-3px); border-color: rgba(225,29,72,.5) !important; outline: none; }
   @media (max-width: 900px) {
     .tr-grid { grid-template-columns: 1fr; }
     .tr-aside { order: -1; position: static !important; }
@@ -96,16 +103,67 @@ function PlatformLink({ id, small }) {
   )
 }
 
+function EpisodeCard({ video, onPlay }) {
+  const [imgErr, setImgErr] = useState(false)
+  return (
+    <button className="tr-ep" onClick={onPlay} style={{
+      textAlign: 'left', padding: 0, cursor: 'pointer', borderRadius: 14, overflow: 'hidden', color: '#fff',
+      background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.08)', fontFamily: 'inherit',
+    }}>
+      <div style={{ position: 'relative', aspectRatio: '16/9', background: '#000' }}>
+        {video.thumbnail && !imgErr
+          ? <img src={video.thumbnail} alt="" loading="lazy" decoding="async" onError={() => setImgErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: .85 }} />
+          : <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: `linear-gradient(135deg, ${COLOR}22, #000)`, fontSize: 30, fontWeight: 900, color: `${COLOR2}66` }}>#{video.episode}</div>}
+        <span style={{ position: 'absolute', left: 8, bottom: 8, padding: '2px 8px', borderRadius: 999, fontSize: 10, fontWeight: 800, background: 'rgba(0,0,0,.6)', border: `1px solid ${COLOR}55`, color: COLOR2 }}>{video.badge || 'VOSTFR'}</span>
+      </div>
+      <div style={{ padding: '10px 12px 12px' }}>
+        <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', color: COLOR2 }}>
+          SAISON {String(video.season || 'S01').replace(/^S0?/i, '')} · ÉP. {video.episode}
+        </div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 3, lineHeight: 1.3 }}>{video.title}</div>
+      </div>
+    </button>
+  )
+}
+
 export default function TokyoRevengersPage({ onClose }) {
+  const [detailIdx, setDetailIdx] = useState(null)
+  // VIDEOS est complété par prepareAnime (App.jsx) avant l'affichage : copie figée au montage.
+  const videos = useMemo(() => VIDEOS.filter(v => v.src), [])
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
   useEffect(() => {
-    const fn = (e) => { if (e.key === 'Escape') onClose?.() }
+    const fn = (e) => {
+      if (e.key !== 'Escape') return
+      if (detailIdx !== null) setDetailIdx(null)
+      else onClose?.()
+    }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [onClose])
+  }, [onClose, detailIdx])
+
+  if (detailIdx !== null) {
+    return (
+      <div className="tr-root" style={{
+        position: 'fixed', left: 0, right: 0, top: 76, bottom: 0, zIndex: 500, overflowY: 'auto',
+        background: 'linear-gradient(135deg, #0c0a10 0%, #110c14 55%, #08070b 100%)', color: '#fff',
+        padding: '20px clamp(16px,3vw,28px) 48px', boxSizing: 'border-box',
+      }}>
+        <style>{CSS}</style>
+        <button onClick={() => setDetailIdx(null)} style={{
+          marginBottom: 16, cursor: 'pointer', padding: '8px 15px', borderRadius: 10, fontSize: 12.5, fontWeight: 800,
+          color: 'rgba(255,255,255,.85)', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)',
+        }}>← Épisodes</button>
+        <div style={{ maxWidth: 1760, margin: '0 auto' }}>
+          <EpisodeWatch videos={videos} startIdx={detailIdx} ns={NS} storageKey={NS} color={COLOR} color2={COLOR2}
+            tags={TAGS} animeSynopsis={SYNOPSIS} onSelect={setDetailIdx} onClose={() => setDetailIdx(null)} />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="tr-root" style={{
@@ -150,6 +208,16 @@ export default function TokyoRevengersPage({ onClose }) {
       <div className="tr-body">
         <div className="tr-grid">
           <main>
+            {videos.length > 0 && (
+              <section style={{ marginBottom: 28 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 900, margin: '10px 0 16px' }}>
+                  Épisodes <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.45)' }}>· {videos.length}</span>
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
+                  {videos.map((v, i) => <EpisodeCard key={v.progressKey || `${v.season}-${v.episode}`} video={v} onPlay={() => setDetailIdx(i)} />)}
+                </div>
+              </section>
+            )}
             <h2 style={{ fontSize: 20, fontWeight: 900, margin: '10px 0 16px' }}>Les saisons</h2>
             <div className="tr-seasons">
               {[...SEASONS].reverse().map((s) => (
@@ -186,7 +254,7 @@ export default function TokyoRevengersPage({ onClose }) {
                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: -4 }}>Saisons 2 et 3</span>
               </div>
               <p style={{ margin: '12px 0 0', fontSize: 12, lineHeight: 1.5, color: 'rgba(255,255,255,.45)' }}>
-                Les épisodes ne sont pas hébergés sur Brams : les liens ouvrent la recherche de chaque plateforme. Le catalogue peut varier selon les pays.
+                Les liens ouvrent la recherche de chaque plateforme. Le catalogue peut varier selon les pays.
               </p>
             </section>
             <section style={{ padding: 18, borderRadius: 16, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
