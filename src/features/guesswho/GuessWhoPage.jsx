@@ -181,7 +181,7 @@ export default function GuessWhoPage() {
       <style>{GLOBAL_CSS}</style>
       <MangaBackdrop />
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <BarreJeu titre="Guess Who" skin="manga" />
+        <BarreJeu titre="Guess Who" skin="brams" />
       </div>
       <div style={{ position: 'relative', zIndex: 1, marginTop: 22, paddingBottom: 120 }}>
         {code ? <Room code={code.toUpperCase()} identity={identity} /> : <Home identity={identity} />}

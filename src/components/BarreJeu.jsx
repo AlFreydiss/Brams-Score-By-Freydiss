@@ -1,5 +1,5 @@
 // Barre compacte des écrans de jeu immersifs : ← Accueil + titre + actions (slot droite).
-// `skin` : 'dark' (défaut, jeux sombres) ou 'manga' (papier + encre, Guess Who).
+// `skin` : 'dark' (défaut, jeux sombres), 'brams' (Guess Who) ou 'manga' (ancienne peau).
 import { Link } from 'react-router-dom'
 
 const SKINS = {
@@ -21,6 +21,18 @@ const SKINS = {
       border: '3px solid #14121A', fontFamily: "'Dela Gothic One', 'Arial Black', sans-serif",
     },
     title: { fontSize: 18, color: '#14121A', fontFamily: "'Dela Gothic One', 'Arial Black', sans-serif" },
+  },
+  // Identité Brams (Tier Studio) : encre chaude, filet fin, titre Fraunces.
+  brams: {
+    bar: {
+      background: 'rgba(11,11,12,0.82)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+      borderBottom: '1px solid rgba(255,255,255,0.07)',
+    },
+    back: {
+      color: '#EDEAE3', fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 999,
+      border: '1px solid rgba(255,255,255,0.07)', fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
+    },
+    title: { fontSize: 18, fontWeight: 500, color: '#EDEAE3', fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '-0.01em' },
   },
 }
 

@@ -1,20 +1,20 @@
-// Guess Who — effets ponctuels : confettis encrés, compteur qui monte, bouton son.
+// Guess Who — effets ponctuels : paillettes champagne, compteur qui monte, bouton son.
 // Tout est one-shot (CSS transform/opacity) et coupé par prefers-reduced-motion.
 import { useEffect, useMemo, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
-import { C, FONT_DISPLAY } from './manga.jsx'
+import { T, pill } from './theme.js'
 import { isMuted, onMuteChange, play, setMuted } from './sfx.js'
 
-const COLORS = [C.red, C.yellow, C.cyan, C.ink, '#FFFFFF']
+const COLORS = [T.accent, T.accentLit, T.medal.silver, T.accentHi]
 
-// Pluie de confettis (rectangles et bandes encrées), une seule fois.
+// Fine pluie de paillettes champagne, rare et courte, une seule fois.
 export function Confetti({ count = 42, duration = 2600 }) {
   const reduce = useReducedMotion()
   const [alive, setAlive] = useState(true)
-  const pieces = useMemo(() => Array.from({ length: count }, (_, i) => ({
-    i, left: Math.random() * 100, w: 7 + Math.random() * 9, h: 10 + Math.random() * 14,
+  const pieces = useMemo(() => Array.from({ length: Math.ceil(count / 2) }, (_, i) => ({
+    i, left: Math.random() * 100, w: 4 + Math.random() * 2, h: 4 + Math.random() * 2,
     color: COLORS[i % COLORS.length], delay: Math.random() * 0.5, dur: 1.6 + Math.random() * 1.1,
-    dx: `${-80 + Math.random() * 160}px`, rot: `${-540 + Math.random() * 1080}deg`,
+    dx: `${-40 + Math.random() * 80}px`, rot: `${-180 + Math.random() * 360}deg`,
   })), [count])
   useEffect(() => { const t = setTimeout(() => setAlive(false), duration + 600); return () => clearTimeout(t) }, [duration])
   if (reduce || !alive) return null
@@ -23,7 +23,7 @@ export function Confetti({ count = 42, duration = 2600 }) {
       {pieces.map((p) => (
         <span key={p.i} className="gw-anim" style={{
           position: 'absolute', top: 0, left: `${p.left}%`, width: p.w, height: p.h, background: p.color,
-          border: `2px solid ${C.ink}`, '--dx': p.dx, '--rot': p.rot, willChange: 'transform',
+          borderRadius: '50%', opacity: 0.85, boxShadow: `0 0 6px ${T.glow}`, '--dx': p.dx, '--rot': p.rot, willChange: 'transform',
           animation: `gw-confetti ${p.dur}s cubic-bezier(.25,.6,.45,1) ${p.delay}s both`,
         }} />
       ))}
@@ -69,8 +69,8 @@ export function SoundToggle({ style }) {
       aria-pressed={!muted} aria-label={muted ? 'Activer les effets sonores' : 'Couper les effets sonores'}
       title={muted ? 'Effets sonores coupés' : 'Effets sonores activés'}
       style={{
-        width: 46, height: 46, display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: 20, lineHeight: 1,
-        background: muted ? C.tone : C.paper, border: `2px solid ${C.ink}`, fontFamily: FONT_DISPLAY,
+        ...pill('ghost'), width: 44, height: 44, display: 'grid', placeItems: 'center', cursor: 'pointer', fontSize: 18, lineHeight: 1,
+        background: muted ? T.raised : 'transparent', opacity: muted ? 0.7 : 1,
         WebkitTapHighlightColor: 'transparent', ...style,
       }}>{muted ? '🔇' : '🔊'}</button>
   )

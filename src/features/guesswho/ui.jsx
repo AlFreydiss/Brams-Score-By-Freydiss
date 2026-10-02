@@ -1,23 +1,25 @@
-// Guess Who — briques d'interface (vies, avatar, lecteur de son, carte d'imitation), style manga.
+// Guess Who — briques d'interface (vies, avatar, lecteur de son, carte d'imitation), identité Brams.
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { C, FONT_BODY, FONT_DISPLAY, SPRING_POP } from './manga.jsx'
+import { SPRING_POP } from './manga.jsx'
+import { T, F, LINE, RADIUS, SHADOW, plate, pill, label } from './theme.js'
 
-// Cœurs : un cœur qui se perd « éclate » (gonfle puis se fend).
+// Vies : points champagne ; une vie perdue s'éteint doucement.
 export function Lives({ lives, max = 2, size = 20 }) {
+  const d = Math.max(8, Math.round(size * 0.5))
   return (
-    <span aria-label={`${lives} vie${lives > 1 ? 's' : ''}`} style={{ display: 'inline-flex', gap: 4, flex: '0 0 auto' }}>
+    <span aria-label={`${lives} vie${lives > 1 ? 's' : ''}`} style={{ display: 'inline-flex', gap: Math.round(d * 0.6), flex: '0 0 auto', alignItems: 'center' }}>
       {Array.from({ length: max }, (_, i) => {
         const full = i < lives
         return (
           <motion.span key={i} initial={false}
-            animate={full
-              ? { scale: 1, rotate: 0, opacity: 1 }
-              : { scale: [1, 1.8, 0.85], rotate: [0, 18, -12], opacity: [1, 1, 0.45] }}
+            animate={full ? { scale: 1, opacity: 1 } : { scale: [1, 1.25, 1], opacity: [1, 1, 0.9] }}
             transition={full ? SPRING_POP : { duration: 0.6, times: [0, 0.35, 1] }}
-            style={{ fontSize: size, lineHeight: 1, filter: `drop-shadow(2px 2px 0 ${C.ink})` }}>
-            {full ? '❤️' : '💔'}
-          </motion.span>
+            style={{
+              width: d, height: d, borderRadius: '50%', display: 'inline-block',
+              background: full ? T.accent : 'transparent', border: `1px solid ${full ? T.accent : T.textFaint}`,
+              boxShadow: full ? `0 0 8px ${T.glow}` : 'none', transition: 'background .6s, border-color .6s',
+            }} />
         )
       })}
     </span>
@@ -32,11 +34,11 @@ export function AvatarName({ player, size = 44, sub }) {
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, minWidth: 0, maxWidth: '100%' }}>
       <img src={avatarUrl(player)} alt="" width={size} height={size} style={{
         width: size, height: size, borderRadius: '50%', objectFit: 'cover', flex: '0 0 auto',
-        border: `3px solid ${C.ink}`, background: C.paper,
+        border: LINE, background: T.raised,
       }} />
       <span style={{ display: 'grid', minWidth: 0 }}>
-        <span style={{ fontFamily: FONT_DISPLAY, fontSize: size > 50 ? 22 : 18, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-        {sub && <span style={{ fontFamily: FONT_BODY, fontWeight: 800, fontSize: 12.5, color: C.textMut }}>{sub}</span>}
+        <span style={{ fontFamily: F.ui, fontWeight: 600, fontSize: size > 50 ? 18 : 15.5, color: T.textHi, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+        {sub && <span style={{ fontFamily: F.ui, fontWeight: 500, fontSize: 12.5, color: T.textMute }}>{sub}</span>}
       </span>
     </span>
   )
@@ -45,8 +47,8 @@ export function AvatarName({ player, size = 44, sub }) {
 // Un seul son à la fois sur la page : lancer un lecteur met les autres en pause.
 export const PLAY_EVT = 'gw-audio-play'
 
-// Lecteur : gros bouton rouge encré + barre de progression en trame.
-export function ClipPlayer({ url, label, autoPlay = false, onError, big = false, onEnded }) {
+// Lecteur : bouton rond champagne + barre de progression fine.
+export function ClipPlayer({ url, label: name, autoPlay = false, onError, big = false, onEnded }) {
   const ref = useRef(null)
   const [playing, setPlaying] = useState(false)
   const [pct, setPct] = useState(0)
@@ -70,14 +72,13 @@ export function ClipPlayer({ url, label, autoPlay = false, onError, big = false,
     setBlocked(false)
     if (a.paused) { if (a.ended) a.currentTime = 0; a.play().catch(() => {}) } else a.pause()
   }
-  const s = big ? 84 : 52
+  const s = big ? 72 : 48
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', flexWrap: 'wrap' }}>
       {blocked && (
         <button type="button" className="gw-btn" onClick={toggle} style={{
-          width: '100%', minHeight: 56, cursor: 'pointer', background: C.yellow, color: C.ink,
-          border: `3px solid ${C.ink}`, boxShadow: `4px 4px 0 ${C.ink}`, fontFamily: FONT_DISPLAY, fontSize: 18,
-        }}>🔊 Appuie pour écouter le son</button>
+          ...pill('primary'), width: '100%', minHeight: 52, cursor: 'pointer', fontFamily: F.ui, fontWeight: 700, fontSize: 16,
+        }}>Appuie pour écouter le son</button>
       )}
       <audio ref={ref} src={url} preload="auto" playsInline
         onPlay={(e) => { setPlaying(true); window.dispatchEvent(new CustomEvent(PLAY_EVT, { detail: e.currentTarget })) }}
@@ -85,72 +86,66 @@ export function ClipPlayer({ url, label, autoPlay = false, onError, big = false,
         onEnded={() => { setPlaying(false); setPct(1); onEnded?.() }}
         onTimeUpdate={(e) => setPct(e.currentTarget.duration ? e.currentTarget.currentTime / e.currentTarget.duration : 0)}
         onError={onError} />
-      <motion.button type="button" className="gw-btn" onClick={toggle} whileTap={{ scale: 0.9 }}
-        aria-label={playing ? 'Pause' : `Écouter ${label || ''}`}
+      <motion.button type="button" className="gw-btn" onClick={toggle} whileTap={{ scale: 0.94 }}
+        aria-label={playing ? 'Pause' : `Écouter ${name || ''}`}
         style={{
-          width: s, height: s, borderRadius: '50%', cursor: 'pointer', flex: '0 0 auto',
-          background: playing ? C.yellow : C.red, color: playing ? C.ink : '#fff',
-          border: `3px solid ${C.ink}`, boxShadow: `3px 3px 0 ${C.ink}`,
-          fontFamily: FONT_DISPLAY, fontSize: big ? 30 : 18,
+          width: s, height: s, borderRadius: '50%', cursor: 'pointer', flex: '0 0 auto', display: 'grid', placeItems: 'center',
+          background: playing ? 'transparent' : T.accent, color: playing ? T.accent : T.onAccent,
+          border: `1px solid ${T.accent}`, boxShadow: playing ? `0 0 0 6px ${T.glow}` : SHADOW.soft,
+          fontFamily: F.ui, fontWeight: 800, fontSize: big ? 22 : 15, transition: 'background .2s, color .2s, box-shadow .2s',
         }}>
-        {playing ? '❚❚' : '▶'}
+        {playing ? '❚❚' : <span style={{ marginLeft: big ? 4 : 2 }}>▶</span>}
       </motion.button>
-      <div style={{ flex: 1, minWidth: 80, height: 14, border: `3px solid ${C.ink}`, background: C.paper, overflow: 'hidden' }}>
+      <div style={{ flex: 1, minWidth: 80, height: 4, borderRadius: RADIUS.pill, background: T.line, overflow: 'hidden' }}>
         <div style={{
           width: '100%', height: '100%', transform: `scaleX(${pct})`, transformOrigin: 'left', transition: 'transform .2s linear',
-          background: `repeating-linear-gradient(-45deg, ${C.ink} 0 4px, ${C.red} 4px 9px)`,
+          background: T.accent, borderRadius: RADIUS.pill,
         }} />
       </div>
     </div>
   )
 }
 
-// Carte d'imitation : numéro, joueur, lecteur, gros bouton de vote (≥ 52 px).
+// Carte d'imitation : numéro, joueur, lecteur, bouton de vote (≥ 48 px).
 // `onAir` : en cours dans « écouter tout » ; `dim` : le vote est allé à une autre carte.
 export function TakeCard({ player, url, selected, onVote, disabled, voteLabel = 'Voter', index, isMe, onAir, dim }) {
+  const edge = selected || onAir ? T.accent : T.line
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18, rotate: (index ?? 0) % 2 ? 1.5 : -1.5 }}
-      animate={{ opacity: dim ? 0.62 : 1, y: selected ? -4 : 0, rotate: selected ? -1.5 : 0, scale: onAir ? 1.02 : 1 }}
-      transition={{ ...SPRING_POP, delay: index != null ? Math.min(index, 6) * 0.05 : 0 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: dim ? 0.6 : 1, y: 0, scale: onAir ? 1.01 : 1 }}
+      transition={{ duration: 0.25, delay: index != null ? Math.min(index, 6) * 0.04 : 0 }}
       style={{
-        position: 'relative', display: 'flex', flexDirection: 'column', gap: 10, padding: 12,
-        background: selected ? C.yellow : isMe ? '#EEEDF2' : C.paper,
-        border: `3px ${isMe ? 'dashed' : 'solid'} ${onAir ? C.red : C.ink}`,
-        boxShadow: `${selected ? 7 : 4}px ${selected ? 7 : 4}px 0 ${onAir ? C.red : C.ink}`,
+        ...plate({ padding: 14, borderRadius: RADIUS.md }),
+        border: `1px ${isMe ? 'dashed' : 'solid'} ${edge}`,
+        boxShadow: selected ? `0 0 0 3px ${T.glow}, ${SHADOW.soft}` : plate().boxShadow,
+        position: 'relative', display: 'flex', flexDirection: 'column', gap: 12,
       }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {index != null && (
           <span aria-hidden style={{
-            flex: '0 0 auto', width: 30, height: 30, display: 'grid', placeItems: 'center', background: C.ink, color: C.paper,
-            fontFamily: FONT_DISPLAY, fontSize: 15, transform: 'rotate(-6deg)',
+            flex: '0 0 auto', width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center',
+            border: LINE, color: T.accentLit, fontFamily: F.display, fontWeight: 500, fontSize: 14,
           }}>{index + 1}</span>
         )}
-        <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={player} sub={isMe ? "C'est toi" : onAir ? '🔊 En cours…' : undefined} /></div>
+        <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={player} sub={isMe ? "C'est toi" : onAir ? 'En cours…' : undefined} /></div>
+        {selected && <span style={label({ color: T.accent })}>Mon vote</span>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 150px', minWidth: 0 }}><ClipPlayer url={url} label={player?.display_name} /></div>
         {onVote && (
           <motion.button type="button" className="gw-btn" disabled={disabled} onClick={onVote}
-            whileTap={disabled ? undefined : { scale: 0.95, y: 2 }}
+            whileTap={disabled ? undefined : { scale: 0.97 }}
             aria-pressed={!!selected}
             style={{
-              flex: '1 0 110px', minHeight: 52, padding: '0 12px', cursor: disabled ? 'default' : 'pointer', fontFamily: FONT_DISPLAY, fontSize: 16,
-              border: `3px solid ${C.ink}`, background: selected ? C.ink : C.red, color: selected ? C.yellow : '#fff',
-              boxShadow: selected ? 'none' : `3px 3px 0 ${C.ink}`,
+              ...pill(selected ? 'primary' : 'ghost'),
+              flex: '1 0 110px', minHeight: 48, padding: '0 14px', cursor: disabled ? 'default' : 'pointer',
+              fontFamily: F.ui, fontWeight: 700, fontSize: 15, opacity: disabled && !selected ? 0.5 : 1,
             }}>
-            {selected ? '✓ Mon vote' : voteLabel}
+            {selected ? '✓ Voté' : voteLabel}
           </motion.button>
         )}
       </div>
-      {selected && (
-        <motion.span aria-hidden initial={{ scale: 2.6, opacity: 0, rotate: -30 }} animate={{ scale: 1, opacity: 1, rotate: 12 }}
-          transition={{ type: 'spring', stiffness: 600, damping: 14 }}
-          style={{
-            position: 'absolute', top: -14, right: -8, background: C.red, color: '#fff', border: `3px solid ${C.ink}`,
-            fontFamily: FONT_DISPLAY, fontSize: 15, padding: '2px 10px', boxShadow: `3px 3px 0 ${C.ink}`,
-          }}>BEST!</motion.span>
-      )}
     </motion.div>
   )
 }
