@@ -11,35 +11,55 @@ const MAX_PLAYERS = 8
 const MIN_PLAYERS = 3
 
 const SETTINGS_KEY = 'gw_settings'
-const DEFAULTS = { lives: 2, speed: 'normal', sounds: 'all' }
-const OPTIONS = [
+const DEFAULTS = { lives: 2, speed: 'normal', sounds: 'all', rounds: 0 }
+// Anciens réglages (base sans la migration 20261002b).
+const LEGACY = [
   ['lives', 'Vies', [[1, '1'], [2, '2'], [3, '3']]],
   ['speed', 'Chrono', [['normal', 'Normal'], ['fast', 'Rapide']]],
   ['sounds', 'Sons', [['all', 'Tous'], ['fr', 'VF'], ['ja', 'VO'], ['bankai', 'Bankai only']]],
 ]
+// Réglages complets (migration 20261002b) : vies 1-5, chrono lent, types de sons, tours max.
+const FULL = [
+  ['lives', 'Vies', [1, 2, 3, 4, 5].map((n) => [n, String(n)])],
+  ['speed', 'Chrono', [['slow', 'Lent'], ['normal', 'Normal'], ['fast', 'Rapide']]],
+  ['sounds', 'Sons', [['all', 'Tous'], ['fr', 'VF'], ['ja', 'VO'], ['technique', 'Techniques'], ['opening', 'Openings'], ['meme', 'Mèmes'], ['bankai', 'Bankai']]],
+  ['rounds', 'Tours', [[0, '∞'], [5, '5'], [10, '10'], [15, '15'], [20, '20']]],
+]
 function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') } } catch { return DEFAULTS }
 }
+// Réglages envoyés : seulement ce que la base comprend (sinon valeur par défaut).
+function cleanSettings(value, options) {
+  const out = {}
+  for (const [key, , opts] of options) out[key] = opts.some(([v]) => v === value[key]) ? value[key] : DEFAULTS[key]
+  return out
+}
 
-// Réglages de partie (hôte) : boutons segmentés encrés.
-function Settings({ value, onChange }) {
+// Réglages de partie (hôte) : boutons segmentés encrés, qui passent à la ligne sur mobile.
+function Settings({ value, onChange, options }) {
   return (
-    <div style={{ display: 'grid', gap: 10, marginTop: 18, border: `3px solid ${C.ink}`, padding: 14, background: C.yellow }}>
+    <div style={{ display: 'grid', gap: 12, marginTop: 18, border: `3px solid ${C.ink}`, padding: 14, background: C.yellow }}>
       <div style={{ fontFamily: FONT_DISPLAY, fontSize: 18, color: C.ink }}>Règles de la partie</div>
-      {OPTIONS.map(([key, label, opts]) => (
-        <div key={key} role="radiogroup" aria-label={label} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: FONT_BODY, fontWeight: 800, width: 64, color: C.ink }}>{label}</span>
+      {options.map(([key, label, opts]) => (
+        <div key={key} role="radiogroup" aria-label={label} style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {/* libellé sur sa propre ligne : les boutons gardent toute la largeur sur mobile */}
+          <span style={{ fontFamily: FONT_BODY, fontWeight: 800, flex: '1 0 100%', color: C.ink }}>{label}</span>
           {opts.map(([v, text]) => {
             const on = value[key] === v
             return (
               <button key={String(v)} type="button" role="radio" aria-checked={on} className="gw-btn"
                 onClick={() => onChange({ ...value, [key]: v })}
-                style={{ minHeight: 44, padding: '0 14px', cursor: 'pointer', fontFamily: FONT_DISPLAY, fontSize: 14,
+                style={{ minHeight: 44, minWidth: 44, padding: '0 12px', cursor: 'pointer', fontFamily: FONT_DISPLAY, fontSize: 14,
                   border: `3px solid ${C.ink}`, background: on ? C.ink : C.paper, color: on ? C.yellow : C.ink }}>{text}</button>
             )
           })}
         </div>
       ))}
+      {options === FULL && (
+        <div style={{ ...type.small, color: C.ink }}>
+          {value.rounds ? `Au tour ${value.rounds}, s'il n'y a pas d'éliminé, le joueur avec le moins de vies prend le gage.` : 'Tours illimités : on joue jusqu\'au premier éliminé.'}
+        </div>
+      )}
     </div>
   )
 }
@@ -112,9 +132,23 @@ export default function Lobby({ code, g }) {
   const share = async () => {
     try { await navigator.share({ title: 'Guess Who', text: `Viens imiter des sons d'anime ! Salon ${code}`, url: link }) } catch { /* annulé */ }
   }
+  // Migration 20261002b présente : les joueurs ont un champ « ready ».
+  const robust = g.players.some((p) => 'ready' in p)
+  const options = robust ? FULL : LEGACY
+  const [readyOff, setReadyOff] = useState(false) // serveur sans guesswho_set_ready
+  const [readyBusy, setReadyBusy] = useState(false)
+  const showReady = robust && !readyOff && !!g.me && !g.spectator
+  const readyCount = g.players.filter((p) => p.ready).length
+  const toggleReady = async () => {
+    setReadyBusy(true)
+    const r = await g.act.ready(!g.me.ready)
+    setReadyBusy(false)
+    if (r?.error === 'unsupported') setReadyOff(true)
+    else if (r?.ok) { play('select'); vibrate(20) }
+  }
   const start = async () => {
     setBusy(true); setMsg(null)
-    const r = await g.act.start(settings)
+    const r = await g.act.start(cleanSettings(settings, options))
     if (r?.error) setMsg(r.error === 'not_enough_players' ? 'Il faut au moins 3 joueurs.' : 'Lancement impossible, réessaie.')
     setBusy(false)
   }
@@ -157,12 +191,20 @@ export default function Lobby({ code, g }) {
             <motion.div key={p.user_id} layout={!reduce}
               initial={reduce ? { opacity: 0 } : { scale: 0, rotate: -25, y: -20 }} animate={{ scale: 1, rotate: 0, y: 0, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }} transition={{ type: 'spring', stiffness: 520, damping: 14 }}>
-              <PlayerChip player={p} host={p.is_host} me={p.user_id === g.me?.user_id} />
+              <PlayerChip player={p} host={p.is_host} me={p.user_id === g.me?.user_id} submitted={showReady && !!p.ready} />
             </motion.div>
           ))}
         </AnimatePresence>
         {Array.from({ length: seats }, (_, i) => <EmptySeat key={`e${i}`} />)}
       </div>
+      {showReady && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
+          <Btn variant={g.me.ready ? 'sea' : 'ghost'} onClick={toggleReady} disabled={readyBusy} aria-pressed={!!g.me.ready}>
+            {g.me.ready ? '✓ Prêt !' : '✋ Je suis prêt'}
+          </Btn>
+          <span style={{ ...type.small, color: C.textMut }}>{readyCount}/{n} prêt{readyCount > 1 ? 's' : ''}</span>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
         {g.isHost
         ? <Btn onClick={start} disabled={!enough || busy} style={{ flex: '1 1 260px', minHeight: 60, fontSize: 19 }}>
@@ -177,7 +219,7 @@ export default function Lobby({ code, g }) {
         ✍️ Chacun écrit un gage · 🎧 on écoute un son d'anime · 🎙️ on l'imite · 🗳️ on vote.<br />
         Le moins voté perd une vie ; à 0, gage tiré au sort !
       </p>
-      {g.isHost && <Settings value={settings} onChange={changeSettings} />}
+      {g.isHost && <Settings value={settings} onChange={changeSettings} options={options} />}
       {/* Avant de jouer : choisir et tester son micro (le défaut est souvent le mauvais). */}
       {g.me && <div style={{ marginTop: 18 }}><MicSetup /></div>}
       {msg && <p role="alert" style={{ ...type.body, color: C.danger }}>{msg}</p>}

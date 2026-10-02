@@ -105,6 +105,9 @@ const REASONS = {
   seat_taken: 'Ce compte joue déjà depuis un autre appareil : tu regardes en spectateur.',
 }
 
+// Phases d'un tour où l'on affiche « Dernier tour ! ».
+const LAST_ROUND_PHASES = ['listen', 'record', 'vote', 'revote', 'result']
+
 const banner = { fontFamily: FONT_BODY, fontWeight: 800, textAlign: 'center', margin: '0 auto 14px', maxWidth: 820,
   background: C.yellow, border: `3px solid ${C.ink}`, padding: '8px 14px', color: C.ink }
 
@@ -132,6 +135,12 @@ function RoomInner({ code, identity }) {
       <SfxBurst phase={phase} round={g.room?.round} />
       {connectionNotice(g.connection) && <p role="status" style={{ ...banner, background: C.paper }}>{connectionNotice(g.connection)}</p>}
       {g.spectator && <p style={banner}>{REASONS[g.reason] || 'Mode spectateur.'}</p>}
+      {g.isLastRound && LAST_ROUND_PHASES.includes(phase) && (
+        <p role="status" style={{ ...banner, background: C.red, color: '#fff', fontFamily: FONT_DISPLAY, fontWeight: 400,
+          width: 'fit-content', transform: 'rotate(-2deg)', boxShadow: `4px 4px 0 ${C.ink}` }}>
+          🏁 Dernier tour ! ({g.roundsMax}/{g.roundsMax})
+        </p>
+      )}
       {g.notice && (
         <p role="alert" onClick={g.clearNotice} style={{ ...banner, cursor: 'pointer' }}>
           {g.notice} <span aria-hidden>✕</span>

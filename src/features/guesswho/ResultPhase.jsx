@@ -35,8 +35,24 @@ export default function ResultPhase({ g }) {
     : auto ? "Pas d'imitation = une vie en moins"
     : losers.size > 1 ? 'Égalité : les ex aequo perdent une vie' : 'Le moins voté perd une vie'
   const meLost = g.me && losers.has(g.me.user_id)
+  // Qui a voté pour qui (migration 20261002b ; absent sinon) : votes de l'étape décisive.
+  const nameOf = (uid) => (uid === g.me?.user_id ? 'Toi' : g.players.find((p) => p.user_id === uid)?.display_name || 'Un joueur')
+  const ballots = auto ? [] : (Array.isArray(res.votes) ? res.votes : [])
+    .filter((v) => (v.stage || 'vote') === (res.stage === 'revote' ? 'revote' : 'vote'))
+  // Verdict final (dernier tour sans éliminé) : désigné par le serveur.
+  const final = Array.isArray(res.final) ? res.final : []
   return (
-    <PhaseFrame eyebrow={`Tour ${res.round} · Verdict`} prompt={title} remaining={g.remaining} total={g.total} tilt={0.6}>
+    <PhaseFrame eyebrow={`Tour ${res.round}${g.roundsMax ? `/${g.roundsMax}` : ''} · Verdict`} prompt={title} remaining={g.remaining} total={g.total} tilt={0.6}>
+      {g.isLastRound && !final.length && (
+        <p style={{ ...type.small, margin: '0 0 14px', color: C.ink }}>
+          🏁 Dernier tour : sans éliminé, le joueur avec le moins de vies prendra le gage.
+        </p>
+      )}
+      {final.length > 0 && (
+        <p role="status" style={{ margin: '0 0 14px', padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.yellow, fontFamily: FONT_BODY, fontWeight: 800, color: C.ink }}>
+          🏁 Verdict final : {final.map(nameOf).join(' & ')} {final.length > 1 ? 'prennent' : 'prend'} le gage (moins de vies).
+        </p>
+      )}
       {step >= 1 && topScore > 0 && <Confetti count={34} />}
       <motion.div
         animate={step === 2 && losers.size && !reduce ? { x: [0, -10, 9, -6, 4, 0] } : { x: 0 }}
@@ -97,6 +113,16 @@ export default function ResultPhase({ g }) {
           style={{ margin: '18px 0 0', textAlign: 'center', fontFamily: FONT_DISPLAY, fontSize: 'clamp(1.2rem,4vw,1.6rem)', color: C.red }}>
           {g.me.lives > 0 ? `Aïe… il te reste ${g.me.lives} vie${g.me.lives > 1 ? 's' : ''} 💔` : 'Plus de vie : place au gage ! 😈'}
         </motion.p>
+      )}
+      {step >= 1 && ballots.length > 0 && (
+        <motion.ul initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_POP} aria-label="Détail des votes"
+          style={{ listStyle: 'none', margin: '18px 0 0', padding: '10px 12px', border: `3px dashed ${C.ink}`, display: 'grid', gap: 4 }}>
+          {ballots.map((v) => (
+            <li key={`${v.voter}-${v.stage}`} style={{ ...type.small, color: C.ink, overflowWrap: 'anywhere' }}>
+              {v.voter === g.me?.user_id ? <b>Tu</b> : <b>{nameOf(v.voter)}</b>} {v.voter === g.me?.user_id ? 'as' : 'a'} voté pour <b>{nameOf(v.target)}</b>
+            </li>
+          ))}
+        </motion.ul>
       )}
     </PhaseFrame>
   )

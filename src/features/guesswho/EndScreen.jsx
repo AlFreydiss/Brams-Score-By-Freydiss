@@ -69,7 +69,15 @@ export default function EndScreen({ g }) {
   const [busy, setBusy] = useState(false)
   const rows = [...g.players].filter((p) => p.seat != null).sort((a, b) => b.total_votes - a.total_votes || b.lives - a.lives)
   const rest = rows.slice(3)
-  const top = bestHighlight(g.highlights)
+  // Récap serveur (guesswho_stats) en priorité, calcul local en repli.
+  const awards = g.stats?.awards || {}
+  const sp = Object.fromEntries((g.stats?.players || []).map((s) => [s.user_id, s]))
+  const nameOf = (uid) => g.players.find((p) => p.user_id === uid)?.display_name || sp[uid]?.display_name || 'Invité'
+  const livesLost = (p) => sp[p.user_id]?.lives_lost ?? p.lives_lost ?? Math.max(0, g.maxLives - p.lives)
+  const bt = awards.best_take
+  const top = bt?.audio_url
+    ? { round: bt.round, user_id: bt.user_id, votes: bt.votes, audio_url: bt.audio_url, clip: bt.clip?.title || '' }
+    : bestHighlight(g.highlights)
   const topPlayer = top && g.players.find((p) => p.user_id === top.user_id)
   useEffect(() => { const t = setTimeout(() => play('fanfare'), 900); return () => clearTimeout(t) }, [])
   const share = async () => {
@@ -81,14 +89,20 @@ export default function EndScreen({ g }) {
   }
   const replay = async () => { setBusy(true); await g.act.start(g.room?.settings); setBusy(false) }
   const voted = rows.length ? leaders(rows, (p) => p.total_votes) : null
-  const lost = rows.length ? leaders(rows, (p) => g.maxLives - p.lives) : null
+  const lost = rows.length ? leaders(rows, livesLost) : null
   const alive = rows.length ? leaders(rows, (p) => p.lives) : null
+  const mv = awards.most_voted && sp[awards.most_voted]
+  const mw = awards.most_wins && sp[awards.most_wins]
+  const played = g.stats?.rounds?.length || g.room?.round || 0
   const stats = [
     top && { icon: '🎤', label: 'Imitation de la partie', value: topPlayer?.display_name || 'Un joueur', detail: `« ${top.clip} » · ${plural(top.votes, 'vote')}` },
-    voted && voted.max > 0 && { icon: '🗳️', label: 'Le plus voté', value: voted.names, detail: plural(voted.max, 'vote') },
+    mv ? { icon: '🗳️', label: 'Le plus voté', value: nameOf(mv.user_id), detail: plural(mv.total_votes, 'vote') }
+      : voted && voted.max > 0 && { icon: '🗳️', label: 'Le plus voté', value: voted.names, detail: plural(voted.max, 'vote') },
+    mw && { icon: '👑', label: 'Roi des tours', value: nameOf(mw.user_id), detail: `${plural(mw.wins, 'tour')} gagné${mw.wins > 1 ? 's' : ''}` },
     lost && lost.max > 0 && { icon: '💔', label: 'Cœurs brisés', value: lost.names, detail: `${plural(lost.max, 'vie')} perdue${lost.max > 1 ? 's' : ''}` },
-    alive && alive.max > 0 && { icon: '🛡️', label: 'Le plus solide', value: alive.names, detail: `${plural(alive.max, 'vie')} restante${alive.max > 1 ? 's' : ''}` },
-    g.room?.round > 0 && { icon: '📖', label: 'Tours joués', value: `${g.room.round}` },
+    awards.untouchable ? { icon: '🛡️', label: 'Intouchable', value: nameOf(awards.untouchable), detail: 'aucune vie perdue' }
+      : alive && alive.max > 0 && { icon: '🛡️', label: 'Le plus solide', value: alive.names, detail: `${plural(alive.max, 'vie')} restante${alive.max > 1 ? 's' : ''}` },
+    played > 0 && { icon: '📖', label: 'Tours joués', value: `${played}` },
   ].filter(Boolean)
   return (
     <PhaseFrame eyebrow="Fin du chapitre" prompt="Le classement final" tilt={0.4}>
