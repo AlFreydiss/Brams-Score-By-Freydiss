@@ -2,7 +2,7 @@
 // Affiche portrait 2:3, skeleton pendant le chargement, badge sobre unique,
 // survol : zoom + overlay bas (note, genres, actions icône), en CSS pur. La
 // progression n'apparaît QUE si > 0 (barre laiton fine en bas de l'affiche).
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { C, FONT_BODY, RADIUS_CARD } from './tokens.js'
 import { TitleArt } from './HeroCinematic.jsx'
 import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
@@ -71,16 +71,50 @@ export default function AnimeCard({
 }) {
   const STATUSES = [['avoir', 'À voir'], ['encours', 'En cours'], ['termine', 'Vu']]
   const [loaded, setLoaded] = useState(false)
+  // Au doigt, pas de survol : un appui long ouvre l'overlay (Ma liste, statut).
+  // Un tap ailleurs le referme ; le clic qui suit l'appui long n'ouvre pas la fiche.
+  const [opened, setOpened] = useState(false)
+  const pressTimer = useRef(0)
+  const swallowClick = useRef(false)
+  const cardRef = useRef(null)
+  const hasActions = !!(onToggleList || onSetStatus)
+  const cancelPress = () => { clearTimeout(pressTimer.current); pressTimer.current = 0 }
+  const onTouchStart = () => {
+    if (!hasActions) return
+    cancelPress()
+    pressTimer.current = setTimeout(() => {
+      pressTimer.current = 0
+      swallowClick.current = true
+      setOpened(true)
+      try { navigator.vibrate?.(12) } catch {}
+    }, 480)
+  }
+  useEffect(() => {
+    if (!opened) return
+    const close = e => { if (!cardRef.current?.contains(e.target)) setOpened(false) }
+    document.addEventListener('touchstart', close, { passive: true })
+    return () => document.removeEventListener('touchstart', close)
+  }, [opened])
+  useEffect(() => cancelPress, [])
 
   return (
     <div
+      ref={cardRef}
       role="button"
       tabIndex={0}
       aria-label={anime.title}
-      onClick={() => onOpen?.(anime)}
+      onClick={() => {
+        if (swallowClick.current) { swallowClick.current = false; return }
+        if (opened) { setOpened(false); return }
+        onOpen?.(anime)
+      }}
       onKeyDown={e => { if (e.key === 'Enter') onOpen?.(anime) }}
-      style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none' }}
-      className="ah2-card"
+      onTouchStart={onTouchStart}
+      onTouchMove={cancelPress}
+      onTouchEnd={cancelPress}
+      onContextMenu={e => { if (hasActions && (opened || swallowClick.current)) e.preventDefault() }}
+      style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+      className={opened ? 'ah2-card ah2-open' : 'ah2-card'}
     >
       {/* Affiche 2:3 — zoom et overlay pilotés en CSS (voir .ah2-art / .ah2-ov) */}
       <div className="ah2-art" style={{

@@ -175,7 +175,7 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
     setEndCard(false); setAutoNext(true); setCountdown(6)
     scrollRef.current?.scrollTo({ top: 0 })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapter.num])
+  }, [chapter.num, isWebtoon])
 
   // Les deux premières pages du chapitre suivant partent dès l'avant-dernière
   // page : le passage au chapitre suivant n'attend plus le réseau.
@@ -238,7 +238,9 @@ export function Reader({ chapter, chapterIndex, onClose, onPrevChapter, onNextCh
 
   // Webtoon : la position était perdue à chaque fermeture (seul le mode page
   // retenait sa page). On retient la page en haut de l'écran, par chapitre.
-  const wtKey = `${namespace}_wt_${chapter.num}`
+  // Même clé que le mode page : la reprise du hub (« p. N ») la lit, et
+  // passer de webtoon à page par page garde l'endroit où on en est.
+  const wtKey = `${namespace}_page_${chapter.num}`
   const wtSaved = useRef(-1)
   const wtWarmed = useRef(null)
   useEffect(() => {

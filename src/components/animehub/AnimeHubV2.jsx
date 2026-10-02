@@ -484,11 +484,15 @@ export default function AnimeHubV2(props) {
            Le focus clavier ouvre le même overlay — ses boutons étaient
            inatteignables autrement. */
         .ah2-art { transition: transform ${DUR.fast}s var(--mo-out), box-shadow ${DUR.base}s var(--mo-out) }
-        .ah2-card:hover .ah2-art,
+        /* Survol réservé aux souris : au doigt, :hover et le focus posé par
+           le tap restaient collés (overlay figé sur la carte au retour). */
+        @media (hover: hover) { .ah2-card:hover .ah2-art { transform: scale(1.045); box-shadow: ${SHADOW_CARD} } }
         .ah2-card:focus-visible .ah2-art { transform: scale(1.045); box-shadow: ${SHADOW_CARD} }
         .ah2-ov { opacity: 0; pointer-events: none; transition: opacity ${DUR.fast}s var(--mo-out) }
-        .ah2-card:hover .ah2-ov,
-        .ah2-card:focus-within .ah2-ov { opacity: 1; pointer-events: auto }
+        @media (hover: hover) { .ah2-card:hover .ah2-ov { opacity: 1; pointer-events: auto } }
+        .ah2-card.ah2-open .ah2-ov,
+        .ah2-card:focus-visible .ah2-ov,
+        .ah2-card:has(.ah2-ov :focus-visible) .ah2-ov { opacity: 1; pointer-events: auto }
 
         /* Flèches de row : visibles au survol de la row, ou dès qu'on les
            atteint au clavier. */
