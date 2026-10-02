@@ -97,6 +97,18 @@ export default function EndScreen({ g }) {
     if (r?.error) logEvent(g.room?.code, g.me?.user_id, 'start_refused', `revanche:${r.error}`)
     setBusy(false)
   }
+  const [readyOff, setReadyOff] = useState(false) // base sans guesswho_set_ready
+  const [readyBusy, setReadyBusy] = useState(false)
+  const seated = g.players.filter((p) => p.seat != null)
+  const showReady = !readyOff && !!g.me && g.me.seat != null && seated.some((p) => 'ready' in p)
+  const readyCount = seated.filter((p) => p.ready).length
+  const toggleReady = async () => {
+    setReadyBusy(true)
+    const r = await g.act.ready(!g.me.ready)
+    setReadyBusy(false)
+    if (r?.error === 'unsupported') setReadyOff(true)
+    else if (r?.ok) play('select')
+  }
   const voted = rows.length ? leaders(rows, (p) => p.total_votes) : null
   const lost = rows.length ? leaders(rows, livesLost) : null
   const alive = rows.length ? leaders(rows, (p) => p.lives) : null
@@ -119,13 +131,28 @@ export default function EndScreen({ g }) {
       <Podium rows={rows} />
       {/* Actions en haut : pas besoin de défiler pour relancer. */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+        {showReady && (
+          <Btn variant={g.me.ready ? 'sea' : 'ghost'} onClick={toggleReady} disabled={readyBusy} aria-pressed={!!g.me.ready}
+            style={{ flex: '1 1 200px', minHeight: 60, fontSize: 18 }}>
+            {g.me.ready ? '✓ Prêt pour la revanche' : '✋ Prêt pour la revanche ?'}
+          </Btn>
+        )}
         {g.isHost
-          ? <Btn onClick={replay} disabled={busy} style={{ flex: '1 1 220px', minHeight: 60, fontSize: 20 }}>{busy ? 'Relance…' : '🔁 Rejouer'}</Btn>
-          : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>En attente de l'hôte pour rejouer…</span>}
+          ? <Btn onClick={replay} disabled={busy} style={{ flex: '1 1 220px', minHeight: 60, fontSize: 20 }}>
+              {busy ? 'Relance…' : showReady ? `🔁 Revanche (${readyCount}/${seated.length} prêts)` : '🔁 Rejouer'}
+            </Btn>
+          : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
+              {showReady ? `${readyCount}/${seated.length} prêts · l'hôte lance la revanche…` : "En attente de l'hôte pour rejouer…"}
+            </span>}
         <Btn variant="ghost" onClick={() => navigate('/guess-who')}>Quitter</Btn>
       </div>
       {replayErr && (
         <div role="alert" style={{ margin: '-8px 0 18px', fontFamily: FONT_BODY, fontWeight: 800, fontSize: 15, color: '#c8102e' }}>{replayErr}</div>
+      )}
+      {showReady && readyCount > 0 && (
+        <div style={{ margin: '-6px 0 16px', fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14, color: C.ink }}>
+          ✓ Prêts : {seated.filter((p) => p.ready).map((p) => p.display_name || 'Invité').join(', ')}
+        </div>
       )}
 
       {stats.length > 0 && (
@@ -155,6 +182,7 @@ export default function EndScreen({ g }) {
             <div key={p.user_id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.paper }}>
               <span style={{ fontFamily: FONT_DISPLAY, fontSize: 16, color: C.ink, width: 24 }}>{i + 4}</span>
               <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={p} size={36} /></div>
+              {p.ready && <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.ok }}>✓ prêt</span>}
               <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.ink, whiteSpace: 'nowrap' }}>{plural(p.total_votes, 'vote')}</span>
               <Lives lives={p.lives} max={g.maxLives} size={16} />
             </div>
