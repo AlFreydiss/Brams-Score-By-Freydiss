@@ -1,10 +1,15 @@
 // Guess Who — choix du micro et niveau d'entrée (logique PURE, testée).
 
 // Contraintes getUserMedia : le micro choisi par le joueur, sinon celui du système.
+// Anti-larsen gardé (le son du tour peut sortir du haut-parleur), mais ni
+// réduction de bruit (elle mange les cris) ni gain auto (il « pompe » sur les
+// cris) : le volume est égalisé après coup, pareil pour tout le monde.
 export function micConstraints(deviceId) {
   return {
     echoCancellation: true,
     noiseSuppression: false,
+    autoGainControl: false,
+    channelCount: { ideal: 1 },
     ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
   }
 }
