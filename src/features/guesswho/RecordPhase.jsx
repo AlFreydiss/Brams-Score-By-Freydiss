@@ -10,6 +10,7 @@ import {
 } from '../../lib/guessWhoAudio.js'
 import { AUTO_SEND_S, COUNTDOWN, COUNT_STEP_MS, backoffMs, deadlineAction, inAppBrowser, retryableError, takeLimitMs } from './logic/recordFlow.js'
 import MicSetup from './MicSetup.jsx'
+import { logEvent } from '../../lib/guessWhoLog.js'
 import LiveWave, { WavePlayer } from './LiveWave.jsx'
 import { useClip } from './ListenPhase.jsx'
 
@@ -50,8 +51,17 @@ export default function RecordPhase({ g }) {
   const autoTried = useRef(null)
   const sendingRef = useRef(false)
 
+  const takeRef = useRef(null)
+  takeRef.current = take
+  const sentRef = useRef(null)
+  sentRef.current = sentId
+
   // Démontage (fin de phase) : micro rendu, lecture coupée, aperçus libérés.
   useEffect(() => () => {
+    const gg = gRef.current
+    if (gg.me && gg.me.lives > 0 && sentRef.current == null) {
+      logEvent(gg.room?.code, gg.me.user_id, 'record_timeout', takeRef.current ? 'not_sent' : 'no_take')
+    }
     flow.current.n++
     recRef.current?.stop()
     if (held.current) { releaseMic(); held.current = false }
@@ -84,6 +94,7 @@ export default function RecordPhase({ g }) {
     try {
       s = await getStream()
     } catch (e) {
+      logEvent(gRef.current.room?.code, gRef.current.me?.user_id, 'mic_error', micError(e))
       if (alive()) { setErr(MESSAGES[micError(e)] || MESSAGES.mic_denied); setRec('idle') }
       return
     }
@@ -101,6 +112,7 @@ export default function RecordPhase({ g }) {
     try {
       session = startRecorder(currentMic() || s, maxMs)
     } catch {
+      logEvent(gRef.current.room?.code, gRef.current.me?.user_id, 'mic_error', 'rec_failed')
       setErr(MESSAGES.rec_failed); setRec('idle'); setStream(null)
       return
     }
@@ -145,7 +157,10 @@ export default function RecordPhase({ g }) {
       setSending(false)
     }
     if (r?.ok) { setSentId(t.id); setAutoSent(auto); buzz(20) }
-    else setErr(MESSAGES[r?.error] || MESSAGES.upload_failed)
+    else {
+      setErr(MESSAGES[r?.error] || MESSAGES.upload_failed)
+      logEvent(gRef.current.room?.code, gRef.current.me?.user_id, 'upload_failed', String(r?.error || 'unknown'))
+    }
   }
 
   // Fin du chrono : on coupe la prise en cours puis on envoie la dernière prise.
@@ -258,7 +273,7 @@ export default function RecordPhase({ g }) {
             {showMic ? 'Fermer le réglage du micro' : 'Problème de micro ?'}
           </button>
         )}
-        {showMic && !busy && <MicSetup compact />}
+        {showMic && !busy && <MicSetup compact onError={(c) => logEvent(gRef.current.room?.code, gRef.current.me?.user_id, 'mic_error', `setup:${c}`)} />}
       </div>
       <LiveRoster players={g.players} submittedSeats={roster(g, g.prog?.took)} meUserId={g.me?.user_id} />
     </PhaseFrame>

@@ -15,7 +15,7 @@ const ERRORS = {
   no_support: "Le micro n'est pas accessible ici. Ouvre le site dans Safari ou Chrome.",
 }
 
-export default function MicSetup({ compact = false }) {
+export default function MicSetup({ compact = false, onError }) {
   const [devices, setDevices] = useState([])
   const [micId, setMic] = useState(getMicId())
   const [status, setStatus] = useState('idle') // idle | asking | live | error
@@ -75,6 +75,7 @@ export default function MicSetup({ compact = false }) {
       if (used && used !== id) { setMic(used); setMicId(used) }
       setStatus('live')
     } catch (e) {
+      onError?.(micError(e))
       setError(ERRORS[micError(e)] || ERRORS.mic_denied)
       setStatus('error')
     }

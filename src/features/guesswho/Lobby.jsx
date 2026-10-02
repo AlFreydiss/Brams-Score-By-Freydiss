@@ -7,6 +7,7 @@ import MicSetup from './MicSetup.jsx'
 import { SoundToggle } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
 import { startErrorText } from './logic/startError.js'
+import { logEvent } from '../../lib/guessWhoLog.js'
 
 const MAX_PLAYERS = 8
 const MIN_PLAYERS = 3
@@ -163,6 +164,7 @@ export default function Lobby({ code, g }) {
     setBusy(true); setMsg(null)
     const r = await g.act.start(cleanSettings(settings, options))
     setMsg(startErrorText(r))
+    if (r?.error) logEvent(code, g.me?.user_id, 'start_refused', `lobby:${r.error}`)
     setBusy(false)
   }
   const canShare = typeof navigator !== 'undefined' && !!navigator.share
@@ -235,7 +237,7 @@ export default function Lobby({ code, g }) {
       </p>
       {g.isHost && <Settings value={settings} onChange={changeSettings} options={options} />}
       {/* Avant de jouer : choisir et tester son micro (le défaut est souvent le mauvais). */}
-      {g.me && <div style={{ marginTop: 18 }}><MicSetup /></div>}
+      {g.me && <div style={{ marginTop: 18 }}><MicSetup onError={(c) => logEvent(code, g.me?.user_id, 'mic_error', `setup:${c}`)} /></div>}
       {msg && <p role="alert" style={{ ...type.body, color: C.danger }}>{msg}</p>}
     </PhaseFrame>
   )

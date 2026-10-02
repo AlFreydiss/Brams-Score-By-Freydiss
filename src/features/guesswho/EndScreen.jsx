@@ -7,6 +7,7 @@ import { Confetti } from './fx.jsx'
 import { play } from './sfx.js'
 import { bestHighlight } from './logic/highlights.js'
 import { startErrorText } from './logic/startError.js'
+import { logEvent } from '../../lib/guessWhoLog.js'
 
 const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`
 // Noms des ex aequo sur un critère (au plus 2, puis « +N »).
@@ -93,6 +94,7 @@ export default function EndScreen({ g }) {
     setBusy(true); setReplayErr(null)
     const r = await g.act.start(g.room?.settings)
     setReplayErr(startErrorText(r))
+    if (r?.error) logEvent(g.room?.code, g.me?.user_id, 'start_refused', `revanche:${r.error}`)
     setBusy(false)
   }
   const voted = rows.length ? leaders(rows, (p) => p.total_votes) : null

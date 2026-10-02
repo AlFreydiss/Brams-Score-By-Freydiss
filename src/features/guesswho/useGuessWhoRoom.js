@@ -9,6 +9,7 @@
 // tout retombe sur les anciennes fonctions.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as api from '../../lib/guessWhoRooms.js'
+import { logEvent } from '../../lib/guessWhoLog.js'
 import {
   remainingSec, shouldAdvance, isDone, phaseTotal, advanceRetryMs,
   clockSample, addSample, bestOffset, backoffMs, pollMs,
@@ -51,6 +52,16 @@ export function useGuessWhoRoom({ code, identity }) {
   const idRef = useRef(identity)
   idRef.current = identity
   const userId = identity?.userId ? String(identity.userId) : null
+
+  // Journal : durée de chaque coupure (> 8 s, seuil de `offline`).
+  const offlineSince = useRef(null)
+  useEffect(() => {
+    if (offline) { offlineSince.current = Date.now() - OFFLINE_AFTER_MS; return }
+    if (offlineSince.current == null) return
+    const s = Math.round((Date.now() - offlineSince.current) / 1000)
+    offlineSince.current = null
+    logEvent(code, userId, 'offline', `${s}s`)
+  }, [offline, code, userId])
 
   // ── Synchro (ordre garanti : une réponse plus ancienne n'écrase jamais) ─────
   const rejoinRef = useRef(() => {})
