@@ -38,3 +38,11 @@ export function retryableError(error) {
 export function inAppBrowser(ua) {
   return /FBAN|FBAV|Instagram|Discord|Line\/|Snapchat|TikTok|musical_ly|Twitter/i.test(String(ua || ''))
 }
+
+// Consigne pour sortir du navigateur intégré (le micro y est souvent bloqué).
+export function openInBrowserHint(ua) {
+  const s = String(ua || '')
+  if (/iPhone|iPad|iPod/.test(s)) return 'Touche ⋯ puis « Ouvrir dans Safari ».'
+  if (/Android/.test(s)) return 'Touche ⋮ puis « Ouvrir dans Chrome ».'
+  return 'Copie le lien et colle-le dans ton navigateur.'
+}

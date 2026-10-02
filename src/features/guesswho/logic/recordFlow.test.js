@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { takeLimitMs, deadlineAction, backoffMs, retryableError, inAppBrowser } from './recordFlow.js'
+import { takeLimitMs, deadlineAction, backoffMs, retryableError, inAppBrowser, openInBrowserHint } from './recordFlow.js'
 
 test('takeLimitMs : son + 3 s, borné', () => {
   assert.equal(takeLimitMs(2.5), 5500)
@@ -34,4 +34,11 @@ test('retryableError : le réseau oui, les refus serveur non', () => {
 test('inAppBrowser : repère les navigateurs intégrés', () => {
   assert.equal(inAppBrowser('Mozilla/5.0 (iPhone) Instagram 300.0'), true)
   assert.equal(inAppBrowser('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) Version/18.0 Mobile Safari/604.1'), false)
+})
+
+test("openInBrowserHint : consigne selon l'appareil", () => {
+  assert.match(openInBrowserHint('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5) Discord/240'), /Safari/)
+  assert.match(openInBrowserHint('Mozilla/5.0 (Linux; Android 14) Discord/240'), /Chrome/)
+  assert.match(openInBrowserHint('Mozilla/5.0 (Windows NT 10.0) Discord/240'), /navigateur/)
+  assert.match(openInBrowserHint(''), /navigateur/)
 })
