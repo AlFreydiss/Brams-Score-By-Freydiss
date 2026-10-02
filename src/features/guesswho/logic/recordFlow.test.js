@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { takeLimitMs, deadlineAction, backoffMs, retryableError, inAppBrowser, openInBrowserHint } from './recordFlow.js'
+import { takeLimitMs, deadlineAction, backoffMs, retryableError, inAppBrowser, openInBrowserHint, recordTimeoutDetail } from './recordFlow.js'
 
 test('takeLimitMs : son + 3 s, borné', () => {
   assert.equal(takeLimitMs(2.5), 5500)
@@ -41,4 +41,19 @@ test("openInBrowserHint : consigne selon l'appareil", () => {
   assert.match(openInBrowserHint('Mozilla/5.0 (Linux; Android 14) Discord/240'), /Chrome/)
   assert.match(openInBrowserHint('Mozilla/5.0 (Windows NT 10.0) Discord/240'), /navigateur/)
   assert.match(openInBrowserHint(''), /navigateur/)
+})
+
+test('recordTimeoutDetail : vérité serveur, pas de faux positif', () => {
+  const me = { user_id: 'u1', lives: 2 }
+  const base = { me, took: [], sentLocal: false, hadTake: false, canRecord: true, dev: false }
+  assert.equal(recordTimeoutDetail(base), 'no_take')
+  assert.equal(recordTimeoutDetail({ ...base, hadTake: true }), 'not_sent')
+  // imitation reçue par le serveur (ex. envoyée avant un rechargement)
+  assert.equal(recordTimeoutDetail({ ...base, took: ['u1'] }), null)
+  assert.equal(recordTimeoutDetail({ ...base, sentLocal: true }), null)
+  // navigateur sans micro, spectateur, éliminé, dev : rien
+  assert.equal(recordTimeoutDetail({ ...base, canRecord: false }), null)
+  assert.equal(recordTimeoutDetail({ ...base, me: null }), null)
+  assert.equal(recordTimeoutDetail({ ...base, me: { user_id: 'u1', lives: 0 } }), null)
+  assert.equal(recordTimeoutDetail({ ...base, dev: true }), null)
 })

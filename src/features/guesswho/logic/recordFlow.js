@@ -46,3 +46,12 @@ export function openInBrowserHint(ua) {
   if (/Android/.test(s)) return 'Touche ⋮ puis « Ouvrir dans Chrome ».'
   return 'Copie le lien et colle-le dans ton navigateur.'
 }
+
+// Fin de la phase d'enregistrement : faut-il journaliser une prise manquée ?
+// Vérité serveur d'abord (`took` = joueurs dont l'imitation est arrivée), pour
+// ne rien signaler après un rechargement ; rien sans micro, en dev ou hors jeu.
+export function recordTimeoutDetail({ me, took, sentLocal, hadTake, canRecord, dev }) {
+  if (dev || !canRecord || !me || !(me.lives > 0)) return null
+  if (sentLocal || (Array.isArray(took) && took.includes(me.user_id))) return null
+  return hadTake ? 'not_sent' : 'no_take'
+}

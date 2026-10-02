@@ -22,7 +22,9 @@ begin
   delete from guesswho_players
     where room_id = v_room.id and not is_host and last_seen <= now() - v_win
       and not (v_room.phase = 'end' and ready);
-  if v_n > 8 then return jsonb_build_object('error', 'too_many_players'); end if;
+  -- Plus de 8 restants (téléphone en veille pendant qu'un 9e entrait) : au lieu
+  -- de refuser à chaque fois, les 8 premiers arrivés jouent, les autres regardent.
+  v_n := least(v_n, 8);
 
   v_lives := case when jsonb_typeof(s->'lives') = 'number' then greatest(1, least(5, (s->>'lives')::numeric::int)) else 2 end;
   v_rounds := case when jsonb_typeof(s->'rounds') = 'number' then (s->>'rounds')::numeric::int else 0 end;
@@ -35,7 +37,7 @@ begin
 
   with o as (select id, row_number() over (order by joined_at) - 1 as rn
              from guesswho_players where room_id = v_room.id)
-  update guesswho_players p set seat = o.rn, lives = v_lives, total_votes = 0, gage = null, ready = false
+  update guesswho_players p set seat = case when o.rn < 8 then o.rn end, lives = v_lives, total_votes = 0, gage = null, ready = false
     from o where p.id = o.id;
   delete from guesswho_takes where room_id = v_room.id;
   delete from guesswho_votes where room_id = v_room.id;
@@ -130,20 +132,26 @@ create index if not exists guesswho_events_room_at_idx on guesswho_events (room_
 alter table guesswho_events enable row level security; -- aucune policy : illisible côté site
 revoke all on guesswho_events from anon, authenticated;
 
-create or replace function guesswho_log(p_code text, p_user text, p_kind text, p_detail text default null, p_device text default null)
+-- Écriture réservée à un joueur du salon (jeton) : le code et l'identité ne
+-- peuvent pas être inventés. Plafonds : 20 / salon / minute, 300 / minute en tout.
+drop function if exists guesswho_log(text, text, text, text, text);
+create or replace function guesswho_log(p_code text, p_token uuid, p_kind text, p_detail text default null, p_device text default null)
   returns jsonb language plpgsql security definer set search_path = public as $$
-declare v_code text := upper(left(coalesce(p_code, ''), 8));
+declare v_pl guesswho_players; v_code text := upper(left(coalesce(p_code, ''), 8));
 begin
   if p_kind is null or p_kind not in ('mic_error', 'upload_failed', 'start_refused', 'offline', 'record_timeout') then
     return jsonb_build_object('error', 'kind');
   end if;
-  if (select count(*) from guesswho_events where room_code = v_code and at > now() - interval '1 minute') >= 20 then
+  select * into v_pl from _gw_player(v_code, p_token);
+  if v_pl.id is null then return jsonb_build_object('error', 'unauthorized'); end if;
+  if (select count(*) from guesswho_events where room_code = v_code and at > now() - interval '1 minute') >= 20
+     or (select count(*) from guesswho_events where at > now() - interval '1 minute') >= 300 then
     return jsonb_build_object('error', 'rate');
   end if;
   delete from guesswho_events where at < now() - interval '30 days';
   insert into guesswho_events (room_code, user_id, kind, detail, device)
-    values (v_code, left(p_user, 64), p_kind, left(p_detail, 500), left(p_device, 80));
+    values (v_code, left(v_pl.user_id, 64), p_kind, left(p_detail, 500), left(p_device, 80));
   return jsonb_build_object('ok', true);
 end $$;
 
-grant execute on function guesswho_log(text, text, text, text, text) to anon, authenticated;
+grant execute on function guesswho_log(text, uuid, text, text, text) to anon, authenticated;

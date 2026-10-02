@@ -132,18 +132,35 @@ test('avance : deux joueurs en même temps → une seule transition', async () =
 })
 
 // ── Journal d'erreurs ───────────────────────────────────────────────────────
-const log = (db, kind, detail = 'x', code = 'ABCD') => call(db, 'guesswho_log', code, 'u0', kind, detail, 'iPhone · Safari 17')
-
-test('journal : type connu enregistré, inconnu refusé', async () => {
+// Salon réel + jeton du joueur : sinon n'importe qui remplirait la table.
+async function logDb() {
   const db = await freshDb()
+  const a = await setupRoom(db, 1)
+  const b = await setupRoom(db, 1, 'WXYZ')
+  return { db, tok: { ABCD: a.players[0].token, WXYZ: b.players[0].token } }
+}
+let T = {}
+const log = (db, kind, detail = 'x', code = 'ABCD') =>
+  call(db, 'guesswho_log', code, T[code] ?? null, kind, detail, 'iPhone · Safari 17')
+
+test('journal : type connu enregistré (joueur du salon), inconnu refusé', async () => {
+  const { db, tok } = await logDb(); T = tok
   assert.equal((await log(db, 'mic_error', 'mic_busy')).ok, true)
   assert.equal((await log(db, 'hack')).error, 'kind')
-  const { rows } = await db.query(`select kind, detail, device, room_code from guesswho_events`)
-  assert.deepEqual(rows, [{ kind: 'mic_error', detail: 'mic_busy', device: 'iPhone · Safari 17', room_code: 'ABCD' }])
+  const { rows } = await db.query(`select kind, detail, device, room_code, user_id from guesswho_events`)
+  assert.deepEqual(rows, [{ kind: 'mic_error', detail: 'mic_busy', device: 'iPhone · Safari 17', room_code: 'ABCD', user_id: 'u0' }])
+})
+
+test('journal : sans jeton valide ou salon inventé → refusé', async () => {
+  const { db, tok } = await logDb(); T = tok
+  assert.equal((await call(db, 'guesswho_log', 'ABCD', null, 'offline', 'x', 'd')).error, 'unauthorized')
+  assert.equal((await call(db, 'guesswho_log', 'R123', tok.ABCD, 'offline', 'x', 'd')).error, 'unauthorized')
+  const { rows } = await db.query(`select count(*)::int as n from guesswho_events`)
+  assert.equal(rows[0].n, 0)
 })
 
 test('journal : 20 par salon et par minute, détail tronqué à 500', async () => {
-  const db = await freshDb()
+  const { db, tok } = await logDb(); T = tok
   for (let i = 0; i < 20; i++) assert.equal((await log(db, 'offline', 'y'.repeat(900))).ok, true)
   assert.equal((await log(db, 'offline')).error, 'rate')
   assert.equal((await log(db, 'offline', 'z', 'WXYZ')).ok, true)
@@ -151,8 +168,14 @@ test('journal : 20 par salon et par minute, détail tronqué à 500', async () =
   assert.equal(rows[0].n, 500)
 })
 
+test('journal : plafond global 300 par minute, tous salons confondus', async () => {
+  const { db, tok } = await logDb(); T = tok
+  await db.query(`insert into guesswho_events (room_code, kind) select 'Z' || g, 'offline' from generate_series(1, 300) g`)
+  assert.equal((await log(db, 'offline')).error, 'rate')
+})
+
 test('journal : purge au-delà de 30 jours', async () => {
-  const db = await freshDb()
+  const { db, tok } = await logDb(); T = tok
   await log(db, 'offline')
   await db.query(`update guesswho_events set at = now() - interval '31 days'`)
   await log(db, 'offline', 'neuf', 'WXYZ')
@@ -161,11 +184,26 @@ test('journal : purge au-delà de 30 jours', async () => {
 })
 
 test('journal : table illisible pour anon, fonction appelable', async () => {
-  const db = await freshDb()
+  const { db, tok } = await logDb()
   const { rows } = await db.query(`select relrowsecurity from pg_class where relname = 'guesswho_events'`)
   assert.equal(rows[0].relrowsecurity, true)
   await db.exec('set role anon')
   await assert.rejects(db.query(`select * from guesswho_events`))
-  await db.query(`select guesswho_log('ABCD', 'u0', 'offline', '9s', 'PC · Chrome 129')`)
+  await db.query(`select guesswho_log('ABCD', $1::uuid, 'offline', '9s', 'PC · Chrome 129')`, [tok.ABCD])
   await db.exec('reset role')
+})
+
+// ── Revanche à plus de 8 ────────────────────────────────────────────────────
+test('revanche à 9 présents : les 8 premiers jouent, le 9e devient spectateur', async () => {
+  const { db, g } = await atEnd(8)
+  await stale(db, 'u7', 30) // téléphone en veille : le salon laisse entrer un 9e
+  const j = await call(db, 'guesswho_join', g.code, 'u8', 'Joueur 8', null, null)
+  assert.ok(j.secret_token)
+  await call(db, 'guesswho_set_ready', g.code, g.players[7].token, true)
+  const r = await call(db, 'guesswho_start', g.code, g.players[0].token, {})
+  assert.equal(r.ok, true)
+  assert.equal(r.players, 8)
+  const ps = await players(db)
+  assert.equal(ps.filter((p) => p.seat != null).length, 8)
+  assert.equal(ps.find((p) => p.user_id === 'u8').seat, null)
 })

@@ -60,7 +60,7 @@ export function useGuessWhoRoom({ code, identity }) {
     if (offlineSince.current == null) return
     const s = Math.round((Date.now() - offlineSince.current) / 1000)
     offlineSince.current = null
-    logEvent(code, userId, 'offline', `${s}s`)
+    logEvent(code, 'offline', `${s}s`)
   }, [offline, code, userId])
 
   // ── Synchro (ordre garanti : une réponse plus ancienne n'écrase jamais) ─────

@@ -94,7 +94,7 @@ export default function EndScreen({ g }) {
     setBusy(true); setReplayErr(null)
     const r = await g.act.start(g.room?.settings)
     setReplayErr(startErrorText(r))
-    if (r?.error) logEvent(g.room?.code, g.me?.user_id, 'start_refused', `revanche:${r.error}`)
+    if (r?.error) logEvent(g.room?.code, 'start_refused', `revanche:${r.error}`)
     setBusy(false)
   }
   const [readyOff, setReadyOff] = useState(false) // base sans guesswho_set_ready
