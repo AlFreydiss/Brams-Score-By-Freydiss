@@ -365,3 +365,68 @@ test('migration recollée deux fois : sans erreur', async () => {
   const { readFileSync } = await import('node:fs')
   await db.exec(readFileSync(new URL('../../../../supabase/migrations/20261002b_guess_who_robuste.sql', import.meta.url), 'utf8'))
 })
+
+// ── Données pour l'UI ────────────────────────────────────────────────────────
+
+test('sync : mon vote, mon gage et mon imitation retrouvés après rechargement', async () => {
+  const { db, g } = await toRecord()
+  let s = await call(db, 'guesswho_sync', g.code, g.players[1].token)
+  assert.equal(s.me.gage, 'gage de u1')
+  assert.equal(s.me.has_take, false)
+  for (const i of [0, 1, 2]) await take(db, g, i)
+  await next(db, g) // → vote
+  s = await call(db, 'guesswho_sync', g.code, g.players[1].token)
+  assert.equal(s.me.has_take, true)
+  assert.equal(s.me.vote, null)
+  await vote(db, g, 1, 'u2')
+  s = await call(db, 'guesswho_sync', g.code, g.players[1].token)
+  assert.equal(s.me.vote, 'u2')
+  // jamais le vote ni le gage des autres
+  assert.ok(!JSON.stringify(s).includes('gage de u0'))
+})
+
+test('qui a voté pour qui : dans le résultat du tour et dans le récap, jamais avant', async () => {
+  const { db, g } = await toRecord()
+  for (const i of [0, 1, 2]) await take(db, g, i)
+  await next(db, g)
+  await vote(db, g, 0, 'u1'); await vote(db, g, 1, 'u0'); await vote(db, g, 2, 'u1')
+  const during = await call(db, 'guesswho_sync', g.code, null)
+  assert.ok(!JSON.stringify(during).includes('"target"'))
+  await next(db, g)
+  const r = await room(db)
+  assert.equal(r.last_result.votes.length, 3)
+  const s = await call(db, 'guesswho_stats', g.code)
+  assert.deepEqual(s.rounds[0].votes.map((v) => `${v.voter}>${v.target}`).sort(), ['u0>u1', 'u1>u0', 'u2>u1'])
+})
+
+test('vies perdues par joueur dans l\'état public', async () => {
+  const { db, g } = await toRecord()
+  await next(db, g) // auto : tout le monde perd une vie
+  const ps = await players(db)
+  assert.deepEqual(ps.map((p) => p.lives_lost), [1, 1, 1])
+})
+
+test('gage_pool : tous les textes de gages (sans auteurs), seulement au tirage', async () => {
+  const { db, g } = await toRecord()
+  assert.equal((await room(db)).gage_pool, null)
+  await db.query(`update guesswho_players set lives = 1 where user_id = 'u2'`)
+  await take(db, g, 0); await take(db, g, 1)
+  await next(db, g); await next(db, g) // vote → result
+  await next(db, g) // → gage
+  const r = await room(db)
+  assert.deepEqual([...r.gage_pool].sort(), ['gage de u0', 'gage de u1', 'gage de u2'])
+  await next(db, g)
+  await call(db, 'guesswho_start', g.code, g.players[0].token)
+  assert.equal((await room(db)).gage_pool, null)
+})
+
+test('prêt : seulement au salon, remis à zéro au lancement', async () => {
+  const db = await freshDb()
+  await seedClips(db)
+  const g = await setupRoom(db, 3)
+  assert.equal((await call(db, 'guesswho_set_ready', g.code, g.players[1].token, true)).ok, true)
+  assert.equal((await players(db)).find((p) => p.user_id === 'u1').ready, true)
+  await call(db, 'guesswho_start', g.code, g.players[0].token)
+  assert.equal((await players(db)).find((p) => p.user_id === 'u1').ready, false)
+  assert.equal((await call(db, 'guesswho_set_ready', g.code, g.players[1].token, true)).error, 'phase')
+})

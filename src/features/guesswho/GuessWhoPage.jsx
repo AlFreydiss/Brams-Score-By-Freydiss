@@ -1,6 +1,6 @@
 // Guess Who — point d'entrée : /guess-who (créer / rejoindre) ou /guess-who/:code (salon).
 // Identité « planche de manga » : voir manga.jsx.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
@@ -17,14 +17,25 @@ import ResultPhase from './ResultPhase.jsx'
 import GageWheel from './GageWheel.jsx'
 import EndScreen from './EndScreen.jsx'
 import { useReactions, ReactionBar, FloatingReactions } from './Reactions.jsx'
+import { connectionNotice } from './logic/notices.js'
 
+// null tant que l'auth n'est pas connue : sinon on rejoindrait d'abord en
+// invité puis, la session arrivée, une 2e fois avec l'id Discord (place fantôme).
+// Filet : au bout de 6 s on joue en invité plutôt que d'attendre pour toujours.
 function useIdentity() {
   const auth = useAuth()
-  return useMemo(() => ({
+  const [gaveUp, setGaveUp] = useState(false)
+  useEffect(() => {
+    if (!auth.loading) return
+    const t = setTimeout(() => setGaveUp(true), 6000)
+    return () => clearTimeout(t)
+  }, [auth.loading])
+  const ready = !auth.loading || gaveUp
+  return useMemo(() => ready ? ({
     userId: String(auth.discordId || guestId()),
     displayName: auth.displayName || 'Invité',
     avatarUrl: auth.avatarUrl || null,
-  }), [auth.discordId, auth.displayName, auth.avatarUrl])
+  }) : null, [ready, auth.discordId, auth.displayName, auth.avatarUrl])
 }
 
 const RULES = [
@@ -39,6 +50,7 @@ function Home({ identity }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
   const create = async () => {
+    if (!identity) return
     setBusy(true); setErr(null)
     const r = await createRoom(identity)
     setBusy(false)
@@ -70,7 +82,7 @@ function Home({ identity }) {
           ))}
         </ol>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 22 }}>
-          <Btn onClick={create} disabled={busy}>{busy ? 'Création…' : 'Créer un salon'}</Btn>
+          <Btn onClick={create} disabled={busy || !identity}>{busy ? 'Création…' : 'Créer un salon'}</Btn>
           <span style={{ fontFamily: FONT_BODY, fontWeight: 800, color: C.textMut }}>ou</span>
           <input className="gw-focus" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 4))}
             placeholder="CODE" aria-label="Code du salon"
@@ -88,7 +100,7 @@ function Home({ identity }) {
 }
 
 const REASONS = {
-  started: 'La partie a déjà commencé : tu regardes en spectateur.',
+  started: 'La partie a déjà commencé : tu regardes en spectateur, tu auras une place au prochain tour.',
   full: 'Salon complet (8 joueurs) : tu regardes en spectateur.',
   seat_taken: 'Ce compte joue déjà depuis un autre appareil : tu regardes en spectateur.',
 }
@@ -97,9 +109,16 @@ const banner = { fontFamily: FONT_BODY, fontWeight: 800, textAlign: 'center', ma
   background: C.yellow, border: `3px solid ${C.ink}`, padding: '8px 14px', color: C.ink }
 
 function Room({ code, identity }) {
+  if (!identity) return <Waiting label="Connexion…" />
+  return <RoomInner code={code} identity={identity} />
+}
+
+function RoomInner({ code, identity }) {
   const g = useGuessWhoRoom({ code, identity })
   const reactions = useReactions(code, g.status === 'ready')
-  if (g.status === 'joining') return <Waiting label="Connexion au salon…" />
+  if (g.status === 'joining') {
+    return <Waiting label={g.error ? 'Réseau lent… nouvelle tentative de connexion au salon' : 'Connexion au salon…'} />
+  }
   if (g.status === 'error') {
     return (
       <PhaseFrame prompt="Salon introuvable">
@@ -111,6 +130,7 @@ function Room({ code, identity }) {
   return (
     <>
       <SfxBurst phase={phase} round={g.room?.round} />
+      {connectionNotice(g.connection) && <p role="status" style={{ ...banner, background: C.paper }}>{connectionNotice(g.connection)}</p>}
       {g.spectator && <p style={banner}>{REASONS[g.reason] || 'Mode spectateur.'}</p>}
       {g.notice && (
         <p role="alert" onClick={g.clearNotice} style={{ ...banner, cursor: 'pointer' }}>

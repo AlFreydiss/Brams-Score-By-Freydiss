@@ -9,9 +9,13 @@
 --  • Arrivée en cours de partie (gages / écoute) ; fantômes du salon purgés.
 --  • Sons : le moins récemment joué d'abord, même entre deux parties du salon.
 --  • Entrées bornées : nom, avatar, code, durée d'imitation.
+--  • Pour l'UI : textes des gages (machine à sous), qui a voté pour qui par tour,
+--    mon vote / mon gage après rechargement, vies perdues, bouton « prêt ».
 
 alter table guesswho_rooms add column if not exists phase_secs int;
 alter table guesswho_rooms add column if not exists history jsonb not null default '[]'::jsonb;
+alter table guesswho_rooms add column if not exists gage_pool jsonb;
+alter table guesswho_players add column if not exists ready boolean not null default false;
 
 -- ── Nettoyage des entrées ────────────────────────────────────────────────────
 create or replace function _gw_clean_name(p_name text) returns text
@@ -205,12 +209,12 @@ begin
 
   with o as (select id, row_number() over (order by joined_at) - 1 as rn
              from guesswho_players where room_id = v_room.id)
-  update guesswho_players p set seat = o.rn, lives = v_lives, total_votes = 0, gage = null
+  update guesswho_players p set seat = o.rn, lives = v_lives, total_votes = 0, gage = null, ready = false
     from o where p.id = o.id;
   delete from guesswho_takes where room_id = v_room.id;
   delete from guesswho_votes where room_id = v_room.id;
   -- used_clips conservé : une revanche dans le même salon ne rejoue pas les mêmes sons.
-  update guesswho_rooms set status = 'playing', round = 0, clip = null, history = '[]'::jsonb,
+  update guesswho_rooms set status = 'playing', round = 0, clip = null, history = '[]'::jsonb, gage_pool = null,
     tied = '{}', last_result = null, gage_result = null, settings = v_settings where id = v_room.id;
   perform _gw_set_phase(v_room.id, 'gages');
   return jsonb_build_object('ok', true, 'players', v_n, 'settings', v_settings);
@@ -300,6 +304,8 @@ begin
       || jsonb_build_array(jsonb_build_object(
         'round', r.round, 'stage', p_stage, 'scores', v_scores, 'revote_scores', v_rev,
         'losers', to_jsonb(v_losers),
+        'votes', coalesce((select jsonb_agg(jsonb_build_object('voter', voter, 'target', target, 'stage', stage) order by stage, created_at)
+                           from guesswho_votes where room_id = p_room and round = r.round), '[]'::jsonb),
         'clip', case when r.clip is null then null else jsonb_build_object(
           'id', r.clip->>'id', 'title', r.clip->>'title', 'anime', r.clip->>'anime',
           'lang', r.clip->>'lang', 'kind', r.clip->>'kind') end))
@@ -405,7 +411,14 @@ begin
           perform _gw_step(v_room.id);
         end if;
       end if;
-      v_me := jsonb_build_object('user_id', v_pl.user_id);
+      -- Ce que JE sais déjà (retrouvé après rechargement) : mon vote, mon gage, mon imitation.
+      select * into v_room from guesswho_rooms where id = v_pl.room_id;
+      v_me := jsonb_build_object('user_id', v_pl.user_id,
+        'gage', (select gage from guesswho_players where id = v_pl.id),
+        'vote', (select target from guesswho_votes where room_id = v_room.id and round = v_room.round
+                 and stage = v_room.phase and voter = v_pl.user_id),
+        'has_take', exists (select 1 from guesswho_takes where room_id = v_room.id and round = v_room.round
+                            and user_id = v_pl.user_id));
     end if;
   end if;
   v_state := guesswho_room_state(p_code);
@@ -460,10 +473,79 @@ begin
                     order by (x->>'total_votes')::int desc limit 1)));
 end $$;
 
+-- ── État public : + vies perdues, « prêt » ───────────────────────────────────
+create or replace function guesswho_room_state(p_code text)
+  returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare v_room guesswho_rooms;
+begin
+  select * into v_room from guesswho_rooms where code = upper(p_code);
+  if v_room.id is null then return jsonb_build_object('error', 'introuvable'); end if;
+  return jsonb_build_object('room', to_jsonb(v_room), 'players', coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'user_id', user_id, 'display_name', display_name, 'avatar_url', avatar_url,
+      'seat', seat, 'lives', lives, 'total_votes', total_votes, 'is_host', is_host,
+      'connected', last_seen > now() - interval '22 seconds',
+      'has_gage', gage is not null, 'ready', ready,
+      'lives_lost', (select count(*) from jsonb_array_elements(v_room.history) e where e->'losers' ? p.user_id))
+      order by joined_at)
+    from guesswho_players p where room_id = v_room.id), '[]'::jsonb));
+end $$;
+
+-- « Prêt » dans le salon d'attente (indicatif : l'hôte lance quand il veut).
+create or replace function guesswho_set_ready(p_code text, p_token uuid, p_ready boolean)
+  returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pl guesswho_players;
+begin
+  select * into v_pl from _gw_player(p_code, p_token);
+  if v_pl.id is null then return jsonb_build_object('error', 'unauthorized'); end if;
+  if (select phase from guesswho_rooms where id = v_pl.room_id) not in ('lobby', 'end') then
+    return jsonb_build_object('error', 'phase'); end if;
+  update guesswho_players set ready = coalesce(p_ready, false), last_seen = now() where id = v_pl.id;
+  -- réveille les abonnés realtime (seule la table des salons est diffusée)
+  update guesswho_rooms set updated_at = now() where id = v_pl.room_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Gages : + gage_pool = tous les textes de la partie, sans auteurs (machine à
+-- sous de l'écran du gage), publié seulement au moment du tirage.
+create or replace function _gw_draw_gages(p_room uuid)
+  returns void language plpgsql security definer set search_path = public as $$
+declare d record; v_pid uuid; v_gage text; v_author text; v_used uuid[] := '{}'; v_out jsonb := '[]'::jsonb;
+        v_fallback text[] := array[
+          'Chanter l''opening de ton anime préféré en vocal',
+          'Parler avec l''accent de ton choix pendant 5 minutes',
+          'Garder la photo de profil choisie par le groupe pendant 24 h',
+          'Imiter un personnage d''anime choisi par le groupe',
+          'Envoyer un vocal où tu cries ta technique préférée'];
+begin
+  for d in select user_id, display_name from guesswho_players
+           where room_id = p_room and seat is not null and lives <= 0 order by seat loop
+    v_pid := null; v_gage := null; v_author := null;
+    select p.id, p.gage, p.display_name into v_pid, v_gage, v_author from guesswho_players p
+      where p.room_id = p_room and p.user_id <> d.user_id and p.gage is not null and not (p.id = any(v_used))
+      order by random() limit 1;
+    if v_pid is null then
+      v_gage := v_fallback[1 + floor(random() * cardinality(v_fallback))::int];
+    else
+      v_used := array_append(v_used, v_pid);
+    end if;
+    v_out := v_out || jsonb_build_array(jsonb_build_object(
+      'user_id', d.user_id, 'name', d.display_name, 'gage', v_gage, 'author', v_author));
+  end loop;
+  update guesswho_rooms set gage_result = v_out, gage_pool = coalesce((
+      select jsonb_agg(g order by random()) from (
+        select gage as g from guesswho_players where room_id = p_room and gage is not null
+        union
+        select x->>'gage' from jsonb_array_elements(v_out) x) t), '[]'::jsonb)
+    where id = p_room;
+  perform _gw_set_phase(p_room, 'gage');
+end $$;
+
 -- ── Droits ───────────────────────────────────────────────────────────────────
 revoke execute on function _gw_clean_name(text), _gw_clean_avatar(text), _gw_set_phase(uuid, text),
   _gw_pick_clip(text[], text), _gw_auto_host(uuid), _gw_resolve(uuid, text), _gw_final_verdict(uuid),
-  _gw_step(uuid) from public, anon, authenticated;
+  _gw_step(uuid), _gw_draw_gages(uuid) from public, anon, authenticated;
 grant execute on function guesswho_sync(text, uuid), guesswho_stats(text), guesswho_join(text, text, text, text, uuid),
   guesswho_create(text, text, text, text), guesswho_start(text, uuid, jsonb), guesswho_advance(text, uuid, text, int),
-  guesswho_submit_take(text, uuid, text, real, int), guesswho_promote_host(text, uuid) to anon, authenticated;
+  guesswho_submit_take(text, uuid, text, real, int), guesswho_promote_host(text, uuid),
+  guesswho_room_state(text), guesswho_set_ready(text, uuid, boolean) to anon, authenticated;

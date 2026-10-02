@@ -18,3 +18,23 @@ export function bestHighlight(list) {
   for (const h of list || []) if (!best || h.votes >= best.votes) best = h
   return best
 }
+
+// Récap serveur (guesswho_stats) → même forme que addHighlight. Il fait foi :
+// il survit au rechargement et aux phases ratées en arrière-plan.
+export function highlightsFromStats(stats) {
+  const out = []
+  for (const r of stats?.rounds || []) {
+    const b = r?.best
+    if (!b || !b.user_id || !(b.votes > 0) || !b.audio_url) continue
+    out.push({ round: r.round, user_id: b.user_id, votes: b.votes, audio_url: b.audio_url, clip: r.clip?.title || '' })
+  }
+  return out
+}
+
+// Fusion : le serveur remplace le local pour un même tour, le local comble les trous.
+export function mergeHighlights(local, server) {
+  const byRound = new Map()
+  for (const h of local || []) byRound.set(h.round, h)
+  for (const h of server || []) byRound.set(h.round, h)
+  return [...byRound.values()].sort((a, b) => a.round - b.round)
+}
