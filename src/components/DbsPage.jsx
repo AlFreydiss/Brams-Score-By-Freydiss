@@ -1,13 +1,9 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import VideoPlayer from './VideoPlayer.jsx'
-import EpisodeDetailInline from './EpisodeDetailInline.jsx'
 import EpisodeWatch from './EpisodeWatch.jsx'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
-import { Reader } from './MangaReader.jsx'
 import VIDEOS_RAW from '../data/dbs-videos.json'
-import CHAPTERS_RAW from '../data/dbs-chapters.json'
-import { MANGA_ARCS } from '../data/manga-arcs.js'
 
 const VIDEOS = VIDEOS_RAW
 const COLOR  = '#f57f17'
@@ -16,8 +12,6 @@ const NS     = 'dbs'
 
 const COVER = 'https://resizing.flixster.com/rkYW70Qo4tqbX8akxnoNX0Yf5z0=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzLzllY2IwZjMyLWVjYjMtNDAzMC1hYWViLTBjZjcxMmFmNDU1MC5wbmc='
 const COVER_FALLBACK = 'https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/dbs-thumbnails/S01E001.jpg'
-
-const EMOJIS = ['🐉','⚡','🌟','💥','👊','🌀','🔥','🌊','🌙','💀','🗡️','🔮','🏹','🦁','🌑','🧿','⚔️','🦂','💎','🌸','🌪️','🔱','🎭','💧','🌒','⛓️','🩸']
 
 const SYNOPSIS = "Après la défaite de Kid Boo, Son Goku et ses amis vivent en paix. Mais de nouvelles menaces surgissent : Beerus, le Dieu de la Destruction, Freezer ressuscité, et bien d'autres encore. Goku et Vegeta repoussent sans cesse leurs limites pour protéger l'univers lors de tournois cosmiques légendaires."
 
@@ -34,12 +28,6 @@ function loadProgress() {
 }
 function saveProgress(p) {
   try { localStorage.setItem(`${NS}_vp`, JSON.stringify(p)) } catch {}
-}
-function loadScanProgress() {
-  try { return JSON.parse(localStorage.getItem(`${NS}_progress`) || '{}') } catch { return {} }
-}
-function saveScanProgress(p) {
-  try { localStorage.setItem(`${NS}_progress`, JSON.stringify(p)) } catch {}
 }
 
 const CSS = `
@@ -73,9 +61,6 @@ const CSS = `
   .dbs-scroll { scrollbar-width: thin; scrollbar-color: rgba(245,127,23,.2) transparent; }
   .dbs-scroll::-webkit-scrollbar { width: 4px; }
   .dbs-scroll::-webkit-scrollbar-thumb { background: rgba(245,127,23,.2); border-radius: 4px; }
-
-  .dbs-ch-card { transition: transform .2s ease, box-shadow .2s ease, border-color .18s ease; cursor: pointer; }
-  .dbs-ch-card:hover { transform: translateY(-3px) !important; box-shadow: 0 10px 28px rgba(245,127,23,.18) !important; }
 
   /* Layout responsive : hero/infos en colonne fixe sur desktop, EMPILÉ sur mobile.
      Avant, la grille 310px+contenu restait sur petit écran → le fond du hero et les
@@ -223,53 +208,10 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume }) {
   )
 }
 
-function ScanInfoPanel({ readCount, total }) {
-  const pct = total > 0 ? Math.round((readCount / total) * 100) : 0
-  return (
-    <aside className="dbs-aside" style={{
-      position: 'sticky', top: 0, alignSelf: 'start',
-      borderRadius: 22, overflow: 'hidden',
-      background: 'linear-gradient(180deg,rgba(12,8,2,.96),rgba(8,5,1,.99))',
-      border: '1px solid rgba(245,127,23,.18)',
-      boxShadow: '0 24px 70px rgba(0,0,0,.44),inset 0 1px 0 rgba(255,255,255,.04)',
-      backdropFilter: 'blur(20px)',
-      padding: '22px 18px',
-      display: 'flex', flexDirection: 'column', gap: 16,
-    }}>
-      <div>
-        <div style={{ fontSize:9.5,fontWeight:800,letterSpacing:'.18em',color:COLOR2,textTransform:'uppercase',marginBottom:8 }}>🐉 Scans Dragon Ball Super</div>
-        <div style={{ fontSize:22,fontWeight:900,color:'#fff',fontFamily:"'Pirata One',cursive",lineHeight:1.1 }}>Archives Manga</div>
-        <div style={{ fontSize:11,color:'rgba(255,255,255,.4)',marginTop:4 }}>{total} chapitres disponibles</div>
-      </div>
-      <div style={{ display:'flex',alignItems:'center',gap:14 }}>
-        <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>{readCount} / {total} chapitres</div>
-          <div style={{ height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
-            <div style={{ width:`${pct}%`,height:'100%',borderRadius:999,background:`linear-gradient(90deg,${COLOR},${COLOR2})`,transition:'width .5s ease' }} />
-          </div>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
 export default function DbsPage({ onClose }) {
-  const [tab,        setTab]        = useState('videos')
   const [playerIdx,  setPlayerIdx]  = useState(null)
   const [detailIdx, setDetailIdx] = useState(null)
   const [progress,   setProgress]   = useState(loadProgress)
-  const [scanProg,   setScanProg]   = useState(loadScanProgress)
-  const [reading,    setReading]    = useState(null)
-
-  const CHAPTERS = useMemo(() => CHAPTERS_RAW.map((ch, i) => ({
-    num:   ch.num,
-    title: ch.title || `Chapitre ${ch.num}`,
-    emoji: EMOJIS[i % EMOJIS.length],
-    pages: ch.pages,
-  })), [])
-
-  const arcsData = MANGA_ARCS.dbs || []
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -277,10 +219,15 @@ export default function DbsPage({ onClose }) {
   }, [])
 
   useEffect(() => {
-    const fn = e => { if (e.key === 'Escape' && playerIdx === null && reading === null) onClose() }
+    // Échap ferme d'abord la vue épisode, puis la page (le lecteur gère le sien).
+    const fn = e => {
+      if (e.key !== 'Escape' || playerIdx !== null) return
+      if (detailIdx !== null) setDetailIdx(null)
+      else onClose()
+    }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [playerIdx, reading, onClose])
+  }, [playerIdx, detailIdx, onClose])
 
   const markWatched = useCallback((idx) => {
     setProgress(prev => {
@@ -307,46 +254,6 @@ export default function DbsPage({ onClose }) {
     const first = VIDEOS.findIndex(v => !progress[v.episode]?.completed)
     return first >= 0 ? first : 0
   }, [progress])
-
-  const markScan = useCallback((chNum, status) => {
-    setScanProg(prev => {
-      const next = { ...prev, [chNum]: status }
-      saveScanProgress(next)
-      return next
-    })
-  }, [])
-
-  const openChapter = useCallback((idx) => {
-    const ch = CHAPTERS[idx]
-    if (!ch) return
-    setReading(idx)
-    if (scanProg[ch.num] !== 'read') markScan(ch.num, 'reading')
-  }, [CHAPTERS, scanProg, markScan])
-
-  const finishChapter = useCallback(() => {
-    if (reading === null) return
-    markScan(CHAPTERS[reading].num, 'read')
-  }, [reading, CHAPTERS, markScan])
-
-  const readCount = useMemo(() =>
-    CHAPTERS.filter(c => scanProg[c.num] === 'read').length, [CHAPTERS, scanProg])
-
-  const chaptersByArc = useMemo(() => {
-    if (!arcsData.length) return null
-    return arcsData.map(arc => ({
-      ...arc,
-      chapters: CHAPTERS.filter(ch => {
-        const n = parseFloat(ch.num)
-        return n >= arc.start && n <= arc.end
-      }),
-    })).filter(a => a.chapters.length > 0)
-  }, [CHAPTERS, arcsData])
-
-  const chNumToIdx = useMemo(() => {
-    const m = {}
-    CHAPTERS.forEach((ch, i) => { m[ch.num] = i })
-    return m
-  }, [CHAPTERS])
 
   return (
     <>
@@ -378,7 +285,6 @@ export default function DbsPage({ onClose }) {
         <div className="dbs-scroll" style={{ flex:1,overflowY:'auto',padding:'24px 20px' }}>
           <div style={{ maxWidth:1600,margin:'0 auto' }}>
 
-            {tab === 'videos' ? (
               <div className="dbs-layout">
                 <InfoPanel
                   watchedCount={watchedCount}
@@ -406,87 +312,9 @@ export default function DbsPage({ onClose }) {
                   </div>
                 </div>
               </div>
-            ) : (
-              /* ── Scans tab ── */
-              <div className="dbs-layout">
-                <ScanInfoPanel readCount={readCount} total={CHAPTERS.length} />
-                <div>
-                  <div style={{ marginBottom:18 }}>
-                    <h3 style={{ margin:0,fontFamily:"'Pirata One',cursive",fontSize:22,fontWeight:900,color:'#fff' }}>Chapitres Manga</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.35)',fontWeight:600,marginTop:3 }}>{CHAPTERS.length} chapitres disponibles</div>
-                  </div>
-                  {chaptersByArc
-                    ? chaptersByArc.map(arc => (
-                        <div key={arc.name} style={{ marginBottom:28 }}>
-                          <div style={{ display:'flex',alignItems:'center',gap:12,marginBottom:12 }}>
-                            <div style={{ height:2,flex:1,background:`linear-gradient(90deg,${COLOR}55,transparent)` }} />
-                            <span style={{ fontSize:14,fontWeight:800,color:'#fff',whiteSpace:'nowrap' }}>{arc.name}</span>
-                            <span style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>ch.{arc.start}–{arc.end === 9999 ? '…' : arc.end}</span>
-                            <div style={{ height:2,flex:1,background:`linear-gradient(90deg,transparent,${COLOR}55)` }} />
-                          </div>
-                          <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:10 }}>
-                            {arc.chapters.map(ch => {
-                              const status = scanProg[ch.num] || null
-                              const isRead = status === 'read'
-                              const isReading = status === 'reading'
-                              return (
-                                <button
-                                  key={ch.num}
-                                  className="dbs-ch-card"
-                                  onClick={() => openChapter(chNumToIdx[ch.num])}
-                                  style={{ position:'relative',background:isRead?'rgba(20,14,4,.5)':'rgba(20,14,4,.85)',border:`1px solid ${isReading?COLOR+88:isRead?'rgba(245,127,23,.15)':'rgba(255,255,255,.07)'}`,borderRadius:14,padding:'16px',cursor:'pointer',textAlign:'left',fontFamily:'var(--body)',opacity:isRead?.65:1 }}
-                                >
-                                  {isRead && <div style={{ position:'absolute',top:10,right:10,width:20,height:20,borderRadius:'50%',background:'rgba(52,211,153,.2)',border:'1px solid rgba(52,211,153,.5)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#34d399',fontWeight:700 }}>✓</div>}
-                                  {isReading && <div style={{ position:'absolute',top:10,right:10,fontSize:10,fontWeight:700,background:`${COLOR}22`,color:COLOR,border:`1px solid ${COLOR}55`,borderRadius:100,padding:'2px 8px' }}>En cours</div>}
-                                  <div style={{ fontSize:20,marginBottom:8 }}>{ch.emoji}</div>
-                                  <div style={{ fontSize:10,fontWeight:700,color:COLOR2,letterSpacing:'.08em',marginBottom:4 }}>CHAPITRE {ch.num}</div>
-                                  <div style={{ fontSize:12.5,fontWeight:700,color:isRead?'rgba(255,255,255,.5)':'#fff',lineHeight:1.35,marginBottom:8 }}>{ch.title}</div>
-                                  <div style={{ fontSize:11,fontWeight:700,color:isRead?'rgba(255,255,255,.3)':COLOR2 }}>📖 {isRead?'Relire':isReading?'Continuer':'Lire'}</div>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ))
-                    : (
-                      <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))',gap:10 }}>
-                        {CHAPTERS.map((ch, i) => {
-                          const status = scanProg[ch.num] || null
-                          const isRead = status === 'read'
-                          return (
-                            <button key={ch.num} className="dbs-ch-card" onClick={() => openChapter(i)}
-                              style={{ background:isRead?'rgba(20,14,4,.5)':'rgba(20,14,4,.85)',border:`1px solid ${isRead?'rgba(245,127,23,.15)':'rgba(255,255,255,.07)'}`,borderRadius:14,padding:'14px',cursor:'pointer',textAlign:'left',fontFamily:'var(--body)',opacity:isRead?.65:1 }}
-                            >
-                              <div style={{ fontSize:18,marginBottom:6 }}>{ch.emoji}</div>
-                              <div style={{ fontSize:10,fontWeight:700,color:COLOR2,letterSpacing:'.08em',marginBottom:3 }}>CH. {ch.num}</div>
-                              <div style={{ fontSize:12,fontWeight:700,color:isRead?'rgba(255,255,255,.5)':'#fff',lineHeight:1.3 }}>{ch.title}</div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )
-                  }
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
-
-      {reading !== null && CHAPTERS[reading] && (
-        <Reader
-          chapter={CHAPTERS[reading]}
-          chapterIndex={reading}
-          totalChapters={CHAPTERS.length}
-          onClose={() => setReading(null)}
-          onPrevChapter={() => setReading(i => Math.max(0, i - 1))}
-          onNextChapter={() => setReading(i => Math.min(CHAPTERS.length - 1, i + 1))}
-          onFinish={finishChapter}
-          isRead={scanProg[CHAPTERS[reading]?.num] === 'read'}
-          namespace={NS}
-          themeColor={COLOR}
-        />
-      )}
 
       {playerIdx !== null && VIDEOS[playerIdx] && (
         <VideoPlayer
