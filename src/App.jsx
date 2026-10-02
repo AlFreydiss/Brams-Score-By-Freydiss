@@ -104,6 +104,8 @@ const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipp
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
 const GuessWhoPage       = lazyWithReload(() => import('./features/guesswho/GuessWhoPage.jsx'))
+// Démo des écrans Guess Who : développement local uniquement (absente du build de prod).
+const GuessWhoDemo = import.meta.env.DEV ? lazyWithReload(() => import('./features/guesswho/DemoPage.jsx')) : null
 import GarticErrorBoundary from './features/garticphone/GarticErrorBoundary.jsx'
 const AkinatorPage       = lazyWithReload(() => import('./components/AkinatorPage.jsx'))
 const EchecsPage         = lazyWithReload(() => import('./features/echecs/EchecsPage.jsx'))
@@ -745,6 +747,7 @@ export default function App() {
         <Route path="/brams-phone"        element={<GarticErrorBoundary><GameLayout><BramsPhonePage /></GameLayout></GarticErrorBoundary>} />
         <Route path="/brams-phone/:code"  element={<GarticErrorBoundary><GameLayout><BramsPhonePage /></GameLayout></GarticErrorBoundary>} />
         <Route path="/guess-who"        element={<GameLayout><GuessWhoPage /></GameLayout>} />
+        {GuessWhoDemo && <Route path="/guess-who/demo" element={<GameLayout><GuessWhoDemo /></GameLayout>} />}
         <Route path="/guess-who/:code"  element={<GameLayout><GuessWhoPage /></GameLayout>} />
         <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
