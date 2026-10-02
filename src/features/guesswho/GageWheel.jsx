@@ -4,7 +4,7 @@ import { C, FONT_BODY, FONT_DISPLAY, PhaseFrame } from './manga.jsx'
 import { AvatarName } from './ui.jsx'
 import { play, vibrate } from './sfx.js'
 
-// Leurres qui défilent avec les vrais gages (la machine ne connaît que le gage tiré).
+// Leurres de repli : seulement si le serveur n'a pas publié les gages de la partie (room.gage_pool).
 const DECOYS = [
   "Chanter l'opening de Naruto",
   'Parler comme Goku pendant 2 minutes',
@@ -33,7 +33,9 @@ function Reel({ result, player, extraSteps = 0, pool }) {
   const reduce = useReducedMotion()
   const total = STEPS + extraSteps
   const reel = useMemo(() => {
-    const fill = shuffle([...pool.filter((x) => x !== result.gage), ...DECOYS])
+    const others = pool.filter((x) => x !== result.gage)
+    // vrais gages de la partie ; leurres en complément s'il y en a trop peu
+    const fill = shuffle(others.length >= 3 ? others : [...others, ...DECOYS])
     return [...Array.from({ length: total }, (_, i) => fill[i % fill.length]), result.gage]
   }, [result.gage, pool, total])
   const [k, setK] = useState(reduce ? total : 0)
@@ -106,14 +108,24 @@ function Reel({ result, player, extraSteps = 0, pool }) {
 // Tirage du gage : une machine par éliminé, arrêts décalés pour garder le suspense.
 export default function GageWheel({ g }) {
   const results = g.room.gage_result || []
+  // Gages de toute la partie (sans auteurs, migration 20261002b), sinon seulement ceux tirés.
+  const served = Array.isArray(g.room.gage_pool) ? g.room.gage_pool.filter((x) => typeof x === 'string' && x) : []
   // clé texte : le sondage renvoie un nouveau tableau toutes les 3 s, la machine ne doit pas se rebattre
-  const poolKey = JSON.stringify(results.map((r) => r.gage))
+  const poolKey = JSON.stringify(served.length ? served : results.map((r) => r.gage))
   const pool = useMemo(() => JSON.parse(poolKey), [poolKey])
   const names = results.map((r) => r.name).join(' et ')
   const meOut = results.some((r) => r.user_id === g.me?.user_id)
+  // Dernier tour sans éliminé : le serveur a désigné le(s) joueur(s) au moins de vies.
+  const final = g.room.last_result?.final || []
   return (
-    <PhaseFrame eyebrow="Éliminé" prompt={meOut ? 'C\'est toi qui trinques 😈' : `${names} ${results.length > 1 ? 'doivent' : 'doit'} faire un gage`}
+    <PhaseFrame eyebrow={final.length ? 'Verdict final' : 'Éliminé'} prompt={meOut ? 'C\'est toi qui trinques 😈' : `${names} ${results.length > 1 ? 'doivent' : 'doit'} faire un gage`}
       remaining={g.remaining} total={g.total} tilt={-1}>
+      {final.length > 0 && (
+        <p role="status" style={{ margin: '0 0 16px', padding: '8px 12px', border: `3px solid ${C.ink}`, background: C.yellow,
+          fontFamily: FONT_BODY, fontWeight: 800, color: C.ink }}>
+          🏁 Dernier tour sans éliminé : le joueur avec le moins de vies (puis de votes) prend le gage.
+        </p>
+      )}
       {results.map((r, i) => (
         <Reel key={r.user_id} result={r} pool={pool} extraSteps={i * 4}
           player={g.players.find((p) => p.user_id === r.user_id)} />

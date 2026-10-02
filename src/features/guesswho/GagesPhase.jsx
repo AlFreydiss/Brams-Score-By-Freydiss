@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { C, FONT_DISPLAY, SPRING_POP, type, Btn, PhaseFrame, LiveRoster } from './manga.jsx'
 import { play, vibrate } from './sfx.js'
@@ -16,23 +16,33 @@ const IDEAS = [
 ]
 
 export default function GagesPhase({ g }) {
-  const [text, setText] = useState('')
-  const [sent, setSent] = useState(!!g.me?.has_gage)
+  // Gage déjà envoyé (retrouvé après rechargement) : pré-rempli.
+  const [text, setText] = useState(g.myGage || '')
+  const [sent, setSent] = useState(!!(g.me?.has_gage || g.myGage))
   const [err, setErr] = useState(null)
   const [ideas] = useState(() => [...IDEAS].sort(() => Math.random() - 0.5).slice(0, 3))
+  const touched = useRef(false)
+  useEffect(() => {
+    if (!g.myGage) return
+    setSent(true)
+    if (!touched.current) setText(g.myGage)
+  }, [g.myGage])
+  const edit = (v) => { touched.current = true; setText(v) }
   const send = async () => {
     const r = await g.act.gage(text)
     if (r?.ok) { setSent(true); setErr(null); play('select'); vibrate(25) } else setErr(r?.error === 'empty' ? 'Écris un gage.' : 'Envoi impossible, réessaie.')
   }
+  // rien à renvoyer si le texte est celui déjà enregistré
+  const same = sent && !!g.myGage && text.trim() === g.myGage.trim()
   return (
     <PhaseFrame tick eyebrow="Avant de jouer" prompt="Écris un gage" remaining={g.remaining} total={g.total}
-      footer={g.me && <Btn onClick={send} disabled={!text.trim()} style={{ minWidth: 180 }}>{sent ? 'Modifier mon gage' : 'Envoyer ✍️'}</Btn>}>
+      footer={g.me && <Btn onClick={send} disabled={!text.trim() || same} style={{ minWidth: 180 }}>{same ? '✓ Gage envoyé' : sent ? 'Modifier mon gage' : 'Envoyer ✍️'}</Btn>}>
       <p style={{ ...type.body, color: C.textMut, marginTop: 0 }}>
         Il sera peut-être tiré pour le premier éliminé (jamais pour toi). Personne ne le voit avant.
       </p>
       {g.me ? (
         <div style={{ position: 'relative' }}>
-          <textarea value={text} maxLength={140} onChange={(e) => setText(e.target.value)} rows={3}
+          <textarea value={text} maxLength={140} onChange={(e) => edit(e.target.value)} rows={3}
             placeholder="Ex. : chanter l'opening de One Piece en vocal" aria-label="Ton gage"
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && text.trim()) send() }}
             className="gw-focus" style={{ width: '100%', borderRadius: 0, padding: 14, background: C.paper, ...type.body, fontSize: 17,
@@ -50,7 +60,7 @@ export default function GagesPhase({ g }) {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
               <span style={{ ...type.small, color: C.textMut, alignSelf: 'center' }}>En panne d'idée ?</span>
               {ideas.map((t, i) => (
-                <motion.button key={t} type="button" className="gw-btn" onClick={() => setText(t)}
+                <motion.button key={t} type="button" className="gw-btn" onClick={() => edit(t)}
                   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING_POP, delay: i * 0.06 }}
                   style={{
                     minHeight: 44, padding: '6px 12px', cursor: 'pointer', textAlign: 'left', ...type.small, color: C.ink,

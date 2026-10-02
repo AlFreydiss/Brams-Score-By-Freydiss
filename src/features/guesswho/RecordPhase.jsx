@@ -239,6 +239,12 @@ export default function RecordPhase({ g }) {
             {autoSent ? 'Chrono presque fini : ta dernière prise a été envoyée automatiquement ✓' : 'Envoyé ✓ Tu peux encore recommencer et renvoyer avant la fin du chrono.'}
           </p>
         )}
+        {/* Après un rechargement : le serveur a déjà mon imitation de ce tour. */}
+        {g.myTake && !sentId && !take && !busy && (
+          <p role="status" style={{ ...type.body, color: C.ok, margin: 0 }}>
+            Imitation déjà envoyée ✓ Tu peux en refaire une avant la fin du chrono.
+          </p>
+        )}
         {take && sentId && !sentThis && !busy && (
           <p style={{ ...type.small, color: C.warn, margin: 0 }}>Nouvelle prise pas encore envoyée : c'est la précédente qui compte pour l'instant (envoi auto à la fin du chrono).</p>
         )}

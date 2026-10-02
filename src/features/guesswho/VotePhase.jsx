@@ -48,8 +48,14 @@ function usePlaylist(urls) {
 
 export default function VotePhase({ g }) {
   const revote = g.room.phase === 'revote'
-  const [mine, setMine] = useState(null)
+  // Vote déjà enregistré côté serveur (survit au rechargement).
+  const [mine, setMine] = useState(g.myVote)
   const [err, setErr] = useState(null)
+  const pending = useRef(false)
+  useEffect(() => {
+    // pas pendant un envoi : une synchro plus ancienne écraserait le vote optimiste
+    if (g.myVote && !pending.current) setMine(g.myVote)
+  }, [g.myVote])
   const byId = Object.fromEntries(g.players.map((p) => [p.user_id, p]))
   const shown = revote ? g.takes.filter((t) => g.room.tied.includes(t.user_id)) : g.takes
   const allowed = new Set(votableTakes(g.takes, { me: g.me?.user_id, phase: g.room.phase, tied: g.room.tied }).map((t) => t.user_id))
@@ -62,7 +68,8 @@ export default function VotePhase({ g }) {
     const prev = mine
     setMine(uid); setErr(null)
     play('select'); vibrate(25)
-    const r = await g.act.vote(uid)
+    pending.current = true
+    const r = await g.act.vote(uid).finally(() => { pending.current = false })
     if (!r?.ok) { setMine(prev); setErr(r?.error === 'phase' ? 'Trop tard, le vote est fini.' : "Vote pas pris en compte, réessaie.") }
   }
   const voters = g.players.filter((p) => p.seat != null && p.connected !== false)
