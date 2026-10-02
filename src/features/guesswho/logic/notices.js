@@ -7,3 +7,15 @@ export function takeNotice(result) {
   }
   return null
 }
+
+// Arrivée en cours de partie (place donnée par le serveur).
+export function joinNotice(join) {
+  if (join?.late) return 'Partie en cours : tu as une place, tu joues dès ce tour.'
+  return null
+}
+
+// Bandeau de connexion : seulement après plusieurs secondes sans réponse.
+export function connectionNotice(connection) {
+  if (connection === 'reconnecting') return 'Connexion perdue… on se reconnecte, ta place est gardée.'
+  return null
+}

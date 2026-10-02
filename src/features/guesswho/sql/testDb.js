@@ -4,15 +4,18 @@
 import { PGlite } from '@electric-sql/pglite'
 import { readFileSync } from 'node:fs'
 
-const MIGRATION = new URL('../../../../supabase/migrations/20261001_guess_who.sql', import.meta.url)
+const MIG = (f) => new URL(`../../../../supabase/migrations/${f}`, import.meta.url)
+// Ordre d'application en prod (collées à la main dans l'éditeur SQL).
+export const MIGRATIONS = ['20261001_guess_who.sql', '20261002_guess_who_modes.sql', '20261002b_guess_who_robuste.sql']
 
-export async function freshDb() {
+// `upTo` : nombre de migrations appliquées (pour tester l'ancien comportement).
+export async function freshDb({ upTo = MIGRATIONS.length } = {}) {
   const db = new PGlite()
   await db.exec(`
     create role anon; create role authenticated;
     create publication supabase_realtime;
   `)
-  await db.exec(readFileSync(MIGRATION, 'utf8'))
+  for (const f of MIGRATIONS.slice(0, upTo)) await db.exec(readFileSync(MIG(f), 'utf8'))
   return db
 }
 

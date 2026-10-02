@@ -1,13 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import { freshDb, call, setupRoom, expirePhase } from './testDb.js'
-
-const MODES = readFileSync(new URL('../../../../supabase/migrations/20261002_guess_who_modes.sql', import.meta.url), 'utf8')
 
 async function db() {
   const d = await freshDb()
-  await d.exec(MODES)
   const add = (id, lang, kind) => d.query(
     `insert into guesswho_clips(id, title, anime, lang, kind, url, duration, enabled) values ($1, $1, 'T', $2, $3, 'https://x/' || $1, 3, true)`,
     [id, lang, kind])
@@ -24,7 +20,7 @@ async function toListen(d, settings) {
   return { g, r }
 }
 
-test('vies réglables de 1 à 3 (bornées)', async () => {
+test('vies réglables de 1 à 5 (bornées)', async () => {
   const d = await db()
   await toListen(d, { lives: 3 })
   let st = await call(d, 'guesswho_room_state', 'ABCD')
@@ -32,7 +28,7 @@ test('vies réglables de 1 à 3 (bornées)', async () => {
   const d2 = await db()
   await toListen(d2, { lives: 9 })
   st = await call(d2, 'guesswho_room_state', 'ABCD')
-  assert.deepEqual(st.players.map((p) => p.lives), [3, 3, 3])
+  assert.deepEqual(st.players.map((p) => p.lives), [5, 5, 5])
 })
 
 test('sans réglage : 2 vies, comme avant', async () => {
