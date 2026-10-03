@@ -32,8 +32,10 @@ const CLIPS = [
   ['gin', 72.7, 4.3, 'Bankai ! Kamishini no Yari', 'Gin'],
   ['ichigo', 110.6, 3.2, 'Bankai ! Tensa Zangetsu', 'Ichigo'],
   ['mayuri', 312.6, 4.9, 'Bankai ! Konjiki Ashisogi Jizō', 'Mayuri'],
-  ['renji', 333.3, 4.0, 'Bankai ! Hihiō Zabimaru', 'Renji'],
-  ['komamura', 390.7, 6.0, "Bankai ! Kokujō Tengen Myō'ō", 'Komamura'],
+  // on entend « Ikuze, Zabimaru », pas l'annonce du Bankai (transcrit le 2026-10-03)
+  ['renji', 333.3, 4.0, 'Ikuze, Zabimaru !', 'Renji'],
+  // à 390,7 s c'est Rukia (« Hakka no Togame »), pas Komamura (transcrit le 2026-10-03)
+  ['rukia', 390.7, 6.0, 'Bankai ! Hakka no Togame', 'Rukia'],
   ['hirako', 473.1, 5.5, 'Bankai ! Sakashima Yokoshima Happō Fusagari', 'Hirako'],
   ['shunsui', 580.4, 3.0, 'Bankai ! Katen Kyōkotsu', 'Shunsui'],
   ['unohana', 669.0, 3.6, 'Bankai ! Minazuki', 'Unohana'],
