@@ -5,44 +5,37 @@ import { T, F, LINE, RADIUS, label } from './theme.js'
 import { ClipPlayer, TakeCard, PLAY_EVT } from './ui.jsx'
 import { roster } from './GagesPhase.jsx'
 import { votableTakes } from './logic/clock.js'
+import { createPlayQueue } from './logic/playQueue.js'
 import { play, vibrate } from './sfx.js'
 
-// « Écouter tout » : original puis chaque imitation, dans UN seul élément audio
-// (débloqué par le tap → iOS accepte d'enchaîner les sons sans nouveau geste).
+// « Écouter tout » : file audio unique (logique dans logic/playQueue.js).
 function usePlaylist(urls) {
-  const audioRef = useRef(null)
-  const idxRef = useRef(null)
-  const [idx, setIdxState] = useState(null)
+  const [idx, setIdx] = useState(null)
   const list = useRef(urls)
   list.current = urls
-  const setIdx = (i) => { idxRef.current = i; setIdxState(i) }
-  const go = (i) => {
-    const a = audioRef.current
-    if (!a || i >= list.current.length) { setIdx(null); return }
-    setIdx(i)
-    a.src = list.current[i]
-    a.play().catch(() => { if (idxRef.current === i) go(i + 1) })
+  const q = useRef(null)
+  if (!q.current) {
+    q.current = createPlayQueue({
+      getUrls: () => list.current,
+      onIdx: setIdx,
+      makeAudio: () => {
+        const a = new Audio()
+        a.setAttribute('playsinline', '')
+        a.onEnded = (fn) => a.addEventListener('ended', fn)
+        return a
+      },
+    })
   }
-  const stop = () => { audioRef.current?.pause(); setIdx(null) }
   const start = () => {
-    if (!audioRef.current) {
-      const a = new Audio()
-      a.setAttribute('playsinline', '')
-      // petite respiration entre deux sons
-      a.addEventListener('ended', () => {
-        const i = idxRef.current
-        if (i != null) setTimeout(() => { if (idxRef.current === i) go(i + 1) }, 350)
-      })
-      audioRef.current = a
-    }
-    window.dispatchEvent(new CustomEvent(PLAY_EVT, { detail: audioRef.current }))
-    go(0)
+    const a = q.current.start()
+    window.dispatchEvent(new CustomEvent(PLAY_EVT, { detail: a }))
   }
+  const stop = () => q.current.stop()
   useEffect(() => {
     // Un lecteur lancé à la main coupe la file.
-    const other = (e) => { if (e.detail !== audioRef.current && idxRef.current != null) { audioRef.current?.pause(); setIdx(null) } }
+    const other = (e) => { if (e.detail !== q.current.audio && q.current.idx != null) q.current.stop() }
     window.addEventListener(PLAY_EVT, other)
-    return () => { window.removeEventListener(PLAY_EVT, other); audioRef.current?.pause() }
+    return () => { window.removeEventListener(PLAY_EVT, other); q.current.dispose() }
   }, [])
   return { idx, start, stop }
 }
