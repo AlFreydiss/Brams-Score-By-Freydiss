@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { C, PhaseFrame, SPRING_POP, type } from './manga.jsx'
 import { T, F, LINE, RADIUS, SHADOW, plate } from './theme.js'
@@ -10,6 +11,30 @@ import { pulseFrom } from './SoundField.jsx'
 // Rythme de la révélation (le verdict ne dure que 8 s).
 const FIRST_MS = 350
 const GAP_MS = 420
+
+// Ton verdict à toi : un cadre de points autour de l'écran (doré si tu es le
+// meilleur, rouge si tu perds une vie) qui clignote puis s'éteint (1,8 s).
+// Pas de lueur floue : l'or flou vire au brun sur ce fond. Portail vers
+// <body> : le cadre de phase animé (transform) piégerait le position: fixed.
+const EDGE_TONE = { gold: T.accentLit, red: T.danger }
+function Vignette({ tone }) {
+  const c = EDGE_TONE[tone]
+  const h = `linear-gradient(90deg, ${c} 0 5px, transparent 5px) 0 0 / 11px 5px repeat-x`
+  const v = `linear-gradient(180deg, ${c} 0 5px, transparent 5px) 0 0 / 5px 11px repeat-y`
+  const strip = { position: 'absolute' }
+  return createPortal(
+    <div aria-hidden className="gw-anim gw-keep" style={{
+      position: 'fixed', inset: 10, zIndex: 55, pointerEvents: 'none',
+      '--gw-d': '1.8s', animation: 'gw-vignette 1.8s linear both',
+    }}>
+      <span style={{ ...strip, top: 0, left: 0, right: 0, height: 5, background: h }} />
+      <span style={{ ...strip, bottom: 0, left: 0, right: 0, height: 5, background: h }} />
+      <span style={{ ...strip, top: 0, bottom: 0, left: 0, width: 5, background: v }} />
+      <span style={{ ...strip, top: 0, bottom: 0, right: 0, width: 5, background: v }} />
+    </div>,
+    document.body,
+  )
+}
 
 // Jauge de votes : un point par vote possible, ils s'allument un à un au
 // rythme du compteur (même trame de points que le fond).
@@ -67,6 +92,7 @@ export default function ResultPhase({ g }) {
     : auto ? "Pas d'imitation = une vie en moins"
     : losers.size > 1 ? 'Égalité : les ex aequo perdent une vie' : 'Le moins voté perd une vie'
   const meLost = g.me && losers.has(g.me.user_id)
+  const meBest = !auto && !!g.me && topScore > 0 && (scores[g.me.user_id] || 0) === topScore
   // Qui a voté pour qui (migration 20261002b ; absent sinon) : votes de l'étape décisive.
   const nameOf = (uid) => (uid === g.me?.user_id ? 'Toi' : g.players.find((p) => p.user_id === uid)?.display_name || 'Un joueur')
   const ballots = auto ? [] : (Array.isArray(res.votes) ? res.votes : [])
@@ -86,6 +112,9 @@ export default function ResultPhase({ g }) {
         </p>
       )}
       {step >= 1 && topScore > 0 && <Confetti count={34} />}
+      {/* bords de l'écran : dorés si c'est toi le meilleur, rouges si tu perds une vie */}
+      {step >= 1 && meBest && !meLost && <Vignette key="vg" tone="gold" />}
+      {step === 2 && meLost && <Vignette key="vr" tone="red" />}
       <motion.div
         animate={{ x: 0 }}
         transition={{ duration: 0.2 }}

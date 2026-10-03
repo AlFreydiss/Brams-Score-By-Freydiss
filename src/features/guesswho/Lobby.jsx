@@ -11,6 +11,8 @@ import { inAppBrowser, openInBrowserHint } from './logic/recordFlow.js'
 import { startErrorText } from './logic/startError.js'
 import { logEvent } from '../../lib/guessWhoLog.js'
 import { glyph, DOT_COLS, DOT_ROWS } from './logic/dotFont.js'
+import { DotBurst } from './ui.jsx'
+import { pulseFrom } from './SoundField.jsx'
 
 const MAX_PLAYERS = 8
 const MIN_PLAYERS = 3
@@ -104,6 +106,15 @@ function BigCode({ code, onCopy }) {
   )
 }
 
+// Joueur arrivé pendant qu'on attend (pas ceux déjà là à l'ouverture) :
+// gerbe de points + onde dorée du fond depuis son avatar.
+function Arrival({ fresh, children }) {
+  const ref = useRef(null)
+  const [burst] = useState(fresh)
+  useEffect(() => { if (burst) pulseFrom(ref.current, 'gold') }, [burst])
+  return <div ref={ref} style={{ position: 'relative' }}>{burst && <DotBurst />}{children}</div>
+}
+
 // Place vide : cercle pointillé qui attend un joueur.
 function EmptySeat() {
   return (
@@ -119,6 +130,9 @@ function EmptySeat() {
 
 export default function Lobby({ code, g }) {
   const reduce = useReducedMotion()
+  // vrai une fois la salle affichée : les joueurs déjà là n'ont pas d'effet d'arrivée
+  const mounted = useRef(false)
+  useEffect(() => { mounted.current = true }, [])
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -237,7 +251,9 @@ export default function Lobby({ code, g }) {
             <motion.div key={p.user_id} layout={!reduce}
               initial={reduce ? { opacity: 0 } : { scale: 0.85, y: 6, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 26 }}>
-              <PlayerChip player={p} host={p.is_host} me={p.user_id === g.me?.user_id} submitted={showReady && !!p.ready} />
+              <Arrival fresh={mounted.current}>
+                <PlayerChip player={p} host={p.is_host} me={p.user_id === g.me?.user_id} submitted={showReady && !!p.ready} />
+              </Arrival>
             </motion.div>
           ))}
         </AnimatePresence>

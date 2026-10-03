@@ -7,6 +7,7 @@ import { AvatarName, ClipPlayer, Lives, avatarUrl } from './ui.jsx'
 import { Confetti } from './fx.jsx'
 import { play } from './sfx.js'
 import { bestHighlight } from './logic/highlights.js'
+import { rankPlayers } from './logic/ranking.js'
 import { startErrorText } from './logic/startError.js'
 import { logEvent } from '../../lib/guessWhoLog.js'
 
@@ -77,7 +78,7 @@ function Stat({ label: text, value, detail, i }) {
 export default function EndScreen({ g }) {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
-  const rows = [...g.players].filter((p) => p.seat != null).sort((a, b) => b.total_votes - a.total_votes || b.lives - a.lives)
+  const rows = rankPlayers(g.players)
   const rest = rows.slice(3)
   // Récap serveur (guesswho_stats) en priorité, calcul local en repli.
   const awards = g.stats?.awards || {}

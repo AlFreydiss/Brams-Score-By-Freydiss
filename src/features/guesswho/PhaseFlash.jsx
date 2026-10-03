@@ -16,9 +16,9 @@ const COL_MS = 14 // décalage du balayage par colonne de points
 
 export const flashWord = (phase) => WORDS[phase] || null
 
-export default function PhaseFlash({ phase, round }) {
+export default function PhaseFlash({ phase, round, word: override }) {
   const reduce = useReducedMotion()
-  const word = flashWord(phase)
+  const word = override || flashWord(phase)
   const [alive, setAlive] = useState(true)
   useEffect(() => {
     setAlive(true)
@@ -28,7 +28,8 @@ export default function PhaseFlash({ phase, round }) {
   if (reduce || !word || !alive) return null
   const chars = [...word]
   const units = chars.length * DOT_COLS + (chars.length - 1)
-  const sub = phase === 'listen' && round ? `Tour ${round}` : null
+  const sub = phase === 'listen' && round ? `Tour ${round}`
+    : phase === 'end' && word !== 'FIN' ? 'remporte la partie' : null
   return (
     <div key={`${phase}-${round}`} aria-hidden className="gw-anim gw-keep" style={{ '--gw-d': `${LIFE_MS}ms`,
       position: 'fixed', inset: 0, zIndex: 60, pointerEvents: 'none', display: 'grid', placeItems: 'center', alignContent: 'center', gap: 18,

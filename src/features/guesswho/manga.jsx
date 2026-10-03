@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { play, vibrate } from './sfx.js'
 import { T, F, LINE, SHADOW, plate, pill, label } from './theme.js'
-import SoundField, { PULSE_EVT } from './SoundField.jsx'
+import SoundField, { PULSE_EVT, pulseFrom } from './SoundField.jsx'
 
 export const FONT_DISPLAY = F.display
 export const FONT_BODY = F.ui
@@ -51,6 +51,7 @@ export const GLOBAL_CSS = `
 /* sur téléphone, un mot par ligne dès le départ : pas de saut pendant l'étirement */
 @media (max-width: 640px) { .gw-title .gw-word { display: block } }
 @media (prefers-reduced-motion: reduce) { .gw-title { animation: none } }
+@keyframes gw-vignette { 0% { opacity: 0 } 10% { opacity: 1 } 25% { opacity: .2 } 40% { opacity: 1 } 70% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes gw-eq { 0%, 100% { opacity: 1 } 50% { opacity: .12 } }
 @keyframes gw-ballot { 0% { opacity: .14 } 12% { opacity: 1 } 88% { opacity: 1 } 100% { opacity: .14 } }
 @keyframes gw-life { 0%, 35% { fill: ${T.accent}; opacity: 1 } 45% { fill: ${T.danger}; opacity: 1 } 60%, 80% { fill: ${T.danger}; opacity: .15 } 95%, 100% { fill: ${T.accent}; opacity: 1 } }
@@ -117,9 +118,12 @@ export function Timer({ remaining, total, tick = false }) {
   const r = remaining == null ? null : Math.max(0, Math.ceil(remaining))
   const crit = r != null && r <= 5 && r > 0
   const last = useRef(r)
+  const el = useRef(null)
   useEffect(() => {
     if (r === last.current) return
     last.current = r
+    // 3 dernières secondes : le fond bat en rouge depuis le chrono (muet)
+    if (r != null && r > 0 && r <= 3) pulseFrom(el.current, 'red')
     if (!tick || r == null || r > 5) return
     if (r > 0) { play(r <= 3 ? 'tickHi' : 'tick'); vibrate(r <= 3 ? 40 : 20) } else vibrate([60, 40, 60])
   }, [r, tick])
@@ -130,7 +134,7 @@ export function Timer({ remaining, total, tick = false }) {
   // le sens horaire, le dernier allumé est un peu plus gros.
   const lit = Math.ceil(pct * TIMER_DOTS)
   return (
-    <div role="timer" aria-label={`${r} secondes`} className={crit ? 'gw-anim gw-keep' : undefined}
+    <div ref={el} role="timer" aria-label={`${r} secondes`} className={crit ? 'gw-anim gw-keep' : undefined}
       style={{ position: 'relative', width: 64, height: 64, flex: '0 0 auto', '--gw-d': '1s', '--gw-n': 'infinite', animation: crit ? 'gw-pulse 1s ease-in-out infinite' : 'none' }}>
       <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden>
         {Array.from({ length: TIMER_DOTS }, (_, i) => {

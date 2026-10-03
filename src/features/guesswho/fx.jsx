@@ -1,6 +1,7 @@
 // Guess Who — effets ponctuels : paillettes champagne, compteur qui monte, bouton son.
 // Tout est one-shot (CSS transform/opacity) et coupé par prefers-reduced-motion.
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useReducedMotion } from 'framer-motion'
 import { T, pill } from './theme.js'
 import { isMuted, onMuteChange, play, setMuted } from './sfx.js'
@@ -18,7 +19,8 @@ export function Confetti({ count = 42, duration = 2600 }) {
   })), [count])
   useEffect(() => { const t = setTimeout(() => setAlive(false), duration + 600); return () => clearTimeout(t) }, [duration])
   if (reduce || !alive) return null
-  return (
+  // portail vers <body> : un parent animé (transform) piégerait le position: fixed
+  return createPortal(
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 58, pointerEvents: 'none', overflow: 'hidden' }}>
       {pieces.map((p) => (
         <span key={p.i} className="gw-anim gw-keep" style={{
@@ -29,7 +31,7 @@ export function Confetti({ count = 42, duration = 2600 }) {
         }} />
       ))}
     </div>
-  )
+  , document.body)
 }
 
 // Nombre qui monte de 0 à `to` après `delay` ms (petit clic à chaque pas).
