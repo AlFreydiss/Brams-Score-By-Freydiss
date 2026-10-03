@@ -12,7 +12,7 @@
 // → data URL inline plafonnée (le serveur la plafonne aussi).
 import { getAccessToken } from './supabaseRest.js'
 import { baseMime, pickRecorderMime, blobToDataUrl } from '../features/guesswho/logic/audioData.js'
-import { micConstraints } from '../features/guesswho/logic/mic.js'
+import { micConstraints, raceWithRelease } from '../features/guesswho/logic/mic.js'
 import { encodeWav, mixToMono, peaksOf, processTake } from '../features/guesswho/logic/dsp.js'
 import { backoffMs } from '../features/guesswho/logic/recordFlow.js'
 
@@ -235,10 +235,8 @@ export async function listMics() {
 // 10 s : sans réponse du navigateur, le bouton ne doit pas rester sans effet.
 export async function openMic(deviceId = getMicId()) {
   if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('no_support'), { name: 'NoSupportError' })
-  const ask = (id) => Promise.race([
-    navigator.mediaDevices.getUserMedia({ audio: micConstraints(id) }),
-    new Promise((_, reject) => setTimeout(() => reject(Object.assign(new Error('timeout'), { name: 'TimeoutError' })), 10000)),
-  ])
+  // micro accordé après les 10 s : refermé aussitôt (voir raceWithRelease)
+  const ask = (id) => raceWithRelease(navigator.mediaDevices.getUserMedia({ audio: micConstraints(id) }), 10000)
   try {
     return await ask(deviceId)
   } catch (e) {

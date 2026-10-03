@@ -28,3 +28,16 @@ export function levelOf(samples) {
 export function micLabel(device, index) {
   return device?.label || `Micro ${index + 1}`
 }
+
+// Demande de micro bornée dans le temps (le navigateur peut ne jamais répondre).
+// `later(fn)` programme l'expiration (setTimeout injecté pour les tests).
+// Si le micro arrive APRÈS l'expiration (permission accordée tard sur iPhone),
+// on le referme aussitôt : sinon il restait ouvert sans détenteur.
+export function raceWithRelease(promise, ms, later = (fn) => setTimeout(fn, ms)) {
+  let expired = false
+  promise.then((s) => { if (expired) s?.getTracks?.().forEach((t) => t.stop()) }, () => {})
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => later(() => { expired = true; reject(Object.assign(new Error('timeout'), { name: 'TimeoutError' })) })),
+  ])
+}
