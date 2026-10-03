@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { C, FONT_BODY, GLOBAL_CSS, Btn, PhaseFrame, Waiting, MangaBackdrop } from './manga.jsx'
-import { T, F, LINE, RADIUS, pill, label } from './theme.js'
+import { T, F, LINE, RADIUS, pill } from './theme.js'
 import BarreJeu from '../../components/BarreJeu.jsx'
 import { createRoom, guestId } from '../../lib/guessWhoRooms.js'
 import { useGuessWhoRoom } from './useGuessWhoRoom.js'
@@ -37,13 +37,6 @@ const RULES = [
   ['Survis', 'Le moins voté perd une vie. À 0, tu fais le gage tiré au sort.'],
 ]
 
-// Ce qu'on veut savoir avant de lancer : combien, avec quoi, combien de temps.
-const FACTS = [
-  ['👥', '3 à 8 joueurs'],
-  ['🎙️', 'Micro requis'],
-  ['📱', 'Mobile ou PC'],
-  ['🎌', "Sons d'anime"],
-]
 
 // Dernier salon rejoint : un onglet tué par le téléphone (appel, appareil
 // photo…) ramenait sur l'accueil sans le code. 3 h après, il est sûrement fini.
@@ -81,16 +74,18 @@ function Home({ identity }) {
   }
   return (
     <div style={{ maxWidth: 880, margin: '0 auto', display: 'grid', gap: 22 }}>
-      {/* Couverture : titre gravé, sobre. */}
-      <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
-        style={{ textAlign: 'center', padding: 'clamp(10px,4vw,34px) 0 4px' }}>
-        <div style={label({ color: T.accent, marginBottom: 12 })}>Brams · Jeu de soirée</div>
-        <h1 style={{
-          margin: 0, fontFamily: F.display, fontWeight: 500, lineHeight: 0.95, letterSpacing: '-0.025em',
-          fontSize: 'clamp(3rem, 11vw, 6.2rem)', color: T.textHi,
-        }}>Guess Who<span style={{ color: T.accent }}>.</span></h1>
-        <p style={{ margin: '14px auto 0', maxWidth: 460, fontFamily: F.ui, fontSize: 16, lineHeight: 1.55, color: T.textMute }}>
+      {/* Couverture : le titre en chasse large porte la page, le reste se tait. */}
+      <motion.header initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
+        style={{ textAlign: 'center', padding: 'clamp(18px,6vw,56px) 0 6px' }}>
+        <h1 className="gw-title" style={{
+          margin: 0, fontFamily: F.display, fontWeight: 800, lineHeight: 0.88, letterSpacing: '-0.04em',
+          color: T.textHi,
+        }}>Guess Who</h1>
+        <p style={{ margin: '20px auto 0', maxWidth: 440, fontFamily: F.ui, fontSize: 17, lineHeight: 1.5, color: T.text }}>
           Imite un son d'anime, votez pour la meilleure imitation. Le moins voté perd une vie.
+        </p>
+        <p style={{ margin: '8px auto 0', fontFamily: F.ui, fontSize: 14, color: T.textMute }}>
+          De 3 à 8 joueurs, sur mobile ou PC. Il faut un micro.
         </p>
       </motion.header>
 
@@ -104,26 +99,19 @@ function Home({ identity }) {
       )}
 
       <PhaseFrame>
-        <ul aria-label="En bref" style={{ listStyle: 'none', margin: '0 0 18px', padding: 0, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {FACTS.map(([icon, text]) => (
-            <li key={text} style={{
-              ...pill('ghost'), display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-              fontFamily: F.ui, fontWeight: 600, fontSize: 13.5, lineHeight: 1.2, color: T.text,
-            }}><span aria-hidden>{icon}</span>{text}</li>
-          ))}
-        </ul>
-        <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        {/* Un tour en trois temps : la numérotation suit vraiment l'ordre du jeu. */}
+        <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'clamp(14px,3vw,28px)', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
           {RULES.map(([title, text], i) => (
-            <li key={title} style={{ border: LINE, borderRadius: RADIUS.md, padding: '14px 16px', background: i === 2 ? 'rgba(199,168,105,0.06)' : 'transparent' }}>
+            <li key={title}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 15, color: T.accent }}>{String(i + 1).padStart(2, '0')}</span>
-                <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 19, color: T.textHi }}>{title}</span>
+                <span style={{ fontFamily: F.display, fontWeight: 700, fontSize: 15, color: T.accent }}>{i + 1}</span>
+                <span style={{ fontFamily: F.display, fontWeight: 700, fontSize: 19, letterSpacing: '-0.02em', color: T.textHi }}>{title}</span>
               </div>
-              <p style={{ margin: '6px 0 0', fontFamily: F.ui, fontWeight: 400, fontSize: 14.5, lineHeight: 1.5, color: T.textMute }}>{text}</p>
+              <p style={{ margin: '8px 0 0', fontFamily: F.ui, fontWeight: 400, fontSize: 14.5, lineHeight: 1.5, color: T.textMute }}>{text}</p>
             </li>
           ))}
         </ol>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 22, paddingTop: 20, borderTop: LINE }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginTop: 28 }}>
           <Btn onClick={create} disabled={busy || !identity}>{busy ? 'Création…' : 'Créer un salon'}</Btn>
           <span style={{ fontFamily: F.ui, fontWeight: 500, color: T.textFaint }}>ou</span>
           <input className="gw-focus" value={code} onChange={(e) => setCode(cleanCode(e.target.value))}
@@ -131,7 +119,7 @@ function Home({ identity }) {
             placeholder="CODE" aria-label="Code du salon" autoCapitalize="characters" autoComplete="off" spellCheck={false}
             style={{
               width: 140, minHeight: 48, border: LINE, borderRadius: RADIUS.pill, padding: '0 14px', outline: 'none',
-              fontFamily: F.display, fontWeight: 500, fontSize: 20, letterSpacing: '0.3em', textAlign: 'center',
+              fontFamily: F.display, fontWeight: 700, fontSize: 18, letterSpacing: '0.18em', textAlign: 'center',
               background: T.deep, color: T.textHi, boxSizing: 'border-box',
             }} />
           <Btn variant="ghost" disabled={code.length !== 4} onClick={join}>Rejoindre</Btn>

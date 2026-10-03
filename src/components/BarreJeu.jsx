@@ -22,7 +22,7 @@ const SKINS = {
     },
     title: { fontSize: 18, color: '#14121A', fontFamily: "'Dela Gothic One', 'Arial Black', sans-serif" },
   },
-  // Identité Brams (Tier Studio) : encre chaude, filet fin, titre Fraunces.
+  // Identité Brams (Guess Who) : encre chaude, filet fin, Archivo.
   brams: {
     bar: {
       background: 'rgba(11,11,12,0.82)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
@@ -30,9 +30,9 @@ const SKINS = {
     },
     back: {
       color: '#EDEAE3', fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 999,
-      border: '1px solid rgba(255,255,255,0.07)', fontFamily: "'Hanken Grotesk', system-ui, sans-serif",
+      border: '1px solid rgba(255,255,255,0.07)', fontFamily: "'Archivo', system-ui, sans-serif",
     },
-    title: { fontSize: 18, fontWeight: 500, color: '#EDEAE3', fontFamily: "'Fraunces', Georgia, serif", letterSpacing: '-0.01em' },
+    title: { fontSize: 15, fontWeight: 700, color: '#EDEAE3', fontFamily: "'GW Display', 'Archivo', system-ui, sans-serif" },
   },
 }
 

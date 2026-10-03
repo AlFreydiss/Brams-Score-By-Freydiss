@@ -1,6 +1,6 @@
 // Guess Who — identité Brams (atelier de gravure) : encre chaude + champagne.
 // Repose sur src/theme/tierStudio.js, aucune seconde palette.
-import { ink, fonts } from '../../theme/tierStudio.js'
+import { ink } from '../../theme/tierStudio.js'
 
 export const T = {
   bg: ink.ink800, surface: ink.ink700, raised: ink.ink600, deep: ink.ink900,
@@ -12,7 +12,9 @@ export const T = {
   medal: { gold: '#C7A869', silver: '#A9A9A4', bronze: '#A9774F' },
 }
 
-export const F = { display: fonts.display, ui: fonts.ui }
+// Archivo seule : chasse large pour les titres (alias « GW Display », défini
+// dans GLOBAL_CSS), chasse normale pour l'interface.
+export const F = { display: "'GW Display', 'Archivo', system-ui, sans-serif", ui: "'Archivo', system-ui, sans-serif" }
 export const LINE = `1px solid ${T.line}`
 export const LINE_SOFT = `1px solid ${T.lineSoft}`
 export const RADIUS = { sm: 10, md: 14, lg: 18, pill: 999 }
@@ -25,7 +27,9 @@ export const SHADOW = {
 // Plaque (carte structurelle) : filet fin, dégradé léger, ombre douce.
 export function plate(extra = {}) {
   return {
-    background: `linear-gradient(180deg, ${T.raised} 0%, ${T.surface} 100%)`,
+    // légèrement translucide : le spectre du fond se devine derrière
+    background: 'linear-gradient(180deg, rgba(30,30,32,0.9) 0%, rgba(22,22,24,0.9) 100%)',
+    backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
     border: LINE, borderTopColor: 'rgba(255,255,255,0.09)', borderRadius: RADIUS.lg,
     boxShadow: `${SHADOW.soft}, ${SHADOW.inset}`, ...extra,
   }
@@ -41,9 +45,9 @@ export function pill(kind = 'primary', extra = {}) {
   return { borderRadius: RADIUS.pill, ...(skins[kind] || skins.primary), ...extra }
 }
 
-// Étiquette gravée : petites capitales espacées.
+// Étiquette : petite, casse normale (pas de capitales espacées).
 export function label(extra = {}) {
-  return { fontFamily: F.ui, fontWeight: 700, fontSize: 11.5, letterSpacing: '.16em', textTransform: 'uppercase', color: T.textMute, ...extra }
+  return { fontFamily: F.ui, fontWeight: 600, fontSize: 13, color: T.textMute, ...extra }
 }
 
 // Rapport de contraste WCAG entre deux couleurs #RRGGBB.

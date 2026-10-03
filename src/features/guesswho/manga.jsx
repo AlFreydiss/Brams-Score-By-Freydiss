@@ -1,11 +1,12 @@
-// Guess Who — briques visuelles communes, identité Brams (atelier de gravure) :
-// encre chaude, champagne mat, Fraunces + Hanken Grotesk, plaques à filet fin.
+// Guess Who — briques visuelles communes, identité Brams : encre chaude,
+// champagne mat, Archivo (large pour les titres), plaques à filet fin.
 // Même API qu'avant (Btn, PhaseFrame, LiveRoster, PlayerChip, Waiting, C…) :
 // les écrans changent de peau sans changer de logique. Palette : ./theme.js.
 import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { play, vibrate } from './sfx.js'
 import { T, F, LINE, SHADOW, plate, pill, label } from './theme.js'
+import SoundField from './SoundField.jsx'
 
 export const FONT_DISPLAY = F.display
 export const FONT_BODY = F.ui
@@ -22,7 +23,13 @@ export const C = {
 
 export const SPRING_POP = { type: 'spring', stiffness: 380, damping: 26, mass: 0.7 }
 
+// « GW Display » = Archivo forcé en chasse large et graisse forte : la face
+// déclare une seule largeur (125 %) et les graisses 650-900, donc un titre qui
+// demande 500 est rendu large et appuyé sans retoucher chaque écran.
 export const GLOBAL_CSS = `
+@font-face { font-family: 'GW Display'; font-style: normal; font-weight: 650 900; font-stretch: 125%; font-display: swap;
+  src: url(https://fonts.gstatic.com/s/archivo/v25/k3kQo8UDI-1M0wlSfdnoLg.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 .gw-btn:focus-visible, .gw-focus:focus-visible { outline: 2px solid ${T.accent}; outline-offset: 3px; }
 @keyframes gw-spin { to { transform: rotate(360deg) } }
 @keyframes gw-confetti { 0% { transform: translate3d(0,-10vh,0) rotate(0) } 100% { transform: translate3d(var(--dx),110vh,0) rotate(var(--rot)) } }
@@ -33,20 +40,20 @@ export const GLOBAL_CSS = `
 @keyframes gw-float-up { 0% { transform: translate3d(0,0,0) scale(.6); opacity: 0 } 15% { transform: translate3d(0,-40px,0) scale(1); opacity: .85 } 75% { opacity: .7 } 100% { transform: translate3d(var(--dx),-300px,0) scale(.9); opacity: 0 } }
 @keyframes gw-flash { 0% { opacity: .5 } 100% { opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .gw-anim { animation: none !important } }
+/* titre d'accueil : index.css force les h1 à 48 px max sur mobile (!important) */
+.gw-title { font-size: clamp(3.4rem, 17vw, 8rem) !important; }
 .gw-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 `
 
 // Grain très léger (bruit SVG) pour casser l'aplat sans motif visible.
 const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
 
-// Fond : encre unie + halo champagne à peine visible + grain.
+// Fond : encre unie + spectre sonore en trame de points + grain.
 export function MangaBackdrop() {
   return (
     <>
-      <div aria-hidden style={{
-        position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: T.bg,
-        backgroundImage: 'radial-gradient(ellipse 60% 45% at 50% 28%, rgba(199,168,105,0.09), transparent 70%)',
-      }} />
+      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', background: T.bg }} />
+      <SoundField />
       <div aria-hidden style={{
         position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', opacity: 0.035, backgroundImage: GRAIN,
       }} />
