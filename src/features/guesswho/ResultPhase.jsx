@@ -7,6 +7,7 @@ import { AvatarName, Lives } from './ui.jsx'
 import { Confetti, CountUp } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
 import { pulseFrom } from './SoundField.jsx'
+import { KoStamp, LAND } from './cartoon.jsx'
 
 // Rythme de la révélation (le verdict ne dure que 8 s).
 const FIRST_MS = 350
@@ -130,13 +131,17 @@ export default function ResultPhase({ g }) {
           return (
             <motion.div key={p.user_id} data-gw-row={p.user_id}
               initial={reduce ? { opacity: 0 } : { y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: ko ? 0.72 : 1, scale: best ? 1.01 : 1 }}
-              transition={{ ...SPRING_POP, delay: reduce ? 0 : (FIRST_MS + i * GAP_MS) / 1000 }}
+              animate={{ y: 0, opacity: 1, scale: best ? 1.01 : 1, scaleY: ko && !reduce ? [1, 0.93, 1.03, 1] : 1 }}
+              transition={{
+                ...SPRING_POP, delay: reduce ? 0 : (FIRST_MS + i * GAP_MS) / 1000,
+                // le K.O. tasse la ligne juste avant l'impact du tampon
+                scaleY: { duration: 0.45, times: [0, 0.4, 0.7, 1], ease: 'easeOut' },
+              }}
               style={{
                 ...plate({ borderRadius: RADIUS.md }),
                 position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
                 border: `1px solid ${best ? T.accent : ko ? T.danger : T.line}`,
-                boxShadow: best ? `0 0 0 4px ${T.glow}, 0 0 28px rgba(199,168,105,0.18), ${SHADOW.soft}` : plate().boxShadow,
+                boxShadow: best ? `0 0 0 3px ${T.glow}, ${SHADOW.soft}` : plate().boxShadow,
                 transition: 'border-color .4s, box-shadow .4s, opacity .6s',
               }}>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -158,16 +163,17 @@ export default function ResultPhase({ g }) {
               </span>
               {best && (
                 <motion.span aria-label="meilleure imitation du tour"
-                  initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ position: 'absolute', left: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 12, color: T.onAccent, background: T.accent, borderRadius: RADIUS.pill, padding: '2px 9px' }}>Meilleure</motion.span>
+                  initial={reduce ? { opacity: 0 } : LAND.initial} animate={reduce ? { opacity: 1 } : LAND.animate}
+                  transition={LAND.transition}
+                  style={{ transformOrigin: '50% 100%', position: 'absolute', left: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 12, color: T.onAccent, background: T.accent, borderRadius: RADIUS.pill, padding: '2px 9px' }}>Meilleure</motion.span>
               )}
+              {ko && <KoStamp />}
               {ko && (
                 <motion.span aria-label="perd une vie"
-                  initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
+                  initial={reduce ? { opacity: 0 } : LAND.initial} animate={reduce ? { opacity: 1 } : LAND.animate}
+                  transition={{ ...LAND.transition, delay: 0.3 }}
                   style={{
-                    position: 'absolute', right: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 12,
+                    transformOrigin: '50% 100%', position: 'absolute', right: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 12,
                     color: T.danger, background: T.bg, border: `1px solid ${T.danger}`, borderRadius: RADIUS.pill, padding: '2px 9px',
                   }}>− 1 vie</motion.span>
               )}

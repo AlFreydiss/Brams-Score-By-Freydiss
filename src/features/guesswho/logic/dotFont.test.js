@@ -19,6 +19,7 @@ test('dotFont : accents et espace des mots de transition', () => {
   for (const ch of 'ÉÀ') assert.ok(glyph(ch).flat().some(Boolean), ch)
   assert.deepEqual(glyph('é'), glyph('É'))
   assert.ok(hasGlyph(' ') && !glyph(' ').flat().some(Boolean))
+  for (const ch of '.!') assert.ok(glyph(ch).flat().some(Boolean), ch)
 })
 
 test('dotFont : minuscules acceptées, inconnu = grille éteinte', () => {

@@ -24,6 +24,9 @@ const STEPS = 22
 // Délai entre deux crans : rapide puis freinage marqué (≈ 3 s au total).
 const delayAt = (k) => 50 + 340 * Math.pow(k / STEPS, 2.6)
 
+// Vitesse relative (0 = arrêt, 1 = plein régime) au cran `k`.
+const speedAt = (k) => 1 - (delayAt(Math.min(k, STEPS)) - delayAt(0)) / (delayAt(STEPS) - delayAt(0))
+
 function shuffle(arr) {
   const a = [...arr]
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
@@ -91,6 +94,9 @@ function Reel({ result, player, extraSteps = 0, pool }) {
               style={{
                 position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: '0 20px', textAlign: 'center',
                 color: T.textHi, fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.05rem, 4.2vw, 1.5rem)', lineHeight: 1.15, overflowWrap: 'anywhere',
+                // flou de vitesse dessiné : étiré et pâle quand ça tourne vite,
+                // net quand la machine freine
+                scaleY: 1 + 0.45 * speedAt(k), opacity: 1 - 0.4 * speedAt(k),
               }}>{reel[k]}</motion.div>
           </AnimatePresence>
           {/* fenêtre de la machine : fondu haut/bas, repères carrés, enseigne qui chasse */}
@@ -101,13 +107,14 @@ function Reel({ result, player, extraSteps = 0, pool }) {
           <Marquee edge="bottom" chase reverse />
         </div>
       ) : (
+        // la carte jaillit de la fenêtre : écrasée, puis étirée, puis posée
         <motion.div ref={card}
-          initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.35, ease: [0.2, 0.7, 0.2, 1] }}
+          initial={reduce ? { opacity: 0 } : { opacity: 0, scaleX: 1.25, scaleY: 0.35 }}
+          animate={reduce ? { opacity: 1 } : { opacity: [0, 1, 1, 1], scaleX: [1.25, 0.94, 1.03, 1], scaleY: [0.35, 1.12, 0.95, 1] }}
+          transition={{ duration: 0.6, times: [0, 0.45, 0.75, 1], ease: 'easeOut' }}
           style={{
             ...plate({ borderRadius: RADIUS.lg }), border: `1px solid ${T.accent}`,
-            boxShadow: `0 0 0 4px ${T.glow}, 0 0 40px rgba(199,168,105,0.16), ${SHADOW.soft}`,
+            boxShadow: `0 0 0 3px ${T.glow}, ${SHADOW.soft}`,
             padding: 'clamp(28px,5vw,40px) clamp(20px,5vw,40px)', textAlign: 'center', position: 'relative',
           }}>
           {/* à l'arrêt : l'enseigne s'allume en entier et clignote trois fois */}
@@ -115,8 +122,15 @@ function Reel({ result, player, extraSteps = 0, pool }) {
           <Marquee edge="bottom" />
           {!reduce && <DotBurst />}
           <div style={label({ color: T.accent })}>{result.name}, ton gage</div>
-          <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.4rem, 5vw, 2.2rem)', lineHeight: 1.18, color: T.textHi, margin: '12px 0', overflowWrap: 'anywhere' }}>
-            « {result.gage} »
+          {/* les mots tombent un par un et s'écrasent en touchant */}
+          <div aria-label={`« ${result.gage} »`} style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.4rem, 5vw, 2.2rem)', lineHeight: 1.18, color: T.textHi, margin: '12px 0', overflowWrap: 'anywhere' }}>
+            {['«', ...String(result.gage).split(/\s+/).filter(Boolean), '»'].map((w, i) => (
+              <motion.span key={i} aria-hidden
+                initial={reduce ? false : { y: -30, opacity: 0, scaleY: 1.3 }}
+                animate={reduce ? undefined : { y: [-30, 0, -5, 0], opacity: [0, 1, 1, 1], scaleY: [1.3, 0.78, 1.06, 1] }}
+                transition={{ delay: 0.35 + i * 0.07, duration: 0.45, times: [0, 0.5, 0.75, 1], ease: 'easeOut' }}
+                style={{ display: 'inline-block', marginRight: '0.28em', transformOrigin: '50% 100%' }}>{w}</motion.span>
+            ))}
           </div>
           <div style={{ fontFamily: F.ui, fontWeight: 500, fontSize: 13.5, color: T.textMute }}>
             {result.author ? `Écrit par ${result.author}` : 'Gage de secours'}

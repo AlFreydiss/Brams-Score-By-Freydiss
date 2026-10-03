@@ -2,24 +2,39 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { SPRING_POP } from './manga.jsx'
+import { LifeShards } from './cartoon.jsx'
 import { T, F, LINE, RADIUS, SHADOW, plate, pill } from './theme.js'
 
-// Vies : points champagne ; une vie perdue s'éteint doucement.
+// Vies : points champagne. Une vie perdue pendant qu'on regarde se brise
+// façon dessin animé : elle gonfle (anticipation), vire au rouge, s'écrase,
+// puis ses éclats tombent (LifeShards). Au premier affichage : rien.
 export function Lives({ lives, max = 2, size = 20 }) {
   const d = Math.max(8, Math.round(size * 0.5))
+  const prev = useRef(lives)
+  const [broken, setBroken] = useState(null) // index de la vie qui vient de casser
+  useEffect(() => {
+    if (lives < prev.current) setBroken(lives)
+    prev.current = lives
+  }, [lives])
   return (
     <span aria-label={`${lives} vie${lives > 1 ? 's' : ''}`} style={{ display: 'inline-flex', gap: Math.round(d * 0.6), flex: '0 0 auto', alignItems: 'center' }}>
       {Array.from({ length: max }, (_, i) => {
         const full = i < lives
+        const breaking = i === broken
         return (
-          <motion.span key={i} initial={false}
-            animate={full ? { scale: 1, opacity: 1 } : { scale: [1, 1.25, 1], opacity: [1, 1, 0.9] }}
-            transition={full ? SPRING_POP : { duration: 0.6, times: [0, 0.35, 1] }}
-            style={{
-              width: d, height: d, borderRadius: '50%', display: 'inline-block',
-              background: full ? T.accent : 'transparent', border: `1px solid ${full ? T.accent : T.textFaint}`,
-              boxShadow: full ? `0 0 8px ${T.glow}` : 'none', transition: 'background .6s, border-color .6s',
-            }} />
+          <span key={i} style={{ position: 'relative', display: 'inline-block', width: d, height: d }}>
+            <motion.span initial={false}
+              animate={full ? { scale: 1, scaleY: 1, opacity: 1 }
+                : breaking ? { scale: [1, 1.45, 1.3, 0.55, 1], scaleY: [1, 1.1, 0.6, 1, 1], opacity: [1, 1, 1, 1, 0.9] }
+                : { scale: 1, opacity: 0.9 }}
+              transition={full ? SPRING_POP : { duration: 0.55, times: [0, 0.25, 0.4, 0.6, 1] }}
+              style={{
+                position: 'absolute', inset: 0, borderRadius: '50%', display: 'block',
+                background: full ? T.accent : 'transparent', border: `1px solid ${full ? T.accent : breaking ? T.danger : T.textFaint}`,
+                boxShadow: full ? `0 0 8px ${T.glow}` : 'none', transition: 'background .25s .15s, border-color .25s .15s',
+              }} />
+            {breaking && <LifeShards key={`shards-${lives}`} size={d} />}
+          </span>
         )
       })}
     </span>

@@ -16,7 +16,7 @@ test('endWord : nom du vainqueur en majuscules s\'il passe dans la police', () =
 
 test('endWord : FIN si nom trop long, caractère inconnu ou personne', () => {
   assert.equal(endWord([P('Unnomtreslong', 5, 1)]), 'FIN')
-  assert.equal(endWord([P('Jo!', 5, 1)]), 'FIN')
+  assert.equal(endWord([P('Jo?', 5, 1)]), 'FIN')
   assert.equal(endWord([P('Hélène', 5, 1)]), 'FIN') // « È » absent de la police
   assert.equal(endWord([]), 'FIN')
 })
