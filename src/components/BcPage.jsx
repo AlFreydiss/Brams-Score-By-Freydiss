@@ -26,6 +26,22 @@ const AWARDS = [
 
 const COVER = '/bc-poster.jpg'
 
+// Anime : saisons et film, avec bande-annonce officielle (YouTube, chargée au
+// clic) et la plateforme qui les diffuse légalement en France. Aucun épisode
+// hébergé sur Brams. Données AniList / oEmbed YouTube vérifiées le 2026-10-03.
+const SEASONS = [
+  { key: 's2', title: 'Saison 2', sub: 'Le raid sur le royaume de Spade', year: '2026', info: 'En cours · un épisode par semaine depuis le 3 octobre 2026',
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx195604-tSZcfKbVqSEG.jpg', trailer: '4MYo8FfiXMA', where: 'crunchyroll', live: true },
+  { key: 's1', title: 'Saison 1', sub: "D'Hage au Taureau noir", year: '2017 à 2021', info: '170 épisodes',
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97940-fyh8o7gNbha0.png', trailer: 'vUjAxk1qYzQ', where: 'crunchyroll' },
+  { key: 'film', title: "L'Épée de l'Empereur-Mage", sub: 'Le film', year: '2023', info: 'Film',
+    cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx131680-gjs8mMQPmkOQ.png', trailer: 'u0cu-T7C9bU', where: 'netflix' },
+]
+const PLATFORMS = {
+  crunchyroll: { name: 'Crunchyroll', color: '#f47521', url: 'https://www.crunchyroll.com/fr/series/GRE50KV36/black-clover' },
+  netflix:     { name: 'Netflix',     color: '#e50914', url: 'https://www.netflix.com/search?q=black%20clover' },
+}
+
 function loadProgress() {
   try { return JSON.parse(localStorage.getItem(`${NS}_vp`) || '{}') } catch { return {} }
 }
@@ -67,6 +83,17 @@ const CSS = `
     box-shadow: 0 8px 28px rgba(56,142,60,.22);
   }
 
+  .bc-chap { transition: background .15s, border-color .15s, transform .12s; }
+  .bc-chap:hover { background: rgba(56,142,60,.18) !important; border-color: rgba(56,142,60,.4) !important; }
+  .bc-chap:active { transform: scale(.96); }
+  .bc-chap:focus-visible, .bc-trailer:focus-visible, .bc-cta:focus-visible { outline: 2px solid ${COLOR2}; outline-offset: 2px; }
+  .bc-trailer img { opacity: .85; transition: opacity .2s, transform .3s; }
+  .bc-trailer:hover img { opacity: 1; transform: scale(1.03); }
+  @media (max-width: 600px) {
+    .bc-season { grid-template-columns: 1fr !important; }
+    .bc-season > img { display: none; }
+  }
+
   .bc-scroll { scrollbar-width: thin; scrollbar-color: rgba(56,142,60,.2) transparent; }
   .bc-scroll::-webkit-scrollbar { width: 4px; }
   .bc-scroll::-webkit-scrollbar-thumb { background: rgba(56,142,60,.2); border-radius: 4px; }
@@ -103,8 +130,101 @@ const EpCard = memo(function EpCard({ video, index, watched, onPlay }) {
   )
 })
 
-function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount }) {
-  const pct = total > 0 ? Math.round((watchedCount / total) * 100) : 0
+// Bande-annonce : miniature d'abord, le lecteur YouTube ne charge qu'au clic.
+function Trailer({ id, title }) {
+  const [on, setOn] = useState(false)
+  return (
+    <div style={{ position:'relative', aspectRatio:'16/9', maxWidth:560, borderRadius:12, overflow:'hidden', background:'#000', marginTop:12 }}>
+      {on ? (
+        <iframe src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`} title={`Bande-annonce : ${title}`}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen
+          style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:0 }} />
+      ) : (
+        <button type="button" className="bc-trailer" onClick={() => setOn(true)} aria-label={`Lire la bande-annonce : ${title}`}
+          style={{ position:'absolute', inset:0, border:0, padding:0, cursor:'pointer', background:'none' }}>
+          <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          <span aria-hidden style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)', width:58, height:58, borderRadius:'50%',
+            display:'grid', placeItems:'center', background:'rgba(10,8,20,.72)', border:`1px solid ${COLOR2}`, color:'#fff', fontSize:20 }}>▶</span>
+        </button>
+      )}
+    </div>
+  )
+}
+
+function Seasons() {
+  return (
+    <section aria-labelledby="bc-anime" style={{ display:'grid', gap:14, padding:0 }}>
+      <h3 id="bc-anime" style={{ margin:0, fontSize:18, fontWeight:900, color:'#fff' }}>Anime</h3>
+      <p style={{ margin:'-6px 0 2px', fontSize:12.5, color:'rgba(255,255,255,.45)', lineHeight:1.6 }}>
+        Les épisodes se regardent sur les plateformes qui ont les droits en France.
+      </p>
+      {SEASONS.map((s) => {
+        const p = PLATFORMS[s.where]
+        return (
+          <article key={s.key} className="bc-season" style={{ display:'grid', gridTemplateColumns:'110px minmax(0,1fr)', gap:16, padding:14, borderRadius:16,
+            background:'rgba(255,255,255,.035)', border:`1px solid ${s.live ? 'rgba(74,222,128,.35)' : 'rgba(255,255,255,.07)'}` }}>
+            <img src={s.cover} alt="" loading="lazy" style={{ width:'100%', aspectRatio:'2/3', objectFit:'cover', borderRadius:10 }} />
+            <div style={{ minWidth:0 }}>
+              <div style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
+                <h4 style={{ margin:0, fontSize:17, fontWeight:900, color:'#fff' }}>{s.title}</h4>
+                <span style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,.4)' }}>{s.year}</span>
+              </div>
+              <div style={{ fontSize:13, color:'rgba(255,255,255,.6)', marginTop:3 }}>{s.sub}</div>
+              <div style={{ fontSize:12, fontWeight:700, color: s.live ? COLOR2 : 'rgba(255,255,255,.4)', marginTop:6 }}>{s.info}</div>
+              <Trailer id={s.trailer} title={`Black Clover, ${s.title}`} />
+              {p && (
+                <a href={p.url} target="_blank" rel="noopener noreferrer" className="bc-cta"
+                  style={{ display:'inline-flex', alignItems:'center', gap:8, marginTop:12, padding:'10px 16px', borderRadius:11, background:p.color,
+                    color:'#fff', fontSize:13.5, fontWeight:800, textDecoration:'none' }}>
+                  Regarder sur {p.name}
+                </a>
+              )}
+            </div>
+          </article>
+        )
+      })}
+    </section>
+  )
+}
+
+// Scans : grille des chapitres, du plus récent au plus ancien ; un chapitre lu
+// est marqué ; un clic ouvre le lecteur.
+function ScanList({ progress, onRead }) {
+  const list = useMemo(() => CHAPTERS.map((c, i) => ({ c, i })).reverse(), [])
+  if (!CHAPTERS.length) return null
+  return (
+    <section aria-labelledby="bc-scans" style={{ display:'grid', gap:12, marginTop:34, padding:0 }}>
+      <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
+        <h3 id="bc-scans" style={{ margin:0, fontSize:18, fontWeight:900, color:'#fff' }}>Scans</h3>
+        <span style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,.4)' }}>
+          Chapitres {CHAPTERS[0].num} à {CHAPTERS[CHAPTERS.length - 1].num}
+        </span>
+      </div>
+      <div className="bc-scroll" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(62px, 1fr))', gap:6, maxHeight:340, overflowY:'auto', paddingRight:4 }}>
+        {list.map(({ c, i }) => {
+          const read = progress[c.num] === 'read'
+          return (
+            <button key={c.num} type="button" onClick={() => onRead(i)} title={c.title || `Chapitre ${c.num}`}
+              aria-label={`Chapitre ${c.num}${c.title ? `, ${c.title}` : ''}${read ? ', lu' : ''}`}
+              className="bc-chap"
+              style={{ padding:'9px 0', borderRadius:9, cursor:'pointer', fontSize:13, fontWeight:800, fontFamily:'var(--body)',
+                background: read ? 'rgba(56,142,60,.14)' : 'rgba(255,255,255,.04)', color: read ? COLOR2 : 'rgba(255,255,255,.75)',
+                border:`1px solid ${read ? 'rgba(56,142,60,.3)' : 'rgba(255,255,255,.07)'}` }}>
+              {read ? '✓ ' : ''}{c.num}
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount, scansRead = 0, scanResume, onReadScan }) {
+  // sans épisode hébergé, la progression suivie est celle des scans
+  const scansMode = total === 0
+  const pct = scansMode
+    ? (chapterCount > 0 ? Math.round((scansRead / chapterCount) * 100) : 0)
+    : (total > 0 ? Math.round((watchedCount / total) * 100) : 0)
   const nextVideo = VIDEOS[lastWatchedIdx] || VIDEOS[0]
   return (
     <aside className="anime-infopanel" style={{ position: 'sticky', top: 0, alignSelf: 'start', display: 'flex', flexDirection: 'column', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(180deg,rgba(16,12,30,.96),rgba(10,8,20,.99))', border: '1px solid rgba(56,142,60,.18)', boxShadow: '0 24px 70px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.04)', backdropFilter: 'blur(20px)' }}>
@@ -122,26 +242,41 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
         <div style={{ display:'flex',alignItems:'center',gap:14 }}>
           <ProgressRing pct={pct} posterSrc={COVER} color={COLOR} />
           <div style={{ flex:1 }}>
-            <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>{watchedCount} / {total} vidéos</div>
+            <div style={{ fontSize:12,fontWeight:800,color:'rgba(255,255,255,.65)',marginBottom:4 }}>
+              {scansMode ? `${scansRead} / ${chapterCount} chapitres lus` : `${watchedCount} / ${total} vidéos`}
+            </div>
             <div style={{ height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${pct}%`,height:'100%',borderRadius:999,background:`linear-gradient(90deg,${COLOR},${COLOR2})`,boxShadow:`0 0 12px ${COLOR}55`,transition:'width .5s ease' }} />
             </div>
-            <div style={{ fontSize:10,color:'rgba(255,255,255,.28)',fontWeight:600,marginTop:4 }}>{pct === 100 ? '✓ Tout vu' : pct === 0 ? 'Pas encore commencé' : 'En cours de visionnage'}</div>
+            <div style={{ fontSize:10,color:'rgba(255,255,255,.28)',fontWeight:600,marginTop:4 }}>
+              {pct === 100 ? (scansMode ? '✓ Tout lu' : '✓ Tout vu') : pct === 0 ? 'Pas encore commencé' : (scansMode ? 'Lecture en cours' : 'En cours de visionnage')}
+            </div>
           </div>
         </div>
 
+        {scansMode ? (
+          <button className="bc-cta" onClick={onReadScan} disabled={!scanResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(56,142,60,.14)`,border:`1px solid rgba(56,142,60,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
+            {scansRead === 0 ? `Lire le chapitre ${scanResume?.num ?? ''}` : pct === 100 ? 'Relire depuis le début' : `Reprendre au chapitre ${scanResume?.num ?? ''}`}
+          </button>
+        ) : (
         <button className="bc-cta" onClick={onResume} style={{ width:'100%',padding:'11px 0',borderRadius:12, background:`rgba(56,142,60,.14)`,border:`1px solid rgba(56,142,60,.32)`, color:'#fff',cursor:'pointer',fontSize:13,fontWeight:800, display:'flex',alignItems:'center',justifyContent:'center',gap:8, fontFamily:'var(--body)' }}>
           <span style={{ fontSize:16 }}>▶</span>
-          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre — ${nextVideo?.kind === 'film' ? 'Film' : nextVideo?.kind === 'ova' ? 'OAV' : `Ép. ${nextVideo?.episode}`}${nextVideo?.title ? ` · ${nextVideo.title}` : ''}`}
+          {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir depuis le début' : `Reprendre : ${nextVideo?.kind === 'film' ? 'Film' : nextVideo?.kind === 'ova' ? 'OAV' : `Ép. ${nextVideo?.episode}`}${nextVideo?.title ? `, ${nextVideo.title}` : ''}`}
         </button>
+        )}
 
         <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:8 }}>
-          {[
+          {(scansMode ? [
+            { label:'Saisons', value:'2', dot:COLOR2 },
+            { label:'Épisodes S1', value:'170', dot:'#34d399' },
+            { label:'Chapitres', value:String(chapterCount), dot:'#f97316' },
+            { label:'Note', value:'★ 7.9', dot:'#f97316' },
+          ] : [
             { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
             { label:'OAV', value:String(VIDEOS.filter(v=>v.kind==='ova').length), dot:'#34d399' },
             { label:'Audio', value:'VF + VO', dot:'#f97316' },
             { label:'Note', value:'★ 8.0', dot:'#f97316' },
-          ].map(s => (
+          ]).map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
               <div style={{ display:'flex',alignItems:'center',gap:5,marginBottom:3 }}>
                 <div style={{ width:4,height:4,borderRadius:'50%',background:s.dot }} />
@@ -214,6 +349,9 @@ export default function BcPage({ onClose }) {
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
   const chapterCount = CHAPTERS.length || 280
+  // scans : combien sont lus, et le premier non lu (ou le premier tout court)
+  const scansRead = useMemo(() => CHAPTERS.filter(c => scanProg[c.num] === 'read').length, [scanProg])
+  const scanResumeIdx = useMemo(() => { const i = CHAPTERS.findIndex(c => scanProg[c.num] !== 'read'); return i >= 0 ? i : 0 }, [scanProg])
 
   return (
     <>
@@ -234,7 +372,7 @@ export default function BcPage({ onClose }) {
               {detailIdx !== null ? (VIDEOS[detailIdx]?.title || `Épisode ${VIDEOS[detailIdx]?.episode}`) : 'Black Clover'}
             </span>
           </div>
-          <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+          <div style={{ display: VIDEOS.length ? 'flex' : 'none',alignItems:'center',gap:8 }}>
             <div className="ap-hdr-count" style={{ fontSize:10.5,color:'rgba(255,255,255,.28)',fontWeight:700 }}>{watchedCount}/{VIDEOS.length} vus</div>
             <div style={{ width:56,height:5,borderRadius:999,background:'rgba(255,255,255,.07)',overflow:'hidden' }}>
               <div style={{ width:`${Math.round(watchedCount/VIDEOS.length*100)}%`,height:'100%',background:`linear-gradient(90deg,${COLOR},${COLOR2})`,borderRadius:999,transition:'width .4s' }} />
@@ -257,23 +395,11 @@ export default function BcPage({ onClose }) {
               @media (max-width:900px) { .anime-infopanel { position:static !important; } }
             `}</style>
             <div className="bc-layout">
-              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount} />
+              <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount}
+                scansRead={scansRead} scanResume={CHAPTERS[scanResumeIdx]} onReadScan={() => setReading(scanResumeIdx)} />
               <div>
-                <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20 }}>
-                  <div>
-                    <h3 style={{ margin:'0 0 3px',fontSize:18,fontWeight:900,color:'#fff',letterSpacing:'-.01em' }}>Épisodes</h3>
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,.32)',fontWeight:600 }}>Bientôt disponible en streaming</div>
-                  </div>
-                  <div style={{ display:'flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:999,background:'rgba(56,142,60,.08)',border:'1px solid rgba(56,142,60,.18)' }}>
-                    <div style={{ width:6,height:6,borderRadius:'50%',background:COLOR }} />
-                    <span style={{ fontSize:11,fontWeight:800,color:COLOR2 }}>À venir</span>
-                  </div>
-                </div>
-
-                <div style={{ padding:'42px 20px', borderRadius:14, background:'rgba(255,255,255,.03)', border:'1px dashed rgba(255,255,255,.1)', textAlign:'center', color:'rgba(255,255,255,.45)', fontSize:13, lineHeight:1.7 }}>
-                  <div style={{ fontSize:34, marginBottom:10 }}>📺</div>
-                  Les épisodes arrivent bientôt — encodage et mise en ligne à venir.
-                </div>
+                <Seasons />
+                <ScanList progress={scanProg} onRead={setReading} />
                 {reading !== null && CHAPTERS[reading] && (
                   <div style={{ position:'fixed', inset:0, zIndex:9999, background:'#0a0814' }}>
                     <Reader
@@ -291,12 +417,6 @@ export default function BcPage({ onClose }) {
                   </div>
                 )}
 
-                <div style={{ marginTop:28,padding:'14px 18px',borderRadius:12,background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)',display:'flex',alignItems:'center',gap:10 }}>
-                  <span style={{ fontSize:16 }}>🍀</span>
-                  <span style={{ fontSize:12,color:'rgba(255,255,255,.38)',fontWeight:600,lineHeight:1.5 }}>
-                    Black Clover — l'histoire d'un garçon sans magie qui veut devenir le Sorcier Empereur.
-                  </span>
-                </div>
               </div>
             </div>
           </div>
