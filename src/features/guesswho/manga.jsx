@@ -51,6 +51,16 @@ export const GLOBAL_CSS = `
 /* sur téléphone, un mot par ligne dès le départ : pas de saut pendant l'étirement */
 @media (max-width: 640px) { .gw-title .gw-word { display: block } }
 @media (prefers-reduced-motion: reduce) { .gw-title { animation: none } }
+@keyframes gw-flash-life { 0% { opacity: 0 } 8% { opacity: 1 } 70% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes gw-dot-in { 0% { opacity: 0; fill: ${T.accentLit} } 55% { opacity: 1; fill: ${T.accentLit} } 100% { opacity: 1; fill: ${T.textHi} } }
+/* html.low-end (posé sur tout écran ≤ 768 px) ramène toutes les animations à
+   0,001 ms. Celles du jeu sont légères (opacité, transform) : on leur rend leur
+   durée, portée par --gw-d (et --gw-n pour les boucles) ; jamais si l'OS demande
+   moins d'animations. */
+@media (prefers-reduced-motion: no-preference) {
+  html.low-end .gw-keep { animation-duration: var(--gw-d) !important; animation-iteration-count: var(--gw-n, 1) !important; }
+  html.low-end .gw-title { animation-duration: 1.3s !important; }
+}
 .gw-code rect.on { transition: fill .25s; }
 .gw-code:hover rect.on, .gw-code:focus-visible rect.on { fill: ${T.accentLit}; }
 .gw-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
@@ -114,8 +124,8 @@ export function Timer({ remaining, total, tick = false }) {
   // le sens horaire, le dernier allumé est un peu plus gros.
   const lit = Math.ceil(pct * TIMER_DOTS)
   return (
-    <div role="timer" aria-label={`${r} secondes`} className={crit ? 'gw-anim' : undefined}
-      style={{ position: 'relative', width: 64, height: 64, flex: '0 0 auto', animation: crit ? 'gw-pulse 1s ease-in-out infinite' : 'none' }}>
+    <div role="timer" aria-label={`${r} secondes`} className={crit ? 'gw-anim gw-keep' : undefined}
+      style={{ position: 'relative', width: 64, height: 64, flex: '0 0 auto', '--gw-d': '1s', '--gw-n': 'infinite', animation: crit ? 'gw-pulse 1s ease-in-out infinite' : 'none' }}>
       <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden>
         {Array.from({ length: TIMER_DOTS }, (_, i) => {
           const a = (i / TIMER_DOTS) * 2 * Math.PI - Math.PI / 2
@@ -221,9 +231,9 @@ export function LiveRoster({ players, submittedSeats, meUserId, label: text = 'o
 export function Waiting({ label: text }) {
   return (
     <div style={{ textAlign: 'center', padding: '40px 0', fontFamily: F.ui, color: T.text }}>
-      <span aria-hidden style={{
+      <span aria-hidden className="gw-keep" style={{
         display: 'inline-block', width: 30, height: 30, borderRadius: '50%', marginBottom: 14,
-        border: `1.5px solid ${T.line}`, borderTopColor: T.accent, animation: 'gw-spin .9s linear infinite',
+        border: `1.5px solid ${T.line}`, borderTopColor: T.accent, animation: 'gw-spin .9s linear infinite', '--gw-d': '.9s', '--gw-n': 'infinite',
       }} />
       <div style={{ fontWeight: 600, color: T.textMute }}>{text}</div>
     </div>

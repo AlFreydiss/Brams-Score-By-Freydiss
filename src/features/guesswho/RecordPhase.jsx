@@ -256,7 +256,7 @@ export default function RecordPhase({ g }) {
           </div>
         )}
         {rec === 'countdown' && <p role="status" style={{ ...type.h3, color: C.ink, margin: 0 }}>Prépare-toi…</p>}
-        {rec === 'recording' && <p role="status" style={{ ...type.h3, color: T.textHi, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}><span aria-hidden className="gw-anim" style={{ width: 10, height: 10, borderRadius: '50%', background: T.danger, animation: 'gw-blink 1.2s ease-in-out infinite' }} />À toi ! Appuie sur Arrêter quand tu as fini.</p>}
+        {rec === 'recording' && <p role="status" style={{ ...type.h3, color: T.textHi, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}><span aria-hidden className="gw-anim gw-keep" style={{ width: 10, height: 10, borderRadius: '50%', background: T.danger, '--gw-d': '1.2s', '--gw-n': 'infinite', animation: 'gw-blink 1.2s ease-in-out infinite' }} />À toi ! Appuie sur Arrêter quand tu as fini.</p>}
         {rec === 'processing' && <p role="status" style={{ ...type.small, color: C.textMut, margin: 0 }}>On nettoie ta prise (silences coupés, volume réglé)…</p>}
 
         {take && !busy && (

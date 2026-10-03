@@ -149,7 +149,7 @@ export default function EndScreen({ g }) {
           ? <Btn onClick={replay} disabled={busy} style={{ flex: '1 1 220px', minHeight: 60, fontSize: 20 }}>
               {busy ? 'Relance…' : showReady ? `Revanche (${readyCount}/${seated.length} prêts)` : 'Rejouer'}
             </Btn>
-          : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: F.ui, fontWeight: 600, color: T.textMute, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
+          : <span className="gw-anim gw-keep" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: F.ui, fontWeight: 600, color: T.textMute, '--gw-d': '1.6s', '--gw-n': 'infinite', animation: 'gw-blink 1.6s ease-in-out infinite' }}>
               {showReady ? `${readyCount}/${seated.length} prêts. L'hôte lance la revanche…` : "En attente de l'hôte pour rejouer…"}
             </span>}
         <Btn variant="ghost" onClick={() => navigate('/guess-who')}>Quitter</Btn>

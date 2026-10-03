@@ -75,10 +75,11 @@ export function FloatingReactions({ items }) {
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 54, overflow: 'hidden', contain: 'strict' }}>
       {items.map((r) => (
-        <span key={r.id} className="gw-anim" style={{
+        <span key={r.id} className="gw-anim gw-keep" style={{
           position: 'absolute', left: `${r.x}%`, bottom: 78, fontSize: r.mine ? 30 : 26, lineHeight: 1,
           willChange: 'transform, opacity',
           '--rot': `${r.rot}deg`, '--dx': `${r.dx}px`,
+          '--gw-d': `${LIFE_MS}ms`,
           animation: `gw-float-up ${LIFE_MS}ms cubic-bezier(.2,.7,.3,1) both`,
         }}>{r.emoji}</span>
       ))}

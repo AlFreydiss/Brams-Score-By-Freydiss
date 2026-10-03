@@ -15,6 +15,12 @@ test('dotFont : chaque caractère des codes de salon a une lettre 5×7 non vide'
   }
 })
 
+test('dotFont : accents et espace des mots de transition', () => {
+  for (const ch of 'ÉÀ') assert.ok(glyph(ch).flat().some(Boolean), ch)
+  assert.deepEqual(glyph('é'), glyph('É'))
+  assert.ok(hasGlyph(' ') && !glyph(' ').flat().some(Boolean))
+})
+
 test('dotFont : minuscules acceptées, inconnu = grille éteinte', () => {
   assert.deepEqual(glyph('a'), glyph('A'))
   assert.ok(!glyph('?').flat().some(Boolean))

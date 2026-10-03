@@ -256,7 +256,7 @@ export default function Lobby({ code, g }) {
         ? <Btn onClick={start} disabled={!enough || busy} style={{ flex: '1 1 260px', minHeight: 60, fontSize: 19 }}>
             {busy ? 'Lancement…' : enough ? `Lancer la partie (${n})` : `Encore ${MIN_PLAYERS - n} joueur${MIN_PLAYERS - n > 1 ? 's' : ''} pour lancer`}
           </Btn>
-        : <span className="gw-anim" style={{ ...type.body, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
+        : <span className="gw-anim gw-keep" style={{ ...type.body, fontWeight: 800, color: C.ink, '--gw-d': '1.6s', '--gw-n': 'infinite', animation: 'gw-blink 1.6s ease-in-out infinite' }}>
             {enough ? "L'hôte va lancer la partie…" : `En attente de joueurs (${n}/${MIN_PLAYERS} min.)…`}
           </span>}
       </div>

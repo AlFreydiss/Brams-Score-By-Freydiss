@@ -2,6 +2,7 @@
 // bannières, écran de la phase en cours, réactions. Utilisé par la vraie page
 // et par la page de démo (DEV) avec un état factice.
 import { SfxBurst } from './manga.jsx'
+import PhaseFlash from './PhaseFlash.jsx'
 import { T, F, LINE, RADIUS } from './theme.js'
 import Lobby from './Lobby.jsx'
 import GagesPhase from './GagesPhase.jsx'
@@ -32,6 +33,7 @@ export default function RoomView({ g, code, reactions }) {
   return (
     <>
       <SfxBurst phase={phase} round={g.room?.round} />
+      <PhaseFlash phase={phase} round={g.room?.round} />
       {connectionNotice(g.connection) && <p role="status" style={banner}>{connectionNotice(g.connection)}</p>}
       {g.spectator && <p style={banner}>{REASONS[g.reason] || 'Mode spectateur.'}</p>}
       {g.isLastRound && LAST_ROUND_PHASES.includes(phase) && (

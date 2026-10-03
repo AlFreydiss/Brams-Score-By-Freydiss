@@ -10,7 +10,9 @@ import { ambientLevel } from './ambient.js'
 const GAP = 22 // pas de la trame (px CSS)
 // Émis par SfxBurst à chaque changement de phase.
 export const PULSE_EVT = 'gw-pulse'
-const FPS = 30
+// Appareil faible (html.low-end, posé par main.jsx) : moitié moins d'images,
+// pas de rendu Retina.
+const lowEnd = () => typeof document !== 'undefined' && document.documentElement.classList.contains('low-end')
 
 // Hauteur (0..1) de la colonne `c` au temps `t` : trois sinusoïdes lentes
 // déphasées par colonne, comme une voix qui module.
@@ -32,6 +34,8 @@ export default function SoundField() {
     const canvas = ref.current
     const ctx = canvas.getContext('2d')
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const low = lowEnd()
+    const fps = low ? 15 : 30
     const NEUTRAL = rgb(T.textHi)
     const GOLD = rgb(T.accent)
     const LIT = rgb(T.accentLit)
@@ -46,7 +50,7 @@ export default function SoundField() {
     const media = new Set()
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const dpr = low ? 1 : Math.min(window.devicePixelRatio || 1, 2)
       w = window.innerWidth; h = window.innerHeight
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -108,7 +112,7 @@ export default function SoundField() {
 
     const loop = (now) => {
       raf = requestAnimationFrame(loop)
-      if (now - last < 1000 / FPS) return
+      if (now - last < 1000 / fps) return
       last = now
       draw(now)
     }

@@ -21,9 +21,10 @@ export function Confetti({ count = 42, duration = 2600 }) {
   return (
     <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 58, pointerEvents: 'none', overflow: 'hidden' }}>
       {pieces.map((p) => (
-        <span key={p.i} className="gw-anim" style={{
+        <span key={p.i} className="gw-anim gw-keep" style={{
           position: 'absolute', top: 0, left: `${p.left}%`, width: p.w, height: p.h, background: p.color,
           borderRadius: '50%', opacity: 0.85, boxShadow: `0 0 6px ${T.glow}`, '--dx': p.dx, '--rot': p.rot, willChange: 'transform',
+          '--gw-d': `${p.dur}s`,
           animation: `gw-confetti ${p.dur}s cubic-bezier(.25,.6,.45,1) ${p.delay}s both`,
         }} />
       ))}
