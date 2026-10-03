@@ -23,7 +23,7 @@ export const ANIME_VIDEO_FILES = {
   'kaiju-no-8': 'kaiju-videos', bluelock: 'bluelock-videos', 'fate-zero': 'fate-zero-videos',
   'your-name': 'your-name-videos', 'your-lie': 'your-lie-videos', 'fgo-babylonia': 'fgo-babylonia-videos',
   quintuplets: 'quintuplets-videos', kaguya: 'kaguya-videos', hxh: 'hxh-videos',
-  'tokyo-revengers': 'tokyo-revengers-videos',
+  'tokyo-revengers': 'tokyo-revengers-videos', 'death-note': 'death-note-videos',
 }
 
 const VIDEO_MODULES = import.meta.glob('../data/*-videos.json')

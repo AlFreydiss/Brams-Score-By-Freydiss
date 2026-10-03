@@ -33,6 +33,7 @@ export const ANIME_META = {
   kaguya:              { title: 'Kaguya-sama: Love is War',       note: 8.4, youtube: null },
   'kaiju-no-8':        { title: 'Kaiju No. 8',                    note: 8.3, youtube: null },
   'tokyo-revengers':   { title: 'Tokyo Revengers',                note: 7.7, youtube: 'nYQUVwwD-H4' },
+  'death-note':        { title: 'Death Note',                     note: 8.4, youtube: 'NlJZ-YgAt-c' },
   quintuplets:         { title: 'The Quintessential Quintuplets', note: 8.0, youtube: null },
   'your-lie':          { title: 'Your Lie in April',              note: 8.6, youtube: null },
   'koi-ameagari':      { title: 'After the Rain',                 note: 7.6, youtube: null },

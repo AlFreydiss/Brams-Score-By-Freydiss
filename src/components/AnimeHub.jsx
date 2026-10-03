@@ -196,6 +196,27 @@ export const ANIMES = [
     badge: 'NOUVELLE SAISON',
     badgeColor: '#e11d48',
   },
+  {
+    id: 'death-note',
+    title: 'Death Note',
+    subtitle: 'Kira contre L',
+    emoji: '📓',
+    color: '#b91c1c',
+    colorDark: '#3f0a0a',
+    coverImage: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx1535-kUgkcrfOrkUM.jpg',
+    coverPosition: 'center top',
+    year: 2006,
+    genres: ['Thriller', 'Psychologique'],
+    description: "Light Yagami trouve un cahier qui tue quiconque y voit son nom écrit, et devient Kira. Face à lui, le détective L. Bande-annonce et où regarder légalement.",
+    stats: [
+      { label: 'Épisodes', value: '37' },
+      { label: 'Studio', value: 'Madhouse' },
+      { label: 'Statut', value: 'Terminé' },
+    ],
+    action: '▶ Accéder',
+    badge: 'NOUVEAU',
+    badgeColor: '#b91c1c',
+  },
   // Dr. Stone retiré d'Anime & Scan le 2026-06-13 (demande). Page + routing conservés.
   {
     id: 'jjk',
