@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { type } from './manga.jsx'
 import { C } from './manga.jsx'
-import { T, F } from './theme.js'
+import { T, F, RADIUS } from './theme.js'
 import { Btn, PhaseFrame, LiveRoster } from './manga.jsx'
 import { roster } from './GagesPhase.jsx'
 import {
@@ -14,6 +14,7 @@ import MicSetup from './MicSetup.jsx'
 import { logEvent } from '../../lib/guessWhoLog.js'
 import LiveWave, { WavePlayer } from './LiveWave.jsx'
 import { useClip } from './ListenPhase.jsx'
+import DotText from './DotText.jsx'
 
 const MESSAGES = {
   mic_denied: "Micro refusé. Sur iPhone : Réglages › Safari › Micro › Autoriser. Ailleurs : icône 🔒 à côté de l'adresse. Puis recharge la page.",
@@ -195,12 +196,32 @@ export default function RecordPhase({ g }) {
   const sentThis = take && sentId === take.id
   const late = g.remaining != null && g.remaining <= AUTO_SEND_S
   let mainBtn
-  if (rec === 'recording') mainBtn = <Btn variant="danger" onClick={stop} style={{ minHeight: 56 }}>■ Arrêter</Btn>
+  if (rec === 'recording') mainBtn = null
   else if (rec === 'countdown' || rec === 'arming') mainBtn = <Btn variant="ghost" onClick={cancel}>{rec === 'arming' ? 'Autorise le micro…' : 'Annuler'}</Btn>
   else if (rec === 'processing') mainBtn = <Btn variant="ghost" disabled>Préparation…</Btn>
   else if (take) mainBtn = <Btn variant="ghost" onClick={begin} disabled={sending || late} style={{ minHeight: 56, padding: '0 26px' }}>↺ Recommencer</Btn>
   // Pas encore de prise : le geste principal de l'écran, en gros au centre.
-  const bigRec = !mainBtn && (
+  // En cours de prise : même place, carré d'arrêt, anneau qui respire.
+  const bigStop = rec === 'recording' && (
+    <div style={{ display: 'grid', justifyItems: 'center', gap: 10, padding: '4px 0' }}>
+      <span style={{ position: 'relative', width: 108, height: 108, display: 'grid', placeItems: 'center' }}>
+        <span aria-hidden className="gw-anim gw-keep" style={{
+          position: 'absolute', inset: 0, borderRadius: '50%', border: `1px solid ${T.danger}`,
+          '--gw-d': '1.4s', '--gw-n': 'infinite', animation: 'gw-ring 1.4s ease-out infinite',
+        }} />
+        <motion.button type="button" className="gw-btn" onClick={stop} aria-label="Arrêter l'enregistrement"
+          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.94 }}
+          style={{
+            position: 'relative', width: 108, height: 108, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer',
+            background: 'rgba(190,106,90,0.16)', border: `1px solid ${T.danger}`, touchAction: 'manipulation',
+          }}>
+          <span aria-hidden style={{ width: 32, height: 32, borderRadius: 4, background: T.danger }} />
+        </motion.button>
+      </span>
+      <span style={{ fontFamily: F.display, fontWeight: 700, fontSize: 17, color: T.textHi }}>Arrêter</span>
+    </div>
+  )
+  const bigRec = !mainBtn && rec !== 'recording' && (
     <div style={{ display: 'grid', justifyItems: 'center', gap: 12, padding: '10px 0 4px' }}>
       <motion.button type="button" className="gw-btn" onClick={begin} disabled={sending || late}
         aria-label="Enregistrer mon imitation"
@@ -246,17 +267,19 @@ export default function RecordPhase({ g }) {
                   transition={{ duration: 0.22 }}
                   style={{
                     position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none',
-                    fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(72px, 20vw, 120px)', lineHeight: 1, color: T.accentLit,
-                    textShadow: '0 4px 30px rgba(0,0,0,.6)',
+                    background: 'rgba(8,8,9,0.82)', borderRadius: RADIUS.md,
                   }}>
-                  {count}
+                  {/* chiffre en points (afficheur), texte réel pour les lecteurs d'écran */}
+                  <DotText text={count} dot={11} color={T.accentLit} />
+                  <span style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{count}</span>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         )}
         {rec === 'countdown' && <p role="status" style={{ ...type.h3, color: C.ink, margin: 0 }}>Prépare-toi…</p>}
-        {rec === 'recording' && <p role="status" style={{ ...type.h3, color: T.textHi, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}><span aria-hidden className="gw-anim gw-keep" style={{ width: 10, height: 10, borderRadius: '50%', background: T.danger, '--gw-d': '1.2s', '--gw-n': 'infinite', animation: 'gw-blink 1.2s ease-in-out infinite' }} />À toi ! Appuie sur Arrêter quand tu as fini.</p>}
+        {rec === 'recording' && <p role="status" style={{ ...type.h3, color: T.textHi, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}><span aria-hidden className="gw-anim gw-keep" style={{ width: 10, height: 10, borderRadius: '50%', background: T.danger, '--gw-d': '1.2s', '--gw-n': 'infinite', animation: 'gw-blink 1.2s ease-in-out infinite' }} />Vas-y, imite !</p>}
+        {bigStop}
         {rec === 'processing' && <p role="status" style={{ ...type.small, color: C.textMut, margin: 0 }}>On nettoie ta prise (silences coupés, volume réglé)…</p>}
 
         {take && !busy && (

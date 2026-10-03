@@ -1,8 +1,8 @@
 // Guess Who — briques d'interface (vies, avatar, lecteur de son, carte d'imitation), identité Brams.
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { SPRING_POP } from './manga.jsx'
-import { T, F, LINE, RADIUS, SHADOW, plate, pill, label } from './theme.js'
+import { T, F, LINE, RADIUS, SHADOW, plate, pill } from './theme.js'
 
 // Vies : points champagne ; une vie perdue s'éteint doucement.
 export function Lives({ lives, max = 2, size = 20 }) {
@@ -108,6 +108,29 @@ export function ClipPlayer({ url, label: name, autoPlay = false, onError, big = 
   )
 }
 
+// Vote posé : une gerbe de points champagne jaillit du bouton (une fois,
+// au montage ; rien si l'OS demande moins d'animations).
+const BURST = Array.from({ length: 12 }, (_, i) => {
+  const a = (i / 12) * Math.PI * 2 + (i % 2 ? 0.2 : 0)
+  const d = 38 + (i % 3) * 14
+  return { x: Math.cos(a) * d * 1.6, y: Math.sin(a) * d, s: i % 3 === 0 ? 6 : 4 }
+})
+function DotBurst() {
+  const reduce = useReducedMotion()
+  if (reduce) return null
+  return (
+    <span aria-hidden style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, pointerEvents: 'none', zIndex: 2 }}>
+      {BURST.map((p, i) => (
+        <motion.span key={i}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+          animate={{ x: p.x, y: p.y, opacity: 0, scale: 0.4 }}
+          transition={{ duration: 0.6, ease: [0.15, 0.8, 0.3, 1] }}
+          style={{ position: 'absolute', left: -p.s / 2, top: -p.s / 2, width: p.s, height: p.s, background: i % 4 ? T.accent : T.accentLit }} />
+      ))}
+    </span>
+  )
+}
+
 // Carte d'imitation : numéro, joueur, lecteur, bouton de vote (≥ 48 px).
 // `onAir` : en cours dans « écouter tout » ; `dim` : le vote est allé à une autre carte.
 export function TakeCard({ player, url, selected, onVote, disabled, voteLabel = 'Voter', index, isMe, onAir, dim }) {
@@ -131,21 +154,23 @@ export function TakeCard({ player, url, selected, onVote, disabled, voteLabel = 
           }}>{index + 1}</span>
         )}
         <div style={{ flex: 1, minWidth: 0 }}><AvatarName player={player} sub={isMe ? "C'est toi" : onAir ? 'En cours…' : undefined} /></div>
-        {selected && <span style={label({ color: T.accent })}>Mon vote</span>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 150px', minWidth: 0 }}><ClipPlayer url={url} label={player?.display_name} /></div>
         {onVote && (
+          <span style={{ position: 'relative', flex: '1 0 110px', display: 'flex' }}>
+          {selected && <DotBurst />}
           <motion.button type="button" className="gw-btn" disabled={disabled} onClick={onVote}
             whileTap={disabled ? undefined : { scale: 0.97 }}
             aria-pressed={!!selected}
             style={{
               ...pill(selected ? 'primary' : 'ghost'),
-              flex: '1 0 110px', minHeight: 48, padding: '0 14px', cursor: disabled ? 'default' : 'pointer',
+              flex: 1, minHeight: 48, padding: '0 14px', cursor: disabled ? 'default' : 'pointer',
               fontFamily: F.ui, fontWeight: 700, fontSize: 15, opacity: disabled && !selected ? 0.5 : 1,
             }}>
             {selected ? '✓ Voté' : voteLabel}
           </motion.button>
+          </span>
         )}
       </div>
     </motion.div>

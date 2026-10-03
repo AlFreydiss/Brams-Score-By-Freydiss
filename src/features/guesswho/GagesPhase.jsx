@@ -37,7 +37,7 @@ export default function GagesPhase({ g }) {
   const same = sent && !!g.myGage && text.trim() === g.myGage.trim()
   return (
     <PhaseFrame tick eyebrow="Avant de jouer" prompt="Écris un gage" remaining={g.remaining} total={g.total}
-      footer={g.me && <Btn onClick={send} disabled={!text.trim() || same} style={{ minWidth: 180 }}>{same ? '✓ Gage envoyé' : sent ? 'Modifier mon gage' : 'Envoyer ✍️'}</Btn>}>
+      footer={g.me && <Btn onClick={send} disabled={!text.trim() || same} style={{ minWidth: 180 }}>{same ? '✓ Gage envoyé' : sent ? 'Modifier mon gage' : 'Envoyer mon gage'}</Btn>}>
       <p style={{ ...type.body, color: C.textMut, marginTop: 0 }}>
         Il sera peut-être tiré pour le premier éliminé (jamais pour toi). Personne ne le voit avant.
       </p>
@@ -48,15 +48,14 @@ export default function GagesPhase({ g }) {
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && text.trim()) send() }}
             className="gw-focus" style={{ width: '100%', borderRadius: RADIUS.md, padding: 16, background: T.deep, ...type.body, fontSize: 17,
               color: T.textHi, border: LINE, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
-          {sent && (
-            <motion.span key="stamp" aria-label="gage envoyé" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              style={{
-                ...pill('primary'), position: 'absolute', right: 12, top: -12, fontFamily: F.ui, fontWeight: 700, fontSize: 12.5,
-                padding: '3px 12px', pointerEvents: 'none',
-              }}>✓ Envoyé</motion.span>
-          )}
-          <div style={{ ...type.small, color: text.length > 125 ? C.danger : C.textMut, textAlign: 'right', marginTop: 6 }}>{text.length}/140</div>
+          {/* sous le champ : « envoyé » à gauche, compteur à droite (plus rien ne chevauche le texte) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 6 }}>
+            {sent
+              ? <motion.span key="stamp" role="status" initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}
+                  style={{ ...type.small, color: T.accentLit }}>✓ Gage envoyé</motion.span>
+              : <span />}
+            <span style={{ ...type.small, color: text.length > 125 ? C.danger : C.textMut }}>{text.length}/140</span>
+          </div>
           {!text && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
               <span style={{ ...type.small, color: C.textMut, alignSelf: 'center' }}>En panne d'idée ?</span>

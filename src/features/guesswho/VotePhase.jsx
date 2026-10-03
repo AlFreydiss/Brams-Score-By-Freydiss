@@ -82,7 +82,7 @@ export default function VotePhase({ g }) {
         }}>
         <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 16.5 }}>
           {!canVote ? 'Les joueurs votent…'
-            : mine ? `✓ Vote pour ${byId[mine]?.display_name || '…'} — modifiable jusqu'à la fin`
+            : mine ? `✓ Tu as voté pour ${byId[mine]?.display_name || '…'}. Tu peux changer jusqu'à la fin.`
             : 'Écoute, puis vote pour ton préféré'}
         </span>
         <span style={{ fontFamily: F.ui, fontWeight: 600, fontSize: 13.5, color: T.textMute }}>
