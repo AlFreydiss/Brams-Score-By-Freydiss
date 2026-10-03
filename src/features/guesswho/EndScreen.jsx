@@ -62,11 +62,11 @@ function Podium({ rows }) {
   )
 }
 
-function Stat({ icon, label: text, value, detail, i }) {
+function Stat({ label: text, value, detail, i }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 1.2 + i * 0.1 }}
       style={{ ...plate({ borderRadius: RADIUS.md }), padding: '12px 14px', minWidth: 0 }}>
-      <div style={label({ display: 'flex', alignItems: 'center', gap: 6 })}><span aria-hidden style={{ letterSpacing: 0 }}>{icon}</span>{text}</div>
+      <div style={label()}>{text}</div>
       <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 18, color: T.textHi, marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
       {detail && <div style={{ fontFamily: F.ui, fontWeight: 500, fontSize: 12.5, color: T.textMute }}>{detail}</div>}
     </motion.div>
@@ -124,14 +124,14 @@ export default function EndScreen({ g }) {
   const mw = awards.most_wins && sp[awards.most_wins]
   const played = g.stats?.rounds?.length || g.room?.round || 0
   const stats = [
-    top && { icon: '🎤', label: 'Imitation de la partie', value: topPlayer?.display_name || 'Un joueur', detail: `« ${top.clip} », ${plural(top.votes, 'vote')}` },
-    mv ? { icon: '🗳️', label: 'Le plus voté', value: nameOf(mv.user_id), detail: plural(mv.total_votes, 'vote') }
-      : voted && voted.max > 0 && { icon: '🗳️', label: 'Le plus voté', value: voted.names, detail: plural(voted.max, 'vote') },
-    mw && { icon: '👑', label: 'Roi des tours', value: nameOf(mw.user_id), detail: `${plural(mw.wins, 'tour')} gagné${mw.wins > 1 ? 's' : ''}` },
-    lost && lost.max > 0 && { icon: '💔', label: 'Cœurs brisés', value: lost.names, detail: `${plural(lost.max, 'vie')} perdue${lost.max > 1 ? 's' : ''}` },
-    awards.untouchable ? { icon: '🛡️', label: 'Intouchable', value: nameOf(awards.untouchable), detail: 'aucune vie perdue' }
-      : alive && alive.max > 0 && { icon: '🛡️', label: 'Le plus solide', value: alive.names, detail: `${plural(alive.max, 'vie')} restante${alive.max > 1 ? 's' : ''}` },
-    played > 0 && { icon: '📖', label: 'Tours joués', value: `${played}` },
+    top && { label: 'Imitation de la partie', value: topPlayer?.display_name || 'Un joueur', detail: `« ${top.clip} », ${plural(top.votes, 'vote')}` },
+    mv ? { label: 'Le plus voté', value: nameOf(mv.user_id), detail: plural(mv.total_votes, 'vote') }
+      : voted && voted.max > 0 && { label: 'Le plus voté', value: voted.names, detail: plural(voted.max, 'vote') },
+    mw && { label: 'Roi des tours', value: nameOf(mw.user_id), detail: `${plural(mw.wins, 'tour')} gagné${mw.wins > 1 ? 's' : ''}` },
+    lost && lost.max > 0 && { label: 'Cœurs brisés', value: lost.names, detail: `${plural(lost.max, 'vie')} perdue${lost.max > 1 ? 's' : ''}` },
+    awards.untouchable ? { label: 'Intouchable', value: nameOf(awards.untouchable), detail: 'aucune vie perdue' }
+      : alive && alive.max > 0 && { label: 'Le plus solide', value: alive.names, detail: `${plural(alive.max, 'vie')} restante${alive.max > 1 ? 's' : ''}` },
+    played > 0 && { label: 'Tours joués', value: `${played}` },
   ].filter(Boolean)
   return (
     <PhaseFrame eyebrow="Fin de partie" prompt="Le classement final">

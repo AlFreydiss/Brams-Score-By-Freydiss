@@ -10,6 +10,7 @@ import { play, vibrate } from './sfx.js'
 import { inAppBrowser, openInBrowserHint } from './logic/recordFlow.js'
 import { startErrorText } from './logic/startError.js'
 import { logEvent } from '../../lib/guessWhoLog.js'
+import { glyph, DOT_COLS, DOT_ROWS } from './logic/dotFont.js'
 
 const MAX_PLAYERS = 8
 const MIN_PLAYERS = 3
@@ -79,16 +80,26 @@ async function copyText(text) {
   } catch { return false }
 }
 
-// Code du salon en grand, gravé ; un tap copie le lien.
+// Code du salon en lettres de points (afficheur LED, même trame que le fond) :
+// les points s'allument lettre par lettre, virent au champagne au survol.
+// Un tap copie le lien.
 function BigCode({ code, onCopy }) {
+  const reduce = useReducedMotion()
+  const chars = code.split('')
+  const units = chars.length * DOT_COLS + (chars.length - 1) * 2
   return (
-    <button type="button" className="gw-btn" onClick={onCopy} aria-label={`Code du salon ${code.split('').join(' ')}, appuie pour copier le lien`}
-      style={{ ...plate({ borderRadius: RADIUS.lg }), display: 'flex', gap: 'clamp(10px,3vw,22px)', justifyContent: 'center', padding: 'clamp(14px,3vw,22px) clamp(22px,6vw,40px)', cursor: 'pointer' }}>
-      {code.split('').map((ch, i) => (
-        <motion.span key={i} initial={{ y: 6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.05 + i * 0.06 }}
-          style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(2.6rem, 11vw, 4rem)', color: T.textHi, lineHeight: 1 }}>{ch}</motion.span>
-      ))}
+    <button type="button" className="gw-btn gw-code" onClick={onCopy} aria-label={`Code du salon ${chars.join(' ')}, appuie pour copier le lien`}
+      style={{ ...plate({ borderRadius: RADIUS.lg }), display: 'block', padding: 'clamp(16px,3.5vw,26px) clamp(22px,6vw,40px)', cursor: 'pointer' }}>
+      <svg viewBox={`-0.5 -0.5 ${units} ${DOT_ROWS}`} aria-hidden
+        style={{ display: 'block', width: 'clamp(180px, 58vw, 300px)', height: 'auto' }}>
+        {chars.map((ch, i) => glyph(ch).flatMap((row, r) => row.map((on, c) => (
+          <motion.rect key={`${i}-${r}-${c}`} className={on ? 'on' : undefined}
+            x={i * (DOT_COLS + 2) + c - 0.32} y={r - 0.32} width={0.64} height={0.64}
+            initial={reduce || !on ? false : { opacity: 0.12 }} animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.15 + i * 0.16 + r * 0.025 }}
+            fill={on ? T.textHi : 'rgba(237,234,227,0.07)'} />
+        ))))}
+      </svg>
     </button>
   )
 }
@@ -235,7 +246,7 @@ export default function Lobby({ code, g }) {
       {showReady && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
           <Btn variant={g.me.ready ? 'sea' : 'ghost'} onClick={toggleReady} disabled={readyBusy} aria-pressed={!!g.me.ready}>
-            {g.me.ready ? '✓ Prêt !' : '✋ Je suis prêt'}
+            {g.me.ready ? '✓ Prêt !' : 'Je suis prêt'}
           </Btn>
           <span style={{ ...type.small, color: C.textMut }}>{readyCount}/{n} prêt{readyCount > 1 ? 's' : ''}</span>
         </div>
@@ -243,7 +254,7 @@ export default function Lobby({ code, g }) {
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
         {g.isHost
         ? <Btn onClick={start} disabled={!enough || busy} style={{ flex: '1 1 260px', minHeight: 60, fontSize: 19 }}>
-            {busy ? 'Lancement…' : enough ? `▶ Lancer la partie (${n})` : `Encore ${MIN_PLAYERS - n} joueur${MIN_PLAYERS - n > 1 ? 's' : ''} pour lancer`}
+            {busy ? 'Lancement…' : enough ? `Lancer la partie (${n})` : `Encore ${MIN_PLAYERS - n} joueur${MIN_PLAYERS - n > 1 ? 's' : ''} pour lancer`}
           </Btn>
         : <span className="gw-anim" style={{ ...type.body, fontWeight: 800, color: C.ink, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
             {enough ? "L'hôte va lancer la partie…" : `En attente de joueurs (${n}/${MIN_PLAYERS} min.)…`}

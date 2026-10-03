@@ -51,6 +51,8 @@ export const GLOBAL_CSS = `
 /* sur téléphone, un mot par ligne dès le départ : pas de saut pendant l'étirement */
 @media (max-width: 640px) { .gw-title .gw-word { display: block } }
 @media (prefers-reduced-motion: reduce) { .gw-title { animation: none } }
+.gw-code rect.on { transition: fill .25s; }
+.gw-code:hover rect.on, .gw-code:focus-visible rect.on { fill: ${T.accentLit}; }
 .gw-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 `
 
@@ -91,8 +93,10 @@ export function Btn({ children, variant = 'gold', disabled, full, style, ...prop
   )
 }
 
-// Chrono : anneau fin champagne qui se vide ; brique et pulsation douce sous 5 s.
+// Chrono : anneau de points champagne qui s'éteignent ; brique et pulsation douce sous 5 s.
 // `tick` : petit clic + vibration (jamais pendant l'enregistrement).
+const TIMER_DOTS = 30
+
 export function Timer({ remaining, total, tick = false }) {
   const r = remaining == null ? null : Math.max(0, Math.ceil(remaining))
   const crit = r != null && r <= 5 && r > 0
@@ -105,15 +109,23 @@ export function Timer({ remaining, total, tick = false }) {
   }, [r, tick])
   if (r == null) return null
   const pct = total ? Math.max(0, Math.min(1, remaining / total)) : 1
-  const R = 28, L = 2 * Math.PI * R
   const color = crit ? T.danger : T.accent
+  // Anneau de points (même trame que le fond) : ils s'éteignent un à un dans
+  // le sens horaire, le dernier allumé est un peu plus gros.
+  const lit = Math.ceil(pct * TIMER_DOTS)
   return (
     <div role="timer" aria-label={`${r} secondes`} className={crit ? 'gw-anim' : undefined}
       style={{ position: 'relative', width: 64, height: 64, flex: '0 0 auto', animation: crit ? 'gw-pulse 1s ease-in-out infinite' : 'none' }}>
-      <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="32" cy="32" r={R} fill="none" stroke={T.line} strokeWidth="3" />
-        <circle cx="32" cy="32" r={R} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={L} strokeDashoffset={L * (1 - pct)} style={{ transition: 'stroke-dashoffset .25s linear, stroke .3s' }} />
+      <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden>
+        {Array.from({ length: TIMER_DOTS }, (_, i) => {
+          const a = (i / TIMER_DOTS) * 2 * Math.PI - Math.PI / 2
+          const on = i < lit
+          const head = on && i === lit - 1
+          const s = head ? 4.2 : 2.8
+          return <rect key={i} x={32 + 28 * Math.cos(a) - s / 2} y={32 + 28 * Math.sin(a) - s / 2} width={s} height={s}
+            fill={on ? (head ? (crit ? T.danger : T.accentLit) : color) : 'rgba(237,234,227,0.14)'}
+            style={{ transition: 'fill .3s' }} />
+        })}
       </svg>
       <span style={{
         position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
