@@ -71,7 +71,7 @@ export default function VotePhase({ g }) {
   const left = Math.max(0, voters.length - voted)
   const canVote = !!g.me && allowed.size > 0
   return (
-    <PhaseFrame wide tick eyebrow={revote ? 'Égalité !' : `Tour ${g.room.round} · Vote`}
+    <PhaseFrame wide tick eyebrow={revote ? 'Égalité !' : `Tour ${g.room.round}, vote`}
       prompt={revote ? 'Départage les ex aequo' : 'Qui a fait la meilleure imitation ?'} remaining={g.remaining} total={g.total}>
       {/* Bandeau d'état : quoi faire maintenant. */}
       <motion.div key={mine ? 'ok' : 'todo'} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}

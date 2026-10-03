@@ -178,7 +178,7 @@ export default function Lobby({ code, g }) {
   // places vides affichées : de quoi atteindre le minimum, puis une seule invitation
   const seats = n >= MAX_PLAYERS ? 0 : Math.max(MIN_PLAYERS - n, 1)
   return (
-    <PhaseFrame eyebrow="Guess Who · Salle d'attente" prompt="Invite ta bande">
+    <PhaseFrame eyebrow="Salle d'attente" prompt="Invite ta bande">
       {showInApp && (
         <div role="alert" style={{ ...plate({ borderRadius: RADIUS.md }), border: `1px solid ${T.accent}`, padding: '14px 16px', marginBottom: 18, display: 'grid', gap: 10 }}>
           <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 18, color: T.textHi }}>Le micro ne marche pas ici</div>
@@ -192,7 +192,7 @@ export default function Lobby({ code, g }) {
         </div>
       )}
       <div style={{ display: 'grid', justifyItems: 'center', gap: 14, marginBottom: 20 }}>
-        <div style={label()}>Code du salon · appuie pour copier</div>
+        <div style={label()}>Appuie sur le code pour le copier</div>
         <BigCode code={code} onCopy={copy} />
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Btn variant={copied ? 'sea' : 'ghost'} onClick={copy}>{copied ? '✓ Lien copié' : 'Copier le lien'}</Btn>
@@ -217,7 +217,7 @@ export default function Lobby({ code, g }) {
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', borderTop: LINE, paddingTop: 16, marginBottom: 14 }}>
         <span style={{ fontFamily: F.display, fontWeight: 500, fontSize: 19, color: T.textHi }}>Joueurs</span>
         <span style={{ fontFamily: F.ui, fontWeight: 600, fontSize: 14, color: enough ? T.ok : T.textMute }}>
-          {n}/{MAX_PLAYERS} {enough ? '· prêt à lancer ✓' : `· ${MIN_PLAYERS} minimum`}
+          {n}/{MAX_PLAYERS} {enough ? 'joueurs, prêt à lancer ✓' : `joueurs, ${MIN_PLAYERS} minimum`}
         </span>
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -251,7 +251,7 @@ export default function Lobby({ code, g }) {
       </div>
 
       <p style={{ ...type.body, color: C.textMut, margin: '18px 0 0', textAlign: 'center' }}>
-        ✍️ Chacun écrit un gage · 🎧 on écoute un son d'anime · 🎙️ on l'imite · 🗳️ on vote.<br />
+        Chacun écrit un gage, on écoute un son d'anime, on l'imite, puis on vote.<br />
         Le moins voté perd une vie ; à 0, gage tiré au sort !
       </p>
       {g.isHost && <Settings value={settings} onChange={changeSettings} options={options} />}

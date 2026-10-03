@@ -7,6 +7,8 @@ import { useEffect, useRef } from 'react'
 import { T } from './theme.js'
 
 const GAP = 22 // pas de la trame (px CSS)
+// Émis par SfxBurst à chaque changement de phase.
+export const PULSE_EVT = 'gw-pulse'
 const FPS = 30
 
 // Hauteur (0..1) de la colonne `c` au temps `t` : trois sinusoïdes lentes
@@ -35,7 +37,12 @@ export default function SoundField() {
     let w = 0, h = 0, cols = 0, rows = 0, ox = 0, oy = 0
     const mouse = { x: -1e4, y: -1e4, k: 0 }
     const waves = []
-    let raf = 0, last = 0, t0 = performance.now()
+    let raf = 0, last = 0
+    const t0 = performance.now()
+    // Le spectre « écoute » le jeu : tant qu'un son joue sur la page, il monte
+    // et s'accélère. `phase` intègre une vitesse variable pour rester continu.
+    let energy = 0, phase = 0, prev = t0
+    const media = new Set()
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
@@ -47,11 +54,16 @@ export default function SoundField() {
     }
 
     const draw = (now) => {
-      const t = (now - t0) / 1000
+      // un lecteur démonté en pleine lecture n'émet jamais « pause »
+      for (const el of media) if (el.paused || !el.isConnected) media.delete(el)
+      energy += ((media.size > 0 ? 1 : 0) - energy) * 0.06
+      phase += Math.min(now - prev, 100) / 1000 * (1 + 1.3 * energy)
+      prev = now
+      const t = phase
       ctx.clearRect(0, 0, w, h)
       mouse.k += ((mouse.x > -1e3 ? 1 : 0) - mouse.k) * 0.08
       for (let i = waves.length - 1; i >= 0; i--) if (now - waves[i].at > 2600) waves.splice(i, 1)
-      const maxBar = Math.min(rows * 0.55, 22)
+      const maxBar = Math.min(rows * (0.55 + 0.2 * energy), 22 + 10 * energy)
       for (let c = 0; c < cols; c++) {
         const x = ox + c * GAP
         // le spectre s'atténue vers les bords pour laisser le centre calme
@@ -98,7 +110,17 @@ export default function SoundField() {
     }
 
     resize()
-    if (reduce) { draw(t0 + 4000); return undefined }
+    if (reduce) { phase = 4; draw(t0); return undefined }
+
+    // Événements média : ils ne remontent pas, on les capte en phase de capture.
+    const onPlay = (e) => { media.add(e.target) }
+    const onStop = (e) => { media.delete(e.target) }
+    // Changement de phase (SfxBurst) : une onde part du bas, au centre.
+    const onPulse = () => { waves.push({ x: w / 2, y: h, at: performance.now() }); if (waves.length > 4) waves.shift() }
+    document.addEventListener('playing', onPlay, true)
+    document.addEventListener('pause', onStop, true)
+    document.addEventListener('ended', onStop, true)
+    window.addEventListener(PULSE_EVT, onPulse)
 
     const onMove = (e) => { mouse.x = e.clientX; mouse.y = e.clientY }
     const onLeave = () => { mouse.x = -1e4; mouse.y = -1e4 }
@@ -116,6 +138,10 @@ export default function SoundField() {
     raf = requestAnimationFrame(loop)
     return () => {
       cancelAnimationFrame(raf)
+      document.removeEventListener('playing', onPlay, true)
+      document.removeEventListener('pause', onStop, true)
+      document.removeEventListener('ended', onStop, true)
+      window.removeEventListener(PULSE_EVT, onPulse)
       window.removeEventListener('resize', onResize)
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerdown', onDown)

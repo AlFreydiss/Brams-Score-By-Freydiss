@@ -37,7 +37,7 @@ export default function RoomView({ g, code, reactions }) {
       {g.isLastRound && LAST_ROUND_PHASES.includes(phase) && (
         <p role="status" style={{ ...banner, width: 'fit-content', border: `1px solid ${T.accent}`, color: T.accentLit,
           fontFamily: F.display, fontWeight: 500, fontSize: 17 }}>
-          Dernier tour · {g.roundsMax}/{g.roundsMax}
+          Dernier tour ({g.roundsMax}/{g.roundsMax})
         </p>
       )}
       {g.notice && (

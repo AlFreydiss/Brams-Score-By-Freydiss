@@ -80,7 +80,7 @@ function Home({ identity }) {
         <h1 className="gw-title" style={{
           margin: 0, fontFamily: F.display, fontWeight: 800, lineHeight: 0.88, letterSpacing: '-0.04em',
           color: T.textHi,
-        }}>Guess Who</h1>
+        }}><span className="gw-word">Guess</span> <span className="gw-word">Who</span></h1>
         <p style={{ margin: '20px auto 0', maxWidth: 440, fontFamily: F.ui, fontSize: 17, lineHeight: 1.5, color: T.text }}>
           Imite un son d'anime, votez pour la meilleure imitation. Le moins voté perd une vie.
         </p>

@@ -201,7 +201,7 @@ export default function RecordPhase({ g }) {
   else mainBtn = <Btn variant={take ? 'ghost' : 'ember'} onClick={begin} disabled={sending || late} style={{ minHeight: 56, padding: '0 26px' }}>{take ? '↺ Recommencer' : '● Enregistrer'}</Btn>
 
   return (
-    <PhaseFrame eyebrow={`Tour ${g.room.round} · À toi`} prompt={`Imite : ${clip?.title || ''}`} remaining={g.remaining} total={g.total}
+    <PhaseFrame eyebrow={`Tour ${g.room.round}, à toi`} prompt={`Imite : ${clip?.title || ''}`} remaining={g.remaining} total={g.total}
       footer={
         <>
           {mainBtn}

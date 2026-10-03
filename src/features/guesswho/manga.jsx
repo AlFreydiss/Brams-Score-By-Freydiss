@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { play, vibrate } from './sfx.js'
 import { T, F, LINE, SHADOW, plate, pill, label } from './theme.js'
-import SoundField from './SoundField.jsx'
+import SoundField, { PULSE_EVT } from './SoundField.jsx'
 
 export const FONT_DISPLAY = F.display
 export const FONT_BODY = F.ui
@@ -41,7 +41,16 @@ export const GLOBAL_CSS = `
 @keyframes gw-flash { 0% { opacity: .5 } 100% { opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .gw-anim { animation: none !important } }
 /* titre d'accueil : index.css force les h1 à 48 px max sur mobile (!important) */
-.gw-title { font-size: clamp(3.4rem, 17vw, 8rem) !important; }
+.gw-title { font-size: clamp(3.4rem, 17vw, 8rem) !important; animation: gw-stretch 1.3s cubic-bezier(.16,.9,.24,1) .1s both; }
+/* le titre s'ouvre comme un son : chasse étroite et serrée → large */
+@keyframes gw-stretch {
+  0% { font-variation-settings: 'wdth' 62, 'wght' 900; letter-spacing: .02em; opacity: 0 }
+  25% { opacity: 1 }
+  100% { font-variation-settings: 'wdth' 125, 'wght' 800; letter-spacing: -0.04em; opacity: 1 }
+}
+/* sur téléphone, un mot par ligne dès le départ : pas de saut pendant l'étirement */
+@media (max-width: 640px) { .gw-title .gw-word { display: block } }
+@media (prefers-reduced-motion: reduce) { .gw-title { animation: none } }
 .gw-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
 `
 
@@ -219,6 +228,7 @@ export function SfxBurst({ phase, round }) {
   useEffect(() => {
     if (first.current) { first.current = false; return }
     if (PHASE_SFX[phase]) play(PHASE_SFX[phase])
+    window.dispatchEvent(new Event(PULSE_EVT))
   }, [key, phase])
   return null
 }

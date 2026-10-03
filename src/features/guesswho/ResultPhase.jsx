@@ -43,7 +43,7 @@ export default function ResultPhase({ g }) {
   // Verdict final (dernier tour sans éliminé) : désigné par le serveur.
   const final = Array.isArray(res.final) ? res.final : []
   return (
-    <PhaseFrame eyebrow={`Tour ${res.round}${g.roundsMax ? `/${g.roundsMax}` : ''} · Verdict`} prompt={title} remaining={g.remaining} total={g.total} tilt={0.6}>
+    <PhaseFrame eyebrow={`Tour ${res.round}${g.roundsMax ? `/${g.roundsMax}` : ''}, verdict`} prompt={title} remaining={g.remaining} total={g.total} tilt={0.6}>
       {g.isLastRound && !final.length && (
         <p style={{ ...type.small, margin: '0 0 14px', color: T.accentLit }}>
           Dernier tour : sans éliminé, le joueur avec le moins de vies prendra le gage.
@@ -96,14 +96,14 @@ export default function ResultPhase({ g }) {
                 <motion.span aria-label="meilleure imitation du tour"
                   initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.3 }}
-                  style={{ position: 'absolute', left: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase', color: T.onAccent, background: T.accent, borderRadius: RADIUS.pill, padding: '2px 9px' }}>Meilleure</motion.span>
+                  style={{ position: 'absolute', left: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 12, color: T.onAccent, background: T.accent, borderRadius: RADIUS.pill, padding: '2px 9px' }}>Meilleure</motion.span>
               )}
               {ko && (
                 <motion.span aria-label="perd une vie"
                   initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                   style={{
-                    position: 'absolute', right: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase',
+                    position: 'absolute', right: 14, top: -9, fontFamily: F.ui, fontWeight: 700, fontSize: 12,
                     color: T.danger, background: T.bg, border: `1px solid ${T.danger}`, borderRadius: RADIUS.pill, padding: '2px 9px',
                   }}>− 1 vie</motion.span>
               )}

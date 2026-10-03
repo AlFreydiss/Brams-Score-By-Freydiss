@@ -46,10 +46,10 @@ export default function ListenPhase({ g }) {
   }
   const retry = () => { setBroken(false); sound.retry() }
   return (
-    <PhaseFrame eyebrow={`Tour ${g.room.round} · Écoute bien`} prompt={clip.title} remaining={g.remaining} total={g.total}
+    <PhaseFrame eyebrow={`Tour ${g.room.round}, écoute bien`} prompt={clip.title} remaining={g.remaining} total={g.total}
       footer={g.isHost && broken && <Btn variant="ghost" onClick={() => { setBroken(false); g.act.skip() }}>Changer de son</Btn>}>
       <p style={{ ...type.body, color: C.textMut, marginTop: 0 }}>
-        {clip.anime} · {clip.lang === 'fr' ? 'VF' : 'VO'} — tu devras le reproduire juste après.
+        {clip.anime} ({clip.lang === 'fr' ? 'VF' : 'VO'}). Tu devras le reproduire juste après.
       </p>
       {sound.status === 'loading'
         ? <p role="status" style={{ ...type.h3, color: C.textMut, margin: '8px 0' }}>Chargement du son…</p>
