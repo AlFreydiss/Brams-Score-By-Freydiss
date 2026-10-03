@@ -155,9 +155,6 @@ function Seasons() {
   return (
     <section aria-labelledby="bc-anime" style={{ display:'grid', gap:14, padding:0 }}>
       <h3 id="bc-anime" style={{ margin:0, fontSize:18, fontWeight:900, color:'#fff' }}>Anime</h3>
-      <p style={{ margin:'-6px 0 2px', fontSize:12.5, color:'rgba(255,255,255,.45)', lineHeight:1.6 }}>
-        Les épisodes se regardent sur les plateformes qui ont les droits en France.
-      </p>
       {SEASONS.map((s) => {
         const p = PLATFORMS[s.where]
         return (
