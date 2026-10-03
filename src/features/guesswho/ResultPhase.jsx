@@ -5,6 +5,7 @@ import { T, F, LINE, RADIUS, SHADOW, plate } from './theme.js'
 import { AvatarName, Lives } from './ui.jsx'
 import { Confetti, CountUp } from './fx.jsx'
 import { play, vibrate } from './sfx.js'
+import { pulseFrom } from './SoundField.jsx'
 
 // Rythme de la révélation (le verdict ne dure que 8 s).
 const FIRST_MS = 350
@@ -43,10 +44,21 @@ export default function ResultPhase({ g }) {
   const [step, setStep] = useState(reduce ? 2 : 0) // 0 révélation · 1 couronne · 2 K.O.
   useEffect(() => {
     if (reduce) return
-    const t1 = setTimeout(() => { setStep(1); if (topScore > 0) play('fanfare') }, revealMs)
+    // le fond répond : onde dorée depuis le meilleur, rouge depuis le(s) perdant(s)
+    const rowEl = (uid) => document.querySelector(`[data-gw-row="${CSS.escape(String(uid))}"]`)
+    const t1 = setTimeout(() => {
+      setStep(1)
+      if (topScore > 0) {
+        play('fanfare')
+        if (!auto) rows.filter((p) => (scores[p.user_id] || 0) === topScore).forEach((p) => pulseFrom(rowEl(p.user_id), 'gold'))
+      }
+    }, revealMs)
     const t2 = setTimeout(() => {
       setStep(2)
-      if (losers.size) { play('boom'); setTimeout(() => play('heartbreak'), 120); vibrate([80, 50, 140]) }
+      if (losers.size) {
+        play('boom'); setTimeout(() => play('heartbreak'), 120); vibrate([80, 50, 140])
+        losers.forEach((uid) => pulseFrom(rowEl(uid), 'red'))
+      }
     }, revealMs + (topScore > 0 ? 700 : 100))
     return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -87,7 +99,7 @@ export default function ResultPhase({ g }) {
           // le cœur perdu est encore entier jusqu'au K.O.
           const shownLives = lost && step < 2 ? Math.min(g.maxLives, p.lives + 1) : p.lives
           return (
-            <motion.div key={p.user_id}
+            <motion.div key={p.user_id} data-gw-row={p.user_id}
               initial={reduce ? { opacity: 0 } : { y: 10, opacity: 0 }}
               animate={{ y: 0, opacity: ko ? 0.72 : 1, scale: best ? 1.01 : 1 }}
               transition={{ ...SPRING_POP, delay: reduce ? 0 : (FIRST_MS + i * GAP_MS) / 1000 }}

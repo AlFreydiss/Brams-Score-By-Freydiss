@@ -51,6 +51,8 @@ export const GLOBAL_CSS = `
 /* sur téléphone, un mot par ligne dès le départ : pas de saut pendant l'étirement */
 @media (max-width: 640px) { .gw-title .gw-word { display: block } }
 @media (prefers-reduced-motion: reduce) { .gw-title { animation: none } }
+@keyframes gw-chase { to { background-position: 27px 0 } }
+@keyframes gw-flicker { 0%, 100% { opacity: 1 } 50% { opacity: .15 } }
 @keyframes gw-ring { 0% { transform: scale(1); opacity: .8 } 100% { transform: scale(1.4); opacity: 0 } }
 @keyframes gw-flash-life { 0% { opacity: 0 } 8% { opacity: 1 } 70% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes gw-dot-in { 0% { opacity: 0; fill: ${T.accentLit} } 55% { opacity: 1; fill: ${T.accentLit} } 100% { opacity: 1; fill: ${T.textHi} } }

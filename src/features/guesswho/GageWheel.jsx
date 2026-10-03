@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { PhaseFrame } from './manga.jsx'
 import { T, F, LINE, RADIUS, SHADOW, plate, label } from './theme.js'
-import { AvatarName } from './ui.jsx'
+import { AvatarName, DotBurst } from './ui.jsx'
 import { play, vibrate } from './sfx.js'
+import { pulseFrom } from './SoundField.jsx'
 
 // Leurres de repli : seulement si le serveur n'a pas publié les gages de la partie (room.gage_pool).
 const DECOYS = [
@@ -29,6 +30,26 @@ function shuffle(arr) {
   return a
 }
 
+// Enseigne de machine à sous : rangée de points en haut ou en bas.
+// `chase` : un point sur trois allumé qui défile (tirage en cours) ;
+// sinon toute la rangée allumée qui clignote trois fois (gage tiré).
+function Marquee({ edge, chase = false, reverse = false }) {
+  const lit = chase
+    ? `linear-gradient(90deg, ${T.accentLit} 0 4px, transparent 4px) 0 0 / 27px 4px repeat-x`
+    : `linear-gradient(90deg, ${T.accentLit} 0 4px, transparent 4px) 0 0 / 9px 4px repeat-x`
+  return (
+    <span aria-hidden style={{ position: 'absolute', left: 14, right: 14, [edge]: 10, height: 4, pointerEvents: 'none',
+      background: `linear-gradient(90deg, rgba(237,234,227,0.14) 0 4px, transparent 4px) 0 0 / 9px 4px repeat-x` }}>
+      <span className="gw-anim gw-keep" style={{
+        position: 'absolute', inset: 0, background: lit,
+        ...(chase
+          ? { '--gw-d': '.45s', '--gw-n': 'infinite', animation: `gw-chase .45s steps(3) infinite${reverse ? ' reverse' : ''}` }
+          : { '--gw-d': '.32s', '--gw-n': '3', animation: 'gw-flicker .32s steps(2) 3' }),
+      }} />
+    </span>
+  )
+}
+
 // Une machine à sous verticale qui ralentit et s'arrête sur le vrai gage.
 function Reel({ result, player, extraSteps = 0, pool }) {
   const reduce = useReducedMotion()
@@ -40,12 +61,17 @@ function Reel({ result, player, extraSteps = 0, pool }) {
     return [...Array.from({ length: total }, (_, i) => fill[i % fill.length]), result.gage]
   }, [result.gage, pool, total])
   const [k, setK] = useState(reduce ? total : 0)
+  const card = useRef(null)
   const done = k >= total
   useEffect(() => {
     if (reduce || done) return
     const t = setTimeout(() => {
       setK(k + 1)
-      if (k + 1 >= total) { play('boom'); vibrate([90, 40, 160]) } else play('slot')
+      if (k + 1 >= total) {
+        play('boom'); vibrate([90, 40, 160])
+        // onde dorée depuis le gage tiré, une fois la carte affichée
+        setTimeout(() => pulseFrom(card.current, 'gold'), 60)
+      } else play('slot')
     }, delayAt(Math.min(k, STEPS)))
     return () => clearTimeout(t)
   }, [k, done, reduce, total])
@@ -67,21 +93,27 @@ function Reel({ result, player, extraSteps = 0, pool }) {
                 color: T.textHi, fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.05rem, 4.2vw, 1.5rem)', lineHeight: 1.15, overflowWrap: 'anywhere',
               }}>{reel[k]}</motion.div>
           </AnimatePresence>
-          {/* fenêtre de la machine : fondu haut/bas + repère central champagne */}
+          {/* fenêtre de la machine : fondu haut/bas, repères carrés, enseigne qui chasse */}
           <span style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(${T.deep} 0, transparent 22%, transparent 78%, ${T.deep} 100%)` }} />
-          <span style={{ position: 'absolute', left: 0, top: '50%', width: 10, height: 1, background: T.accent }} />
-          <span style={{ position: 'absolute', right: 0, top: '50%', width: 10, height: 1, background: T.accent }} />
+          <span style={{ position: 'absolute', left: 6, top: 'calc(50% - 3px)', width: 6, height: 6, background: T.accent }} />
+          <span style={{ position: 'absolute', right: 6, top: 'calc(50% - 3px)', width: 6, height: 6, background: T.accent }} />
+          <Marquee edge="top" chase />
+          <Marquee edge="bottom" chase reverse />
         </div>
       ) : (
-        <motion.div
+        <motion.div ref={card}
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.35, ease: [0.2, 0.7, 0.2, 1] }}
           style={{
             ...plate({ borderRadius: RADIUS.lg }), border: `1px solid ${T.accent}`,
             boxShadow: `0 0 0 4px ${T.glow}, 0 0 40px rgba(199,168,105,0.16), ${SHADOW.soft}`,
-            padding: 'clamp(22px,5vw,34px) clamp(20px,5vw,40px)', textAlign: 'center',
+            padding: 'clamp(28px,5vw,40px) clamp(20px,5vw,40px)', textAlign: 'center', position: 'relative',
           }}>
+          {/* à l'arrêt : l'enseigne s'allume en entier et clignote trois fois */}
+          <Marquee edge="top" />
+          <Marquee edge="bottom" />
+          {!reduce && <DotBurst />}
           <div style={label({ color: T.accent })}>{result.name}, ton gage</div>
           <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.4rem, 5vw, 2.2rem)', lineHeight: 1.18, color: T.textHi, margin: '12px 0', overflowWrap: 'anywhere' }}>
             « {result.gage} »

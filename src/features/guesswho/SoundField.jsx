@@ -10,6 +10,14 @@ import { ambientLevel } from './ambient.js'
 const GAP = 22 // pas de la trame (px CSS)
 // Émis par SfxBurst à chaque changement de phase.
 export const PULSE_EVT = 'gw-pulse'
+
+// Onde du fond qui part du centre d'un élément (verdict, gage tiré…).
+// `tone` : 'gold' (défaut) ou 'red'.
+export function pulseFrom(el, tone = 'gold') {
+  if (!el || typeof window === 'undefined') return
+  const r = el.getBoundingClientRect()
+  window.dispatchEvent(new CustomEvent(PULSE_EVT, { detail: { x: r.left + r.width / 2, y: r.top + r.height / 2, tone } }))
+}
 // Appareil faible (html.low-end, posé par main.jsx) : moitié moins d'images,
 // pas de rendu Retina.
 const lowEnd = () => typeof document !== 'undefined' && document.documentElement.classList.contains('low-end')
@@ -39,6 +47,7 @@ export default function SoundField() {
     const NEUTRAL = rgb(T.textHi)
     const GOLD = rgb(T.accent)
     const LIT = rgb(T.accentLit)
+    const TONES = { gold: LIT, red: rgb(T.danger) }
     let w = 0, h = 0, cols = 0, rows = 0, ox = 0, oy = 0
     const mouse = { x: -1e4, y: -1e4, k: 0 }
     const waves = []
@@ -101,7 +110,7 @@ export default function SoundField() {
             const age = (now - wv.at) / 1000
             const ring = age * 520
             const d = Math.abs(Math.hypot(x - wv.x, y - wv.y) - ring)
-            if (d < 26) { const k = (1 - d / 26) * Math.max(0, 1 - age / 2.4); a += 0.45 * k; size += 1.1 * k; col = LIT }
+            if (d < 26) { const k = (1 - d / 26) * Math.max(0, 1 - age / 2.4); a += 0.45 * k; size += 1.1 * k; col = wv.col || LIT }
           }
           if (a < 0.015) continue
           ctx.fillStyle = `rgba(${col},${Math.min(a, 0.9)})`
@@ -124,7 +133,12 @@ export default function SoundField() {
     const onPlay = (e) => { media.add(e.target) }
     const onStop = (e) => { media.delete(e.target) }
     // Changement de phase (SfxBurst) : une onde part du bas, au centre.
-    const onPulse = () => { waves.push({ x: w / 2, y: h, at: performance.now() }); if (waves.length > 4) waves.shift() }
+    // sans détail : du bas, au centre ; sinon depuis {x, y} dans la teinte demandée
+    const onPulse = (e) => {
+      const d = e.detail || {}
+      waves.push({ x: d.x ?? w / 2, y: d.y ?? h, col: TONES[d.tone], at: performance.now() })
+      if (waves.length > 6) waves.shift()
+    }
     document.addEventListener('playing', onPlay, true)
     document.addEventListener('pause', onStop, true)
     document.addEventListener('ended', onStop, true)

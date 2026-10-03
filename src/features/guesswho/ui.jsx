@@ -115,7 +115,7 @@ const BURST = Array.from({ length: 12 }, (_, i) => {
   const d = 38 + (i % 3) * 14
   return { x: Math.cos(a) * d * 1.6, y: Math.sin(a) * d, s: i % 3 === 0 ? 6 : 4 }
 })
-function DotBurst() {
+export function DotBurst() {
   const reduce = useReducedMotion()
   if (reduce) return null
   return (
