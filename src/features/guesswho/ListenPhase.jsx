@@ -57,7 +57,7 @@ export default function ListenPhase({ g }) {
             onError={() => setBroken(true)} />}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
         <button type="button" className="gw-focus" aria-pressed={loop} onClick={() => setLoop((v) => !v)} style={pill(loop)}>
-          🔁 {loop ? 'En boucle' : 'Écouter en boucle'}
+          {loop ? '✓ En boucle' : 'Écouter en boucle'}
         </button>
       </div>
       {broken && (

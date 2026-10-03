@@ -10,6 +10,23 @@ import { play, vibrate } from './sfx.js'
 const FIRST_MS = 350
 const GAP_MS = 420
 
+// Jauge de votes : un point par vote possible, ils s'allument un à un au
+// rythme du compteur (même trame de points que le fond).
+function VoteDots({ n, max, hot, cold, reduce, delay, step }) {
+  const on = hot ? T.accentLit : cold ? T.danger : T.accent
+  return (
+    <span aria-hidden style={{ display: 'flex', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 120, flex: '0 1 auto' }}>
+      {Array.from({ length: max }, (_, k) => (
+        <motion.span key={k}
+          initial={{ backgroundColor: 'rgba(237,234,227,0.14)', scale: 1 }}
+          animate={k < n ? { backgroundColor: on, scale: reduce ? 1 : [1, 1.7, 1] } : { backgroundColor: 'rgba(237,234,227,0.14)' }}
+          transition={{ delay: reduce ? 0 : (delay + (k + 1) * step) / 1000, duration: 0.3 }}
+          style={{ width: 7, height: 7, display: 'block' }} />
+      ))}
+    </span>
+  )
+}
+
 // Verdict du tour : les cases tombent une à une, les votes montent,
 // puis couronne + confettis pour le meilleur et cœur brisé + « K.O. » pour le(s) perdant(s).
 export default function ResultPhase({ g }) {
@@ -20,6 +37,8 @@ export default function ResultPhase({ g }) {
   const scores = res.stage === 'revote' ? res.revote_scores || {} : res.scores || {}
   const rows = [...g.players].filter((p) => p.seat != null).sort((a, b) => (scores[b.user_id] || 0) - (scores[a.user_id] || 0))
   const topScore = auto ? 0 : Math.max(0, ...rows.map((p) => scores[p.user_id] || 0))
+  // un joueur reçoit au plus un vote de chacun des autres
+  const maxVotes = Math.max(topScore, rows.length - 1, 1)
   const revealMs = reduce ? 0 : FIRST_MS + rows.length * GAP_MS + 250
   const [step, setStep] = useState(reduce ? 2 : 0) // 0 révélation · 1 couronne · 2 K.O.
   useEffect(() => {
@@ -82,6 +101,10 @@ export default function ResultPhase({ g }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <AvatarName player={p} sub={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 2 }}><Lives lives={shownLives} max={g.maxLives} size={18} />{me && 'Toi'}</span>} />
               </div>
+              {!auto && (
+                <VoteDots n={n} max={maxVotes} hot={best} cold={ko} reduce={reduce}
+                  delay={FIRST_MS + i * GAP_MS + 150} step={Math.max(45, Math.min(110, 320 / Math.max(1, n)))} />
+              )}
               <span style={{ ...type.h3, color: best ? T.accentLit : T.textHi, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', textAlign: 'center', display: 'grid', lineHeight: 1, flex: '0 0 auto' }}>
                 {auto ? '—' : (
                   <>

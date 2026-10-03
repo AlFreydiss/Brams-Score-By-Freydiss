@@ -5,6 +5,7 @@
 // demande moins d'animations.
 import { useEffect, useRef } from 'react'
 import { T } from './theme.js'
+import { ambientLevel } from './ambient.js'
 
 const GAP = 22 // pas de la trame (px CSS)
 // Émis par SfxBurst à chaque changement de phase.
@@ -39,8 +40,8 @@ export default function SoundField() {
     const waves = []
     let raf = 0, last = 0
     const t0 = performance.now()
-    // Le spectre « écoute » le jeu : tant qu'un son joue sur la page, il monte
-    // et s'accélère. `phase` intègre une vitesse variable pour rester continu.
+    // Le spectre « écoute » le jeu (ambient.js + <audio> de la page) : il monte
+    // et s'accélère avec le son. `phase` intègre une vitesse variable.
     let energy = 0, phase = 0, prev = t0
     const media = new Set()
 
@@ -56,14 +57,17 @@ export default function SoundField() {
     const draw = (now) => {
       // un lecteur démonté en pleine lecture n'émet jamais « pause »
       for (const el of media) if (el.paused || !el.isConnected) media.delete(el)
-      energy += ((media.size > 0 ? 1 : 0) - energy) * 0.06
-      phase += Math.min(now - prev, 100) / 1000 * (1 + 1.3 * energy)
+      // niveau réel (enveloppe du son lu, ou ta voix au micro) sinon simple
+      // « un <audio> joue » ; monte vite, retombe doucement
+      const target = Math.max(media.size > 0 ? 0.6 : 0, Math.min(1, ambientLevel(now) * 1.4))
+      energy += (target - energy) * (target > energy ? 0.45 : 0.08)
+      phase += Math.min(now - prev, 100) / 1000 * (1 + 1.6 * energy)
       prev = now
       const t = phase
       ctx.clearRect(0, 0, w, h)
       mouse.k += ((mouse.x > -1e3 ? 1 : 0) - mouse.k) * 0.08
       for (let i = waves.length - 1; i >= 0; i--) if (now - waves[i].at > 2600) waves.splice(i, 1)
-      const maxBar = Math.min(rows * (0.55 + 0.2 * energy), 22 + 10 * energy)
+      const maxBar = Math.min(rows * (0.55 + 0.3 * energy), 22 + 16 * energy)
       for (let c = 0; c < cols; c++) {
         const x = ox + c * GAP
         // le spectre s'atténue vers les bords pour laisser le centre calme

@@ -48,6 +48,8 @@ function Podium({ rows }) {
               ...plate({ borderRadius: `${RADIUS.md}px ${RADIUS.md}px 4px 4px` }),
               width: '100%', height: h, transformOrigin: 'bottom', display: 'grid', placeItems: 'start center', paddingTop: 12,
               opacity: p ? 1 : 0.35, boxSizing: 'border-box',
+              // même trame de points que le fond, dorée sous le vainqueur
+              background: `radial-gradient(circle, ${rank === 1 ? 'rgba(199,168,105,0.42)' : 'rgba(237,234,227,0.12)'} 1.3px, transparent 1.8px) 4px 4px / 9px 9px, linear-gradient(180deg, rgba(30,30,32,0.9) 0%, rgba(22,22,24,0.9) 100%)`,
             }}>
             <span style={{
               width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: MEDAL[rank],
@@ -145,7 +147,7 @@ export default function EndScreen({ g }) {
         )}
         {g.isHost
           ? <Btn onClick={replay} disabled={busy} style={{ flex: '1 1 220px', minHeight: 60, fontSize: 20 }}>
-              {busy ? 'Relance…' : showReady ? `🔁 Revanche (${readyCount}/${seated.length} prêts)` : '🔁 Rejouer'}
+              {busy ? 'Relance…' : showReady ? `Revanche (${readyCount}/${seated.length} prêts)` : 'Rejouer'}
             </Btn>
           : <span className="gw-anim" style={{ flex: '1 1 220px', alignSelf: 'center', fontFamily: F.ui, fontWeight: 600, color: T.textMute, animation: 'gw-blink 1.6s ease-in-out infinite' }}>
               {showReady ? `${readyCount}/${seated.length} prêts. L'hôte lance la revanche…` : "En attente de l'hôte pour rejouer…"}
@@ -171,7 +173,7 @@ export default function EndScreen({ g }) {
         <div style={{ ...plate({ borderRadius: RADIUS.lg }), border: `1px solid ${T.accent}`, padding: 18, marginBottom: 14, display: 'grid', gap: 12 }}>
           <div style={label({ color: T.accent })}>L'imitation de la partie</div>
           <div style={{ fontFamily: F.display, fontWeight: 500, fontSize: 'clamp(1.2rem,3.4vw,1.6rem)', color: T.textHi, lineHeight: 1.2 }}>
-            {topPlayer?.display_name || 'Un joueur'} <span style={{ color: T.textMute, fontFamily: F.ui, fontWeight: 500, fontSize: 15 }}>sur « {top.clip} », tour {top.round} · {plural(top.votes, 'vote')}</span>
+            {topPlayer?.display_name || 'Un joueur'} <span style={{ color: T.textMute, fontFamily: F.ui, fontWeight: 500, fontSize: 15 }}>sur « {top.clip} », tour {top.round}, {plural(top.votes, 'vote')}</span>
           </div>
           <ClipPlayer url={top.audio_url} label="l'imitation de la partie" big />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

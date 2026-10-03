@@ -198,7 +198,24 @@ export default function RecordPhase({ g }) {
   if (rec === 'recording') mainBtn = <Btn variant="danger" onClick={stop} style={{ minHeight: 56 }}>■ Arrêter</Btn>
   else if (rec === 'countdown' || rec === 'arming') mainBtn = <Btn variant="ghost" onClick={cancel}>{rec === 'arming' ? 'Autorise le micro…' : 'Annuler'}</Btn>
   else if (rec === 'processing') mainBtn = <Btn variant="ghost" disabled>Préparation…</Btn>
-  else mainBtn = <Btn variant={take ? 'ghost' : 'ember'} onClick={begin} disabled={sending || late} style={{ minHeight: 56, padding: '0 26px' }}>{take ? '↺ Recommencer' : '● Enregistrer'}</Btn>
+  else if (take) mainBtn = <Btn variant="ghost" onClick={begin} disabled={sending || late} style={{ minHeight: 56, padding: '0 26px' }}>↺ Recommencer</Btn>
+  // Pas encore de prise : le geste principal de l'écran, en gros au centre.
+  const bigRec = !mainBtn && (
+    <div style={{ display: 'grid', justifyItems: 'center', gap: 12, padding: '10px 0 4px' }}>
+      <motion.button type="button" className="gw-btn" onClick={begin} disabled={sending || late}
+        aria-label="Enregistrer mon imitation"
+        whileHover={sending || late ? undefined : { scale: 1.04 }} whileTap={sending || late ? undefined : { scale: 0.94 }}
+        style={{
+          width: 108, height: 108, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: sending || late ? 'default' : 'pointer',
+          background: 'rgba(190,106,90,0.12)', border: `1px solid ${T.danger}`, opacity: sending || late ? 0.45 : 1,
+          boxShadow: '0 0 0 10px rgba(190,106,90,0.06)', touchAction: 'manipulation',
+        }}>
+        <span aria-hidden style={{ width: 40, height: 40, borderRadius: '50%', background: T.danger }} />
+      </motion.button>
+      <span style={{ fontFamily: F.display, fontWeight: 700, fontSize: 17, color: T.textHi }}>Enregistrer</span>
+      <span style={{ ...type.small, fontWeight: 500, color: C.textMut, marginTop: -6 }}>{COUNTDOWN.join(', ')}, puis à toi</span>
+    </div>
+  )
 
   return (
     <PhaseFrame eyebrow={`Tour ${g.room.round}, à toi`} prompt={`Imite : ${clip?.title || ''}`} remaining={g.remaining} total={g.total}
@@ -217,6 +234,7 @@ export default function RecordPhase({ g }) {
         {clip && original.status === 'ready'
           ? <WavePlayer id={`clip:${clip.id}`} src={original.src} peaks={original.peaks} label={clip.title} disabled={busy} />
           : <p style={{ ...type.small, color: C.textMut, margin: 0 }}>Chargement du son…</p>}
+        {bigRec}
 
         {stream && (rec === 'countdown' || rec === 'recording') && (
           <div style={{ position: 'relative' }}>

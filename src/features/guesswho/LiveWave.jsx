@@ -4,14 +4,27 @@
 //   durée max (on voit le temps qui reste) ;
 // - WavePlayer : lecteur avec l'onde du son (original ou ta prise), touche pour
 //   avancer, progression en champagne.
+// Tout est dessiné en colonnes de points (même trame que le fond) et pousse
+// son niveau vers ambient.js pour que le fond suive le son.
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { T, F, LINE, RADIUS, SHADOW, pill } from './theme.js'
 import { audioCtx, justUnblocked, onSound, pauseSound, playSound, seekSound, setSoundLoop, soundProgress, soundState } from '../../lib/guessWhoAudio.js'
 import { levelOf } from './logic/mic.js'
+import { pushLevel } from './ambient.js'
 
 const BARS = 32
 const TAPE = 60
+
+// Colonne de points centrée verticalement, hauteur `frac` (0..1) de `h`.
+function dots(g, x, bw, h, frac, dpr) {
+  const size = Math.max(1.5 * dpr, Math.min(bw * 0.62, 4 * dpr))
+  const step = size + 2 * dpr
+  const n = Math.max(1, Math.round((frac * h) / step) | 1) // impair : un point au centre
+  const cx = x + (bw - size) / 2
+  const top = (h - (n - 1) * step - size) / 2
+  for (let k = 0; k < n; k++) g.fillRect(cx, top + k * step, size, size)
+}
 
 function fit(cv) {
   const dpr = window.devicePixelRatio || 1
@@ -50,11 +63,12 @@ export default function LiveWave({ stream, startedAt = null, maxMs = 8000, heigh
         // Avant la prise : barres de fréquences au centre.
         tapeStart = null
         analyser.getByteFrequencyData(freq)
+        analyser.getByteTimeDomainData(time)
+        pushLevel(levelOf(time) * 3.2)
         const bw = w / BARS
         for (let i = 0; i < BARS; i++) {
           const v = freq[Math.floor((i / BARS) * freq.length * 0.35)] / 255
-          const bh = Math.max(3 * dpr, v * h * 0.92)
-          g.fillRect(i * bw + bw * 0.18, (h - bh) / 2, bw * 0.64, bh)
+          dots(g, i * bw, bw, h, v * 0.92, dpr)
         }
       } else {
         // Pendant la prise : la bande se remplit au fil du temps.
@@ -62,12 +76,11 @@ export default function LiveWave({ stream, startedAt = null, maxMs = 8000, heigh
         analyser.getByteTimeDomainData(time)
         const p = Math.min(1, (performance.now() - t0) / max)
         const idx = Math.min(TAPE - 1, Math.floor(p * TAPE))
-        tape[idx] = Math.max(tape[idx], Math.min(1, levelOf(time) * 3.2))
+        const lv = Math.min(1, levelOf(time) * 3.2)
+        pushLevel(lv)
+        tape[idx] = Math.max(tape[idx], lv)
         const bw = w / TAPE
-        for (let i = 0; i <= idx; i++) {
-          const bh = Math.max(2 * dpr, tape[i] * h * 0.9)
-          g.fillRect(i * bw + bw * 0.15, (h - bh) / 2, bw * 0.7, bh)
-        }
+        for (let i = 0; i <= idx; i++) dots(g, i * bw, bw, h, tape[i] * 0.9, dpr)
         g.fillStyle = 'rgba(255,255,255,0.03)'
         g.fillRect(p * w, 0, w - p * w, h)
         g.fillStyle = T.danger
@@ -136,10 +149,10 @@ export function WavePlayer({ id, src, peaks, label, big = false, loop = false, a
       if (pk?.length) {
         const bw = w / pk.length
         for (let i = 0; i < pk.length; i++) {
-          const bh = Math.max(2 * dpr, pk[i] * h * 0.86)
           g.fillStyle = (i + 0.5) / pk.length <= p ? ac : 'rgba(237,234,227,0.24)'
-          g.fillRect(i * bw + bw * 0.18, (h - bh) / 2, Math.max(dpr, bw * 0.64), bh)
+          dots(g, i * bw, bw, h, pk[i] * 0.86, dpr)
         }
+        if (playing) pushLevel(pk[Math.min(pk.length - 1, Math.floor(p * pk.length))])
       } else {
         // sans onde (son non décodable) : simple barre de progression
         g.fillStyle = 'rgba(255,255,255,0.08)'

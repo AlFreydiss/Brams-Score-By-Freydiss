@@ -47,7 +47,10 @@ export function AvatarName({ player, size = 44, sub }) {
 // Un seul son à la fois sur la page : lancer un lecteur met les autres en pause.
 export const PLAY_EVT = 'gw-audio-play'
 
-// Lecteur : bouton rond champagne + barre de progression fine.
+// Points carrés de 4 px tous les 9 px.
+const dotRow = (color) => `linear-gradient(90deg, ${color} 0 4px, transparent 4px) 0 0 / 9px 4px repeat-x`
+
+// Lecteur : bouton rond champagne + progression en points.
 export function ClipPlayer({ url, label: name, autoPlay = false, onError, big = false, onEnded }) {
   const ref = useRef(null)
   const [playing, setPlaying] = useState(false)
@@ -96,11 +99,10 @@ export function ClipPlayer({ url, label: name, autoPlay = false, onError, big = 
         }}>
         {playing ? '❚❚' : <span style={{ marginLeft: big ? 4 : 2 }}>▶</span>}
       </motion.button>
-      <div style={{ flex: 1, minWidth: 80, height: 4, borderRadius: RADIUS.pill, background: T.line, overflow: 'hidden' }}>
-        <div style={{
-          width: '100%', height: '100%', transform: `scaleX(${pct})`, transformOrigin: 'left', transition: 'transform .2s linear',
-          background: T.accent, borderRadius: RADIUS.pill,
-        }} />
+      {/* progression en rangée de points (même trame que le fond), motif
+          répété : autant de points que la largeur en permet */}
+      <div aria-hidden style={{ flex: 1, minWidth: 80, height: 4, background: dotRow('rgba(237,234,227,0.18)') }}>
+        <div style={{ width: `${pct * 100}%`, height: '100%', background: dotRow(playing ? T.accentLit : T.accent), transition: 'width .2s linear' }} />
       </div>
     </div>
   )
