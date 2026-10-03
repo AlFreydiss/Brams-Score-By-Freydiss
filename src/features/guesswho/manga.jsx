@@ -51,6 +51,9 @@ export const GLOBAL_CSS = `
 /* sur téléphone, un mot par ligne dès le départ : pas de saut pendant l'étirement */
 @media (max-width: 640px) { .gw-title .gw-word { display: block } }
 @media (prefers-reduced-motion: reduce) { .gw-title { animation: none } }
+@keyframes gw-eq { 0%, 100% { opacity: 1 } 50% { opacity: .12 } }
+@keyframes gw-ballot { 0% { opacity: .14 } 12% { opacity: 1 } 88% { opacity: 1 } 100% { opacity: .14 } }
+@keyframes gw-life { 0%, 35% { fill: ${T.accent}; opacity: 1 } 45% { fill: ${T.danger}; opacity: 1 } 60%, 80% { fill: ${T.danger}; opacity: .15 } 95%, 100% { fill: ${T.accent}; opacity: 1 } }
 @keyframes gw-chase { to { background-position: 27px 0 } }
 @keyframes gw-flicker { 0%, 100% { opacity: 1 } 50% { opacity: .15 } }
 @keyframes gw-ring { 0% { transform: scale(1); opacity: .8 } 100% { transform: scale(1.4); opacity: 0 } }

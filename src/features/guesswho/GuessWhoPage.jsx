@@ -11,6 +11,7 @@ import { createRoom, guestId } from '../../lib/guessWhoRooms.js'
 import { useGuessWhoRoom } from './useGuessWhoRoom.js'
 import { useReactions } from './Reactions.jsx'
 import RoomView from './RoomView.jsx'
+import RuleArt from './RuleArt.jsx'
 
 // null tant que l'auth n'est pas connue : sinon on rejoindrait d'abord en
 // invité puis, la session arrivée, une 2e fois avec l'id Discord (place fantôme).
@@ -103,6 +104,7 @@ function Home({ identity }) {
         <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'clamp(14px,3vw,28px)', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))' }}>
           {RULES.map(([title, text], i) => (
             <li key={title}>
+              <RuleArt rule={title} />
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
                 <span style={{ fontFamily: F.display, fontWeight: 700, fontSize: 15, color: T.accent }}>{i + 1}</span>
                 <span style={{ fontFamily: F.display, fontWeight: 700, fontSize: 19, letterSpacing: '-0.02em', color: T.textHi }}>{title}</span>
