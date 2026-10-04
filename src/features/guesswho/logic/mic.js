@@ -2,7 +2,8 @@
 
 // Contraintes getUserMedia : le micro choisi par le joueur, sinon celui du système.
 // Anti-larsen gardé (le son du tour peut sortir du haut-parleur), mais ni
-// réduction de bruit (elle mange les cris) ni gain auto (il « pompe » sur les
+// réduction de bruit du navigateur (elle mange les cris : on passe par RNNoise,
+// src/lib/guessWhoDenoise.js, désactivable) ni gain auto (il « pompe » sur les
 // cris) : le volume est égalisé après coup, pareil pour tout le monde.
 export function micConstraints(deviceId) {
   return {

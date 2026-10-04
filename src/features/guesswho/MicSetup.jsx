@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Btn } from './manga.jsx'
 import { T, F, LINE, RADIUS } from './theme.js'
-import { acquireMic, audioCtx, getMicId, listMics, micError, releaseMic, setMicId, unlockAudio } from '../../lib/guessWhoAudio.js'
+import { acquireMic, audioCtx, getDenoise, getMicId, listMics, micDenoised, micError, releaseMic, setDenoiseLive, setMicId, unlockAudio } from '../../lib/guessWhoAudio.js'
 import { levelOf, micLabel } from './logic/mic.js'
 
 const ERRORS = {
@@ -23,6 +23,8 @@ export default function MicSetup({ compact = false, onError }) {
   const [error, setError] = useState(null)
   const [heard, setHeard] = useState(false)
   const [silent, setSilent] = useState(false)
+  const [denoise, setDenoiseOn] = useState(getDenoise)
+  const [denoiseOk, setDenoiseOk] = useState(null) // null = pas encore testé
   const bar = useRef(null)
   const live = useRef({ held: false, source: null, raf: 0, timer: 0, n: 0 })
 
@@ -70,6 +72,7 @@ export default function MicSetup({ compact = false, onError }) {
       live.current.source = source
       live.current.raf = requestAnimationFrame(tick)
       live.current.timer = setTimeout(() => { if (peak < 0.06) setSilent(true) }, 4000)
+      setDenoiseOk(getDenoise() ? micDenoised() : null)
       setDevices(await listMics())
       // micro réellement ouvert (peut différer si le choix précédent a disparu)
       const used = stream.getAudioTracks()[0]?.getSettings?.().deviceId || ''
@@ -80,6 +83,17 @@ export default function MicSetup({ compact = false, onError }) {
       setError(ERRORS[micError(e)] || ERRORS.mic_denied)
       setStatus('error')
     }
+  }
+
+  const toggleDenoise = async () => {
+    const on = !denoise
+    setDenoiseOn(on)
+    unlockAudio()
+    const wasLive = status === 'live'
+    stop()
+    await setDenoiseLive(on).catch(() => {})
+    if (wasLive) start()
+    else setDenoiseOk(null)
   }
 
   const choose = (id) => {
@@ -113,13 +127,33 @@ export default function MicSetup({ compact = false, onError }) {
         </label>
       )}
 
+      {/* Réduction de bruit (RNNoise) : clavier, ventilo, télé… effacés, la voix reste. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button type="button" role="switch" aria-checked={denoise} aria-label="Réduction de bruit" className="gw-focus gw-btn" onClick={toggleDenoise}
+          style={{
+            flexShrink: 0, width: 46, height: 28, borderRadius: RADIUS.pill, border: LINE, cursor: 'pointer', padding: 3,
+            background: denoise ? T.accent : T.surface, display: 'flex', justifyContent: denoise ? 'flex-end' : 'flex-start',
+            transition: 'background 160ms ease', touchAction: 'manipulation',
+          }}>
+          <span aria-hidden style={{ width: 20, height: 20, borderRadius: '50%', background: denoise ? T.onAccent : T.textMute }} />
+        </button>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: 'block', fontWeight: 600, fontSize: 14.5, color: T.textHi }}>Réduction de bruit</span>
+          <span style={{ display: 'block', fontSize: 13, color: denoiseOk === false ? T.danger : T.textMute, marginTop: 2 }}>
+            {!denoise ? 'Coupée : tout ce que capte le micro part dans la prise.'
+              : denoiseOk === false ? "Pas disponible sur ce navigateur : le micro est utilisé tel quel."
+              : 'Comme Krisp sur Discord : clavier, ventilo, télé effacés. Si tes cris sont coupés, désactive-la.'}
+          </span>
+        </span>
+      </div>
+
       {status === 'live' && (
         <>
           <div aria-label="Niveau du micro" style={{ height: 6, borderRadius: RADIUS.pill, background: T.line, overflow: 'hidden' }}>
             <div ref={bar} style={{ width: 0, height: '100%', borderRadius: RADIUS.pill, background: T.textFaint, transition: 'width 60ms linear' }} />
           </div>
           <p role="status" style={{ margin: 0, fontWeight: 600, fontSize: 14.5, color: heard ? T.ok : silent ? T.danger : T.textMute }}>
-            {heard ? 'Ton micro capte bien ✓' : silent ? "Aucun son capté : parle plus fort ou choisis un autre micro dans la liste." : 'Parle ou crie un coup pour tester…'}
+            {heard ? `Ton micro capte bien ✓${denoiseOk ? ' · bruit de fond filtré' : ''}` : silent ? "Aucun son capté : parle plus fort ou choisis un autre micro dans la liste." : 'Parle ou crie un coup pour tester…'}
           </p>
         </>
       )}

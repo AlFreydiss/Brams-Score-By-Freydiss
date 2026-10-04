@@ -258,32 +258,54 @@ export function micError(e) {
 
 // ── Micro partagé (enregistrement + réglage) ──────────────────────────────────
 // Compteur de détenteurs : le micro se ferme quand plus personne ne le tient.
-const mic = { stream: null, holders: 0, opening: null, subs: new Set() }
+// raw = flux du micro ; stream = ce qu'on enregistre (raw, ou raw débruité).
+const mic = { stream: null, raw: null, cleanup: null, denoised: false, holders: 0, opening: null, subs: new Set() }
 const isLive = (s) => !!s && s.getAudioTracks().some((t) => t.readyState === 'live')
 const deviceOf = (s) => s?.getAudioTracks()[0]?.getSettings?.().deviceId || ''
 function emitMic() { mic.subs.forEach((cb) => cb(currentMic())) }
 function closeMic() {
   const had = !!mic.stream
+  mic.cleanup?.()
+  mic.raw?.getTracks().forEach((t) => t.stop())
   mic.stream?.getTracks().forEach((t) => t.stop())
-  mic.stream = null
+  mic.stream = null; mic.raw = null; mic.cleanup = null; mic.denoised = false
   if (had) emitMic()
 }
 
-export function currentMic() { return isLive(mic.stream) ? mic.stream : null }
+export function currentMic() { return isLive(mic.stream) && isLive(mic.raw) ? mic.stream : null }
 export function onMicChange(cb) { mic.subs.add(cb); return () => mic.subs.delete(cb) }
+// Le micro ouvert passe-t-il vraiment par la réduction de bruit ? (repli possible)
+export function micDenoised() { return !!currentMic() && mic.denoised }
+
+// ── Réduction de bruit (RNNoise, façon Krisp) — activée par défaut ────────────
+const DENOISE_KEY = 'gw_denoise'
+export function getDenoise() {
+  try { return localStorage.getItem(DENOISE_KEY) !== '0' } catch { return true }
+}
+export function setDenoise(on) {
+  try { localStorage.setItem(DENOISE_KEY, on ? '1' : '0') } catch {}
+}
 
 async function ensureMic(deviceId) {
-  if (isLive(mic.stream) && (!deviceId || deviceId === deviceOf(mic.stream))) return mic.stream
+  if (currentMic() && (!deviceId || deviceId === deviceOf(mic.raw))) return mic.stream
   if (mic.opening) return mic.opening
   mic.opening = (async () => {
     closeMic()
-    const s = await openMic(deviceId)
-    if (!mic.holders) { s.getTracks().forEach((t) => t.stop()); throw Object.assign(new Error('released'), { name: 'AbortError' }) }
+    const raw = await openMic(deviceId)
+    let out = raw, cleanup = null
+    if (getDenoise()) {
+      const d = await import('./guessWhoDenoise.js').then((m) => m.denoiseStream(raw, audioCtx())).catch(() => null)
+      if (d) { out = d.stream; cleanup = d.close }
+    }
+    if (!mic.holders) {
+      cleanup?.(); raw.getTracks().forEach((t) => t.stop())
+      throw Object.assign(new Error('released'), { name: 'AbortError' })
+    }
     // iPhone coupe le micro en arrière-plan / pendant un appel : on le rouvrira.
-    s.getAudioTracks().forEach((t) => t.addEventListener('ended', () => { if (mic.stream === s) { mic.stream = null; emitMic() } }))
-    mic.stream = s
+    raw.getAudioTracks().forEach((t) => t.addEventListener('ended', () => { if (mic.raw === raw) closeMic() }))
+    mic.raw = raw; mic.stream = out; mic.cleanup = cleanup; mic.denoised = !!cleanup
     emitMic()
-    return s
+    return out
   })().finally(() => { mic.opening = null })
   return mic.opening
 }
@@ -304,6 +326,13 @@ export function releaseMic() {
 }
 // Change d'appareil sans lâcher le micro (réglage).
 export async function switchMic(deviceId) {
+  closeMic()
+  return ensureMic(deviceId)
+}
+// Active / coupe la réduction de bruit ; rouvre le micro s'il est tenu.
+export async function setDenoiseLive(on, deviceId = getMicId()) {
+  setDenoise(on)
+  if (!mic.holders) return null
   closeMic()
   return ensureMic(deviceId)
 }
