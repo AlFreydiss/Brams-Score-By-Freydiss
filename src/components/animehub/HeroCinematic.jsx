@@ -111,7 +111,12 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) saturate(1.05)', transform: 'scale(1.1)' }}
           />
         )}
+        {/* Parallaxe : le hub pose --hx/--hy (-1..1) au mouvement de la souris,
+            le visuel glisse un peu à l'opposé du texte. Ken Burns sur l'image
+            active seulement (la classe relance l'animation à chaque passage). */}
+        <div className="ah2-plx" style={{ position: 'absolute', inset: -24 }}>
         {load && <img decoding="async"
+          className={active && !lowRes ? 'ah2-kb' : undefined}
           loading={active ? 'eager' : 'lazy'}
           fetchPriority={active ? 'high' : 'low'}
           src={keyart} srcSet={srcSet} sizes={sizes}
@@ -122,6 +127,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
             maxWidth: nat.w, maxHeight: '100%', width: 'auto', height: 'auto', filter: 'saturate(1.05)',
           } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: anime.keyartPosition || 'center 20%', filter: 'saturate(1.05)' }}
         />}
+        </div>
       </div>
       {/* Scrim gauche (lisibilité du synopsis) + voile bas LÉGER (le masque fait
           le gros du fondu) + lueur d'accent au ras du contenu. */}
@@ -142,7 +148,7 @@ export default function HeroCinematic({ anime, rating = null, topRank = null, on
         transform: active ? 'none' : 'translateY(10px)',
         transition: active ? 'opacity 420ms ease 180ms, transform 520ms cubic-bezier(.22,1,.36,1) 180ms' : 'opacity 120ms ease',
         pointerEvents: active ? 'auto' : 'none',
-      }} className="ah2-fade" aria-hidden={!active}>
+      }} className={active ? 'ah2-fade ah2-cascade' : 'ah2-fade'} aria-hidden={!active}>
         {/* Eyebrow de marque : mark épées laiton + type (seule exception capitales espacées) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <span aria-hidden style={{ color: theme.accent, fontSize: 16, lineHeight: 1 }}>⚔</span>

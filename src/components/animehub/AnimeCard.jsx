@@ -16,7 +16,7 @@ export function BackdropCard({ anime, progressPct = 0, width = 300, onOpen }) {
   const fresh = anime.badge === 'À JOUR' || anime.badge === 'NOUVEAU' || /^\+\d+ NOUVEAU/.test(anime.badge || '')
   return (
     <div
-      role="button" tabIndex={0} aria-label={anime.title} className="ah2-card"
+      role="button" tabIndex={0} aria-label={anime.title} className="ah2-card" data-preview={anime.id}
       onClick={() => onOpen?.(anime)}
       onKeyDown={e => { if (e.key === 'Enter') onOpen?.(anime) }}
       style={{ width, flexShrink: 0, cursor: 'pointer', fontFamily: FONT_BODY, outline: 'none' }}
@@ -100,6 +100,7 @@ export default function AnimeCard({
   return (
     <div
       ref={cardRef}
+      data-preview={anime.id}
       role="button"
       tabIndex={0}
       aria-label={anime.title}

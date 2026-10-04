@@ -16,6 +16,9 @@ import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 import ScanCard, { ScanResumeCard } from './ScanCard.jsx'
 import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
+import { AnimatePresence } from 'framer-motion'
+import HoverPreview from './HoverPreview.jsx'
+import { genreRows, films, bingeable, similarTo } from './rows.js'
 // Image des cartes 16:9 : keyart, sinon bannière officielle, sinon l'affiche
 // portrait (floue une fois étirée — c'était le cas de presque toutes).
 const wideArt = a => (hasKeyart(a.id) ? keyartSrc(a.id, 960) : bannerSrc(a.id) || a.coverImage)
@@ -35,6 +38,24 @@ const HERO_IDS = ['onepiece', 'kaguya', 'kaiju-no-8', 'bleach', 'violet-evergard
 const NEW_IDS = new Set(['koe-no-katachi', 'fgo-babylonia', 'quintuplets', 'kny', 'kaiju-no-8', 'fireforce', 'bleach', 'bluelock', 'domestic-na-kanojo', 'kaguya', 'hxh'])
 const displayBadge = (a) => (a.badge === 'NOUVEAU' ? (NEW_IDS.has(a.id) ? 'NOUVEAU' : null) : a.badge)
 const FAVS_KEY = 'animehub_favs'
+
+// Styles de la transition hub → page série. Posés dans <head> une fois pour
+// toutes : le <style> du hub disparaît avec lui, au milieu de l'animation.
+function installViewTransitionCss() {
+  if (document.getElementById('ah2-vt-css')) return
+  const s = document.createElement('style')
+  s.id = 'ah2-vt-css'
+  s.textContent = `
+    ::view-transition-old(root) { animation: ah2vt-out .32s ease both }
+    ::view-transition-new(root) { animation: ah2vt-in .5s cubic-bezier(.22,1,.36,1) both }
+    ::view-transition-group(ah2-pick) { animation-duration: .55s; z-index: 2 }
+    ::view-transition-old(ah2-pick) { animation: ah2vt-pick .55s cubic-bezier(.4,0,.2,1) both }
+    @keyframes ah2vt-out { to { opacity: 0; transform: scale(.985) } }
+    @keyframes ah2vt-in { from { opacity: 0; transform: scale(1.02) } }
+    @keyframes ah2vt-pick { 40% { opacity: 1 } to { opacity: 0; transform: scale(2.2); filter: blur(8px) } }
+  `
+  document.head.appendChild(s)
+}
 const NORM = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 const SCAN_BY_ANIME = new Map(SCANS.filter(s => s.animeId).map(s => [s.animeId, s]))
 const TOTAL_CHAPTERS = SCANS.reduce((n, s) => n + s.chapters, 0)
@@ -194,10 +215,58 @@ export default function AnimeHubV2(props) {
   // Les animes s'ouvrent par callbacks passes en props ; les scans ont de
   // vraies routes /manga/<slug>, d'ou le navigate.
   const navigate = useNavigate()
+  // Transition vers la page série : l'affiche cliquée grandit et s'efface
+  // pendant que la page arrive (View Transitions, Chrome/Edge/Safari 18).
+  // La page n'existe qu'après prepareAnime (≤ 1,5 s) : on attend que le hub
+  // soit démonté avant la capture « après ».
+  const pressedArt = useRef(null)
   const openAnime = (a) => {
     logAnimeOpen(a.id, discordId) // alimente le « Top du moment » serveur (fire-and-forget)
-    open(a.id)?.()
+    setPreview(null)
+    const go = open(a.id)
+    if (!go) return
+    const root = rootRef.current
+    if (!document.startViewTransition || reduced || !root) { go(); return }
+    const el = pressedArt.current?.closest(`[data-preview="${CSS.escape(a.id)}"]`)?.querySelector('.ah2-art') || null
+    if (el) el.style.viewTransitionName = 'ah2-pick'
+    installViewTransitionCss()
+    const vt = document.startViewTransition(() => new Promise(res => {
+      go()
+      const t0 = performance.now()
+      // setTimeout et pas rAF : le rendu est gelé pendant la mise à jour d'une
+      // View Transition, les rAF n'y tournent pas (la transition expirait).
+      const tick = () => (!root.isConnected || performance.now() - t0 > 1600 ? setTimeout(res, 30) : setTimeout(tick, 25))
+      setTimeout(tick, 25)
+    }))
+    vt.ready.catch(() => {})
+    vt.finished.catch(() => {}).finally(() => { if (el) el.style.viewTransitionName = '' })
   }
+
+  // ── Aperçu au survol (souris) : délégation sur data-preview ──
+  const finePointer = useMemo(() => !!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches, [])
+  const [preview, setPreview] = useState(null) // { anime, rect }
+  const pvTimer = useRef(0)
+  const pvCard = useRef(null)
+  const hidePreview = (delay = 140) => {
+    clearTimeout(pvTimer.current)
+    pvTimer.current = setTimeout(() => { pvCard.current = null; setPreview(null) }, delay)
+  }
+  const onHoverCards = (e) => {
+    if (!finePointer) return
+    if (e.target.closest?.('.ah2-pv')) { clearTimeout(pvTimer.current); return }
+    const card = e.target.closest?.('[data-preview]')
+    if (card === pvCard.current) return
+    pvCard.current = card
+    clearTimeout(pvTimer.current)
+    if (!card) { hidePreview(); return }
+    const a = ANIMES.find(x => x.id === card.dataset.preview)
+    if (!a) return
+    pvTimer.current = setTimeout(() => {
+      if (pvCard.current !== card || !card.isConnected) return
+      setPreview({ anime: a, rect: card.querySelector('.ah2-art')?.getBoundingClientRect() || card.getBoundingClientRect() })
+    }, preview ? 160 : 520)
+  }
+  useEffect(() => () => clearTimeout(pvTimer.current), [])
 
   // ── Vue Animés / Scans, portée par l'URL (?vue=scans) : le bouton Retour du
   // lecteur y ramène, et le lien se partage. replace : pas une entrée
@@ -301,11 +370,9 @@ export default function AnimeHubV2(props) {
   const reduced = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, [])
   // Le raccourci « / » n'existe qu'avec un clavier : pas de hint sur écran tactile
   const kbdHint = useMemo(() => (window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ? '  ( / )' : ''), [])
-  useEffect(() => {
-    if (reduced || paused || slides.length < 2) return
-    const t = setInterval(() => setSlide(s => (s + 1) % slides.length), 7000)
-    return () => clearInterval(t)
-  }, [reduced, paused, slides.length])
+  // Rotation : c'est la fin du remplissage du segment actif (.ah2-segfill, 7 s)
+  // qui passe au slide suivant — la pause au survol fige donc les deux ensemble.
+  const nextSlide = () => setSlide(s => (s + 1) % slides.length)
 
   // ── Toolbar : recherche / segmented / genres / tri ──
   const [query, setQuery] = useState('')
@@ -394,7 +461,14 @@ export default function AnimeHubV2(props) {
   }, [topCounts])
 
   const news = ANIMES.filter(a => displayBadge(a) === 'NOUVEAU')
-  const rowGenres = ['Action', 'Romance', 'Drame', 'Science-fiction']
+  const rowGenres = ['Action', 'Romance', 'Drame', 'Surnaturel', 'Fantasy', 'Science-fiction', 'Musique', 'Comédie']
+  // Rangées éditoriales (rows.js) : films, séries courtes, « parce que tu
+  // regardes X », puis genres sans doublon (les films ont déjà leur rangée).
+  const filmList = useMemo(() => films(ANIMES), [])
+  const bingeList = useMemo(() => bingeable(ANIMES, episodeCount), [])
+  const genreRowList = useMemo(() => genreRows(ANIMES, rowGenres, { skip: new Set(filmList.map(a => a.id)) }), [filmList])
+  const becauseSeed = resume[0] || null
+  const becauseList = useMemo(() => similarTo(becauseSeed, ANIMES.filter(a => (progress[a.id]?.pct || 0) === 0)), [becauseSeed?.id])
 
   // Index catalogue : ns/slug → entrée ANIMES. Le catalogue est keyé par `id`
   // (ex. 'onepiece'). Les RPC renvoient un `ns` que l'on mappe ici.
@@ -478,7 +552,10 @@ export default function AnimeHubV2(props) {
     <div
       ref={rootRef}
       className="ah2-root"
+      onMouseOver={onHoverCards}
+      onPointerDown={e => { pressedArt.current = e.target }}
       onScroll={e => {
+        if (pvCard.current) hidePreview(0)
         // throttle rAF : un seul recalcul par frame, evite le reflow (getBoundingClientRect)
         // a chaque evenement de scroll qui faisait ramer toute la page.
         const el = e.currentTarget
@@ -551,6 +628,31 @@ export default function AnimeHubV2(props) {
            qui apparaît/disparaît) → plus de hero trop haut ni de scroll qui se
            bat avec le toolbar en paysage. Fallback 100vh pour vieux navigateurs. */
         .ah2-hero { height: 100vh; height: 100dvh; }
+        /* Mur de couvertures de la vue Scans : dérive lente, comme un présentoir qui défile. */
+        @keyframes ah2-wall { from { transform: rotate(-4deg) scale(1.15) translateY(0) } to { transform: rotate(-4deg) scale(1.15) translateY(-70px) } }
+        .ah2-scanwall { animation: ah2-wall 26s ease-in-out infinite alternate }
+
+        /* ── Hero vivant ──
+           Ken Burns : zoom lent du visuel actif. Parallaxe : --hx/--hy posés
+           par le hub au mouvement de la souris (le visuel glisse à l'opposé).
+           Cascade : eyebrow, titre, méta, synopsis, boutons entrent l'un après l'autre. */
+        @keyframes ah2-kb { from { transform: scale(1.02) } to { transform: scale(1.11) } }
+        .ah2-kb { animation: ah2-kb 16s cubic-bezier(.25,.1,.25,1) both; transform-origin: 60% 35% }
+        .ah2-plx { transform: translate3d(calc(var(--hx, 0) * -16px), calc(var(--hy, 0) * -10px), 0); transition: transform .9s cubic-bezier(.22,1,.36,1) }
+        @keyframes ah2-up { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: none } }
+        .ah2-cascade > * { animation: ah2-up .7s cubic-bezier(.22,1,.36,1) both }
+        .ah2-cascade > :nth-child(1) { animation-delay: .15s }
+        .ah2-cascade > :nth-child(2) { animation-delay: .24s }
+        .ah2-cascade > :nth-child(3) { animation-delay: .34s }
+        .ah2-cascade > :nth-child(4) { animation-delay: .42s }
+        .ah2-cascade > :nth-child(5) { animation-delay: .5s }
+        .ah2-cascade > :nth-child(n+6) { animation-delay: .58s }
+        @keyframes ah2-seg { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+        .ah2-segfill { animation: ah2-seg 7s linear both }
+        /* Téléphones (html.low-end) : toutes les animations y tombent à 0 ms —
+           le segment, lui, doit garder ses 7 s, sinon les slides défilent en boucle. */
+        html.low-end .ah2-keep { animation-duration: 7s !important }
+        @media (prefers-reduced-motion: reduce) { .ah2-kb, .ah2-cascade > * { animation: none !important } .ah2-plx { transform: none !important } }
         @media (prefers-reduced-motion: reduce) { .ah2-fade { transition: none !important } .ah2-root { transition: none !important; transform: none !important; opacity: 1 !important } .ah2-enter-1, .ah2-enter-2 { animation: none !important } }
         /* Scrollbar sombre (la scrollbar Windows par défaut faisait une barre blanche) */
         .ah2-root { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; }
@@ -595,7 +697,16 @@ export default function AnimeHubV2(props) {
 
       {/* ── HERO rotatif (masqué pendant une recherche) ── */}
       {!searching && mode === 'animes' && (
-        <div className="ah2-enter-1" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} style={{ position: 'relative' }}>
+        <div className="ah2-enter-1 ah2-herowrap" onMouseEnter={() => setPaused(true)}
+          onMouseLeave={e => { setPaused(false); e.currentTarget.style.setProperty('--hx', 0); e.currentTarget.style.setProperty('--hy', 0) }}
+          onMouseMove={e => {
+            // Parallaxe : variables CSS seulement, aucun rendu React par mouvement.
+            if (!finePointer || reduced) return
+            const r = e.currentTarget.getBoundingClientRect()
+            e.currentTarget.style.setProperty('--hx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3))
+            e.currentTarget.style.setProperty('--hy', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3))
+          }}
+          style={{ position: 'relative' }}>
           {slides.map((a, i) => (
             <div key={a.id} className="ah2-fade" style={{
               transition: 'opacity 700ms ease', opacity: i === slide ? 1 : 0,
@@ -612,11 +723,20 @@ export default function AnimeHubV2(props) {
           {/* Indicateurs segments — au-dessus de la zone de chevauchement */}
           <div style={{ position: 'absolute', bottom: 140, left: GUTTER, zIndex: 3, display: 'flex', gap: 6 }}>
             {slides.map((s, i) => (
-              <button key={s.id} aria-label={`Slide ${i + 1}`} onClick={() => setSlide(i)} style={{
-                width: 34, height: 3, borderRadius: 2, border: 'none', cursor: 'pointer', padding: 0,
-                background: i === slide ? themeFor(s).accent : 'rgba(255,255,255,0.2)',
-                transition: 'background 300ms ease',
-              }} />
+              // Le segment actif se remplit pendant les 7 s du slide (en pause au survol) ;
+              // la zone cliquable déborde du trait fin pour rester facile à viser.
+              <button key={s.id} aria-label={`${s.title} (${i + 1}/${slides.length})`} aria-current={i === slide} onClick={() => setSlide(i)} style={{
+                width: 34, height: 15, border: 'none', cursor: 'pointer', padding: '6px 0', background: 'none',
+              }}>
+                <span style={{ display: 'block', position: 'relative', height: 3, borderRadius: 2, overflow: 'hidden', background: i < slide ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.2)' }}>
+                  {i === slide && (
+                    <span key={slide} className={reduced ? undefined : 'ah2-segfill ah2-keep'} style={{
+                      position: 'absolute', inset: 0, background: themeFor(s).accent, transformOrigin: 'left',
+                      animationPlayState: paused ? 'paused' : 'running',
+                    }} onAnimationEnd={nextSlide} />
+                  )}
+                </span>
+              </button>
             ))}
           </div>
         </div>
@@ -805,6 +925,23 @@ export default function AnimeHubV2(props) {
                   {scansResume.map(s => <ScanResumeCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
                 </AnimeRow>
               )}
+              {SCANS.filter(s => s.status === 'encours').length >= 3 && (
+                <AnimeRow title="🟢 En parution · nouveaux chapitres chaque semaine" count={SCANS.filter(s => s.status === 'encours').length} onSeeAll={() => setSeg('parution')}>
+                  {SCANS.filter(s => s.status === 'encours').map(s => <ScanCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
+                </AnimeRow>
+              )}
+              <AnimeRow title="★ Les mieux notés" count={Math.min(8, SCANS.length)}>
+                {[...SCANS].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8).map((s, i) => (
+                  <div key={s.slug} className="ah2-top" style={{ display: 'flex', alignItems: 'flex-start', flexShrink: 0 }}>
+                    <span aria-hidden className="ah2-rank" style={{
+                      height: 213, display: 'flex', alignItems: 'flex-end', marginRight: i === 0 ? -4 : -20, paddingLeft: i === 0 ? 10 : 0,
+                      fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 176, lineHeight: 0.78, letterSpacing: '-0.09em',
+                      color: C.bg0, WebkitTextStroke: `2.5px ${i < 3 ? C.brass : 'rgba(255,255,255,0.38)'}`, userSelect: 'none',
+                    }}>{i + 1}</span>
+                    <div style={{ position: 'relative', zIndex: 1 }}><ScanCard scan={s} progress={scanProg[s.slug]} onOpen={openScan} width={142} /></div>
+                  </div>
+                ))}
+              </AnimeRow>
               <section style={{ padding: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, margin: '6px 0 16px' }}>
                   <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 600, fontSize: 18, margin: 0 }}>Tous les scans</h2>
@@ -970,18 +1107,35 @@ export default function AnimeHubV2(props) {
               {SCANS.map(s => <ScanCard key={s.slug} scan={s} progress={scanProg[s.slug]} onOpen={openScan} />)}
             </AnimeRow>
 
-            {rowGenres.map(g => {
-              const list = ANIMES.filter(a => (a.genres || []).includes(g))
-              if (list.length < 3) return null
-              return (
-                <AnimeRow key={g} title={g} count={list.length} onSeeAll={() => setGenreSel(new Set([g]))}>
-                  {list.map(a => (
-                    <BackdropCard key={a.id} anime={{ ...a, badge: badgeOf(a) }} width={300}
-                      progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
-                  ))}
-                </AnimeRow>
-              )
-            })}
+            {becauseSeed && becauseList.length >= 3 && (
+              <AnimeRow title={`Parce que tu regardes ${becauseSeed.title}`} count={becauseList.length}>
+                {becauseList.map(a => card(a, 158))}
+              </AnimeRow>
+            )}
+
+            {filmList.length >= 3 && (
+              <AnimeRow title="🎬 Films" count={filmList.length}>
+                {filmList.map(a => (
+                  <BackdropCard key={a.id} anime={{ ...a, badge: badgeOf(a) }} width={300}
+                    progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
+                ))}
+              </AnimeRow>
+            )}
+
+            {bingeList.length >= 3 && (
+              <AnimeRow title="À binge en un week-end · 25 épisodes max" count={bingeList.length}>
+                {bingeList.map(a => card(a, 158))}
+              </AnimeRow>
+            )}
+
+            {genreRowList.map(({ genre: g, list }) => (
+              <AnimeRow key={g} title={g} count={list.length} onSeeAll={() => setGenreSel(new Set([g]))}>
+                {list.map(a => (
+                  <BackdropCard key={a.id} anime={{ ...a, badge: badgeOf(a) }} width={300}
+                    progressPct={progress[a.id]?.pct || 0} onOpen={openAnime} />
+                ))}
+              </AnimeRow>
+            ))}
 
             {/* Tous les animés — grille paginée par 21 (padding:0 vs section global) */}
             <section style={{ padding: 0 }}>
@@ -1007,6 +1161,27 @@ export default function AnimeHubV2(props) {
       </div>
       </div>{/* fin bloc contenu chevauchant */}
       <LongPressHint active={mode === 'animes' && !searching} />
+      <AnimatePresence>
+        {preview && (() => {
+          const a = preview.anime
+          const sc = SCAN_BY_ANIME.get(a.id)
+          const p = progress[a.id]
+          const n = episodeCount(a.id)
+          const meta = [
+            p?.pct > 0 ? `${p.pct} % vu` : null,
+            a.year || null,
+            a.type === 'Film' ? 'Film' : n > 0 ? `${n} épisodes` : 'Série',
+            sc ? `${sc.chapters} ch. en scan` : null,
+          ].filter(Boolean)
+          return (
+            <HoverPreview key={a.id} anime={a} rect={preview.rect} art={wideArt(a)} meta={meta}
+              progressPct={p?.pct || 0} inList={favs.has(a.id)}
+              onWatch={openAnime} onToggleList={toggleFav}
+              onRead={sc ? () => openScan(sc, scanProg[sc.slug].current ?? sc.animeEnd?.next ?? null) : undefined}
+              onEnter={() => clearTimeout(pvTimer.current)} />
+          )
+        })()}
+      </AnimatePresence>
     </div>
   )
 }
