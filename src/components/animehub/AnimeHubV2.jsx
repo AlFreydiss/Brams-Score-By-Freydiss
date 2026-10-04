@@ -19,6 +19,7 @@ import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
 import { AnimatePresence, motion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import HoverPreview from './HoverPreview.jsx'
+import SearchSuggest from './SearchSuggest.jsx'
 import { genreRows, films, bingeable, similarTo } from './rows.js'
 // Image des cartes 16:9 : keyart, sinon bannière officielle, sinon l'affiche
 // portrait (floue une fois étirée — c'était le cas de presque toutes).
@@ -444,6 +445,45 @@ export default function AnimeHubV2(props) {
   }, [debounced, seg, sort, scanProg])
   // Recherche depuis la vue Animés : les scans correspondants suivent les résultats.
   const scanHits = useMemo(() => (debounced.trim() ? SCANS.filter(s => scanMatches(s, debounced)) : []), [debounced])
+
+  // ── Résultats instantanés (sans attendre le debounce) : animés puis scans de
+  // la vue courante d'abord, un titre qui COMMENCE par la saisie passe devant.
+  const [sgOpen, setSgOpen] = useState(false)
+  const [sgActive, setSgActive] = useState(-1)
+  const { suggestions, suggestTotal } = useMemo(() => {
+    const q = NORM(query.trim())
+    if (!q) return { suggestions: [], suggestTotal: 0 }
+    const starts = t => (NORM(t).startsWith(q) ? 0 : 1)
+    const animeHits = ANIMES
+      .filter(a => NORM(`${a.title} ${a.subtitle} ${(a.genres || []).join(' ')} ${(SEARCH_ALIASES[a.id] || []).join(' ')}`).includes(q))
+      .sort((a, b) => starts(a.title) - starts(b.title))
+      .map(a => {
+        const p = progress[a.id]?.pct || 0
+        const n = episodeCount(a.id)
+        return {
+          key: `a-${a.id}`, kind: 'anime', id: a.id, title: a.title, cover: a.coverImage, pct: p,
+          meta: [a.type === 'Film' ? 'Film' : n > 0 ? `${n} épisodes` : 'Série', a.year, p > 0 ? `${p} % vu` : (a.genres || []).slice(0, 2).join(' · ')].filter(Boolean).join(' · '),
+        }
+      })
+    const scanHitsNow = SCANS
+      .filter(s => scanMatches(s, query.trim()))
+      .sort((a, b) => starts(a.title) - starts(b.title))
+      .map(s => {
+        const pr = scanProg[s.slug]
+        return {
+          key: `s-${s.slug}`, kind: 'scan', slug: s.slug, title: s.title, cover: s.cover, pct: pr.pct || 0, resume: pr.current,
+          meta: [`Scan · ${s.chapters} chapitres`, s.author, s.status === 'encours' ? 'en parution' : null].filter(Boolean).join(' · '),
+        }
+      })
+    const [first, second] = mode === 'scans' ? [scanHitsNow, animeHits] : [animeHits, scanHitsNow]
+    const items = [...first.slice(0, 6), ...second.slice(0, 4)]
+    return { suggestions: items, suggestTotal: first.length + second.length }
+  }, [query, mode, progress, scanProg])
+  const pickSuggestion = (it) => {
+    setSgOpen(false); setSgActive(-1)
+    if (it.kind === 'scan') { const s = SCANS.find(x => x.slug === it.slug); if (s) openScan(s, scanProg[s.slug].current) }
+    else { const a = ANIMES.find(x => x.id === it.id); if (a) openAnime(a) }
+  }
   const scanStats = useMemo(() => ({
     encours: SCANS.filter(s => scanStatus(scanProg[s.slug]) === 'encours').length,
     lus: SCANS.reduce((n, s) => n + scanProg[s.slug].read, 0),
@@ -846,16 +886,33 @@ export default function AnimeHubV2(props) {
             <span aria-hidden style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: C.faint, fontSize: 13 }}>⌕</span>
             <input
               ref={searchRef}
-              value={query} onChange={e => setQuery(e.target.value)} placeholder={(mode === 'scans' ? 'Titre, auteur…' : 'Rechercher un animé…') + kbdHint}
+              value={query} onChange={e => { setQuery(e.target.value); setSgOpen(true); setSgActive(-1) }} placeholder={(mode === 'scans' ? 'Titre, auteur…' : 'Rechercher un animé…') + kbdHint}
               aria-label="Rechercher"
+              role="combobox" aria-expanded={sgOpen && suggestions.length > 0} aria-controls="ah2-suggest" aria-autocomplete="list"
+              aria-activedescendant={sgActive >= 0 ? `ah2-sg-${sgActive}` : undefined}
+              onKeyDown={e => {
+                if (e.key === 'Escape') { setSgOpen(false); return }
+                if (!suggestions.length) return
+                if (e.key === 'ArrowDown') { e.preventDefault(); setSgOpen(true); setSgActive(i => Math.min(suggestions.length - 1, i + 1)) }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setSgActive(i => Math.max(-1, i - 1)) }
+                else if (e.key === 'Enter') {
+                  if (sgActive >= 0 && sgOpen) pickSuggestion(suggestions[sgActive])
+                  else { setSgOpen(false); e.currentTarget.blur() } // la grille filtrée prend le relais
+                }
+              }}
               style={{
                 width: '100%', boxSizing: 'border-box', padding: '9px 12px 9px 32px', borderRadius: 9,
                 background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.hair}`, outline: 'none',
                 color: C.text, fontSize: 13.5, fontFamily: FONT_BODY,
               }}
-              onFocus={e => { e.target.style.borderColor = C.brass }}
-              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)' }}
+              onFocus={e => { e.target.style.borderColor = C.brass; setSgOpen(true) }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)'; setSgOpen(false); setSgActive(-1) }}
             />
+            <AnimatePresence>
+              {sgOpen && query.trim().length > 0 && (
+                <SearchSuggest key="sg" items={suggestions} active={sgActive} onHover={setSgActive} onPick={pickSuggestion} total={suggestTotal} />
+              )}
+            </AnimatePresence>
           </div>
           {/* Filtres : display:contents sur grand écran (rien ne change), une
               seule ligne qui défile au doigt sur téléphone (avant : 3 lignes). */}
