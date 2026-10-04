@@ -16,7 +16,8 @@ import AnimeRow from './AnimeRow.jsx'
 import AnimeCard, { BackdropCard } from './AnimeCard.jsx'
 import ScanCard, { ScanResumeCard } from './ScanCard.jsx'
 import { hasKeyart, keyartSrc, bannerSrc } from './keyart.js'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
 import HoverPreview from './HoverPreview.jsx'
 import { genreRows, films, bingeable, similarTo } from './rows.js'
 // Image des cartes 16:9 : keyart, sinon bannière officielle, sinon l'affiche
@@ -244,6 +245,17 @@ export default function AnimeHubV2(props) {
 
   // ── Aperçu au survol (souris) : délégation sur data-preview ──
   const finePointer = useMemo(() => !!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches, [])
+  // Téléphone (même seuil que le CSS du hub) : tiroir des genres, swipe du hero.
+  const [narrow, setNarrow] = useState(() => !!window.matchMedia?.('(max-width: 768px)').matches)
+  useEffect(() => {
+    const mq = window.matchMedia?.('(max-width: 768px)')
+    if (!mq) return
+    const h = () => setNarrow(mq.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
+  // Swipe horizontal sur le hero : slide suivant / précédent.
+  const swipe = useRef(null)
   const [preview, setPreview] = useState(null) // { anime, rect }
   const pvTimer = useRef(0)
   const pvCard = useRef(null)
@@ -667,7 +679,23 @@ export default function AnimeHubV2(props) {
         /* La barre porte désormais l'onglet Animés / Scans : les stats passaient
            sur une seconde ligne sous 1700px. */
         @media (max-width: 1700px) { .ah2-stats { display: none !important; } }
+        .ah2-filters { display: contents }
         @media (max-width: 768px) {
+          /* Une seule ligne de filtres qui défile au doigt, bord à bord. */
+          .ah2-filters {
+            display: flex; flex: 1 1 100%; gap: 8px; align-items: center;
+            overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none;
+            margin: 0 -14px; padding: 0 14px; scroll-padding: 0 14px;
+            -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 28px), transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 28px), transparent);
+          }
+          .ah2-filters::-webkit-scrollbar { display: none }
+          .ah2-filters > * { flex-shrink: 0 }
+          .ah2-filters .ah2-seg { overflow: visible !important; }
+          .ah2-filters button, .ah2-filters select { min-height: 40px; white-space: nowrap; }
+          /* Hero raccourci : on voit la suite dès l'arrivée. */
+          .ah2-hero { height: 74vh; height: 74svh; min-height: 480px; }
+          .ah2-row h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
           /* Toolbar NON-sticky sur mobile : reste à sa place, défile avec la page
              (!important bat le position:sticky inline). Fond opaque pour rester lisible. */
           .ah2-toolbar { position: static !important; top: auto !important; background: ${C.panel} !important; }
@@ -705,6 +733,15 @@ export default function AnimeHubV2(props) {
             const r = e.currentTarget.getBoundingClientRect()
             e.currentTarget.style.setProperty('--hx', ((e.clientX - r.left) / r.width * 2 - 1).toFixed(3))
             e.currentTarget.style.setProperty('--hy', ((e.clientY - r.top) / r.height * 2 - 1).toFixed(3))
+          }}
+          onTouchStart={e => { const t = e.touches[0]; swipe.current = { x: t.clientX, y: t.clientY } }}
+          onTouchEnd={e => {
+            const s = swipe.current; swipe.current = null
+            const t = e.changedTouches[0]
+            if (!s || !t) return
+            const dx = t.clientX - s.x, dy = t.clientY - s.y
+            if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.4) return
+            setSlide(i => (i + (dx < 0 ? 1 : slides.length - 1)) % slides.length)
           }}
           style={{ position: 'relative' }}>
           {slides.map((a, i) => (
@@ -820,6 +857,9 @@ export default function AnimeHubV2(props) {
               onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.07)' }}
             />
           </div>
+          {/* Filtres : display:contents sur grand écran (rien ne change), une
+              seule ligne qui défile au doigt sur téléphone (avant : 3 lignes). */}
+          <div className="ah2-filters">
           {/* Segmented */}
           <div className="ah2-seg" style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 3 }}>
             {mode === 'scans'
@@ -833,7 +873,7 @@ export default function AnimeHubV2(props) {
               background: 'rgba(255,255,255,0.05)', border: `1px solid ${genreSel.size ? C.brass : C.hair}`,
               color: genreSel.size ? C.brass : C.dim,
             }}>Genres{genreSel.size ? ` · ${genreSel.size}` : ''}</button>
-            {genresOpen && (
+            {genresOpen && !narrow && (
               <>
                 <div onClick={() => setGenresOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 5 }} />
                 <div style={{
@@ -853,6 +893,40 @@ export default function AnimeHubV2(props) {
                 </div>
               </>
             )}
+            {/* Téléphone : tiroir du bas, porté sur <body> (la ligne de filtres
+                défile, elle couperait un menu déroulant). Genres en pastilles. */}
+            {narrow && createPortal(
+              <AnimatePresence>
+                {genresOpen && (
+                  <motion.div key="gs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setGenresOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 10040, background: 'rgba(3,5,10,.62)', display: 'flex', alignItems: 'flex-end' }}>
+                    <motion.div role="dialog" aria-label="Genres" onClick={e => e.stopPropagation()}
+                      initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 420, damping: 40 }}
+                      drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }}
+                      onDragEnd={(_, i) => { if (i.offset.y > 90 || i.velocity.y > 500) setGenresOpen(false) }}
+                      style={{ width: '100%', background: '#11151F', borderTop: `1px solid ${C.hair2}`, borderRadius: '18px 18px 0 0', padding: '10px 16px calc(18px + env(safe-area-inset-bottom))', fontFamily: FONT_BODY, color: C.text }}>
+                      <div aria-hidden style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,.22)', margin: '0 auto 14px' }} />
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <strong style={{ fontFamily: FONT_DISPLAY, fontSize: 17 }}>Genres</strong>
+                        {genreSel.size > 0 && <button onClick={() => setGenreSel(new Set())} style={{ background: 'none', border: 'none', color: C.dim, fontSize: 13, fontFamily: FONT_BODY }}>Effacer</button>}
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, maxHeight: '46vh', overflowY: 'auto' }}>
+                        {allGenres.map(g => {
+                          const on = genreSel.has(g)
+                          return (
+                            <button key={g} aria-pressed={on} onClick={() => setGenreSel(prev => { const n = new Set(prev); on ? n.delete(g) : n.add(g); return n })}
+                              style={{ minHeight: 40, padding: '0 14px', borderRadius: 999, fontSize: 14, fontFamily: FONT_BODY, fontWeight: 600, background: on ? C.brass : 'rgba(255,255,255,0.06)', color: on ? '#14110A' : C.text, border: `1px solid ${on ? C.brass : C.hair2}` }}>{g}</button>
+                          )
+                        })}
+                      </div>
+                      <button onClick={() => setGenresOpen(false)} style={{ width: '100%', marginTop: 16, minHeight: 48, borderRadius: 12, border: 'none', background: C.brass, color: '#14110A', fontSize: 15, fontWeight: 800, fontFamily: FONT_BODY }}>
+                        {genreSel.size ? `Voir ${filtered.length} animé${filtered.length > 1 ? 's' : ''}` : 'Fermer'}
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>, document.body)}
           </div>}
           {/* Tri */}
           <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Trier" style={{
@@ -885,6 +959,7 @@ export default function AnimeHubV2(props) {
               background: 'rgba(215,164,74,0.12)', border: `1px solid ${C.brass}55`, color: C.brass,
             }}>Mon Univers</button>
           )}
+          </div>
           <span style={{ flex: 1 }} />
           {/* Stats inline */}
           <span className="ah2-stats" style={{ fontSize: 12.5, color: 'rgba(238,240,246,.78)', whiteSpace: 'nowrap', textShadow: '0 1px 8px rgba(0,0,0,.6)' }}>
@@ -1123,7 +1198,7 @@ export default function AnimeHubV2(props) {
             )}
 
             {bingeList.length >= 3 && (
-              <AnimeRow title="À binge en un week-end · 25 épisodes max" count={bingeList.length}>
+              <AnimeRow title="À binge ce week-end" count={bingeList.length}>
                 {bingeList.map(a => card(a, 158))}
               </AnimeRow>
             )}
