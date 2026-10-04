@@ -6,7 +6,7 @@
 // Migration 20261002b (guesswho_sync / guesswho_stats) : utilisée si présente,
 // sinon on retombe sur les anciennes fonctions (le jeu marche sans elle).
 import { supabase } from './supabase.js'
-import { sbRpc } from './supabaseRest.js'
+import { sbRpc, SB_URL, SB_KEY } from './supabaseRest.js'
 import { isMissingFunction, isNetworkError } from '../features/guesswho/logic/clock.js'
 
 export { isNetworkError }
@@ -202,4 +202,18 @@ export function subscribeRoom(roomId, onChange, onStatus = () => {}) {
   const off = () => { closed = true; clearTimeout(retry); try { supabase.removeChannel(ch) } catch { /* déjà fermé */ } }
   off.reconnect = rebuild
   return off
+}
+
+// Sons du jeu (lecture publique, enabled seulement) — mode Entraînement.
+export async function fetchClips() {
+  if (!SB_URL || !SB_KEY) return { error: 'no_supabase', clips: [] }
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/guesswho_clips?select=id,title,anime,lang,kind,url,duration&enabled=eq.true&order=anime.asc,title.asc`, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+    })
+    if (!res.ok) return { error: `http_${res.status}`, clips: [] }
+    return { clips: await res.json() }
+  } catch (e) {
+    return { error: e?.message || 'network', clips: [] }
+  }
 }

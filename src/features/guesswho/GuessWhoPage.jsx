@@ -12,6 +12,8 @@ import { useGuessWhoRoom } from './useGuessWhoRoom.js'
 import { useReactions } from './Reactions.jsx'
 import RoomView from './RoomView.jsx'
 import RuleArt from './RuleArt.jsx'
+import Training from './Training.jsx'
+import { PALMARES_KEY, parsePalmares, soloSummary } from './logic/palmares.js'
 
 // null tant que l'auth n'est pas connue : sinon on rejoindrait d'abord en
 // invité puis, la session arrivée, une 2e fois avec l'id Discord (place fantôme).
@@ -127,13 +129,42 @@ function Home({ identity }) {
           <Btn variant="ghost" disabled={code.length !== 4} onClick={join}>Rejoindre</Btn>
         </div>
         {err && <p style={{ fontFamily: F.ui, fontWeight: 600, color: T.danger }}>{err}</p>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 18, paddingTop: 18, borderTop: LINE }}>
+          <Btn variant="ghost" onClick={() => navigate('/guess-who/entrainement')}>🎯 S'entraîner seul</Btn>
+          <span style={{ fontFamily: F.ui, fontSize: 14, color: T.textMute }}>Imite un son, le jeu te note sur 100. Pas besoin d'autres joueurs.</span>
+        </div>
         {identity && identity.userId.startsWith('guest_') && (
           <p style={{ margin: '14px 0 0', fontFamily: F.ui, fontWeight: 400, fontSize: 14, color: T.textMute }}>
             Pas besoin de compte : tu joues en invité. Connecte-toi avec Discord pour garder ton pseudo et ton avatar.
           </p>
         )}
       </PhaseFrame>
+      <Palmares />
     </div>
+  )
+}
+
+// Palmarès de cet appareil (parties et entraînement), masqué tant qu'il est vide.
+function Palmares() {
+  const [p] = useState(() => { try { return parsePalmares(localStorage.getItem(PALMARES_KEY)) } catch { return parsePalmares(null) } })
+  const solo = soloSummary(p)
+  if (!p.games && !p.soloPlays) return null
+  const cells = [
+    ['Parties', p.games], ['Victoires', p.wins], ['Podiums', p.podiums], ['Record de votes', p.bestVotes],
+    ['Sons entraînés', solo.clips], ['Meilleur score', solo.best],
+  ]
+  return (
+    <section aria-label="Ton palmarès" style={{ display: 'grid', gap: 12 }}>
+      <h2 style={{ margin: 0, fontFamily: F.display, fontWeight: 700, fontSize: 19, letterSpacing: '-0.02em', color: T.textHi }}>Ton palmarès</h2>
+      <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+        {cells.map(([k, v]) => (
+          <div key={k} style={{ padding: '14px 14px 12px', borderRadius: RADIUS.md, border: LINE, background: 'rgba(14,14,15,0.72)' }}>
+            <div style={{ fontFamily: F.display, fontWeight: 800, fontSize: 26, color: v ? T.textHi : T.textFaint, letterSpacing: '-0.03em' }}>{v}</div>
+            <div style={{ fontFamily: F.ui, fontSize: 13, color: T.textMute, marginTop: 2 }}>{k}</div>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -177,7 +208,8 @@ export default function GuessWhoPage() {
         <BarreJeu titre="Guess Who" skin="brams" />
       </div>
       <div style={{ position: 'relative', zIndex: 1, marginTop: 22, paddingBottom: 120 }}>
-        {code ? <Room code={code.toUpperCase()} identity={identity} /> : <Home identity={identity} />}
+        {code?.toLowerCase() === 'entrainement' ? <Training />
+          : code ? <Room code={code.toUpperCase()} identity={identity} /> : <Home identity={identity} />}
       </div>
     </div>
   )

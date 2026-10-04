@@ -10,6 +10,7 @@ import { bestHighlight } from './logic/highlights.js'
 import { rankPlayers } from './logic/ranking.js'
 import { startErrorText } from './logic/startError.js'
 import { logEvent } from '../../lib/guessWhoLog.js'
+import { PALMARES_KEY, parsePalmares, recordGame } from './logic/palmares.js'
 
 const plural = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`
 // Noms des ex aequo sur un critère (au plus 2, puis « +N »).
@@ -91,6 +92,18 @@ export default function EndScreen({ g }) {
     : bestHighlight(g.highlights)
   const topPlayer = top && g.players.find((p) => p.user_id === top.user_id)
   useEffect(() => { const t = setTimeout(() => play('fanfare'), 900); return () => clearTimeout(t) }, [])
+  // Palmarès local : la partie compte une fois (id = salon + fin de phase).
+  useEffect(() => {
+    const rank = rows.findIndex((p) => p.user_id === g.me?.user_id) + 1
+    if (!rank || !g.room?.code) return
+    try {
+      const p = recordGame(parsePalmares(localStorage.getItem(PALMARES_KEY)), {
+        gameId: `${g.room.code}:${g.room.phase_ends_at || g.room.round}`, rank, votes: g.me.total_votes || 0,
+      })
+      localStorage.setItem(PALMARES_KEY, JSON.stringify(p))
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [g.room?.code, g.room?.phase_ends_at, g.me?.user_id])
   const share = async () => {
     const text = `🎤 Meilleure imitation de la partie Guess Who : ${topPlayer?.display_name} sur « ${top.clip} »`
     try {

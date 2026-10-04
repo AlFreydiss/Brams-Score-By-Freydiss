@@ -403,3 +403,10 @@ export async function uploadTake(take, code) {
   const inline = await blobToDataUrl(take.raw)
   return inline ? { url: inline } : { error: token ? 'upload_failed' : 'too_big' }
 }
+
+// ── Entraînement : échantillons mono d'un son (blob ou URL) pour le score ─────
+export async function decodeMono(source) {
+  const blob = typeof source === 'string' ? await (await fetchT(source, {}, 12000)).blob() : source
+  const buf = await withTimeout(decode(await blob.arrayBuffer()), 6000)
+  return { samples: mixToMono(channelsOf(buf)), rate: buf.sampleRate }
+}
