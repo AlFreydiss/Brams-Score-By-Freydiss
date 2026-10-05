@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './Navbar.jsx'
+import { newGame, answer as engineAnswer, reject as engineReject, decide } from '../features/akinator/engine.js'
+import { SERIES, CHARACTERS } from '../features/akinator/data.js'
 
 // ── Design tokens — DA aqua premium : bleu nuit + cyan goutte d'eau. ──────────
 const BG     = '#06111b'
@@ -82,210 +84,17 @@ const AkiAmbient = () => (
   </>
 )
 
-// ── Characters database ────────────────────────────────────────────────────
-// m=homme | pir=pirate | mar=marine | rev=révolutionnaire
-// df=devil fruit | par=paramecia | log=logia | zo=zoan
-// hak=haki | cq=haki des rois | sh=chapeau de paille
-// yk=yonko | wl=corsaire | adm=amiral | sw=épéiste
-// bl=blond | bh=cheveux noirs | rh=rouge/rose
-// al=vivant | bb=prime>1B | cap=capitaine | old=âgé | gnt=très grand | cyb=cyborg
-const CHARS = [
-  { id:'luffy',      name:'Monkey D. Luffy',      emoji:'🏴‍☠️', color:'#e0524a',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:1,yk:1,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'zoro',       name:'Roronoa Zoro',          emoji:'⚔️',  color:'#22c55e',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:1,yk:0,wl:0,adm:0,sw:1,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'nami',       name:'Nami',                  emoji:'🍊',  color:'#f97316',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'usopp',      name:'Usopp',                 emoji:'🎯',  color:'#a78a5f',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'sanji',      name:'Sanji',                 emoji:'🦵',  color:'#3b82f6',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'chopper',    name:'Tony Tony Chopper',     emoji:'🦌',  color:'#ec4899',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'robin',      name:'Nico Robin',            emoji:'📖',  color:'#8b5cf6',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'franky',     name:'Franky',                emoji:'🤖',  color:'#06b6d4',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:1}},
-  { id:'brook',      name:'Brook',                 emoji:'💀',  color:'#a3a3a3',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:1,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'jinbe',      name:'Jinbe',                 emoji:'🐡',  color:'#60a5fa',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:1,yk:0,wl:1,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'ace',        name:'Portgas D. Ace',        emoji:'🔥',  color:'#f97316',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:0,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'sabo',       name:'Sabo',                  emoji:'🎩',  color:'#eab308',
-    attrs:{m:1,pir:0,mar:0,rev:1,df:1,par:0,log:1,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'shanks',     name:'Shanks',                emoji:'🌊',  color:'#ef4444',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:1,wl:0,adm:0,sw:1,bl:0,bh:0,rh:1,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'blackbeard', name:'Marshall D. Teach',     emoji:'☠️',  color:'#6366f1',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:1,zo:0,hak:1,cq:1,sh:0,yk:1,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'whitebeard', name:'Edward Newgate',        emoji:'⚡',  color:'#e2e8f0',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:1,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:0,bb:1,cap:1,old:1,gnt:1,cyb:0}},
-  { id:'kaido',      name:'Kaido',                 emoji:'🐉',  color:'#7c3aed',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:1,sh:0,yk:1,wl:0,adm:0,sw:1,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:1,cyb:0}},
-  { id:'bigmom',     name:'Charlotte Linlin',      emoji:'🍰',  color:'#ec4899',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:1,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:1,cap:1,old:1,gnt:1,cyb:0}},
-  { id:'roger',      name:'Gol D. Roger',          emoji:'👑',  color:'#f59e0b',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:1,bl:0,bh:1,rh:0,al:0,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'law',        name:'Trafalgar Law',         emoji:'💙',  color:'#3b82f6',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:1,adm:0,sw:1,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'kid',        name:'Eustass Kid',           emoji:'🦾',  color:'#ef4444',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:1,cap:1,old:0,gnt:0,cyb:1}},
-  { id:'katakuri',   name:'Charlotte Katakuri',    emoji:'🍡',  color:'#f97316',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:1,cap:0,old:0,gnt:1,cyb:0}},
-  { id:'yamato',     name:'Yamato',                emoji:'❄️',  color:'#93c5fd',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:1,bl:1,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'crocodile',  name:'Crocodile',             emoji:'🐊',  color:'#d97706',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:1,zo:0,hak:0,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'doflamingo', name:'Donquixote Doflamingo', emoji:'🦩',  color:'#ec4899',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:1,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'mihawk',     name:'Dracule Mihawk',        emoji:'🦅',  color:'#fbbf24',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:1,adm:0,sw:1,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'hancock',    name:'Boa Hancock',           emoji:'🐍',  color:'#ec4899',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'moriah',     name:'Gecko Moriah',          emoji:'🕷️',  color:'#a78bfa',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:1,cyb:0}},
-  { id:'kuma',       name:'Bartholomew Kuma',      emoji:'🐻',  color:'#6b7280',
-    attrs:{m:1,pir:0,mar:0,rev:1,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:1,cyb:1}},
-  { id:'buggy',      name:'Buggy le Clown',        emoji:'🤡',  color:'#ef4444',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:1,wl:1,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'garp',       name:'Monkey D. Garp',        emoji:'👊',  color:'#94a3b8',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'sengoku',    name:'Sengoku',               emoji:'🔔',  color:'#a78a5f',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:1,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'akainu',     name:'Sakazuki (Akainu)',     emoji:'🌋',  color:'#dc2626',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'aokiji',     name:'Kuzan (Aokiji)',        emoji:'🧊',  color:'#93c5fd',
-    attrs:{m:1,pir:0,mar:0,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'kizaru',     name:'Borsalino (Kizaru)',    emoji:'💡',  color:'#fbbf24',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'fujitora',   name:'Issho (Fujitora)',      emoji:'🌀',  color:'#8b5cf6',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:1,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'smoker',     name:'Smoker',                emoji:'💨',  color:'#e2e8f0',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'tashigi',    name:'Tashigi',               emoji:'🗡️',  color:'#34d399',
-    attrs:{m:0,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:1,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'coby',       name:'Coby',                  emoji:'🎖️',  color:'#f9a8d4',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'dragon',     name:'Monkey D. Dragon',      emoji:'🌪️',  color:'#22c55e',
-    attrs:{m:1,pir:0,mar:0,rev:1,df:1,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'ivankov',    name:'Emporio Ivankov',       emoji:'💉',  color:'#a855f7',
-    attrs:{m:1,pir:0,mar:0,rev:1,df:1,par:1,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'enel',       name:'Enel',                  emoji:'⛈️',  color:'#fbbf24',
-    attrs:{m:1,pir:0,mar:0,rev:0,df:1,par:0,log:1,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'rayleigh',   name:'Silvers Rayleigh',      emoji:'⚓',  color:'#94a3b8',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'marco',      name:'Marco',                 emoji:'🦚',  color:'#3b82f6',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'vivi',       name:'Nefertari Vivi',        emoji:'🌸',  color:'#60a5fa',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'perona',     name:'Perona',                emoji:'👻',  color:'#f9a8d4',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'carrot',     name:'Carrot',                emoji:'🐰',  color:'#fde68a',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'killer',     name:'Killer',                emoji:'🗡️',  color:'#fbbf24',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:1,bl:1,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'garp',       name:'Monkey D. Garp',        emoji:'👊',  color:'#94a3b8',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:1,gnt:1,cyb:0}},
-  { id:'dragon',     name:'Monkey D. Dragon',      emoji:'🐲',  color:'#22c55e',
-    attrs:{m:1,pir:0,mar:0,rev:1,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'hancock',    name:'Boa Hancock',            emoji:'🐍',  color:'#ec4899',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'doflamingo', name:'Donquixote Doflamingo',  emoji:'🦩',  color:'#f472b6',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:1,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'mihawk',     name:'Dracule Mihawk',         emoji:'🦅',  color:'#fbbf24',
-    attrs:{m:1,pir:0,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:1,adm:0,sw:1,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'crocodile',  name:'Crocodile',              emoji:'🐊',  color:'#78716c',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:0,log:1,zo:0,hak:0,cq:0,sh:0,yk:0,wl:1,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'kizaru',     name:'Borsalino (Kizaru)',     emoji:'⚡',  color:'#fef08a',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'aokiji',     name:'Kuzan (Aokiji)',          emoji:'🧊',  color:'#93c5fd',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:1,cyb:0}},
-  { id:'akainu',     name:'Sakazuki (Akainu)',       emoji:'🌋',  color:'#ef4444',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:1,sw:0,bl:0,bh:1,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'katakuri',   name:'Charlotte Katakuri',     emoji:'🍩',  color:'#a78bfa',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:1,cyb:0}},
-  { id:'yamato',     name:'Yamato',                 emoji:'🐺',  color:'#60a5fa',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:1,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:0,gnt:1,cyb:0}},
-  { id:'rayleigh',   name:'Silvers Rayleigh',       emoji:'⚓',  color:'#d4a017',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:1,sh:0,yk:0,wl:0,adm:0,sw:1,bl:0,bh:0,rh:0,al:1,bb:1,cap:0,old:1,gnt:0,cyb:0}},
-  { id:'vivi',       name:'Nefertari Vivi',         emoji:'🦆',  color:'#38bdf8',
-    attrs:{m:0,pir:1,mar:0,rev:0,df:0,par:0,log:0,zo:0,hak:0,cq:0,sh:1,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'coby',       name:'Coby',                  emoji:'🔵',  color:'#7dd3fc',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:1,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'smoker',     name:'Smoker',                emoji:'💨',  color:'#e2e8f0',
-    attrs:{m:1,pir:0,mar:1,rev:0,df:1,par:0,log:1,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'buggy',      name:'Buggy',                 emoji:'🤡',  color:'#ef4444',
-    attrs:{m:1,pir:1,mar:0,rev:0,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:1,wl:1,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:1,cap:1,old:0,gnt:0,cyb:0}},
-  { id:'lucci',      name:'Rob Lucci',              emoji:'🐆',  color:'#1e293b',
-    attrs:{m:1,pir:0,mar:0,rev:0,df:1,par:0,log:0,zo:1,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:1,rh:0,al:1,bb:1,cap:0,old:0,gnt:0,cyb:0}},
-  { id:'ivankov',    name:'Emporio Ivankov',        emoji:'🦋',  color:'#d946ef',
-    attrs:{m:1,pir:0,mar:0,rev:1,df:1,par:1,log:0,zo:0,hak:0,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:0,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:1,cyb:0}},
-  { id:'koala',      name:'Koala',                  emoji:'🐨',  color:'#86efac',
-    attrs:{m:0,pir:0,mar:0,rev:1,df:0,par:0,log:0,zo:0,hak:1,cq:0,sh:0,yk:0,wl:0,adm:0,sw:0,bl:1,bh:0,rh:0,al:1,bb:0,cap:0,old:0,gnt:0,cyb:0}},
-]
-
-// ── Questions ─────────────────────────────────────────────────────────────
-const QUESTIONS = [
-  { id:'m',   text:'Votre personnage est-il un homme ?' },
-  { id:'sh',  text:'Votre personnage est-il un Chapeau de Paille ?' },
-  { id:'pir', text:'Votre personnage est-il un pirate ?' },
-  { id:'mar', text:'Votre personnage est-il (ou a-t-il été) un Marine ?' },
-  { id:'rev', text:'Votre personnage fait-il partie des Révolutionnaires ?' },
-  { id:'df',  text:'Votre personnage possède-t-il un Fruit du Démon ?' },
-  { id:'log', text:'Son Fruit du Démon est-il un Logia ?' },
-  { id:'zo',  text:'Son Fruit du Démon est-il un Zoan ?' },
-  { id:'hak', text:'Votre personnage maîtrise-t-il le Haki ?' },
-  { id:'cq',  text:'Votre personnage possède-t-il le Haki des Rois ?' },
-  { id:'yk',  text:'Votre personnage est-il (ou a-t-il été) un Yonko ?' },
-  { id:'wl',  text:'Votre personnage est-il (ou a-t-il été) un Corsaire ?' },
-  { id:'adm', text:'Votre personnage est-il (ou a-t-il été) un Amiral ?' },
-  { id:'sw',  text:'Votre personnage se bat-il principalement à l\'épée ?' },
-  { id:'bl',  text:'Votre personnage est-il blond ?' },
-  { id:'bh',  text:'Votre personnage a-t-il les cheveux noirs ?' },
-  { id:'rh',  text:'Votre personnage a-t-il les cheveux rouges ou roses ?' },
-  { id:'al',  text:'Votre personnage est-il toujours en vie ?' },
-  { id:'bb',  text:'Votre personnage a-t-il une prime de plus d\'1 milliard de Berrys ?' },
-  { id:'cap', text:'Votre personnage est-il (ou a-t-il été) capitaine d\'un équipage ?' },
-  { id:'old', text:'Votre personnage est-il âgé / vieux ?' },
-  { id:'gnt', text:'Votre personnage est-il particulièrement grand ou imposant ?' },
-  { id:'cyb', text:'Votre personnage a-t-il des modifications cybernétiques ou mécaniques ?' },
-]
-
-// ── Algorithm: entropie pour choisir la meilleure question ─────────────────
-function entropy(remaining, qid) {
-  const yes = remaining.filter(c => c.attrs[qid] === 1).length
-  const total = remaining.length
-  if (total === 0 || yes === 0 || yes === total) return 0
-  const p = yes / total
-  return -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p))
-}
-
-function pickQuestion(remaining, asked) {
-  let best = null, bestScore = -1
-  for (const q of QUESTIONS) {
-    if (asked.has(q.id)) continue
-    const yes = remaining.filter(c => c.attrs[q.id] === 1).length
-    const no  = remaining.filter(c => c.attrs[q.id] === 0).length
-    if (yes === 0 || no === 0) continue
-    const score = entropy(remaining, q.id)
-    if (score > bestScore) { bestScore = score; best = q }
-  }
-  return best || QUESTIONS.find(q => !asked.has(q.id)) || null
-}
-
-function filterChars(remaining, qid, answer) {
-  if (answer === 'yes') return remaining.filter(c => c.attrs[qid] === 1)
-  if (answer === 'no')  return remaining.filter(c => c.attrs[qid] === 0)
-  return remaining
-}
-
-// ── Answer buttons ─────────────────────────────────────────────────────────
+// ── Réponses ──────────────────────────────────────────────────────────────
+// Les cinq réponses de l'original. Les nuances comptent : « probablement »
+// pèse moins qu'un « oui » franc dans le calcul du génie.
 const ANSWERS = [
-  { key:'yes',   label:'✅  OUI',         color:'#4ade80', bg:'rgba(34,197,94,.12)',   border:'rgba(34,197,94,.4)'   },
-  { key:'no',    label:'❌  NON',          color:'#f87171', bg:'rgba(239,68,68,.12)',   border:'rgba(239,68,68,.4)'   },
-  { key:'maybe', label:'🤔  PEUT-ÊTRE',   color:'#fbbf24', bg:'rgba(245,158,11,.12)',  border:'rgba(245,158,11,.4)'  },
-  { key:'dunno', label:"❓  PAS SUR", color:'#94a3b8', bg:'rgba(148,163,184,.08)', border:'rgba(148,163,184,.25)' },
+  { key:'yes',     label:'Oui',               color:'#4ade80', bg:'rgba(34,197,94,.12)',   border:'rgba(34,197,94,.4)',   hotkey:'1' },
+  { key:'no',      label:'Non',               color:'#f87171', bg:'rgba(239,68,68,.12)',   border:'rgba(239,68,68,.4)',   hotkey:'2' },
+  { key:'dunno',   label:'Je ne sais pas',    color:'#cbd5e1', bg:'rgba(148,163,184,.08)', border:'rgba(148,163,184,.25)', hotkey:'3' },
+  { key:'prob',    label:'Probablement',      color:'#a3e635', bg:'rgba(132,204,22,.08)',  border:'rgba(132,204,22,.28)', hotkey:'4' },
+  { key:'probnot', label:'Probablement pas',  color:'#fb923c', bg:'rgba(249,115,22,.08)',  border:'rgba(249,115,22,.28)', hotkey:'5' },
 ]
+
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -401,70 +210,82 @@ function IdleScreen({ onStart }) {
       >✨ Je suis prêt !</button>
 
       <p style={{ fontSize:12, color:'rgba(240,232,248,.25)', marginTop:20 }}>
-        Devinettes One Piece · questions illimitées
+        {CHARACTERS.length} personnages · {Object.keys(SERIES).length} séries · réponses instantanées
       </p>
     </motion.div>
   )
 }
 
-function AskingScreen({ question, qCount, loading, onAnswer }) {
-  const pct = Math.min(92, 8 + qCount * 6)
+function AskingScreen({ question, qCount, confidence, onAnswer, onUndo }) {
+  // Certitude réelle du génie sur son favori, pas une barre qui avance seule.
+  const pct = Math.round(Math.max(4, Math.min(100, (confidence || 0) * 100)))
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.target && /input|textarea/i.test(e.target.tagName)) return
+      const a = ANSWERS.find(x => x.hotkey === e.key)
+      if (a) { e.preventDefault(); onAnswer(a.key) }
+      else if (e.key === 'Backspace' && onUndo) { e.preventDefault(); onUndo() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onAnswer, onUndo])
+
   return (
     <motion.div initial={{ opacity:0, x:30 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-30 }}
-      transition={{ duration:.25 }}
+      transition={{ duration:.2 }}
       style={{ width:'100%', maxWidth:620, padding:'0 16px' }}>
 
-      {/* Progress bar */}
       <div style={{ marginBottom:28 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
           <span style={{ fontSize:12, fontWeight:700, color:MUTED, letterSpacing:'.08em', textTransform:'uppercase' }}>
             Question {qCount + 1}
           </span>
           <span style={{ fontSize:12, fontWeight:700, color:PINK_L }}>
-            {loading ? 'le génie réfléchit…' : 'réponds honnêtement'}
+            certitude {pct} %
           </span>
         </div>
         <div style={{ height:5, background:'rgba(255,255,255,.06)', borderRadius:3, overflow:'hidden' }}>
-          <div style={{ height:'100%', width:`${pct}%`, background:GRAD, borderRadius:3, transition:'width .5s ease' }} />
+          <div style={{ height:'100%', width:pct + '%', background:GRAD, borderRadius:3, transition:'width .5s ease' }} />
         </div>
       </div>
 
-      {/* Orb + Question card */}
       <div style={{ textAlign:'center', marginBottom:28 }}>
         <div style={{ display:'flex', justifyContent:'center', marginBottom:22, animation:'akFloat 3s ease-in-out infinite' }}>
           <FreydissMascot size={70} mood="thinking" />
         </div>
-
         <div style={{
           background: GLASS,
           border:`1px solid rgba(34,211,238,.22)`,
           borderRadius:22, padding:'30px 36px',
-          backdropFilter:'blur(24px)',
           boxShadow:`0 24px 64px rgba(0,0,0,.45), inset 0 1px 0 rgba(103,232,249,.08)`,
         }}>
           <p style={{
             fontSize:'clamp(17px,3vw,22px)', fontWeight:700,
-            color:TEXT, lineHeight:1.45, fontFamily:'var(--display)',
-            margin:0,
+            color:TEXT, lineHeight:1.45, fontFamily:'var(--display)', margin:0,
           }}>{question.text}</p>
         </div>
       </div>
 
-      {/* Answer grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
+      <div className="ak-answers">
         {ANSWERS.map(a => (
-          <button key={a.key} disabled={loading} onClick={() => onAnswer(a.key)} style={{
-            padding:'15px 12px', borderRadius:14,
-            background:a.bg, border:`1px solid ${a.border}`,
-            color:a.color, cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize:15, fontWeight:800, letterSpacing:'.02em',
-            transition:'all .15s', fontFamily:'var(--body)',
-          }}
-          onMouseEnter={e => { if (loading) return; e.currentTarget.style.transform='scale(1.035)'; e.currentTarget.style.filter='brightness(1.12)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.filter='brightness(1)' }}
-          >{a.label}</button>
+          <button key={a.key} onClick={() => onAnswer(a.key)} className="ak-answer" style={{
+            background:a.bg, border:`1px solid ${a.border}`, color:a.color,
+          }}>
+            <span>{a.label}</span>
+            <kbd aria-hidden>{a.hotkey}</kbd>
+          </button>
         ))}
       </div>
+
+      {onUndo && (
+        <div style={{ textAlign:'center', marginTop:16 }}>
+          <button onClick={onUndo} style={{
+            background:'none', border:'none', cursor:'pointer', color:MUTED,
+            fontSize:13, fontWeight:600, fontFamily:'var(--body)', padding:'6px 10px',
+          }}>← Corriger la réponse précédente</button>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -496,6 +317,9 @@ function GuessingScreen({ guess, qCount, onRight, onWrong }) {
           fontSize:15, fontWeight:800, color:TEXT,
           fontFamily:'var(--display)', textAlign:'center', lineHeight:1.3,
         }}>{guess.name}</div>
+        {guess.domain && (
+          <div style={{ marginTop:6, fontSize:12, color:MUTED, textAlign:'center' }}>{guess.domain}</div>
+        )}
       </div>
 
       <p style={{ fontSize:15, color:MUTED, marginBottom:22 }}>Est-ce que j'ai raison ?</p>
@@ -607,109 +431,75 @@ function LostScreen({ onReplay }) {
   )
 }
 
-function ThinkingScreen({ error, onRetry }) {
-  return (
-    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      style={{ textAlign:'center', maxWidth:480, padding:'0 16px' }}>
-      <div style={{ marginBottom:24, animation:'akFloat 2.6s ease-in-out infinite' }}>
-        <FreydissMascot size={92} mood="thinking" />
-      </div>
-      {error ? (
-        <>
-          <p style={{ color:'#f87171', fontSize:15, marginBottom:18 }}>{error}</p>
-          <button onClick={onRetry} style={{
-            padding:'12px 36px', borderRadius:100, background:GRAD, border:'none',
-            cursor:'pointer', fontSize:15, fontWeight:800, color:'#fff', fontFamily:'var(--body)',
-          }}>↺ Réessayer</button>
-        </>
-      ) : (
-        <p style={{ color:PINK_L, fontSize:17, fontWeight:700, fontFamily:'var(--display)' }}>
-          Le génie réfléchit<span style={{ animation:'akStar 1s infinite' }}>…</span>
-        </p>
-      )}
-    </motion.div>
-  )
-}
-
 // ── Main page ──────────────────────────────────────────────────────────────
 
 const PHASE = { IDLE:'idle', ASKING:'asking', GUESSING:'guessing', WIN:'win', LOST:'lost' }
 
-const ANSWER_MAP = { yes:'oui', no:'non', maybe:'peut-être / probablement', dunno:'je ne sais pas' }
-const MAX_QUESTIONS = 30
+// Au-delà, le génie s'avoue vaincu.
+const MAX_QUESTIONS = 40
+const MAX_GUESSES   = 5
 
 export default function AkinatorPage() {
-  const [phase,     setPhase]     = useState(PHASE.IDLE)
-  const [history,   setHistory]   = useState([])    // [{question, answer}]
-  const [rejected,  setRejected]  = useState([])    // noms déjà proposés et rejetés
-  const [currentQ,  setCurrentQ]  = useState(null)  // texte de la question courante
-  const [qCount,    setQCount]    = useState(0)
-  const [guess,     setGuess]     = useState(null)  // {name, emoji, domain}
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState(null)
+  const [phase,    setPhase]    = useState(PHASE.IDLE)
+  const [game,     setGame]     = useState(null)   // état du moteur
+  const [move,     setMove]     = useState(null)   // { action, question | char, confidence }
+  const [guess,    setGuess]    = useState(null)   // { name, emoji, domain, id }
+  const [guesses,  setGuesses]  = useState(0)
+  // Pile des états précédents pour « Corriger ».
+  const undoStack = useRef([])
 
-  // Pose la prochaine question ou propose une devinette.
-  const askNextQuestion = useCallback(async (nextHistory, nextRejected) => {
-    setLoading(true); setError(null)
-    try {
-      const res = await fetch('/api/akinator', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ history: nextHistory, rejected: nextRejected }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.action) {
-        setError(data.error || "Le génie n'a pas répondu — réessaie.")
-        return
-      }
-      if (data.action === 'guess') {
-        setGuess({ name: data.text, emoji: '🔮', domain: data.domain || null })
-        setPhase(PHASE.GUESSING)
-      } else {
-        setCurrentQ(data.text)
-        setPhase(PHASE.ASKING)
-      }
-    } catch {
-      setError('Connexion au génie impossible — réessaie.')
-    } finally {
-      setLoading(false)
+  const play = useCallback((state, nGuesses) => {
+    const d = decide(state)
+    if (d.action === 'question' && state.asked.length < MAX_QUESTIONS) {
+      setMove(d); setPhase(PHASE.ASKING); return
     }
+    if (d.action === 'giveup' || nGuesses >= MAX_GUESSES) { setPhase(PHASE.LOST); return }
+    const top = d.char || null
+    if (!top) { setPhase(PHASE.LOST); return }
+    setGuess({ id: top.id, name: top.name, emoji: '🔮', domain: SERIES[top.s]?.name || null })
+    setPhase(PHASE.GUESSING)
   }, [])
 
   const startGame = useCallback(() => {
-    setHistory([]); setRejected([]); setQCount(0); setGuess(null); setCurrentQ(null); setError(null)
-    setPhase(PHASE.ASKING)
-    askNextQuestion([], [])
-  }, [askNextQuestion])
+    const s = newGame()
+    undoStack.current = []
+    setGame(s); setGuess(null); setGuesses(0)
+    play(s, 0)
+  }, [play])
 
-  const handleAnswer = useCallback((answerKey) => {
-    if (!currentQ || loading) return
-    const entry = { question: currentQ, answer: ANSWER_MAP[answerKey] || answerKey }
-    const nextHistory = [...history, entry]
-    setHistory(nextHistory)
-    setQCount(c => c + 1)
-    setCurrentQ(null)
-    askNextQuestion(nextHistory, rejected)
-  }, [currentQ, loading, history, rejected, askNextQuestion])
+  const handleAnswer = useCallback((key) => {
+    if (!game || !move || move.action !== 'question') return
+    undoStack.current.push({ game, move })
+    const next = engineAnswer(game, move.question.id, key)
+    setGame(next)
+    play(next, guesses)
+  }, [game, move, guesses, play])
+
+  const handleUndo = useCallback(() => {
+    const prev = undoStack.current.pop()
+    if (!prev) return
+    // Retour à l'état d'avant la dernière réponse, même question reposée.
+    setGame(prev.game); setMove(prev.move)
+    setPhase(PHASE.ASKING)
+  }, [])
 
   const handleGuessRight = useCallback(() => setPhase(PHASE.WIN), [])
 
   const handleGuessWrong = useCallback(() => {
-    if (loading) return
-    const nextRejected = guess ? [...rejected, guess.name] : rejected
-    const nextHistory = [...history, { question: `Est-ce ${guess?.name} ?`, answer: 'non' }]
-    setRejected(nextRejected)
-    setHistory(nextHistory)
-    setGuess(null)
-    if (qCount >= MAX_QUESTIONS) { setPhase(PHASE.LOST); return }
-    setPhase(PHASE.ASKING)
-    askNextQuestion(nextHistory, nextRejected)
-  }, [loading, guess, rejected, history, qCount, askNextQuestion])
+    if (!game || !guess) return
+    const next = engineReject(game, guess.id)
+    const n = guesses + 1
+    setGame(next); setGuesses(n); setGuess(null)
+    play(next, n)
+  }, [game, guess, guesses, play])
 
   const reset = useCallback(() => {
-    setPhase(PHASE.IDLE)
-    setHistory([]); setRejected([]); setQCount(0); setGuess(null); setCurrentQ(null); setError(null)
+    setPhase(PHASE.IDLE); setGame(null); setMove(null); setGuess(null); setGuesses(0)
+    undoStack.current = []
   }, [])
+
+  const qCount = game ? game.asked.length : 0
+  const currentQ = move && move.action === 'question' ? move.question : null
 
   return (
     <div style={{ position:'fixed', left:0, right:0, top:0, bottom:0, zIndex:100, background:BG, display:'flex', flexDirection:'column', overflow:'hidden' }}>
@@ -718,6 +508,23 @@ export default function AkinatorPage() {
       <style>{`
         @keyframes akStar   { 0%,100%{opacity:.25;transform:scale(1)} 50%{opacity:.9;transform:scale(1.6)} }
         @keyframes akPulse  { 0%,100%{box-shadow:0 0 30px rgba(34,211,238,.32),0 0 60px rgba(14,116,144,.18)} 50%{box-shadow:0 0 52px rgba(34,211,238,.52),0 0 100px rgba(14,116,144,.28)} }
+        .ak-answers { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+        .ak-answers > :first-child, .ak-answers > :nth-child(2) { padding:17px 12px; font-size:16px }
+        .ak-answers > :nth-child(3) { grid-column:1 / -1 }
+        .ak-answer {
+          position:relative; padding:13px 12px; border-radius:14px; cursor:pointer;
+          font-family:var(--body); font-size:14px; font-weight:800; letter-spacing:.02em;
+          transition:transform .15s, filter .15s;
+        }
+        .ak-answer:hover { transform:scale(1.03); filter:brightness(1.15) }
+        .ak-answer:active { transform:scale(.98) }
+        .ak-answer:focus-visible { outline:2px solid #67e8f9; outline-offset:2px }
+        .ak-answer kbd {
+          position:absolute; right:10px; top:50%; transform:translateY(-50%);
+          font:600 10px var(--body); opacity:.4; border:1px solid currentColor;
+          border-radius:4px; padding:1px 5px;
+        }
+        @media (hover:none) { .ak-answer kbd { display:none } }
         @keyframes akFloat  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
       `}</style>
       <AkiAmbient />
@@ -726,8 +533,7 @@ export default function AkinatorPage() {
       <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:24, position:'relative', zIndex:2 }}>
         <AnimatePresence mode="wait">
           {phase === PHASE.IDLE     && <IdleScreen     key="idle"                  onStart={startGame} />}
-          {phase === PHASE.ASKING && currentQ && !error && <AskingScreen key={`q-${qCount}`} question={{ text: currentQ }} qCount={qCount} loading={loading} onAnswer={handleAnswer} />}
-          {phase === PHASE.ASKING && (!currentQ || error) && <ThinkingScreen key="thinking" error={error} onRetry={startGame} />}
+          {phase === PHASE.ASKING && currentQ && <AskingScreen key={`q-${qCount}`} question={currentQ} qCount={qCount} confidence={move.confidence} onAnswer={handleAnswer} onUndo={undoStack.current.length ? handleUndo : null} />}
           {phase === PHASE.GUESSING && guess           && <GuessingScreen key={`g-${qCount}`}  guess={guess}       qCount={qCount} onRight={handleGuessRight} onWrong={handleGuessWrong} />}
           {phase === PHASE.WIN      && guess           && <WinScreen  key="win"  guess={guess} qCount={qCount} onReplay={reset} />}
           {phase === PHASE.LOST                        && <LostScreen key="lost"                                                 onReplay={reset} />}
