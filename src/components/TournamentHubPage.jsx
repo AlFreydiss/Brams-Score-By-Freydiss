@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { DUR, EASE } from '../lib/motion.js'
-import SakuraBackdrop from './SakuraBackdrop.jsx'
-import ArenaBackdrop from './tournament/ArenaBackdrop.jsx'
+import HalftoneField, { fx as dotFx } from './versus/HalftoneField.jsx'
 import LiveStatsBar from './tournament/LiveStatsBar.jsx'
 import DailyDuel from './tournament/DailyDuel.jsx'
 import HallOfChampions from './tournament/HallOfChampions.jsx'
@@ -32,7 +31,7 @@ const ACTIVE_CONFIGS = [
   TOURNAMENT_CONFIG,
 ]
 
-const BG      = '#0a0a0b'
+const BG      = '#050505'
 const PINK    = '#9d174d'   // rose sombre
 const PURPLE  = '#4c1d95'   // violet sombre
 const PINK_L  = '#db2777'   // rose moyen (text mid)
@@ -73,10 +72,6 @@ const HUB_CSS = `
   .ht-swipe { display:none }
   @media (max-width: 760px) { .ht-swipe { display:block } }
 
-  /* Titre : deux tons pleins, pas de dégradé. Le premier mot en blanc, le
-     dernier dans l'accent du hub. */
-  .ht-word { display:inline-block; white-space:nowrap; color:#f6f1f4 }
-  .ht-word:last-child { color:${ACCENT_A} }
   /* Anneau de focus : les cartes navigables sont atteignables au clavier, il
      faut donc voir où on est. Un outline seul se perd sur fond sombre, d'où le
      halo qui l'accompagne. */
@@ -84,91 +79,120 @@ const HUB_CSS = `
     outline:2px solid #f9a8d4; outline-offset:3px;
     box-shadow:0 0 0 6px rgba(249,168,212,.16) !important;
   }
-  /* ── Hero ── deux colonnes : texte à gauche, duel à l'affiche à droite.
-     Une seule couleur pleine (le bouton principal), le reste en filets. */
+  /* ── Hero ── une colonne centrée, noir + trame de points (HalftoneField).
+     Blanc sur noir ; le rose et le violet ne servent que de repères de camp. */
+  .vs-halftone { position:fixed; inset:0; z-index:0; pointer-events:none }
   .ht-hero {
-    display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
-    gap:clamp(32px,5vw,80px); align-items:center;
-    padding:clamp(56px,8vw,104px) 0 clamp(48px,6vw,72px);
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:clamp(64px,8vw,112px) 0 clamp(56px,7vw,88px);
   }
-  .ht-hero--solo { grid-template-columns:minmax(0,1fr) }
   .ht-kicker {
-    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;
-    font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
-    color:rgba(255,255,255,.42);
+    display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px;
+    font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+    color:rgba(255,255,255,.4);
   }
+  .ht-sep { opacity:.4 }
   h1.ht-title {
-    display:block; margin:0 0 20px;
-    font-family:'Archivo','Inter',sans-serif; font-stretch:125%; font-weight:900;
-    text-transform:uppercase;
-    font-size:clamp(48px,6.2vw,96px); line-height:.92; letter-spacing:-.02em;
+    display:block; margin:0 0 18px;
+    font-family:'Archivo','Inter',sans-serif; font-stretch:125%; font-weight:800;
+    text-transform:uppercase; color:#f4f2f3;
+    font-size:clamp(40px,5.4vw,80px); line-height:.95; letter-spacing:-.02em;
   }
+  .ht-word { display:inline-block; white-space:nowrap }
   .ht-lede {
-    margin:0 0 30px; max-width:440px;
-    font-size:clamp(15px,1.5vw,17px); line-height:1.6; color:rgba(255,255,255,.58);
+    margin:0 0 clamp(36px,4.4vw,56px);
+    font-size:clamp(15px,1.4vw,17px); line-height:1.6; color:rgba(255,255,255,.5);
   }
-  .ht-ctas { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px }
-  .ht-btn {
-    padding:13px 26px; border-radius:100px; cursor:pointer;
-    font:inherit; font-size:14px; font-weight:700; letter-spacing:.01em;
-    transition:transform .25s cubic-bezier(.22,1,.36,1), background-color .25s, border-color .25s, color .25s;
+
+  .ht-duel { width:100%; max-width:1040px; margin-bottom:clamp(36px,4vw,52px) }
+  .ht-duel-head {
+    display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:18px;
+    font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:rgba(255,255,255,.55);
   }
-  .ht-btn:active { transform:scale(.97) }
-  .ht-btn--main { border:none; background:#f4f1f3; color:#160912 }
-  .ht-btn--main:hover { background:#fff; transform:translateY(-1px) }
-  .ht-btn--ghost { border:1px solid rgba(255,255,255,.16); background:transparent; color:rgba(255,255,255,.82) }
-  .ht-btn--ghost:hover { border-color:rgba(255,255,255,.4); color:#fff }
-  .ht-links { display:flex; flex-wrap:wrap; gap:20px }
-  .ht-link-btn {
-    padding:4px 0; border:none; background:none; cursor:pointer;
-    font:inherit; font-size:12px; font-weight:600; color:rgba(255,255,255,.42);
-    border-bottom:1px solid transparent; transition:color .2s, border-color .2s;
+  .ht-duel-where { color:rgba(255,255,255,.35); letter-spacing:.12em }
+  .ht-live {
+    width:6px; height:6px; border-radius:50%; background:#fff;
+    animation:htPulse 1.6s ease-in-out infinite;
   }
-  .ht-link-btn:hover { color:#fff; border-bottom-color:rgba(255,255,255,.3) }
-  .ht-btn:focus-visible, .ht-link-btn:focus-visible { outline:2px solid #f9a8d4; outline-offset:3px }
+  .ht-duel-grid {
+    position:relative; display:grid; align-items:start;
+    grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);
+  }
   .ht-side {
     display:block; width:100%; min-width:0; padding:0; margin:0;
     background:none; border:none; color:inherit; font:inherit;
     cursor:pointer; -webkit-tap-highlight-color:transparent;
   }
   .ht-side:disabled { cursor:default }
-  .ht-side:focus-visible { outline:2px solid #f9a8d4; outline-offset:4px; border-radius:10px }
+  .ht-side:focus-visible { outline:2px solid #fff; outline-offset:5px; border-radius:6px }
+  .ht-frame {
+    position:relative; aspect-ratio:16 / 9; overflow:hidden; border-radius:6px;
+    background:#0c0c0d; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+  .ht-side-meta { display:flex; align-items:flex-start; gap:10px; padding-top:14px; text-align:left }
+  .ht-side:last-child .ht-side-meta { flex-direction:row-reverse; text-align:right }
+  .ht-side-mark { flex:0 0 auto; width:3px; height:30px; border-radius:2px; margin-top:2px }
   .ht-side-title {
-    font-size:14px; font-weight:700; color:#fff;
+    font-size:clamp(14px,1.4vw,17px); font-weight:700; color:#fff;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .ht-side-sub {
-    margin-top:2px; font-size:11px; color:rgba(255,255,255,.4);
+    margin-top:3px; font-size:12px; color:rgba(255,255,255,.42);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  /* Le filet et le VS se placent sur le bloc des deux camps (position
-     relative). Le VS se cale au milieu des images 4:3 : une marge en %
-     se calcule sur la LARGEUR du bloc, d'où (largeur - 40) / 2 × 3/4 / 2. */
+  /* VS au milieu des images 16:9 : une marge en % se calcule sur la LARGEUR
+     du bloc, d'où (largeur - 56) / 2 × 9/16 / 2. */
   .ht-vs-col { align-self:stretch }
-  .ht-vs-line {
-    position:absolute; top:0; bottom:0; left:50%; width:1px; transform-origin:top;
-    background:linear-gradient(180deg, transparent, rgba(255,255,255,.22) 15%, rgba(255,255,255,.22) 65%, transparent);
-  }
   .ht-vs {
     position:absolute; left:50%; top:0;
-    width:34px; height:34px; margin-left:-17px; margin-top:calc(18.75% - 7.5px - 17px);
+    width:40px; height:40px; margin-left:-20px; margin-top:calc(14.0625% - 7.875px - 20px);
     border-radius:50%; display:grid; place-items:center;
-    background:#0a0a0b; border:1px solid rgba(255,255,255,.16);
-    font-family:'Pirata One',cursive; font-size:15px; line-height:1; color:#fff;
+    background:#000; box-shadow:0 0 0 1px rgba(255,255,255,.18);
+    font-family:'Archivo',sans-serif; font-stretch:125%; font-weight:800;
+    font-size:11px; letter-spacing:.06em; color:#fff;
   }
-  .ht-duel {
-    padding:clamp(16px,2vw,24px); border-radius:16px;
-    background:rgba(12,10,12,.72); border:1px solid rgba(255,255,255,.08);
+  .ht-duel-foot { display:flex; align-items:center; gap:16px; margin-top:22px }
+  .ht-bar { flex:1; min-width:0; height:1px; background:rgba(255,255,255,.12); overflow:hidden }
+  .ht-bar-fill { height:100%; background:#fff }
+  .ht-foot-txt { font-size:11px; color:rgba(255,255,255,.4); white-space:nowrap }
+  .ht-foot-txt b { font-weight:600; color:rgba(255,255,255,.75) }
+
+  .ht-ctas { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px }
+  .ht-btn {
+    padding:13px 28px; border-radius:100px; cursor:pointer;
+    font:inherit; font-size:14px; font-weight:700; letter-spacing:.01em;
+    transition:transform .25s cubic-bezier(.22,1,.36,1), background-color .25s, border-color .25s, color .25s;
   }
-  @media (max-width: 900px) {
-    .ht-hero { grid-template-columns:minmax(0,1fr); padding-top:40px }
+  .ht-btn:active { transform:scale(.97) }
+  .ht-btn--main { border:none; background:#f4f2f3; color:#0a0a0b }
+  .ht-btn--main:hover { background:#fff; transform:translateY(-1px) }
+  .ht-btn--ghost { border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.4); color:rgba(255,255,255,.85) }
+  .ht-btn--ghost:hover { border-color:rgba(255,255,255,.45); color:#fff }
+  .ht-links { display:flex; flex-wrap:wrap; justify-content:center; gap:22px }
+  .ht-link-btn {
+    padding:4px 0; border:none; background:none; cursor:pointer;
+    font:inherit; font-size:12px; font-weight:600; color:rgba(255,255,255,.42);
+    border-bottom:1px solid transparent; transition:color .2s, border-color .2s;
+  }
+  .ht-link-btn:hover { color:#fff; border-bottom-color:rgba(255,255,255,.3) }
+  .ht-btn:focus-visible, .ht-link-btn:focus-visible { outline:2px solid #fff; outline-offset:3px }
+  @media (max-width: 640px) {
+    .ht-duel-head { flex-wrap:wrap; row-gap:6px }
+    .ht-duel-head > * { white-space:nowrap }
+    .ht-duel-head .ht-sep { display:none }
+    .ht-duel-where { flex-basis:100%; text-align:center }
+    .ht-duel-grid { grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr) }
+    .ht-vs { width:32px; height:32px; margin-left:-16px; margin-top:calc(14.0625% - 5.0625px - 16px); font-size:9px }
+    .ht-side-mark { display:none }
+    .ht-duel-foot { flex-wrap:wrap; gap:8px 14px }
+    .ht-bar { flex-basis:100% }
   }
   @media (max-width: 768px) {
-    /* index.css force tous les h1 à 48 px max sur mobile : le titre du hub
-       garde sa taille d'affiche. */
-    h1.ht-title { font-size:clamp(44px,13vw,64px) !important }
+    /* index.css force tous les h1 à 48 px max sur mobile. */
+    h1.ht-title { font-size:clamp(34px,10.5vw,52px) !important }
     /* La barre de nav flotte au-dessus du contenu sur téléphone. */
-    .ht-hero { padding-top:88px }
+    .ht-hero { padding-top:92px }
   }
   @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
@@ -688,12 +712,35 @@ function HeroTitle({ text }) {
 }
 
 // ── Duel jouable du hero ───────────────────────────────────────────────────
-// La pièce maîtresse : le duel en cours d'une arène, et on le tranche ici,
-// sans quitter le hub. Un clic sur un camp : il s'allume, l'autre s'efface,
+// La pièce maîtresse : le duel en cours d'une arène, en grand, et on le
+// tranche ici. Survol : la trame de points s'éclaire du côté visé. Clic : le
+// camp choisi reste, l'autre s'efface, une onde part du clic dans la trame,
 // puis le duel suivant entre par les bords. Le vote passe par le même bracket
 // que la page du tournoi (lib/tournament), donc rien n'est perdu ni inventé.
-function ytThumb(p) {
-  return p && p.ytId ? 'https://i.ytimg.com/vi/' + p.ytId + '/hqdefault.jpg' : null
+
+// Miniature YouTube la plus nette disponible. maxresdefault n'existe pas pour
+// toutes les vidéos : YouTube renvoie alors une vignette grise de 120 px au
+// lieu d'une erreur, d'où le contrôle de largeur au chargement.
+function YtImage({ ytId, vivid, state }) {
+  const [src, setSrc] = useState('https://i.ytimg.com/vi/' + ytId + '/maxresdefault.jpg')
+  return (
+    <img
+      src={src} alt="" decoding="async" draggable={false}
+      onLoad={e => {
+        if (e.currentTarget.naturalWidth <= 120 && src.includes('maxres')) {
+          setSrc('https://i.ytimg.com/vi/' + ytId + '/hqdefault.jpg')
+        }
+      }}
+      style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+        // hqdefault (4:3) porte des bandes noires : le zoom les rogne ; la
+        // version haute définition est déjà en 16:9.
+        transform: (src.includes('hqdefault') ? 'scale(1.34)' : 'scale(1)') + (vivid ? ' scale(1.04)' : ''),
+        filter: vivid ? 'none' : state === 'lose' ? 'grayscale(1) brightness(.35)' : 'grayscale(.85) brightness(.62)',
+        transition: 'filter .5s ease, transform 1s cubic-bezier(.22,1,.36,1)',
+      }}
+    />
+  )
 }
 
 const EASE_OUT = [0.22, 1, 0.36, 1]
@@ -708,13 +755,12 @@ function sideState(side, hovered, picked) {
 const SIDE_ANIM = {
   rest: { opacity: 1,    scale: 1 },
   lit:  { opacity: 1,    scale: 1 },
-  dim:  { opacity: 0.4,  scale: 0.985 },
-  win:  { opacity: 1,    scale: 1.02 },
-  lose: { opacity: 0.08, scale: 0.94 },
+  dim:  { opacity: 0.55, scale: 0.99 },
+  win:  { opacity: 1,    scale: 1.015 },
+  lose: { opacity: 0.1,  scale: 0.95 },
 }
 
 function DuelSide({ p, side, accent, state, onHover, onPick, disabled }) {
-  const thumb = ytThumb(p)
   const vivid = state === 'lit' || state === 'win'
   const sub = p.artist || p.anime || ''
   return (
@@ -725,54 +771,35 @@ function DuelSide({ p, side, accent, state, onHover, onPick, disabled }) {
       aria-label={'Voter pour ' + p.title + (sub ? ', ' + sub : '')}
       onMouseEnter={() => onHover(side)}
       onFocus={() => onHover(side)}
-      onClick={() => onPick(side)}
-      initial={{ opacity: 0, x: side === 'left' ? -36 : 36 }}
+      onClick={e => onPick(side, e)}
+      initial={{ opacity: 0, x: side === 'left' ? -40 : 40 }}
       animate={{ x: 0, ...SIDE_ANIM[state] }}
       exit={{ opacity: 0, transition: { duration: 0.2 } }}
-      transition={{ duration: state === 'lose' ? 0.55 : 0.6, ease: EASE_OUT }}
+      transition={{ duration: state === 'lose' ? 0.55 : 0.7, ease: EASE_OUT }}
       style={{ textAlign: side }}
     >
-      <div style={{
-        position: 'relative', aspectRatio: '4 / 3', borderRadius: 10, overflow: 'hidden',
-        background: thumb ? '#111' : 'linear-gradient(150deg,' + (p.color || accent) + '55, #111)',
-        border: '1px solid ' + (state === 'win' ? accent : 'rgba(255,255,255,.08)'),
-        transition: 'border-color .3s',
-      }}>
-        {thumb && (
-          <img
-            src={thumb} alt="" decoding="async" draggable={false}
-            style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-              // hqdefault est en 4:3 avec bandes noires : on zoome pour les rogner.
-              transform: vivid ? 'scale(1.42)' : 'scale(1.36)',
-              filter: vivid ? 'none' : state === 'lose' ? 'grayscale(1) brightness(.5)' : 'saturate(.5) brightness(.78)',
-              transition: 'filter .45s ease, transform .8s cubic-bezier(.22,1,.36,1)',
-            }}
-          />
-        )}
-        {/* Repère de camp : un filet de couleur sur le bord intérieur */}
-        <span style={{
-          position: 'absolute', top: 0, bottom: 0, width: 2,
-          [side === 'left' ? 'right' : 'left']: 0,
-          background: accent, opacity: vivid ? 1 : 0.5, transition: 'opacity .3s',
-        }} />
-        {/* Gagnant : une ligne de couleur se trace au pied de l'image */}
+      <div className="ht-frame" data-state={state}>
+        {p.ytId
+          ? <YtImage ytId={p.ytId} vivid={vivid} state={state} />
+          : <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(150deg,' + (p.color || accent) + '44, #0c0c0d)' }} />}
+        {/* Gagnant : un filet blanc se trace au pied de l'image */}
         {state === 'win' && (
           <motion.span
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 0.5, ease: EASE_OUT }}
+            transition={{ duration: 0.55, ease: EASE_OUT }}
             style={{
-              position: 'absolute', left: 0, right: 0, bottom: 0, height: 3,
-              background: accent, transformOrigin: side === 'left' ? 'left' : 'right',
+              position: 'absolute', left: 0, right: 0, bottom: 0, height: 2,
+              background: '#fff', transformOrigin: side === 'left' ? 'left' : 'right',
             }}
           />
         )}
       </div>
-      <div style={{ paddingTop: 10, minWidth: 0 }}>
-        <div className="ht-side-title">{p.title}</div>
-        <div className="ht-side-sub">
-          {state === 'win' ? 'Passe au tour suivant' : sub}
+      <div className="ht-side-meta">
+        <span className="ht-side-mark" style={{ background: accent }} />
+        <div style={{ minWidth: 0 }}>
+          <div className="ht-side-title">{p.title}</div>
+          <div className="ht-side-sub">{state === 'win' ? 'Passe au tour suivant' : sub}</div>
         </div>
       </div>
     </motion.button>
@@ -785,7 +812,7 @@ function HeroDuel({ read, onVote }) {
   const [picked, setPicked] = useState(null)
   const [count, setCount] = useState(0)
   const timer = useRef(0)
-  useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => () => { clearTimeout(timer.current); dotFx.lean(null) }, [])
 
   const match = read?.currentMatch
   const left  = match?.left
@@ -796,92 +823,83 @@ function HeroDuel({ read, onVote }) {
   const pct = total ? (done / total) * 100 : 0
   const route = read.config.route
 
-  function pick(side) {
+  function hover(side) {
+    setHovered(side)
+    dotFx.lean(side)
+  }
+
+  function pick(side, e) {
     if (picked) return
     setPicked(side)
+    dotFx.lean(null)
+    // L'onde part du clic (ou du centre de la carte au clavier).
+    const r = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX || r.left + r.width / 2
+    const y = e.clientY || r.top + r.height / 2
+    dotFx.pulse(x, y, '#ffffff', 1)
     // Le temps de voir le choix se marquer, puis le bracket avance.
     timer.current = setTimeout(() => {
       onVote(side)
       setCount(c => c + 1)
       setPicked(null)
       setHovered(null)
-    }, 900)
+    }, 950)
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2, ease: EASE_OUT }}
+      transition={{ duration: 0.7, delay: 0.25, ease: EASE_OUT }}
       className="ht-duel"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <span data-fx style={{
-          width: 6, height: 6, borderRadius: '50%', background: ACCENT_A, flexShrink: 0,
-          animation: 'htPulse 1.6s ease-in-out infinite',
-        }} />
-        <span style={{
-          fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,.5)', whiteSpace: 'nowrap',
-        }}>
-          À toi de trancher
-        </span>
-        <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {read.config.categoryLabel || 'Tournoi'} · {read.currentRound?.label || 'En cours'}
-        </span>
+      <div className="ht-duel-head">
+        <span data-fx className="ht-live" />
+        <span>À toi de trancher</span>
+        <span aria-hidden className="ht-sep">·</span>
+        <span className="ht-duel-where">{read.config.categoryLabel || 'Tournoi'} — {read.currentRound?.label || 'En cours'}</span>
       </div>
 
-      {/* Les deux camps et le VS. La clé suit le duel : à chaque vote, l'ancien
-          sort et le nouveau entre par les bords. */}
       <AnimatePresence mode="wait" initial={true}>
         <motion.div
           key={match.id}
           exit={{ opacity: 0, transition: { duration: 0.18 } }}
-          style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 40px minmax(0,1fr)', alignItems: 'start' }}
-          onMouseLeave={() => setHovered(null)}
+          className="ht-duel-grid"
+          onMouseLeave={() => hover(null)}
         >
           <DuelSide p={left} side="left" accent={ACCENT_A}
-            state={sideState('left', hovered, picked)} onHover={setHovered} onPick={pick} disabled={!!picked} />
-          <div className="ht-vs-col">
-            <motion.span
-              initial={{ scaleY: 0 }}
-              animate={{ scaleY: 1, opacity: picked ? 0 : 1 }}
-              transition={{ duration: 0.6, delay: 0.25, ease: [0.65, 0, 0.35, 1] }}
-              className="ht-vs-line"
-            />
+            state={sideState('left', hovered, picked)} onHover={hover} onPick={pick} disabled={!!picked} />
+          <div className="ht-vs-col" aria-hidden>
             <motion.span
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: picked ? 0 : 1, scale: picked ? 0.6 : 1 }}
-              transition={{ duration: 0.35, delay: picked ? 0 : 0.55, ease: EASE_OUT }}
+              transition={{ duration: 0.35, delay: picked ? 0 : 0.6, ease: EASE_OUT }}
               className="ht-vs"
             >
-              vs
+              VS
             </motion.span>
           </div>
           <DuelSide p={right} side="right" accent={ACCENT_B}
-            state={sideState('right', hovered, picked)} onHover={setHovered} onPick={pick} disabled={!!picked} />
+            state={sideState('right', hovered, picked)} onHover={hover} onPick={pick} disabled={!!picked} />
         </motion.div>
       </AnimatePresence>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 18 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: Math.max(pct, 1.5) + '%' }}
-              transition={{ duration: 0.9, ease: EASE_OUT }}
-              style={{ height: '100%', background: 'linear-gradient(90deg,' + ACCENT_A + ',' + ACCENT_B + ')' }}
-            />
-          </div>
-          <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,.34)', letterSpacing: '.04em' }}>
-            {done} / {total} duels tranchés
-            {count > 0 && <span style={{ color: 'rgba(255,255,255,.6)' }}> · {count} par toi à l'instant</span>}
-          </div>
+      <div className="ht-duel-foot">
+        <div className="ht-bar">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: Math.max(pct, 1) + '%' }}
+            transition={{ duration: 0.9, ease: EASE_OUT }}
+            className="ht-bar-fill"
+          />
         </div>
+        <span className="ht-foot-txt">
+          {done} / {total} duels tranchés
+          {count > 0 && <b> · {count} par toi</b>}
+        </span>
         {route && (
           <button type="button" className="ht-link-btn" onClick={() => navigate(route)}>
-            Ouvrir l'arène <span aria-hidden>→</span>
+            Ouvrir l'arène →
           </button>
         )}
       </div>
@@ -890,9 +908,8 @@ function HeroDuel({ read, onVote }) {
 }
 
 // ── Hero ───────────────────────────────────────────────────────────────────
-// Deux colonnes sur grand écran : à gauche le titre, une phrase et deux
-// actions ; à droite le duel en cours. Une seule couleur pleine (le bouton
-// principal), le reste en filets.
+// Une seule colonne centrée sur fond noir et trame de points : une ligne de
+// contexte, le titre, une phrase, le duel en grand, puis les actions.
 function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats, onVote }) {
   const navigate = useNavigate()
   function scrollTo(ref) {
@@ -901,56 +918,54 @@ function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats, onVo
   const hasDuel = !!(ticker && ticker.currentMatch && ticker.currentMatch.left && ticker.currentMatch.right)
 
   return (
-    <div className={'ht-hero' + (hasDuel ? '' : ' ht-hero--solo')}>
-      <div className="ht-hero-copy">
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="ht-kicker"
-        >
-          <span>{stats.arenas} arènes ouvertes</span>
-          <span aria-hidden style={{ opacity: 0.4 }}>/</span>
-          <span>{stats.matchesTotal.toLocaleString('fr-FR')} duels à trancher</span>
-        </motion.div>
+    <div className="ht-hero">
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="ht-kicker"
+      >
+        <span>{stats.arenas} arènes ouvertes</span>
+        <span aria-hidden className="ht-sep">·</span>
+        <span>{stats.matchesTotal.toLocaleString('fr-FR')} duels à trancher</span>
+      </motion.div>
 
-        <HeroTitle text="Tournois Brams" />
+      <HeroTitle text="Tournois Brams" />
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="ht-lede"
-        >
-          Openings, endings, OST, rap FR. Deux morceaux, un vote, et le bracket avance jusqu'au champion.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="ht-ctas"
-        >
-          <button type="button" className="ht-btn ht-btn--main" onClick={() => scrollTo(duelRef)}>
-            Duel du jour
-          </button>
-          <button type="button" className="ht-btn ht-btn--ghost" onClick={() => navigate('/tournoi/salon')}>
-            Jouer à plusieurs
-          </button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="ht-links"
-        >
-          <button type="button" className="ht-link-btn" onClick={() => scrollTo(activeRef)}>Tournois actifs ↓</button>
-          <button type="button" className="ht-link-btn" onClick={() => scrollTo(categoriesRef)}>Toutes les arènes ↓</button>
-        </motion.div>
-      </div>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="ht-lede"
+      >
+        Deux morceaux, un vote. Le bracket avance jusqu'au champion.
+      </motion.p>
 
       {hasDuel && <HeroDuel read={ticker} onVote={onVote} />}
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        className="ht-ctas"
+      >
+        <button type="button" className="ht-btn ht-btn--main" onClick={() => scrollTo(duelRef)}>
+          Duel du jour
+        </button>
+        <button type="button" className="ht-btn ht-btn--ghost" onClick={() => navigate('/tournoi/salon')}>
+          Jouer à plusieurs
+        </button>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+        className="ht-links"
+      >
+        <button type="button" className="ht-link-btn" onClick={() => scrollTo(activeRef)}>Tournois actifs ↓</button>
+        <button type="button" className="ht-link-btn" onClick={() => scrollTo(categoriesRef)}>Toutes les arènes ↓</button>
+      </motion.div>
     </div>
   )
 }
@@ -988,11 +1003,9 @@ export default function TournamentHubPage() {
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
-      {/* Fond arène : ciel, projecteurs et sol néon en parallaxe + champ
-          d'énergie interactif au curseur */}
-      <ArenaBackdrop accentA={ACCENT_A} accentB={ACCENT_B} />
-      {/* Pétales sakura par-dessus (remis à la demande) — touche communautaire */}
-      <SakuraBackdrop count={22} />
+      {/* Fond : noir et trame de points (la même que les tournois en images).
+          Elle réagit au duel du hero : côté survolé, onde au vote. */}
+      <HalftoneField />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 2 }}>
