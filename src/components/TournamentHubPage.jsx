@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { DUR, EASE } from '../lib/motion.js'
 import SakuraBackdrop from './SakuraBackdrop.jsx'
 import ArenaBackdrop from './tournament/ArenaBackdrop.jsx'
@@ -9,6 +9,7 @@ import DailyDuel from './tournament/DailyDuel.jsx'
 import HallOfChampions from './tournament/HallOfChampions.jsx'
 import GameModesShowcase from './tournament/GameModesShowcase.jsx'
 import { readAll, globalStats, championsBoard } from '../lib/tournamentStats.js'
+import { loadOrCreateRounds, voteCurrentMatch } from '../lib/tournament.js'
 import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG, RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from '../data/tournament-data.js'
 import {
   TOURNAMENT_CATEGORIES,
@@ -133,6 +134,36 @@ const HUB_CSS = `
   }
   .ht-link-btn:hover { color:#fff; border-bottom-color:rgba(255,255,255,.3) }
   .ht-btn:focus-visible, .ht-link-btn:focus-visible { outline:2px solid #f9a8d4; outline-offset:3px }
+  .ht-side {
+    display:block; width:100%; min-width:0; padding:0; margin:0;
+    background:none; border:none; color:inherit; font:inherit;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .ht-side:disabled { cursor:default }
+  .ht-side:focus-visible { outline:2px solid #f9a8d4; outline-offset:4px; border-radius:10px }
+  .ht-side-title {
+    font-size:14px; font-weight:700; color:#fff;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .ht-side-sub {
+    margin-top:2px; font-size:11px; color:rgba(255,255,255,.4);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  /* Le filet et le VS se placent sur le bloc des deux camps (position
+     relative). Le VS se cale au milieu des images 4:3 : une marge en %
+     se calcule sur la LARGEUR du bloc, d'où (largeur - 40) / 2 × 3/4 / 2. */
+  .ht-vs-col { align-self:stretch }
+  .ht-vs-line {
+    position:absolute; top:0; bottom:0; left:50%; width:1px; transform-origin:top;
+    background:linear-gradient(180deg, transparent, rgba(255,255,255,.22) 15%, rgba(255,255,255,.22) 65%, transparent);
+  }
+  .ht-vs {
+    position:absolute; left:50%; top:0;
+    width:34px; height:34px; margin-left:-17px; margin-top:calc(18.75% - 7.5px - 17px);
+    border-radius:50%; display:grid; place-items:center;
+    background:#0a0a0b; border:1px solid rgba(255,255,255,.16);
+    font-family:'Pirata One',cursive; font-size:15px; line-height:1; color:#fff;
+  }
   .ht-duel {
     padding:clamp(16px,2vw,24px); border-radius:16px;
     background:rgba(12,10,12,.72); border:1px solid rgba(255,255,255,.08);
@@ -673,100 +704,134 @@ function HeroTitle({ text }) {
   )
 }
 
-// ── Affiche du duel en cours ───────────────────────────────────────────────
-// La pièce maîtresse du hero : le duel qui se joue sur l'arène la plus avancée,
-// en vrai (miniatures YouTube des deux morceaux). Un seul effet signature : les
-// deux camps glissent depuis leur bord, le filet central se trace, puis le VS
-// apparaît. Au survol d'un camp, l'autre s'efface.
+// ── Duel jouable du hero ───────────────────────────────────────────────────
+// La pièce maîtresse : le duel en cours d'une arène, et on le tranche ici,
+// sans quitter le hub. Un clic sur un camp : il s'allume, l'autre s'efface,
+// puis le duel suivant entre par les bords. Le vote passe par le même bracket
+// que la page du tournoi (lib/tournament), donc rien n'est perdu ni inventé.
 function ytThumb(p) {
   return p && p.ytId ? 'https://i.ytimg.com/vi/' + p.ytId + '/hqdefault.jpg' : null
 }
 
-function sideMotion(side, hovered) {
-  const dim = hovered && hovered !== side
-  return {
-    initial: { opacity: 0, x: side === 'left' ? -28 : 28 },
-    animate: { opacity: dim ? 0.38 : 1, x: 0 },
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: hovered === undefined ? 0.35 : 0 },
-  }
+const EASE_OUT = [0.22, 1, 0.36, 1]
+
+// États visuels d'un camp : repos, survolé, gagnant, perdant.
+function sideState(side, hovered, picked) {
+  if (picked) return picked === side ? 'win' : 'lose'
+  if (hovered) return hovered === side ? 'lit' : 'dim'
+  return 'rest'
 }
 
-function DuelThumb({ p, side, accent, hovered, onHover }) {
+const SIDE_ANIM = {
+  rest: { opacity: 1,    scale: 1 },
+  lit:  { opacity: 1,    scale: 1 },
+  dim:  { opacity: 0.4,  scale: 0.985 },
+  win:  { opacity: 1,    scale: 1.02 },
+  lose: { opacity: 0.08, scale: 0.94 },
+}
+
+function DuelSide({ p, side, accent, state, onHover, onPick, disabled }) {
   const thumb = ytThumb(p)
-  const lit = hovered === side
-  return (
-    <motion.div
-      {...sideMotion(side, hovered)}
-      onMouseEnter={() => onHover(side)}
-      style={{
-        position: 'relative', aspectRatio: '4 / 3', borderRadius: 10, overflow: 'hidden',
-        background: thumb ? '#111' : 'linear-gradient(150deg,' + (p.color || accent) + '55, #111)',
-        border: '1px solid rgba(255,255,255,.08)',
-      }}
-    >
-      {thumb && (
-        <img
-          src={thumb} alt="" decoding="async"
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-            // hqdefault est en 4:3 avec bandes noires : on zoome pour les rogner.
-            transform: lit ? 'scale(1.42)' : 'scale(1.36)',
-            filter: lit ? 'none' : 'saturate(.5) brightness(.78)',
-            transition: 'filter .45s ease, transform .8s cubic-bezier(.22,1,.36,1)',
-          }}
-        />
-      )}
-      {/* Repère de camp : un filet de couleur sur le bord intérieur, rien de plus */}
-      <span style={{
-        position: 'absolute', top: 0, bottom: 0, width: 2,
-        [side === 'left' ? 'right' : 'left']: 0,
-        background: accent, opacity: lit ? 1 : 0.5, transition: 'opacity .3s',
-      }} />
-    </motion.div>
-  )
-}
-
-function DuelCaption({ p, side, hovered }) {
+  const vivid = state === 'lit' || state === 'win'
   const sub = p.artist || p.anime || ''
   return (
-    <motion.div {...sideMotion(side, hovered)} style={{ minWidth: 0, textAlign: side, paddingTop: 10 }}>
+    <motion.button
+      type="button"
+      className="ht-side"
+      disabled={disabled}
+      aria-label={'Voter pour ' + p.title + (sub ? ', ' + sub : '')}
+      onMouseEnter={() => onHover(side)}
+      onFocus={() => onHover(side)}
+      onClick={() => onPick(side)}
+      initial={{ opacity: 0, x: side === 'left' ? -36 : 36 }}
+      animate={{ x: 0, ...SIDE_ANIM[state] }}
+      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+      transition={{ duration: state === 'lose' ? 0.55 : 0.6, ease: EASE_OUT }}
+      style={{ textAlign: side }}
+    >
       <div style={{
-        fontSize: 14, fontWeight: 700, color: '#fff',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        position: 'relative', aspectRatio: '4 / 3', borderRadius: 10, overflow: 'hidden',
+        background: thumb ? '#111' : 'linear-gradient(150deg,' + (p.color || accent) + '55, #111)',
+        border: '1px solid ' + (state === 'win' ? accent : 'rgba(255,255,255,.08)'),
+        transition: 'border-color .3s',
       }}>
-        {p.title}
+        {thumb && (
+          <img
+            src={thumb} alt="" decoding="async" draggable={false}
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+              // hqdefault est en 4:3 avec bandes noires : on zoome pour les rogner.
+              transform: vivid ? 'scale(1.42)' : 'scale(1.36)',
+              filter: vivid ? 'none' : state === 'lose' ? 'grayscale(1) brightness(.5)' : 'saturate(.5) brightness(.78)',
+              transition: 'filter .45s ease, transform .8s cubic-bezier(.22,1,.36,1)',
+            }}
+          />
+        )}
+        {/* Repère de camp : un filet de couleur sur le bord intérieur */}
+        <span style={{
+          position: 'absolute', top: 0, bottom: 0, width: 2,
+          [side === 'left' ? 'right' : 'left']: 0,
+          background: accent, opacity: vivid ? 1 : 0.5, transition: 'opacity .3s',
+        }} />
+        {/* Gagnant : une ligne de couleur se trace au pied de l'image */}
+        {state === 'win' && (
+          <motion.span
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.5, ease: EASE_OUT }}
+            style={{
+              position: 'absolute', left: 0, right: 0, bottom: 0, height: 3,
+              background: accent, transformOrigin: side === 'left' ? 'left' : 'right',
+            }}
+          />
+        )}
       </div>
-      {sub && (
-        <div style={{
-          marginTop: 2, fontSize: 11, color: 'rgba(255,255,255,.4)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {sub}
+      <div style={{ paddingTop: 10, minWidth: 0 }}>
+        <div className="ht-side-title">{p.title}</div>
+        <div className="ht-side-sub">
+          {state === 'win' ? 'Passe au tour suivant' : sub}
         </div>
-      )}
-    </motion.div>
+      </div>
+    </motion.button>
   )
 }
 
-function HeroDuel({ read }) {
+function HeroDuel({ read, onVote }) {
   const navigate = useNavigate()
-  const [hovered, setHovered] = useState(undefined)
-  const left  = read?.currentMatch?.left
-  const right = read?.currentMatch?.right
+  const [hovered, setHovered] = useState(null)
+  const [picked, setPicked] = useState(null)
+  const [count, setCount] = useState(0)
+  const timer = useRef(0)
+  useEffect(() => () => clearTimeout(timer.current), [])
+
+  const match = read?.currentMatch
+  const left  = match?.left
+  const right = match?.right
   if (!left || !right) return null
 
   const { done, total } = read.progress
-  const pct = total ? Math.round((done / total) * 100) : 0
+  const pct = total ? (done / total) * 100 : 0
   const route = read.config.route
+
+  function pick(side) {
+    if (picked) return
+    setPicked(side)
+    // Le temps de voir le choix se marquer, puis le bracket avance.
+    timer.current = setTimeout(() => {
+      onVote(side)
+      setCount(c => c + 1)
+      setPicked(null)
+      setHovered(null)
+    }, 900)
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.6, delay: 0.2, ease: EASE_OUT }}
       className="ht-duel"
     >
-      {/* En-tête : quelle arène, quel tour */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <span data-fx style={{
           width: 6, height: 6, borderRadius: '50%', background: ACCENT_A, flexShrink: 0,
@@ -774,71 +839,66 @@ function HeroDuel({ read }) {
         }} />
         <span style={{
           fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase',
-          color: 'rgba(255,255,255,.5)',
+          color: 'rgba(255,255,255,.5)', whiteSpace: 'nowrap',
         }}>
-          À l'affiche
+          À toi de trancher
         </span>
         <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {read.config.categoryLabel || 'Tournoi'} · {read.currentRound?.label || 'En cours'}
         </span>
       </div>
 
-      {/* Les deux camps, séparés par le filet et le VS. Deux rangées (images
-          puis légendes) pour que le VS se centre sur les images seules. */}
-      <div
-        style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 40px minmax(0,1fr)' }}
-        onMouseLeave={() => setHovered(null)}
-      >
-        <DuelThumb p={left} side="left" accent={ACCENT_A} hovered={hovered} onHover={setHovered} />
-        <div style={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
-          <motion.span
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ duration: 0.6, delay: 0.55, ease: [0.65, 0, 0.35, 1] }}
-            style={{
-              position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1, transformOrigin: 'top',
-              background: 'linear-gradient(180deg, transparent, rgba(255,255,255,.22) 25%, rgba(255,255,255,.22) 75%, transparent)',
-            }}
-          />
-          <motion.span
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.95, ease: [0.22, 1, 0.36, 1] }}
-            style={{
-              position: 'relative', width: 34, height: 34, borderRadius: '50%',
-              display: 'grid', placeItems: 'center',
-              background: BG, border: '1px solid rgba(255,255,255,.16)',
-              fontFamily: "'Pirata One',cursive", fontSize: 15, lineHeight: 1, color: '#fff',
-            }}
-          >
-            vs
-          </motion.span>
-        </div>
-        <DuelThumb p={right} side="right" accent={ACCENT_B} hovered={hovered} onHover={setHovered} />
-        <DuelCaption p={left} side="left" hovered={hovered} />
-        <span />
-        <DuelCaption p={right} side="right" hovered={hovered} />
-      </div>
+      {/* Les deux camps et le VS. La clé suit le duel : à chaque vote, l'ancien
+          sort et le nouveau entre par les bords. */}
+      <AnimatePresence mode="wait" initial={true}>
+        <motion.div
+          key={match.id}
+          exit={{ opacity: 0, transition: { duration: 0.18 } }}
+          style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 40px minmax(0,1fr)', alignItems: 'start' }}
+          onMouseLeave={() => setHovered(null)}
+        >
+          <DuelSide p={left} side="left" accent={ACCENT_A}
+            state={sideState('left', hovered, picked)} onHover={setHovered} onPick={pick} disabled={!!picked} />
+          <div className="ht-vs-col">
+            <motion.span
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1, opacity: picked ? 0 : 1 }}
+              transition={{ duration: 0.6, delay: 0.25, ease: [0.65, 0, 0.35, 1] }}
+              className="ht-vs-line"
+            />
+            <motion.span
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: picked ? 0 : 1, scale: picked ? 0.6 : 1 }}
+              transition={{ duration: 0.35, delay: picked ? 0 : 0.55, ease: EASE_OUT }}
+              className="ht-vs"
+            >
+              vs
+            </motion.span>
+          </div>
+          <DuelSide p={right} side="right" accent={ACCENT_B}
+            state={sideState('right', hovered, picked)} onHover={setHovered} onPick={pick} disabled={!!picked} />
+        </motion.div>
+      </AnimatePresence>
 
-      {/* Pied : avancement réel de l'arène + entrée */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 18 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: Math.max(pct, 1.5) + '%' }}
-              transition={{ duration: 0.9, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.9, ease: EASE_OUT }}
               style={{ height: '100%', background: 'linear-gradient(90deg,' + ACCENT_A + ',' + ACCENT_B + ')' }}
             />
           </div>
           <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,.34)', letterSpacing: '.04em' }}>
             {done} / {total} duels tranchés
+            {count > 0 && <span style={{ color: 'rgba(255,255,255,.6)' }}> · {count} par toi à l'instant</span>}
           </div>
         </div>
         {route && (
           <button type="button" className="ht-link-btn" onClick={() => navigate(route)}>
-            Voter <span aria-hidden>→</span>
+            Ouvrir l'arène <span aria-hidden>→</span>
           </button>
         )}
       </div>
@@ -850,7 +910,7 @@ function HeroDuel({ read }) {
 // Deux colonnes sur grand écran : à gauche le titre, une phrase et deux
 // actions ; à droite le duel en cours. Une seule couleur pleine (le bouton
 // principal), le reste en filets.
-function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats }) {
+function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats, onVote }) {
   const navigate = useNavigate()
   function scrollTo(ref) {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -907,7 +967,7 @@ function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats }) {
         </motion.div>
       </div>
 
-      {hasDuel && <HeroDuel read={ticker} />}
+      {hasDuel && <HeroDuel read={ticker} onVote={onVote} />}
     </div>
   )
 }
@@ -916,15 +976,32 @@ function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats }) {
 export default function TournamentHubPage() {
   // Une seule lecture de l'état local pour tout le hub : les cartes de tournoi,
   // le bandeau de stats et le podium partent des mêmes chiffres.
-  const reads   = useMemo(() => readAll(ACTIVE_CONFIGS), [])
+  // `version` change à chaque vote donné depuis le hero : cartes, compteurs et
+  // podium se relisent avec.
+  const [version, setVersion] = useState(0)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const reads   = useMemo(() => readAll(ACTIVE_CONFIGS), [version])
   const stats   = useMemo(() => globalStats(reads), [reads])
   const podium  = useMemo(() => championsBoard(reads, 3), [reads])
+
+  // L'arène du hero est choisie une fois (la plus avancée, sinon la première
+  // avec un duel ouvert) et ne change plus pendant la visite : voter ne doit
+  // pas faire sauter le joueur d'un tournoi à l'autre.
+  const [heroId] = useState(() => (stats.hottest || reads.find(r => r.currentMatch) || reads[0])?.id || null)
+  const heroRead = reads.find(r => r.id === heroId) || null
+
+  function voteFromHero(side) {
+    if (!heroRead) return
+    voteCurrentMatch(heroRead.config, loadOrCreateRounds(heroRead.config), side)
+    setVersion(v => v + 1)
+  }
 
   const activeRef     = useRef(null)
   const categoriesRef = useRef(null)
   const duelRef       = useRef(null)
 
   return (
+    <MotionConfig reducedMotion="user">
     <div style={{ minHeight: '100vh', background: BG, fontFamily: 'inherit', position: 'relative', overflowX: 'hidden' }}>
       <style>{HUB_CSS}</style>
 
@@ -947,8 +1024,9 @@ export default function TournamentHubPage() {
             activeRef={activeRef}
             categoriesRef={categoriesRef}
             duelRef={duelRef}
-            ticker={stats.hottest || reads.find(r => r.currentMatch) || null}
+            ticker={heroRead}
             stats={stats}
+            onVote={voteFromHero}
           />
 
           {/* ── Stats du hub ── */}
@@ -1029,5 +1107,6 @@ export default function TournamentHubPage() {
         </div>
       </div>
     </div>
+    </MotionConfig>
   )
 }

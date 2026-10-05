@@ -7,7 +7,7 @@ import {
   advanceWinner,
   getTournamentProgress,
   getWinner,
-  loadState, saveState,
+  loadState, saveState, loadOrCreateRounds,
   loadPersonalVotes, savePersonalVote, savePersonalVotes,
   loadVoteCounts, addVoteCount, saveVoteCounts,
   getVotePercents,
@@ -61,24 +61,7 @@ function HeroGlyphs() {
 }
 
 // ── Version check ──────────────────────────────────────────────────────────
-function loadRoundsWithVersionCheck(config) {
-  const versionKey = `brams_t_version_${config.id}`
-  const version = config.version || 'v1'
-  const savedVersion = localStorage.getItem(versionKey)
-  if (savedVersion !== version) {
-    resetTournament(config.id)
-    localStorage.setItem(versionKey, version)
-    const { rounds } = generateBracket(config.participants, config.id)
-    return rounds
-  }
-  const saved = loadState(config.id)
-  if (saved) {
-    if (getCurrentMatch(saved) || getWinner(saved)) return saved
-    resetTournament(config.id)
-  }
-  const { rounds } = generateBracket(config.participants, config.id)
-  return rounds
-}
+const loadRoundsWithVersionCheck = loadOrCreateRounds
 
 // ── Stats pill ─────────────────────────────────────────────────────────────
 function Pill({ label, value, gold }) {

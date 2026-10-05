@@ -316,3 +316,41 @@ export function resetTournament(tournamentId) {
     localStorage.removeItem(shuffleKey(tournamentId))
   } catch {}
 }
+
+// Bracket d'un tournoi tel que la page du tournoi le joue : l'état sauvegardé
+// s'il est encore valable, sinon un bracket neuf (tirage mémorisé). Une
+// nouvelle version de la config repart de zéro. Partagé par la page du tournoi
+// et le hub, pour que le duel annoncé sur le hub soit celui qu'on joue.
+export function loadOrCreateRounds(config) {
+  try {
+    const versionKey = `brams_t_version_${config.id}`
+    const version = config.version || 'v1'
+    if (localStorage.getItem(versionKey) !== version) {
+      resetTournament(config.id)
+      localStorage.setItem(versionKey, version)
+      return generateBracket(config.participants, config.id).rounds
+    }
+  } catch {}
+  const saved = loadState(config.id)
+  if (saved) {
+    if (getCurrentMatch(saved) || getWinner(saved)) return saved
+    resetTournament(config.id)
+  }
+  return generateBracket(config.participants, config.id).rounds
+}
+
+// Tranche le duel en cours pour `side` ('left' | 'right') : vote perso,
+// compteur, puis avancée du bracket selon les votes comptés — même règle que
+// la page du tournoi. Renvoie le nouveau bracket, déjà sauvegardé.
+export function voteCurrentMatch(config, rounds, side) {
+  const current = getCurrentMatch(rounds)
+  if (!current) return rounds
+  const matchId = current.match.id
+  savePersonalVote(config.id, matchId, side)
+  const vc = addVoteCount(config.id, matchId, side)
+  const p = getVotePercents(vc, matchId)
+  const winnerId = p.leftN >= p.rightN ? current.match.left?.id : current.match.right?.id
+  const next = advanceWinner(rounds, matchId, winnerId)
+  saveState(config.id, next)
+  return next
+}

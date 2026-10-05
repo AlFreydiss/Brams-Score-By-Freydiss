@@ -5,7 +5,7 @@
 // plutôt que d'être absents.
 
 import {
-  loadState, loadVoteCounts, generateBracket,
+  loadOrCreateRounds, loadVoteCounts,
   getTournamentProgress, getCurrentMatch, getWinner,
 } from './tournament.js'
 
@@ -43,7 +43,9 @@ function sumVotes(tournamentId) {
 
 // Lit un tournoi : bracket courant, avancement, vainqueur ou meneur, votes.
 export function readTournament(config) {
-  const rounds = loadState(config.id) || generateBracket(config.participants).rounds
+  // Même bracket que la page du tournoi (tirage mémorisé) : le duel annoncé
+  // sur le hub est bien celui qu'on retrouve en entrant dans l'arène.
+  const rounds = loadOrCreateRounds(config)
   const progress = getTournamentProgress(rounds)
   const winner = getWinner(rounds)
   const current = getCurrentMatch(rounds)
