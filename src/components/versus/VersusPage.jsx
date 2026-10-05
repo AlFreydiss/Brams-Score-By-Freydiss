@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion'
 import { VERSUS_CONFIGS } from '../../data/versus-data.js'
 import { generateBracket, advanceWinner, getCurrentMatch, getWinner, getTournamentProgress } from '../../lib/tournament.js'
 import BleachRadio from './BleachRadio.jsx'
+import HalftoneField, { fx } from './HalftoneField.jsx'
+import { InkSplat, RoundWipe, SfxStamp, SlashSplit, SpeedLines, StretchTitle } from './fx.jsx'
 import './versus.css'
 
 // Tournoi 1v1 en images (Bankai de Bleach, panels de manga cultes).
@@ -114,25 +116,51 @@ export default function VersusPage({ kind }) {
     setRun({ size: chosen.length, rounds: generateBracket(chosen).rounds })
   }
 
+  const [burst, setBurst] = useState(0)                   // relance les lignes de vitesse
+  const [wipe, setWipe] = useState(null)                  // { label, sub }
+  const lastRoundRef = useRef(null)
+  const arenaRef = useRef(null)
+
+  // Volet d'encre à chaque nouveau tour (après le récap s'il y en a un).
+  const roundSize = current?.round.size
+  useEffect(() => {
+    if (!roundSize || recap) return
+    if (lastRoundRef.current === roundSize) return
+    lastRoundRef.current = roundSize
+    const real = current.round.matches.filter(m => m.left && m.right).length
+    setWipe({ label: roundName(roundSize), sub: roundSize === 2 ? 'Le dernier duel' : `${real} duels` })
+    const t = setTimeout(() => setWipe(null), 1300)
+    return () => clearTimeout(t)
+  }, [roundSize, recap, current])
+
+  // Les lignes de vitesse éclatent à chaque nouveau duel.
+  useEffect(() => { if (current) setBurst(b => b + 1) }, [current?.match.id])
+
   const choose = useCallback(side => {
-    if (!current || picked || recap) return
+    if (!current || picked || recap || wipe) return
     const { match, round } = current
     const p = side === 'left' ? match.left : match.right
     if (!p) return
     setPicked(side)
+    fx.lean(null)
+    const card = arenaRef.current?.querySelector(`.vs-card--${side}`)
+    if (card) {
+      const r = card.getBoundingClientRect()
+      fx.pulse(r.left + r.width / 2, r.top + r.height / 2, side === 'left' ? RED : BLUE, 1)
+    }
+    setBurst(b => b + 1)
     setTimeout(() => {
       const next = advanceWinner(rounds, match.id, p.id)
       setHistory(h => [...h.slice(-60), rounds])
       setRun(r => ({ ...r, rounds: next }))
       setPicked(null)
-      // Fin de tour (hors finale) : récap des qualifiés.
       const doneRound = next.find(r => r.id === round.id)
       const roundOver = doneRound.matches.every(m => m.status === 'closed')
       if (roundOver && round.size > 2) {
         setRecap({ size: round.size, qualified: doneRound.matches.map(winnerOf).filter(Boolean) })
       }
-    }, 480)
-  }, [current, picked, recap, rounds])
+    }, 760)
+  }, [current, picked, recap, wipe, rounds])
 
   const undo = useCallback(() => {
     if (!history.length || picked) return
@@ -141,7 +169,7 @@ export default function VersusPage({ kind }) {
     setHistory(h => h.slice(0, -1))
   }, [history, picked])
 
-  const quit = () => { setRun(null); setHistory([]); setRecap(null) }
+  const quit = () => { setRun(null); setHistory([]); setRecap(null); lastRoundRef.current = null }
 
   useEffect(() => {
     const onKey = e => {
@@ -156,25 +184,31 @@ export default function VersusPage({ kind }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [choose, undo, zoom, recap])
 
+  useEffect(() => () => fx.lean(null), [])
+
   const realMatches = current ? current.round.matches.filter(m => m.left && m.right) : []
   const matchIdx = current ? realMatches.findIndex(m => m.id === current.match.id) + 1 : 0
 
   return (
     <div className="vs-page">
-      <div className="vs-dots" aria-hidden />
+      <HalftoneField />
       <div className="vs-shell">
         <BleachRadio compact={narrow} />
 
         <main className="vs-main">
           <header className="vs-head">
             <Link to="/tournoi" className="vs-back">← Tournois</Link>
-            <h1 className="vs-title">{config.title}</h1>
+            <StretchTitle text={config.title} />
             <p className="vs-kicker">{config.kicker}</p>
             {current && (
               <div className="vs-pill">
                 <span>{roundName(current.round.size)}</span>
                 <i />
-                <span><b>{matchIdx}</b>/{realMatches.length}</span>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.span key={matchIdx} initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -14, opacity: 0 }} transition={{ duration: 0.22 }}>
+                    <b>{matchIdx}</b>/{realMatches.length}
+                  </motion.span>
+                </AnimatePresence>
               </div>
             )}
           </header>
@@ -183,25 +217,29 @@ export default function VersusPage({ kind }) {
 
           {current && (
             <>
-              <div className="vs-progress" aria-label={`Progression ${progress.pct} %`}>
-                <span style={{ width: `${progress.pct}%` }} />
+              <RoundStrip matches={realMatches} currentId={current.match.id} />
+              <div className="vs-stage" ref={arenaRef}>
+                <SpeedLines burst={burst} color={picked === 'left' ? RED : picked === 'right' ? BLUE : '#ffffff'} />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={current.match.id}
+                    className="vs-arena"
+                    exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                  >
+                    <DuelCard side="left" color={RED} p={current.match.left} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} seed={matchIdx} />
+                    <div className="vs-mark" aria-hidden>
+                      <InkSplat seed={matchIdx + current.round.size} />
+                      <motion.div className="vs-mark-txt"
+                        initial={{ scale: 3.2, rotate: -24, opacity: 0 }}
+                        animate={picked ? { scale: 0.6, opacity: 0, rotate: 10 } : { scale: 1, rotate: 0, opacity: 1 }}
+                        transition={picked ? { duration: 0.2 } : { type: 'spring', stiffness: 460, damping: 15, delay: 0.18 }}>
+                        <span style={{ color: RED }}>V</span><span style={{ color: BLUE }}>S</span>
+                      </motion.div>
+                    </div>
+                    <DuelCard side="right" color={BLUE} p={current.match.right} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} seed={matchIdx + 3} />
+                  </motion.div>
+                </AnimatePresence>
               </div>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={current.match.id}
-                  className="vs-arena"
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.26, ease: [0.2, 0.7, 0.2, 1] }}
-                >
-                  <DuelCard side="left" color={RED} p={current.match.left} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} />
-                  <div className="vs-mark" aria-hidden>
-                    <span style={{ color: RED }}>V</span><span style={{ color: BLUE }}>S</span>
-                  </div>
-                  <DuelCard side="right" color={BLUE} p={current.match.right} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} />
-                </motion.div>
-              </AnimatePresence>
               <div className="vs-help">
                 <span className="vs-keys"><kbd>←</kbd> <kbd>→</kbd> pour choisir · {progress.done}/{progress.total} duels</span>
                 <button type="button" onClick={undo} disabled={!history.length}>↶ Annuler</button>
@@ -219,13 +257,31 @@ export default function VersusPage({ kind }) {
       </AnimatePresence>
 
       <AnimatePresence>
+        {wipe && <RoundWipe key={wipe.label} label={wipe.label} sub={wipe.sub} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {zoom && (
           <motion.div className="vs-zoom" onClick={() => setZoom(null)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <img src={zoom.img} alt={zoom.title} />
+            <motion.img layoutId={`img-${zoom.id}`} src={zoom.img} alt={zoom.title} transition={{ type: 'spring', stiffness: 300, damping: 30 }} />
             <p>{zoom.title} <small>{zoom.subtitle}</small></p>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Bande de cases : un duel = une case de manga qui se remplit d'encre ────
+function RoundStrip({ matches, currentId }) {
+  const dense = matches.length > 24
+  return (
+    <div className={`vs-strip ${dense ? 'is-dense' : ''}`} aria-hidden>
+      {matches.map(m => {
+        const state = m.status === 'closed' ? 'is-done' : m.id === currentId ? 'is-now' : ''
+        const side = m.status === 'closed' ? (m.left?.id === m.winnerId ? 'l' : 'r') : ''
+        return <i key={m.id} className={`${state} ${side}`} />
+      })}
     </div>
   )
 }
@@ -296,74 +352,144 @@ function Setup({ config, onStart }) {
 }
 
 // ── Duel ───────────────────────────────────────────────────────────────────
-function DuelCard({ side, color, p, fit, picked, onPick, onZoom }) {
-  if (!p) return <div className="vs-card is-empty" style={{ '--c': color }} />
-  const state = picked ? (picked === side ? 'is-win' : 'is-lose') : ''
+// Entrée : la case glisse depuis son côté avec un dépassement (ressort).
+// Survol : inclinaison 3D qui suit le curseur, l'image dérive en parallaxe,
+// la trame de fond se teinte de la couleur du côté.
+// Choix : le gagnant prend une « case d'impact » (négatif d'un instant) et une
+// onomatopée ; le perdant est tranché en deux.
+function DuelCard({ side, color, p, fit, picked, onPick, onZoom, seed }) {
+  const reduce = useReducedMotion()
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const sx = useSpring(mx, { stiffness: 220, damping: 18 })
+  const sy = useSpring(my, { stiffness: 220, damping: 18 })
+  const rotY = useTransform(sx, v => v * 9)
+  const rotX = useTransform(sy, v => v * -7)
+  const imgX = useTransform(sx, v => v * -12)
+  const imgY = useTransform(sy, v => v * -10)
+
+  if (!p) return <div className={`vs-card vs-card--${side} is-empty`} style={{ '--c': color }} />
+  const dir = side === 'left' ? -1 : 1
+  const win = picked === side
+  const lose = picked && !win
+
+  const onMove = e => {
+    if (reduce || e.pointerType === 'touch' || picked) return
+    const r = e.currentTarget.getBoundingClientRect()
+    mx.set((e.clientX - r.left) / r.width - 0.5)
+    my.set((e.clientY - r.top) / r.height - 0.5)
+  }
+  const onEnter = e => { if (e.pointerType !== 'touch') fx.lean(side) }
+  const onLeave = () => { mx.set(0); my.set(0); fx.lean(null) }
+
   return (
     <motion.div
-      className={`vs-card vs-card--${side} ${state}`}
-      style={{ '--c': color }}
-      animate={picked === side ? { scale: [1, 1.035, 1.02] } : picked ? { opacity: 0.25, scale: 0.97 } : { opacity: 1, scale: 1 }}
-      transition={{ duration: 0.42, ease: [0.2, 0.8, 0.2, 1] }}
+      className={`vs-card vs-card--${side} ${win ? 'is-win' : ''} ${lose ? 'is-lose' : ''}`}
+      style={{ '--c': color, rotateX: rotX, rotateY: rotY, transformPerspective: 1100 }}
+      initial={reduce ? { opacity: 0 } : { x: 160 * dir, rotate: 7 * dir, opacity: 0, scale: 0.92 }}
+      animate={win
+        ? { x: 0, rotate: 0, opacity: 1, scale: [1, 1.07, 1.035], zIndex: 4 }
+        : lose ? { x: 0, rotate: 0, opacity: 1, scale: 0.97 }
+        : { x: 0, rotate: 0, opacity: 1, scale: 1 }}
+      transition={win || lose ? { duration: 0.45, ease: [0.2, 0.8, 0.2, 1] } : { type: 'spring', stiffness: 340, damping: 22, mass: 0.9 }}
+      onPointerMove={onMove}
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
     >
-      <button type="button" className="vs-card-hit" onClick={() => onPick(side)} aria-label={`Choisir ${p.title}`}>
-        <img src={p.img} alt={p.title} style={{ objectFit: fit }} draggable={false} />
+      <button type="button" className="vs-card-hit" onClick={() => onPick(side)} aria-label={`Choisir ${p.title}`} disabled={!!picked}>
+        {!lose && (
+          <motion.div className="vs-card-img" style={{ x: imgX, y: imgY }}
+            animate={win ? { filter: ['invert(0) contrast(1)', 'invert(1) contrast(1.6)', 'invert(0) contrast(1)'] } : { scale: [1.06, 1.1] }}
+            transition={win ? { duration: 0.22, times: [0, 0.35, 1] } : { duration: 9, ease: 'linear', repeat: Infinity, repeatType: 'mirror' }}>
+            <motion.img layoutId={`img-${p.id}`} src={p.img} alt={p.title} style={{ objectFit: fit }} draggable={false} />
+          </motion.div>
+        )}
+        {lose && <SlashSplit src={p.img} fit={fit} dir={dir} />}
+        <span className="vs-card-tone" aria-hidden />
       </button>
       <button type="button" className="vs-zoom-btn" onClick={() => onZoom(p)} aria-label="Agrandir">⤢</button>
-      <div className="vs-tag">
+      <motion.div className="vs-tag"
+        initial={{ clipPath: side === 'left' ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)' }}
+        animate={{ clipPath: 'inset(0 0% 0 0%)', opacity: lose ? 0 : 1 }}
+        transition={{ delay: lose ? 0 : 0.28, duration: 0.42, ease: [0.7, 0, 0.2, 1] }}>
         <b>{p.title}</b>
         <small>{p.subtitle}</small>
-      </div>
+      </motion.div>
+      {win && <SfxStamp seed={seed} side={side} />}
     </motion.div>
   )
 }
 
-// ── Récap de fin de tour ───────────────────────────────────────────────────
+// ── Récap de fin de tour : les qualifiés sont « distribués » comme des cartes
 function Recap({ recap, onClose }) {
   const nextName = roundName(recap.size / 2)
+  const dense = recap.qualified.length > 16
   return (
     <motion.div className="vs-recap" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="vs-recap-box" initial={{ y: 24, scale: 0.98 }} animate={{ y: 0, scale: 1 }} transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} onClick={e => e.stopPropagation()}>
-        <p className="vs-recap-k">{roundName(recap.size)} terminé</p>
+      <motion.div className="vs-recap-box" initial={{ y: 30, rotate: -1.5 }} animate={{ y: 0, rotate: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 24 }} onClick={e => e.stopPropagation()}>
+        <p className="vs-recap-k">{roundName(recap.size)} terminé · {recap.size / 2} éliminés</p>
         <h2>Qualifiés pour {nextName === 'Finale' ? 'la finale' : `les ${nextName.toLowerCase()}`}</h2>
-        <div className={`vs-recap-grid ${recap.qualified.length > 16 ? 'is-dense' : ''}`}>
+        <div className={`vs-recap-grid ${dense ? 'is-dense' : ''}`}>
           {recap.qualified.map((p, i) => (
-            <motion.figure key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.025, 0.8) }}>
+            <motion.figure key={p.id}
+              initial={{ opacity: 0, y: -60, rotate: ((i * 37) % 17) - 8, scale: 1.2 }}
+              animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 22, delay: Math.min(i * (dense ? 0.018 : 0.05), 0.9) }}>
               <img src={p.img} alt={p.title} loading="lazy" />
-              {recap.qualified.length <= 16 && <figcaption>{p.title}</figcaption>}
+              {!dense && <figcaption>{p.title}</figcaption>}
             </motion.figure>
           ))}
         </div>
-        <button type="button" className="vs-go" onClick={onClose}>Continuer · {nextName}</button>
+        <button type="button" className="vs-go" onClick={onClose}>Continuer vers {nextName === 'Finale' ? 'la finale' : `les ${nextName.toLowerCase()}`}</button>
       </motion.div>
     </motion.div>
   )
 }
 
-// ── Champion ───────────────────────────────────────────────────────────────
+// ── Champion : une planche de manga composée avec ton top 8 ────────────────
 function Champion({ rounds, config, onRestart, onUndo }) {
   const ranking = topRanking(rounds)
   const [champ, ...rest] = ranking
   const [copied, setCopied] = useState(false)
+  const champRef = useRef(null)
+
+  // Trois ondes d'encre depuis la case du champion.
+  useEffect(() => {
+    const timers = [0, 420, 900].map((d, i) => setTimeout(() => {
+      const r = champRef.current?.getBoundingClientRect()
+      if (r) fx.pulse(r.left + r.width / 2, r.top + r.height / 2, i === 1 ? BLUE : RED, 1.2)
+    }, 350 + d))
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
   const share = async () => {
     const lines = [`Mon top ${config.title} sur Brams Community :`, ...ranking.slice(0, 4).map((r, i) => `${i + 1}. ${r.p.title} (${r.p.subtitle})`), `${window.location.origin}${config.route}`]
     try { await navigator.clipboard.writeText(lines.join('\n')); setCopied(true); setTimeout(() => setCopied(false), 1800) } catch {}
   }
   return (
-    <motion.div className="vs-champ" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <p className="vs-champ-k">Ton champion</p>
-      <motion.div className="vs-champ-card" initial={{ scale: 0.92 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 18 }}>
-        <img src={champ.p.img} alt={champ.p.title} />
-      </motion.div>
-      <h2>{champ.p.title}</h2>
-      <p className="vs-champ-sub">{champ.p.subtitle}</p>
-      <div className="vs-podium">
-        {rest.map(r => (
-          <figure key={r.p.id} className="vs-pod">
-            <span className="vs-pod-rank">{RANK[r.label]}</span>
+    <div className="vs-champ">
+      <div className="vs-page-sheet">
+        <motion.div ref={champRef} className="vs-cell vs-cell--champ"
+          initial={{ clipPath: 'inset(50% 50% 50% 50%)' }} animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
+          transition={{ duration: 0.7, ease: [0.7, 0, 0.2, 1] }}>
+          <SpeedLines burst={1} color="#000000" />
+          <img src={champ.p.img} alt={champ.p.title} />
+          <motion.span className="vs-kanji" initial={{ scale: 3, opacity: 0, rotate: -20 }} animate={{ scale: 1, opacity: 1, rotate: -8 }} transition={{ delay: 0.7, type: 'spring', stiffness: 500, damping: 14 }}>完</motion.span>
+          <div className="vs-cell-cap">
+            <small>Ton champion</small>
+            <b>{champ.p.title}</b>
+            <i>{champ.p.subtitle}</i>
+          </div>
+        </motion.div>
+        {rest.map((r, i) => (
+          <motion.figure key={r.p.id} className={`vs-cell vs-cell--r${RANK[r.label]}`}
+            initial={{ clipPath: i % 2 ? 'inset(0 0 100% 0)' : 'inset(0 100% 0 0)' }}
+            animate={{ clipPath: 'inset(0 0% 0% 0)' }}
+            transition={{ delay: 0.6 + i * 0.09, duration: 0.5, ease: [0.7, 0, 0.2, 1] }}>
             <img src={r.p.img} alt={r.p.title} loading="lazy" />
-            <figcaption><small>{r.label}</small>{r.p.title}</figcaption>
-          </figure>
+            <span className="vs-pod-rank">{RANK[r.label]}</span>
+            <figcaption>{r.p.title}</figcaption>
+          </motion.figure>
         ))}
       </div>
       <div className="vs-help">
@@ -371,6 +497,6 @@ function Champion({ rounds, config, onRestart, onUndo }) {
         <button type="button" onClick={share}>{copied ? '✓ Copié' : 'Copier mon top'}</button>
         <button type="button" className="is-main" onClick={onRestart}>Nouvelle partie</button>
       </div>
-    </motion.div>
+    </div>
   )
 }

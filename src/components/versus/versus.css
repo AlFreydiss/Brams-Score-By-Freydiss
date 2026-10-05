@@ -376,3 +376,185 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
   .vs-setup-box { padding: 20px 16px; }
   .vs-recap-box { padding: 18px 14px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Passe « planche manga » : trame, encre, lignes de vitesse, onomatopées
+   ════════════════════════════════════════════════════════════════════════ */
+.vs-page { background: #050505; }
+.vs-halftone { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.vs-shell { z-index: 1; }
+
+/* Titre : chaque lettre s'étire sur l'axe de chasse */
+.vs-title span { display: inline-block; }
+
+/* Compteur du pill qui défile */
+.vs-pill > span:last-child { display: inline-block; min-width: 46px; text-align: left; }
+
+/* Bande de cases du tour */
+.vs-strip {
+  display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
+  max-width: 640px; margin: -4px auto 26px;
+}
+.vs-strip i {
+  width: 14px; height: 18px;
+  border: 1.5px solid rgba(255,255,255,.28);
+  background: transparent;
+  transform: skewX(-8deg);
+  transition: background .3s, border-color .3s, transform .3s;
+}
+.vs-strip.is-dense { gap: 3px; }
+.vs-strip.is-dense i { width: 7px; height: 12px; border-width: 1px; }
+.vs-strip i.is-done.l { background: var(--red); border-color: var(--red); }
+.vs-strip i.is-done.r { background: var(--blue); border-color: var(--blue); }
+.vs-strip i.is-now { border-color: #fff; transform: skewX(-8deg) scaleY(1.35); background: rgba(255,255,255,.18); }
+
+/* Scène : les lignes de vitesse débordent autour de l'arène */
+.vs-stage { position: relative; }
+.vs-speed {
+  position: absolute; inset: -70px -40px; width: calc(100% + 80px); height: calc(100% + 140px);
+  pointer-events: none; z-index: 0;
+}
+.vs-arena { z-index: 1; }
+
+/* Cases : bordure d'encre + ombre portée pleine, façon case découpée */
+.vs-card {
+  border-width: 3px;
+  border-radius: 4px;
+  background: #000;
+  box-shadow: 10px 10px 0 0 color-mix(in srgb, var(--c) 30%, #000);
+  transition: box-shadow .25s cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+.vs-card:hover:not(.is-lose) { box-shadow: 16px 16px 0 0 color-mix(in srgb, var(--c) 55%, #000); }
+.vs-card.is-win { box-shadow: 18px 18px 0 0 var(--c); }
+.vs-card.is-lose { box-shadow: 4px 4px 0 0 #000; border-color: #333; }
+.vs-card-hit { border-radius: 1px; background: #000; position: relative; }
+.vs-card-hit:disabled { cursor: default; }
+.vs-card-img { position: absolute; inset: -14px; }
+.vs-card-img img { width: 100%; height: 100%; display: block; user-select: none; }
+.vs-card:hover .vs-card-hit img { transform: none; }
+/* Trame qui apparaît sur la case survolée */
+.vs-card-tone {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(color-mix(in srgb, var(--c) 70%, transparent) 1.1px, transparent 1.4px);
+  background-size: 7px 7px;
+  mask-image: linear-gradient(to top, #000, transparent 45%);
+  opacity: 0; transition: opacity .3s;
+}
+.vs-card:hover .vs-card-tone { opacity: .55; }
+.vs-card.is-win .vs-card-tone { opacity: .8; }
+
+/* Coup de sabre */
+.vs-slash { position: absolute; inset: 0; }
+.vs-slash img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vs-slash svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+/* Onomatopée */
+.vs-sfx {
+  position: absolute; top: -26px; z-index: 6;
+  font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'Meiryo', sans-serif;
+  font-weight: 900; font-size: clamp(42px, 5vw, 76px); line-height: 1;
+  color: #fff;
+  -webkit-text-stroke: 5px #000; paint-order: stroke fill;
+  text-shadow: 6px 6px 0 var(--c);
+  pointer-events: none; white-space: nowrap;
+}
+.vs-sfx--left { left: 14px; }
+.vs-sfx--right { right: 14px; }
+
+/* VS : tache d'encre + lettres tamponnées */
+.vs-mark { width: 150px; height: 150px; display: grid; place-items: center; filter: none; transform: translate(-50%, -50%); }
+.vs-splat { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vs-mark-txt { position: relative; transform-origin: 50% 55%; }
+.vs-mark-txt span { display: inline-block; }
+
+/* Volet de tour */
+.vs-wipe {
+  position: fixed; inset: 0; z-index: 10070;
+  background: #050505;
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+.vs-wipe-tone {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(229,50,45,.55) 1.4px, transparent 1.8px);
+  background-size: 11px 11px;
+  mask-image: linear-gradient(115deg, transparent 20%, #000 50%, transparent 80%);
+}
+.vs-wipe-txt { position: relative; text-align: center; padding: 0 16px; }
+.vs-wipe-txt p { margin: 0 0 6px; color: #9a9ca3; font-weight: 600; font-size: 15px; }
+.vs-wipe-txt h2 {
+  margin: 0; color: #fff;
+  font-family: 'Archivo', sans-serif; font-weight: 900; font-style: italic;
+  font-size: clamp(44px, 9vw, 130px); line-height: .95; letter-spacing: -0.02em;
+  -webkit-text-stroke: 2px #050505; paint-order: stroke fill;
+  text-shadow: 8px 8px 0 #e5322d;
+}
+.vs-wipe-txt h2 span { display: inline-block; }
+
+/* Récap : cases distribuées, encre et ombre pleine */
+.vs-recap { background: rgba(3,3,3,.9); }
+.vs-recap-box { border-radius: 4px; border: 3px solid #fff; box-shadow: 14px 14px 0 0 #e5322d; background: #070707; }
+.vs-recap-grid img { border-radius: 2px; border: 2px solid #fff; }
+
+/* Champion : planche de manga, cases sur gouttières claires */
+.vs-champ { padding-top: 0; }
+.vs-page-sheet { text-align: left; }
+.vs-page-sheet {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 120px;
+  grid-auto-flow: dense;
+  gap: 10px;
+  padding: 12px;
+  background: #f1f0ec;
+  border-radius: 2px;
+  box-shadow: 16px 16px 0 0 #e5322d;
+  max-width: 980px; margin: 0 auto;
+}
+.vs-cell { position: relative; margin: 0; overflow: hidden; background: #000; border: 3px solid #000; }
+.vs-cell img { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 1; }
+.vs-cell--champ { grid-column: span 4; grid-row: span 4; background: #fff; }
+.vs-cell--champ img { object-fit: contain; }
+.vs-cell--champ .vs-speed { inset: 0; width: 100%; height: 100%; z-index: 0; }
+.vs-cell--r2 { grid-column: span 2; grid-row: span 2; }
+.vs-cell--r3 { grid-column: span 2; grid-row: span 2; }
+.vs-cell--r5 { grid-column: span 2; grid-row: span 1; }
+.vs-cell figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  padding: 18px 8px 6px; font-size: 12px; font-weight: 700; color: #fff;
+  background: linear-gradient(transparent, rgba(0,0,0,.85));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vs-cell .vs-pod-rank { z-index: 2; }
+.vs-cell-cap {
+  position: absolute; left: 0; bottom: 0; z-index: 3;
+  max-width: 92%;
+  padding: 10px 24px 12px 16px;
+  background: #e5322d; color: #fff;
+  clip-path: polygon(0 0, 100% 0, 94% 100%, 0 100%);
+}
+.vs-cell-cap small { display: block; font-size: 12px; font-weight: 600; opacity: .85; }
+.vs-cell-cap b { display: block; font-family: 'Archivo', sans-serif; font-stretch: 120%; font-weight: 900; font-style: italic; font-size: clamp(20px, 2.6vw, 34px); line-height: 1.05; }
+.vs-cell-cap i { display: block; font-style: normal; font-size: 12px; opacity: .85; }
+.vs-kanji {
+  position: absolute; top: 12px; right: 16px; z-index: 3;
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
+  font-weight: 900; font-size: 74px; line-height: 1; color: #fff;
+  -webkit-text-stroke: 6px #000; paint-order: stroke fill;
+}
+
+@media (max-width: 900px) {
+  .vs-mark { width: 104px; height: 104px; }
+  .vs-sfx { font-size: 40px; top: -18px; }
+  .vs-card { box-shadow: 6px 6px 0 0 color-mix(in srgb, var(--c) 35%, #000); }
+  .vs-page-sheet { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 110px; gap: 7px; padding: 8px; box-shadow: 8px 8px 0 0 #e5322d; }
+  .vs-cell--champ { grid-column: span 2; grid-row: span 3; }
+  .vs-cell--r3, .vs-cell--r5 { grid-column: span 1; grid-row: span 1; }
+  .vs-cell--r2 { grid-column: span 2; grid-row: span 2; }
+  .vs-kanji { font-size: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vs-card, .vs-strip i, .vs-card-tone { transition: none; }
+}
