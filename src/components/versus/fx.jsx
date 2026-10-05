@@ -131,37 +131,30 @@ export function StretchTitle({ text }) {
   )
 }
 
-// ── Volet de changement de tour ────────────────────────────────────────────
-// Un aplat d'encre traverse l'écran en diagonale, le nom du tour s'y imprime.
-export function RoundWipe({ label, sub, kanji }) {
+// ── Changement de tour ─────────────────────────────────────────────────────
+// Un voile, le nom du tour qui s'étire lettre à lettre, et c'est tout.
+export function RoundWipe({ label, sub }) {
   return (
     <motion.div className="vs-wipe" aria-live="polite"
-      initial={{ clipPath: 'polygon(0 0, 0 0, -30% 100%, -30% 100%)' }}
-      animate={{ clipPath: ['polygon(0 0, 0 0, -30% 100%, -30% 100%)', 'polygon(0 0, 130% 0, 100% 100%, -30% 100%)', 'polygon(0 0, 130% 0, 100% 100%, -30% 100%)', 'polygon(130% 0, 130% 0, 100% 100%, 100% 100%)'] }}
-      transition={{ duration: 1.25, times: [0, 0.28, 0.72, 1], ease: [0.7, 0, 0.3, 1] }}>
-      <div className="vs-wipe-tone" />
-      {kanji && (
-        <motion.div className="vs-wipe-kanji" aria-hidden
-          initial={{ scale: 1.6, opacity: 0, x: 80 }} animate={{ scale: 1, opacity: 1, x: -20 }}
-          transition={{ delay: 0.15, duration: 1.1, ease }}>{kanji}</motion.div>
-      )}
+      initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }}
+      transition={{ duration: 1.25, times: [0, 0.18, 0.75, 1], ease: 'easeInOut' }}>
       <div className="vs-wipe-txt">
-        <motion.p initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25, duration: 0.4, ease }}>{sub}</motion.p>
         <h2>
           {[...label].map((ch, i) => (
             <motion.span key={i}
-              initial={{ fontStretch: '62%', opacity: 0, y: 40 }}
-              animate={{ fontStretch: '125%', opacity: 1, y: 0 }}
-              transition={{ delay: 0.22 + i * 0.025, duration: 0.45, ease }}>
+              initial={{ fontStretch: '62%', opacity: 0 }}
+              animate={{ fontStretch: '125%', opacity: 1 }}
+              transition={{ delay: 0.12 + i * 0.022, duration: 0.6, ease }}>
               {ch === ' ' ? ' ' : ch}
             </motion.span>
           ))}
         </h2>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45, duration: 0.4 }}>{sub}</motion.p>
+        <motion.i initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2, duration: 0.8, ease }} />
       </div>
     </motion.div>
   )
 }
-
 
 // ── Désintégration en trame ────────────────────────────────────────────────
 // La case perdante est relue pixel par pixel et redessinée en points

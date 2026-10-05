@@ -1,194 +1,340 @@
-/* Tournois 1v1 en images — Bleach Bankai / Panels cultes */
+/* Tournois 1v1 en images — Bleach Bankai / Panels cultes
+   Version sobre : encre, papier, trame de points. Le rouge et le bleu ne sont
+   plus que des repères (touche ← →, filet du gagnant). */
 
 .vs-page {
-  --ink: #f4f4f5;
-  --mute: #8b8d94;
-  --line: rgba(255, 255, 255, 0.09);
+  --ink: #ececec;
+  --mute: #7c7e85;
+  --faint: #45474d;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-2: rgba(255, 255, 255, 0.22);
   --red: #e5322d;
   --blue: #2f6dff;
+  --ease: cubic-bezier(.2, .8, .2, 1);
   position: relative;
   min-height: 100vh;
-  background: #08090b;
+  background: #000;
   color: var(--ink);
   font-family: 'Inter', system-ui, sans-serif;
-  padding: 84px 20px 48px;
+  padding: 84px 20px 56px;
   overflow-x: clip;
 }
-.vs-dots {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1.2px);
-  background-size: 22px 22px;
-  mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%);
-}
+.vs-halftone { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .vs-shell {
-  position: relative;
+  position: relative; z-index: 1;
   display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
-  gap: 28px;
-  max-width: 1500px;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 40px;
+  max-width: 1480px;
   margin: 0 auto;
   align-items: start;
 }
+.vs-main { min-width: 0; }
 
 /* ── En-tête ── */
-.vs-main { min-width: 0; }
-.vs-head { position: relative; text-align: center; margin-bottom: 22px; }
+.vs-head { position: relative; text-align: center; margin-bottom: 26px; }
 .vs-back {
-  position: absolute; left: 0; top: 6px;
-  color: var(--mute); text-decoration: none; font-size: 13px; font-weight: 600;
+  position: absolute; left: 0; top: 4px;
+  color: var(--mute); text-decoration: none; font-size: 13px; font-weight: 500;
+  transition: color .2s;
 }
 .vs-back:hover { color: var(--ink); }
 .vs-title {
   margin: 0;
   font-family: 'Archivo', 'Inter', sans-serif;
   font-stretch: 125%;
-  font-weight: 900;
-  font-size: clamp(34px, 4.6vw, 62px);
+  font-weight: 800;
+  font-size: clamp(28px, 3.2vw, 44px);
   line-height: 1;
   letter-spacing: -0.01em;
 }
-.vs-kicker { margin: 8px 0 14px; color: var(--mute); font-size: 14px; }
-.vs-pill {
-  display: inline-flex; align-items: center; gap: 12px;
-  padding: 7px 16px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 15px; font-weight: 600;
+.vs-title span { display: inline-block; }
+.vs-kicker { margin: 10px 0 0; color: var(--mute); font-size: 14px; }
+.vs-round {
+  display: inline-flex; gap: 14px; align-items: baseline;
+  margin: 12px 0 0;
+  font-size: 13px; color: var(--mute);
 }
-.vs-pill i { width: 1px; height: 14px; background: rgba(255, 255, 255, 0.2); }
-.vs-pill b { color: var(--red); }
-.vs-pill span:last-child { color: var(--mute); }
+.vs-round > span:first-child { color: var(--ink); font-weight: 600; }
+.vs-round-n { display: inline-block; font-variant-numeric: tabular-nums; min-width: 52px; text-align: left; }
+
+/* ── Bande du tour : un trait par duel ── */
+.vs-strip {
+  display: flex; gap: 3px; justify-content: center;
+  max-width: 520px; margin: 0 auto 30px;
+}
+.vs-strip i {
+  flex: 1; max-width: 26px; height: 2px;
+  background: var(--faint);
+  transition: background .4s var(--ease), transform .4s var(--ease);
+  transform-origin: 50% 100%;
+}
+.vs-strip i.is-done { background: var(--ink); }
+.vs-strip i.is-now { background: var(--ink); transform: scaleY(2.5); }
 
 /* ── Arène ── */
+.vs-stage { position: relative; }
 .vs-arena {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 30px;
+  grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
+  align-items: start;
+  gap: 0;
 }
-.vs-card {
+.vs-card { min-width: 0; }
+.vs-card.is-empty { min-height: 300px; border: 1px dashed var(--line); border-radius: 6px; }
+.vs-frame {
   position: relative;
-  height: min(62vh, 700px);
-  min-height: 360px;
-  border: 4px solid var(--c);
-  border-radius: 14px;
-  background: #0d0e11;
-  overflow: visible;
-}
-.vs-card.is-empty { opacity: 0.3; }
-.vs-card-hit {
-  display: block; width: 100%; height: 100%;
-  padding: 0; border: 0; border-radius: 10px;
-  background: #0d0e11;
+  height: min(60vh, 680px);
+  min-height: 320px;
+  border-radius: 6px;
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
+  background: #050505;
   overflow: hidden;
+  transition: outline-color .3s var(--ease), box-shadow .3s var(--ease);
+  will-change: transform;
+}
+.vs-card:not(.is-lose):not(.is-win) .vs-frame:hover { outline-color: var(--line-2); }
+.vs-card.is-win .vs-frame { outline: 2px solid var(--ink); outline-offset: -2px; }
+.vs-card-hit {
+  position: absolute; inset: 0;
+  display: block; width: 100%; height: 100%;
+  padding: 0; border: 0; background: transparent;
   cursor: pointer;
 }
-.vs-card-hit img {
-  width: 100%; height: 100%;
-  display: block;
-  user-select: none;
-  transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
-}
-.vs-card:hover .vs-card-hit img { transform: scale(1.015); }
-.vs-card-hit:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.vs-card.is-win { box-shadow: 0 0 0 4px var(--c); }
+.vs-card-hit:disabled { cursor: default; }
+.vs-card-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.vs-card-img { position: absolute; inset: -10px; }
+.vs-card-img img { width: 100%; height: 100%; display: block; user-select: none; }
 
 .vs-zoom-btn {
   position: absolute; top: 10px; right: 10px;
-  width: 34px; height: 34px;
-  border: 1px solid rgba(255,255,255,.18); border-radius: 8px;
-  background: rgba(0,0,0,.55); color: #fff;
-  font-size: 16px; cursor: zoom-in;
+  width: 32px; height: 32px;
+  border: 1px solid var(--line-2); border-radius: 6px;
+  background: rgba(0,0,0,.6); color: var(--ink);
+  font-size: 14px; cursor: zoom-in;
   opacity: 0; transition: opacity .2s;
 }
-.vs-card:hover .vs-zoom-btn, .vs-zoom-btn:focus-visible { opacity: 1; }
+.vs-frame:hover .vs-zoom-btn, .vs-zoom-btn:focus-visible { opacity: 1; }
 
-/* Étiquette inclinée façon bandeau de tournoi */
-.vs-tag {
-  position: absolute; bottom: -22px;
-  max-width: 88%;
-  padding: 7px 22px 8px;
-  background: var(--c);
-  transform: skewX(-14deg);
-  font-family: 'Archivo', 'Inter', sans-serif;
-  font-stretch: 112%;
-  line-height: 1.05;
-  pointer-events: none;
+/* Légende sous la case */
+.vs-cap {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 2px 10px;
 }
-.vs-tag > * { display: block; transform: skewX(14deg); }
-.vs-tag b { font-weight: 850; font-style: italic; font-size: clamp(16px, 1.6vw, 24px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vs-tag small { font-size: 12px; font-weight: 600; opacity: .85; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vs-card--left .vs-tag { left: -10px; }
-.vs-card--right .vs-tag { right: -10px; text-align: right; }
+.vs-card--right .vs-cap { flex-direction: row-reverse; text-align: right; }
+.vs-cap-key {
+  flex: 0 0 auto;
+  display: grid; place-items: center;
+  width: 24px; height: 24px; margin-top: 1px;
+  border: 1px solid var(--line-2); border-radius: 5px;
+  font-size: 12px; color: var(--mute);
+  transition: color .25s, border-color .25s;
+}
+.vs-card:hover .vs-cap-key, .vs-card.is-win .vs-cap-key { color: #fff; border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
+.vs-cap-txt { min-width: 0; }
+.vs-cap b {
+  display: block;
+  font-family: 'Archivo', sans-serif; font-stretch: 112%; font-weight: 700;
+  font-size: clamp(15px, 1.25vw, 19px); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vs-cap small { display: block; margin-top: 3px; color: var(--mute); font-size: 12.5px; }
+.vs-cap-line {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: var(--c);
+  transform-origin: 0 50%;
+}
+.vs-card--right .vs-cap-line { transform-origin: 100% 50%; }
 
 .vs-mark {
-  position: absolute; left: 50%; top: 50%;
-  transform: translate(-50%, -50%) skewX(-10deg);
-  z-index: 3;
-  font-family: 'Archivo', 'Inter', sans-serif;
-  font-stretch: 125%;
-  font-weight: 900; font-style: italic;
-  font-size: clamp(52px, 6vw, 96px);
-  line-height: 1;
-  letter-spacing: -0.06em;
-  -webkit-text-stroke: 3px #08090b;
-  paint-order: stroke fill;
+  align-self: center;
+  margin-top: -40px;
+  text-align: center;
+  font-family: 'Archivo', sans-serif; font-stretch: 100%; font-style: italic;
+  font-size: 13px; font-weight: 600; color: var(--mute);
+  letter-spacing: 0.02em;
   pointer-events: none;
-  filter: drop-shadow(0 6px 0 rgba(0,0,0,.6));
 }
 
+/* Coup de sabre + désintégration */
+.vs-slash { position: absolute; inset: 0; }
+.vs-slash img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vs-slash svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.vs-dust { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+
+/* Aide */
 .vs-help {
-  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px;
-  margin-top: 44px;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 10px;
+  margin-top: 30px;
   color: var(--mute); font-size: 13px;
 }
+.vs-keys { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; }
+.vs-keys em { font-style: normal; color: var(--ink); margin-left: 8px; font-variant-numeric: tabular-nums; }
 .vs-help kbd {
-  display: inline-block; min-width: 22px; padding: 1px 6px;
-  border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px;
-  font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink);
+  display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px;
+  border: 1px solid var(--line-2); border-radius: 5px;
+  font-family: inherit; font-size: 12px; color: var(--ink);
 }
 .vs-help button {
-  padding: 7px 14px;
-  border: 1px solid var(--line); border-radius: 8px;
-  background: rgba(255,255,255,.04); color: var(--ink);
-  font: 600 13px 'Inter', sans-serif; cursor: pointer;
+  padding: 7px 12px;
+  border: 1px solid var(--line); border-radius: 7px;
+  background: transparent; color: var(--mute);
+  font: 500 13px 'Inter', sans-serif; cursor: pointer;
+  transition: color .2s, border-color .2s;
 }
-.vs-help button:hover:not(:disabled) { background: rgba(255,255,255,.09); }
+.vs-help button:hover:not(:disabled) { color: var(--ink); border-color: var(--line-2); }
 .vs-help button:disabled { opacity: .35; cursor: default; }
-.vs-help button.is-main { background: var(--red); border-color: var(--red); }
+.vs-help button.is-main { background: var(--ink); border-color: var(--ink); color: #000; font-weight: 600; }
 
-/* ── Champion ── */
-.vs-champ { text-align: center; padding-top: 4px; }
-.vs-champ-k { margin: 0 0 12px; color: var(--red); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
-.vs-champ-card {
-  width: min(560px, 100%); aspect-ratio: 4 / 3; margin: 0 auto;
-  border: 4px solid var(--red); border-radius: 14px; overflow: hidden; background: #0d0e11;
+/* ── Écran de départ ── */
+.vs-setup { position: relative; max-width: 720px; margin: 0 auto; }
+.vs-setup-strip {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;
+  margin-bottom: -48px;
+  mask-image: linear-gradient(#000 20%, transparent);
+  opacity: .4;
 }
-.vs-champ-card img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.vs-champ h2 {
-  margin: 18px 0 4px;
-  font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-style: italic;
-  font-size: clamp(26px, 3.4vw, 42px);
+.vs-setup-strip img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 3px; filter: grayscale(1); }
+.vs-setup-box {
+  position: relative;
+  padding: 26px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: rgba(0,0,0,.92);
 }
-.vs-champ-sub { margin: 0; color: var(--mute); }
-.vs-podium { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 26px; }
-.vs-pod { margin: 0; width: 170px; }
-.vs-pod img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); display: block; }
-.vs-pod figcaption { margin-top: 6px; font-size: 13px; font-weight: 600; }
-.vs-pod small { display: block; color: var(--mute); font-weight: 500; font-size: 11px; }
+.vs-setup-count { margin: 0; color: var(--mute); font-size: 14px; }
+.vs-setup-count b { color: var(--ink); font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 800; font-size: 28px; margin-right: 6px; }
+.vs-setup-box h2 { display: flex; align-items: center; gap: 12px; margin: 22px 0 10px; font-size: 13px; font-weight: 600; color: var(--mute); }
+.vs-formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; }
+.vs-formats button {
+  padding: 12px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: transparent; color: var(--ink); cursor: pointer; text-align: left;
+  transition: border-color .2s, background .2s;
+}
+.vs-formats button b { display: block; font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 800; font-size: 24px; line-height: 1; }
+.vs-formats button small { color: var(--mute); font-size: 12px; }
+.vs-formats button:hover:not(:disabled) { border-color: var(--line-2); }
+.vs-formats button.is-on { border-color: var(--ink); background: rgba(255,255,255,.05); }
+.vs-formats button:disabled { opacity: .3; cursor: default; }
+.vs-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.vs-chips button {
+  padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px;
+  background: transparent; color: var(--faint); font: 500 12.5px 'Inter', sans-serif; cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+.vs-chips button small { opacity: .6; margin-left: 3px; }
+.vs-chips button.is-on { color: var(--ink); border-color: var(--line-2); }
+.vs-linkbtn { border: 0; background: none; color: var(--mute); font: 500 12px 'Inter', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0; }
+.vs-go {
+  display: block; width: 100%; margin-top: 24px; padding: 14px 18px;
+  border: 0; border-radius: 8px;
+  background: var(--ink); color: #000;
+  font-family: 'Archivo', sans-serif; font-stretch: 112%; font-weight: 700; font-size: 16px;
+  cursor: pointer; transition: transform .2s var(--ease), background .2s;
+}
+.vs-go:hover:not(:disabled) { background: #fff; transform: translateY(-1px); }
+.vs-go:disabled { opacity: .4; cursor: default; }
+.vs-setup-note { margin: 10px 0 0; text-align: center; color: var(--faint); font-size: 12px; }
+
+/* ── Changement de tour ── */
+.vs-wipe {
+  position: fixed; inset: 0; z-index: 10070;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,.9);
+  pointer-events: none;
+}
+.vs-wipe-txt { text-align: center; padding: 0 16px; }
+.vs-wipe-txt h2 {
+  margin: 0; color: var(--ink);
+  font-family: 'Archivo', sans-serif; font-weight: 800;
+  font-size: clamp(36px, 6vw, 84px); line-height: 1; letter-spacing: -0.01em;
+}
+.vs-wipe-txt h2 span { display: inline-block; }
+.vs-wipe-txt p { margin: 14px 0 0; color: var(--mute); font-size: 14px; }
+.vs-wipe-txt i { display: block; width: 120px; height: 1px; margin: 18px auto 0; background: var(--line-2); }
+
+/* ── Récap de tour ── */
+.vs-recap {
+  position: fixed; inset: 0; z-index: 10055;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,.88);
+}
+.vs-recap-box {
+  width: min(960px, 100%); max-height: calc(100vh - 40px); overflow-y: auto;
+  padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: #000;
+  text-align: center;
+}
+.vs-recap-k { margin: 0; color: var(--mute); font-size: 13px; }
+.vs-recap-box h2 { margin: 6px 0 20px; font-family: 'Archivo', sans-serif; font-stretch: 120%; font-weight: 800; font-size: clamp(20px, 2.6vw, 30px); }
+.vs-recap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.vs-recap-grid.is-dense { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 5px; }
+.vs-recap-grid figure { margin: 0; }
+.vs-recap-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; outline: 1px solid var(--line); display: block; }
+.vs-recap-grid.is-dense img { aspect-ratio: 1; border-radius: 3px; }
+.vs-recap-grid figcaption { margin-top: 6px; font-size: 12px; color: var(--mute); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs-recap .vs-go { max-width: 320px; margin: 24px auto 0; }
+
+/* ── Champion : planche sombre, gouttières fines ── */
+.vs-champ { padding-top: 0; }
+.vs-page-sheet {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 116px;
+  grid-auto-flow: dense;
+  gap: 6px;
+  max-width: 960px; margin: 0 auto;
+  text-align: left;
+}
+.vs-cell { position: relative; margin: 0; overflow: hidden; background: #050505; border-radius: 4px; outline: 1px solid var(--line); outline-offset: -1px; }
+.vs-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vs-cell--champ { grid-column: span 4; grid-row: span 4; outline: 2px solid var(--ink); outline-offset: -2px; }
+.vs-cell--champ img { object-fit: contain; }
+.vs-cell--r2, .vs-cell--r3 { grid-column: span 2; grid-row: span 2; }
+.vs-cell--r5 { grid-column: span 2; grid-row: span 1; }
+.vs-cell figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 22px 10px 8px; font-size: 12px; font-weight: 600; color: #fff;
+  background: linear-gradient(transparent, rgba(0,0,0,.88));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vs-pod-rank {
+  position: absolute; top: 8px; left: 8px;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 4px;
+  background: rgba(0,0,0,.7); color: #fff;
+  font: 700 12px/22px 'Inter', sans-serif; text-align: center; font-variant-numeric: tabular-nums;
+}
+.vs-cell-cap {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 40px 18px 16px;
+  background: linear-gradient(transparent, rgba(0,0,0,.92));
+}
+.vs-cell-cap small { display: block; font-size: 12px; color: var(--mute); }
+.vs-cell-cap b { display: block; margin-top: 2px; font-family: 'Archivo', sans-serif; font-stretch: 120%; font-weight: 800; font-size: clamp(20px, 2.4vw, 32px); line-height: 1.05; }
+.vs-cell-cap i { display: block; margin-top: 4px; font-style: normal; font-size: 12.5px; color: var(--mute); }
+
+.vs-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  max-width: 960px; margin: 6px auto 0; text-align: left;
+}
+.vs-stats > div { padding: 14px 16px; border-radius: 4px; outline: 1px solid var(--line); outline-offset: -1px; }
+.vs-stats dt { color: var(--mute); font-size: 12.5px; }
+.vs-stats dd { margin: 6px 0 0; font-family: 'Archivo', sans-serif; font-stretch: 120%; font-weight: 800; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.vs-stats p { margin: 6px 0 0; color: var(--mute); font-size: 12.5px; line-height: 1.4; }
 
 /* ── Zoom ── */
 .vs-zoom {
   position: fixed; inset: 0; z-index: 10060;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
   padding: 24px;
-  background: rgba(4, 5, 7, .94);
+  background: rgba(0,0,0,.95);
   cursor: zoom-out;
 }
-.vs-zoom img { max-width: 100%; max-height: calc(100vh - 100px); object-fit: contain; border-radius: 6px; }
-.vs-zoom p { margin: 0; font-weight: 700; }
-.vs-zoom small { color: var(--mute); font-weight: 500; margin-left: 8px; }
+.vs-zoom img { max-width: 100%; max-height: calc(100vh - 100px); object-fit: contain; border-radius: 4px; }
+.vs-zoom p { margin: 0; font-weight: 600; }
+.vs-zoom small { color: var(--mute); font-weight: 400; margin-left: 8px; }
 
 /* ── Radio Bleach ── */
 .vr {
@@ -267,370 +413,43 @@
 .vr-t b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vr-t small { display: block; font-size: 11px; color: var(--mute); }
 
-/* ── Mobile ── */
-@media (max-width: 900px) {
-  .vs-page { padding: 72px 14px 40px; }
-  .vs-shell { grid-template-columns: 1fr; gap: 16px; }
-  .vr { position: relative; top: 0; }
-  .vs-back { position: static; display: inline-block; margin-bottom: 8px; }
-  .vs-arena { grid-template-columns: 1fr; gap: 38px; }
-  .vs-card { height: 31vh; min-height: 220px; }
-  .vs-kicker { display: none; }
-  .vs-pill { margin-top: 10px; }
-  .vs-mark { font-size: 54px; }
-  .vs-zoom-btn { opacity: 1; }
-  .vs-help { margin-top: 36px; }
-}
 
-/* html.low-end (tout écran ≤ 768 px) fige les animations CSS : l'égaliseur est
-   minuscule, on le laisse vivre. */
+/* Radio : accents ramenés au monochrome */
+.vr { border-radius: 10px; background: rgba(0,0,0,.9); top: 84px; }
+.vr-eq i { background: var(--ink); }
+.vr-controls button { border-color: var(--line); background: transparent; }
+.vr-controls .vr-play { background: var(--ink); border-color: var(--ink); color: #000; }
+.vr-shuffle.is-on { color: var(--ink); border-color: var(--ink); }
+.vr-vol input { accent-color: var(--ink); }
+.vr-list button.is-on { background: rgba(255,255,255,.07); }
+.vr-list button.is-on .vr-n { color: var(--ink); }
+.vr-screen-empty { color: rgba(255,255,255,.08); }
+
+/* html.low-end (écrans ≤ 768 px) fige les animations CSS : l'égaliseur reste vivant. */
 html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iteration-count: infinite !important; }
 
-/* ── Progression ── */
-.vs-progress { height: 3px; margin: -6px auto 22px; max-width: 520px; border-radius: 2px; background: rgba(255,255,255,.08); overflow: hidden; }
-.vs-progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--red), var(--blue)); transition: width .4s cubic-bezier(.2,.8,.2,1); }
-.vs-keys { margin-right: 6px; }
-
-/* ── Setup ── */
-.vs-setup { position: relative; max-width: 760px; margin: 0 auto; }
-.vs-setup-strip {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
-  margin-bottom: -60px;
-  mask-image: linear-gradient(#000 30%, transparent);
-  opacity: .55;
-}
-.vs-setup-strip img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; filter: grayscale(.4); }
-.vs-setup-box {
-  position: relative;
-  padding: 26px 26px 22px;
-  border: 1px solid var(--line); border-radius: 16px;
-  background: rgba(12, 13, 16, .94);
-}
-.vs-setup-count { margin: 0 0 6px; color: var(--mute); font-size: 14px; }
-.vs-setup-count b { color: var(--ink); font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: 30px; margin-right: 4px; }
-.vs-setup-box h2 { display: flex; align-items: center; gap: 12px; margin: 20px 0 10px; font-size: 13px; font-weight: 700; color: var(--mute); text-transform: uppercase; letter-spacing: .07em; }
-.vs-formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
-.vs-formats button {
-  padding: 14px 10px; border: 1px solid var(--line); border-radius: 12px;
-  background: rgba(255,255,255,.03); color: var(--ink); cursor: pointer; text-align: left;
-  transition: border-color .15s, background .15s;
-}
-.vs-formats button b { display: block; font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: 28px; line-height: 1; }
-.vs-formats button small { color: var(--mute); font-size: 12px; }
-.vs-formats button:hover:not(:disabled) { border-color: rgba(255,255,255,.25); }
-.vs-formats button.is-on { border-color: var(--red); background: rgba(229,50,45,.12); }
-.vs-formats button:disabled { opacity: .3; cursor: default; }
-.vs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.vs-chips button {
-  padding: 6px 11px; border: 1px solid var(--line); border-radius: 999px;
-  background: transparent; color: var(--mute); font: 600 12.5px 'Inter', sans-serif; cursor: pointer;
-}
-.vs-chips button small { opacity: .6; margin-left: 3px; }
-.vs-chips button.is-on { color: var(--ink); border-color: rgba(47,109,255,.6); background: rgba(47,109,255,.14); }
-.vs-linkbtn { border: 0; background: none; color: var(--blue); font: 600 12px 'Inter', sans-serif; text-transform: none; letter-spacing: 0; cursor: pointer; padding: 0; }
-.vs-go {
-  display: block; width: 100%; margin-top: 24px; padding: 15px 18px;
-  border: 0; border-radius: 12px;
-  background: var(--red); color: #fff;
-  font-family: 'Archivo', sans-serif; font-stretch: 115%; font-weight: 850; font-size: 17px;
-  cursor: pointer; transition: transform .15s, filter .15s;
-}
-.vs-go:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
-.vs-go:disabled { opacity: .4; cursor: default; }
-.vs-setup-note { margin: 10px 0 0; text-align: center; color: var(--mute); font-size: 12px; }
-
-/* ── Récap de tour ── */
-.vs-recap {
-  position: fixed; inset: 0; z-index: 10055;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  background: rgba(4, 5, 7, .88);
-}
-.vs-recap-box {
-  width: min(980px, 100%); max-height: calc(100vh - 40px); overflow-y: auto;
-  padding: 26px; border: 1px solid var(--line); border-radius: 16px; background: #0c0d10;
-  text-align: center;
-}
-.vs-recap-k { margin: 0; color: var(--red); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-.vs-recap-box h2 { margin: 6px 0 18px; font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: clamp(22px, 3vw, 34px); }
-.vs-recap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.vs-recap-grid.is-dense { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
-.vs-recap-grid figure { margin: 0; }
-.vs-recap-grid img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 7px; border: 1px solid var(--line); display: block; }
-.vs-recap-grid.is-dense img { aspect-ratio: 1; border-radius: 5px; }
-.vs-recap-grid figcaption { margin-top: 5px; font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vs-recap .vs-go { max-width: 360px; margin: 22px auto 0; }
-
-/* ── Classement ── */
-.vs-pod { position: relative; }
-.vs-pod-rank {
-  position: absolute; top: 6px; left: 6px;
-  min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px;
-  background: rgba(0,0,0,.75); color: #fff;
-  font: 800 13px/24px 'Archivo', sans-serif; text-align: center;
-}
-
 @media (max-width: 900px) {
+  .vs-page { padding: 72px 14px 40px; }
+  .vs-shell { grid-template-columns: 1fr; gap: 18px; }
+  .vr { position: relative; top: 0; }
+  .vs-back { position: static; display: inline-block; margin-bottom: 10px; }
+  .vs-arena { grid-template-columns: 1fr; }
+  .vs-mark { margin: 2px 0 10px; }
+  .vs-frame { height: 32vh; min-height: 210px; }
+  .vs-card--right .vs-cap { flex-direction: row; text-align: left; }
+  .vs-card--right .vs-cap-line { transform-origin: 0 50%; }
+  .vs-zoom-btn { opacity: 1; }
   .vs-setup-strip { grid-template-columns: repeat(4, 1fr); }
   .vs-setup-strip img:nth-child(n+9) { display: none; }
   .vs-setup-box { padding: 20px 16px; }
-  .vs-recap-box { padding: 18px 14px; }
-}
-
-/* ════════════════════════════════════════════════════════════════════════
-   Passe « planche manga » : trame, encre, lignes de vitesse, onomatopées
-   ════════════════════════════════════════════════════════════════════════ */
-.vs-page { background: #050505; }
-.vs-halftone { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-.vs-shell { z-index: 1; }
-
-/* Titre : chaque lettre s'étire sur l'axe de chasse */
-.vs-title span { display: inline-block; }
-
-/* Compteur du pill qui défile */
-.vs-pill > span:last-child { display: inline-block; min-width: 46px; text-align: left; }
-
-/* Bande de cases du tour */
-.vs-strip {
-  display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
-  max-width: 640px; margin: -4px auto 26px;
-}
-.vs-strip i {
-  width: 14px; height: 18px;
-  border: 1.5px solid rgba(255,255,255,.28);
-  background: transparent;
-  transform: skewX(-8deg);
-  transition: background .3s, border-color .3s, transform .3s;
-}
-.vs-strip.is-dense { gap: 3px; }
-.vs-strip.is-dense i { width: 7px; height: 12px; border-width: 1px; }
-.vs-strip i.is-done.l { background: var(--red); border-color: var(--red); }
-.vs-strip i.is-done.r { background: var(--blue); border-color: var(--blue); }
-.vs-strip i.is-now { border-color: #fff; transform: skewX(-8deg) scaleY(1.35); background: rgba(255,255,255,.18); }
-
-/* Scène : les lignes de vitesse débordent autour de l'arène */
-.vs-stage { position: relative; }
-.vs-speed {
-  position: absolute; inset: -70px -40px; width: calc(100% + 80px); height: calc(100% + 140px);
-  pointer-events: none; z-index: 0;
-}
-.vs-arena { z-index: 1; }
-
-/* Cases : bordure d'encre + ombre portée pleine, façon case découpée */
-.vs-card {
-  border-width: 3px;
-  border-radius: 4px;
-  background: #000;
-  box-shadow: 10px 10px 0 0 color-mix(in srgb, var(--c) 30%, #000);
-  transition: box-shadow .25s cubic-bezier(.2,.8,.2,1);
-  will-change: transform;
-}
-.vs-card:hover:not(.is-lose) { box-shadow: 16px 16px 0 0 color-mix(in srgb, var(--c) 55%, #000); }
-.vs-card.is-win { box-shadow: 18px 18px 0 0 var(--c); }
-.vs-card.is-lose { box-shadow: 4px 4px 0 0 #000; border-color: #333; }
-.vs-card-hit { border-radius: 1px; background: #000; position: relative; }
-.vs-card-hit:disabled { cursor: default; }
-.vs-card-img { position: absolute; inset: -14px; }
-.vs-card-img img { width: 100%; height: 100%; display: block; user-select: none; }
-.vs-card:hover .vs-card-hit img { transform: none; }
-/* Trame qui apparaît sur la case survolée */
-.vs-card-tone {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image: radial-gradient(color-mix(in srgb, var(--c) 70%, transparent) 1.1px, transparent 1.4px);
-  background-size: 7px 7px;
-  mask-image: linear-gradient(to top, #000, transparent 45%);
-  opacity: 0; transition: opacity .3s;
-}
-.vs-card:hover .vs-card-tone { opacity: .55; }
-.vs-card.is-win .vs-card-tone { opacity: .8; }
-
-/* Coup de sabre */
-.vs-slash { position: absolute; inset: 0; }
-.vs-slash img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.vs-slash svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-
-/* Onomatopée */
-.vs-sfx {
-  position: absolute; top: -26px; z-index: 6;
-  font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'Meiryo', sans-serif;
-  font-weight: 900; font-size: clamp(42px, 5vw, 76px); line-height: 1;
-  color: #fff;
-  -webkit-text-stroke: 5px #000; paint-order: stroke fill;
-  text-shadow: 6px 6px 0 var(--c);
-  pointer-events: none; white-space: nowrap;
-}
-.vs-sfx--left { left: 14px; }
-.vs-sfx--right { right: 14px; }
-
-/* VS : tache d'encre + lettres tamponnées */
-.vs-mark { width: 150px; height: 150px; display: grid; place-items: center; filter: none; transform: translate(-50%, -50%); }
-.vs-splat { position: absolute; inset: 0; width: 100%; height: 100%; }
-.vs-mark-txt { position: relative; transform-origin: 50% 55%; }
-.vs-mark-txt span { display: inline-block; }
-
-/* Volet de tour */
-.vs-wipe {
-  position: fixed; inset: 0; z-index: 10070;
-  background: #050505;
-  display: grid; place-items: center;
-  pointer-events: none;
-}
-.vs-wipe-tone {
-  position: absolute; inset: 0;
-  background-image: radial-gradient(rgba(229,50,45,.55) 1.4px, transparent 1.8px);
-  background-size: 11px 11px;
-  mask-image: linear-gradient(115deg, transparent 20%, #000 50%, transparent 80%);
-}
-.vs-wipe-txt { position: relative; text-align: center; padding: 0 16px; }
-.vs-wipe-txt p { margin: 0 0 6px; color: #9a9ca3; font-weight: 600; font-size: 15px; }
-.vs-wipe-txt h2 {
-  margin: 0; color: #fff;
-  font-family: 'Archivo', sans-serif; font-weight: 900; font-style: italic;
-  font-size: clamp(44px, 9vw, 130px); line-height: .95; letter-spacing: -0.02em;
-  -webkit-text-stroke: 2px #050505; paint-order: stroke fill;
-  text-shadow: 8px 8px 0 #e5322d;
-}
-.vs-wipe-txt h2 span { display: inline-block; }
-
-/* Récap : cases distribuées, encre et ombre pleine */
-.vs-recap { background: rgba(3,3,3,.9); }
-.vs-recap-box { border-radius: 4px; border: 3px solid #fff; box-shadow: 14px 14px 0 0 #e5322d; background: #070707; }
-.vs-recap-grid img { border-radius: 2px; border: 2px solid #fff; }
-
-/* Champion : planche de manga, cases sur gouttières claires */
-.vs-champ { padding-top: 0; }
-.vs-page-sheet { text-align: left; }
-.vs-page-sheet {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: 120px;
-  grid-auto-flow: dense;
-  gap: 10px;
-  padding: 12px;
-  background: #f1f0ec;
-  border-radius: 2px;
-  box-shadow: 16px 16px 0 0 #e5322d;
-  max-width: 980px; margin: 0 auto;
-}
-.vs-cell { position: relative; margin: 0; overflow: hidden; background: #000; border: 3px solid #000; }
-.vs-cell img { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; z-index: 1; }
-.vs-cell--champ { grid-column: span 4; grid-row: span 4; background: #fff; }
-.vs-cell--champ img { object-fit: contain; }
-.vs-cell--champ .vs-speed { inset: 0; width: 100%; height: 100%; z-index: 0; }
-.vs-cell--r2 { grid-column: span 2; grid-row: span 2; }
-.vs-cell--r3 { grid-column: span 2; grid-row: span 2; }
-.vs-cell--r5 { grid-column: span 2; grid-row: span 1; }
-.vs-cell figcaption {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
-  padding: 18px 8px 6px; font-size: 12px; font-weight: 700; color: #fff;
-  background: linear-gradient(transparent, rgba(0,0,0,.85));
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.vs-cell .vs-pod-rank { z-index: 2; }
-.vs-cell-cap {
-  position: absolute; left: 0; bottom: 0; z-index: 3;
-  max-width: 92%;
-  padding: 10px 24px 12px 16px;
-  background: #e5322d; color: #fff;
-  clip-path: polygon(0 0, 100% 0, 94% 100%, 0 100%);
-}
-.vs-cell-cap small { display: block; font-size: 12px; font-weight: 600; opacity: .85; }
-.vs-cell-cap b { display: block; font-family: 'Archivo', sans-serif; font-stretch: 120%; font-weight: 900; font-style: italic; font-size: clamp(20px, 2.6vw, 34px); line-height: 1.05; }
-.vs-cell-cap i { display: block; font-style: normal; font-size: 12px; opacity: .85; }
-.vs-kanji {
-  position: absolute; top: 12px; right: 16px; z-index: 3;
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
-  font-weight: 900; font-size: 74px; line-height: 1; color: #fff;
-  -webkit-text-stroke: 6px #000; paint-order: stroke fill;
-}
-
-@media (max-width: 900px) {
-  .vs-mark { width: 104px; height: 104px; }
-  .vs-sfx { font-size: 40px; top: -18px; }
-  .vs-card { box-shadow: 6px 6px 0 0 color-mix(in srgb, var(--c) 35%, #000); }
-  .vs-page-sheet { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 110px; gap: 7px; padding: 8px; box-shadow: 8px 8px 0 0 #e5322d; }
+  .vs-recap-box { padding: 20px 14px; }
+  .vs-page-sheet { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 104px; }
   .vs-cell--champ { grid-column: span 2; grid-row: span 3; }
-  .vs-cell--r3, .vs-cell--r5 { grid-column: span 1; grid-row: span 1; }
   .vs-cell--r2 { grid-column: span 2; grid-row: span 2; }
-  .vs-kanji { font-size: 52px; }
+  .vs-cell--r3, .vs-cell--r5 { grid-column: span 1; grid-row: span 1; }
+  .vs-stats { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vs-card, .vs-strip i, .vs-card-tone { transition: none; }
-}
-
-/* ── Vague 3 : désintégration, combo, finale, rembobinage, confettis ── */
-.vs-dust { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
-.vs-rain { position: fixed; inset: 0; z-index: 10040; pointer-events: none; }
-
-.vs-combo {
-  position: absolute; top: -64px; right: 2%; z-index: 7;
-  display: flex; align-items: baseline; gap: 6px;
-  padding: 6px 16px 8px;
-  background: #fff; color: #050505;
-  border: 3px solid #050505;
-  box-shadow: 7px 7px 0 0 var(--red);
-  font-family: 'Archivo', sans-serif; font-style: italic;
-  pointer-events: none;
-}
-.vs-combo small { font-size: 13px; font-weight: 800; font-stretch: 110%; }
-.vs-combo b { font-size: 34px; font-weight: 900; font-stretch: 125%; line-height: 1; }
-
-.vs-rewind {
-  position: absolute; left: 50%; top: 38%; z-index: 8;
-  translate: -50% -50%;
-  font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'Meiryo', sans-serif;
-  font-weight: 900; font-size: clamp(40px, 6vw, 84px); color: #fff; white-space: nowrap;
-  -webkit-text-stroke: 6px #050505; paint-order: stroke fill;
-  text-shadow: 7px 7px 0 var(--blue);
-  pointer-events: none;
-}
-
-/* Finale : la page se coupe en deux camps, cases plus épaisses, 決戦 */
-.vs-page.is-final::before {
-  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: linear-gradient(105deg, rgba(229,50,45,.10) 0 49.8%, rgba(47,109,255,.10) 50.2% 100%);
-}
-.vs-page.is-final .vs-card { border-width: 5px; }
-.vs-kessen {
-  display: inline-block;
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
-  font-style: normal; font-weight: 900; letter-spacing: 0;
-  font-size: .82em; color: #fff;
-  -webkit-text-stroke: 4px #050505;
-  text-shadow: -5px 0 0 var(--red), 5px 0 0 var(--blue);
-}
-.vs-beat {
-  position: absolute; left: 50%; top: 50%; z-index: 0;
-  width: 300px; height: 300px; margin: -150px 0 0 -150px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  pointer-events: none;
-}
-
-/* Kanji géant derrière le nom du tour */
-.vs-wipe-kanji {
-  position: absolute; right: 4%; top: 50%; translate: 0 -50%;
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
-  font-weight: 900; font-size: clamp(120px, 26vw, 380px); line-height: 1;
-  color: transparent; -webkit-text-stroke: 2px rgba(255,255,255,.22);
-  writing-mode: vertical-rl;
-  pointer-events: none;
-}
-
-/* Stats de décision sous la planche */
-.vs-stats {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
-  max-width: 980px; margin: 34px auto 0; text-align: left;
-}
-.vs-stats > div { padding: 14px 16px; border: 2px solid rgba(255,255,255,.14); border-radius: 3px; background: rgba(5,5,5,.8); }
-.vs-stats dt { color: var(--mute); font-size: 13px; font-weight: 600; }
-.vs-stats dd { margin: 4px 0 0; font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: 30px; line-height: 1.1; }
-.vs-stats p { margin: 4px 0 0; color: var(--mute); font-size: 12.5px; line-height: 1.35; }
-
-@media (max-width: 900px) {
-  .vs-stats { grid-template-columns: 1fr; }
-  .vs-combo { top: -50px; }
-  .vs-combo b { font-size: 26px; }
-  .vs-wipe-kanji { right: 2%; opacity: .7; }
+  .vs-strip i, .vs-frame { transition: none; }
 }

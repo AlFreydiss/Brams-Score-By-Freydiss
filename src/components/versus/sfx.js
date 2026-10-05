@@ -1,5 +1,5 @@
 // Bruitages synthétisés (Web Audio) : aucun fichier, tout est généré.
-// Coupés par défaut si l'utilisateur l'a demandé (localStorage versus_sfx = '0').
+// Coupés par défaut : on les active depuis le bouton Son (localStorage versus_sfx = '1').
 
 const KEY = 'versus_sfx'
 let ctx = null
@@ -7,7 +7,7 @@ let master = null
 let noiseBuf = null
 
 export function sfxEnabled() {
-  try { return localStorage.getItem(KEY) !== '0' } catch { return true }
+  try { return localStorage.getItem(KEY) === '1' } catch { return false }
 }
 export function setSfxEnabled(on) {
   try { localStorage.setItem(KEY, on ? '1' : '0') } catch {}
@@ -20,7 +20,7 @@ function ac() {
     if (!AC) return null
     ctx = new AC()
     master = ctx.createGain()
-    master.gain.value = 0.32
+    master.gain.value = 0.22
     const comp = ctx.createDynamicsCompressor()
     master.connect(comp).connect(ctx.destination)
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.2, ctx.sampleRate)

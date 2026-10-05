@@ -16,8 +16,9 @@ const hexToRgb = h => {
   const n = parseInt(h.replace('#', ''), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
-const RED = hexToRgb('#e5322d')
-const BLUE = hexToRgb('#2f6dff')
+// Teinte de survol : monochrome, la trame s'éclaircit simplement du côté visé.
+const RED = [255, 255, 255]
+const BLUE = [255, 255, 255]
 
 export default function HalftoneField() {
   const ref = useRef(null)
@@ -67,7 +68,7 @@ export default function HalftoneField() {
               const k = leanAmt * (0.35 + edge * 0.65)
               const c = lean === 'left' ? RED : BLUE
               cr += (c[0] - cr) * k; cg += (c[1] - cg) * k; cb += (c[2] - cb) * k
-              a += k * 0.12; r += k * 0.6
+              a += k * 0.06; r += k * 0.35
             }
           }
           for (const wv of waves) {
@@ -77,7 +78,7 @@ export default function HalftoneField() {
             const band = Math.abs(d - radius)
             if (band < 90) {
               const k = (1 - band / 90) * (1 - t) * wv.strength
-              r += k * 4.2; a += k * 0.7
+              r += k * 2.6; a += k * 0.4
               cr += (wv.rgb[0] - cr) * k; cg += (wv.rgb[1] - cg) * k; cb += (wv.rgb[2] - cb) * k
             }
           }
