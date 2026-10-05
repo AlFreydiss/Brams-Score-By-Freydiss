@@ -19,7 +19,7 @@ export const TOURNAMENT_CATEGORIES = [
     id: 'panels',
     label: 'Panels cultes',
     tagline: 'Deux cases de légende, une seule reste.',
-    description: `${PANELS.length} panels de manga archi cultes face à face : Berserk, One Piece, HxH, Vagabond…`,
+    description: `${PANELS.length} panels de manga archi cultes, de Berserk à Vagabond. Format 16 à 128, tirage au hasard, filtre par série.`,
     icon: '▦',
     route: '/tournoi/panels',
     status: 'active',
