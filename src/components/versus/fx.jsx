@@ -77,12 +77,13 @@ export function SlashSplit({ src, fit, dir = 1 }) {
     <div className="vs-slash" aria-hidden>
       <motion.img src={src} style={{ objectFit: fit, clipPath: top }}
         initial={{ x: 0, y: 0, rotate: 0 }}
-        animate={{ x: -28 * dir, y: -16, rotate: -3 * dir, opacity: [1, 1, 0] }}
-        transition={{ delay: 0.16, duration: 0.5, ease }} />
+        animate={{ x: -14 * dir, y: -8, rotate: -2 * dir, opacity: [1, 1, 0] }}
+        transition={{ delay: 0.12, duration: 0.32, ease }} />
       <motion.img src={src} style={{ objectFit: fit, clipPath: bot }}
         initial={{ x: 0, y: 0, rotate: 0 }}
-        animate={{ x: 30 * dir, y: 60, rotate: 4 * dir, opacity: [1, 1, 0] }}
-        transition={{ delay: 0.16, duration: 0.55, ease: [0.5, 0, 0.9, 0.4] }} />
+        animate={{ x: 16 * dir, y: 24, rotate: 3 * dir, opacity: [1, 1, 0] }}
+        transition={{ delay: 0.12, duration: 0.34, ease: [0.5, 0, 0.9, 0.4] }} />
+      <DotDust src={src} fit={fit} dir={dir} />
       <svg viewBox="0 0 100 100" preserveAspectRatio="none">
         <motion.line x1="-4" y1={dir > 0 ? 86 : 14} x2="104" y2={dir > 0 ? 14 : 86}
           stroke="#fff" strokeWidth="1.4" vectorEffect="non-scaling-stroke"
@@ -132,13 +133,18 @@ export function StretchTitle({ text }) {
 
 // ── Volet de changement de tour ────────────────────────────────────────────
 // Un aplat d'encre traverse l'écran en diagonale, le nom du tour s'y imprime.
-export function RoundWipe({ label, sub }) {
+export function RoundWipe({ label, sub, kanji }) {
   return (
     <motion.div className="vs-wipe" aria-live="polite"
       initial={{ clipPath: 'polygon(0 0, 0 0, -30% 100%, -30% 100%)' }}
       animate={{ clipPath: ['polygon(0 0, 0 0, -30% 100%, -30% 100%)', 'polygon(0 0, 130% 0, 100% 100%, -30% 100%)', 'polygon(0 0, 130% 0, 100% 100%, -30% 100%)', 'polygon(130% 0, 130% 0, 100% 100%, 100% 100%)'] }}
       transition={{ duration: 1.25, times: [0, 0.28, 0.72, 1], ease: [0.7, 0, 0.3, 1] }}>
       <div className="vs-wipe-tone" />
+      {kanji && (
+        <motion.div className="vs-wipe-kanji" aria-hidden
+          initial={{ scale: 1.6, opacity: 0, x: 80 }} animate={{ scale: 1, opacity: 1, x: -20 }}
+          transition={{ delay: 0.15, duration: 1.1, ease }}>{kanji}</motion.div>
+      )}
       <div className="vs-wipe-txt">
         <motion.p initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25, duration: 0.4, ease }}>{sub}</motion.p>
         <h2>
@@ -152,6 +158,152 @@ export function RoundWipe({ label, sub }) {
           ))}
         </h2>
       </div>
+    </motion.div>
+  )
+}
+
+
+// ── Désintégration en trame ────────────────────────────────────────────────
+// La case perdante est relue pixel par pixel et redessinée en points
+// d'impression qui se détachent le long de la coupe, puis tombent.
+export function DotDust({ src, fit = 'contain', dir = 1 }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const ctx = canvas.getContext('2d')
+    const r = canvas.getBoundingClientRect()
+    const w = Math.max(1, r.width), h = Math.max(1, r.height)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = w * dpr; canvas.height = h * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    let raf = 0, dead = false
+    const img = new Image()
+    img.src = src
+    img.onload = () => {
+      if (dead) return
+      // Rend l'image comme object-fit sur un canvas réduit, puis échantillonne.
+      const step = w < 400 ? 8 : 10
+      const cols = Math.ceil(w / step), rows = Math.ceil(h / step)
+      const off = document.createElement('canvas')
+      off.width = cols; off.height = rows
+      const o = off.getContext('2d')
+      const s = fit === 'cover' ? Math.max(cols / img.width, rows / img.height) : Math.min(cols / img.width, rows / img.height)
+      const iw = img.width * s, ih = img.height * s
+      o.drawImage(img, (cols - iw) / 2, (rows - ih) / 2, iw, ih)
+      let data
+      try { data = o.getImageData(0, 0, cols, rows).data } catch { return }
+      const parts = []
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        const i = (y * cols + x) * 4
+        if (data[i + 3] < 40) continue
+        const lum = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11) / 255
+        const px = x * step + step / 2, py = y * step + step / 2
+        // délai : la désintégration suit la diagonale de la coupe
+        const along = dir > 0 ? (px / w + (1 - py / h)) / 2 : (px / w + py / h) / 2
+        parts.push({
+          x: px, y: py, r: (1 - lum) * step * 0.55 + 0.6,
+          c: `rgb(${data[i]},${data[i + 1]},${data[i + 2]})`,
+          vx: (Math.random() - 0.5) * 2.2 + dir * 1.4, vy: -Math.random() * 2.6 - 0.4,
+          d: along * 260 + Math.random() * 90,
+        })
+      }
+      const t0 = performance.now()
+      const frame = now => {
+        const t = now - t0
+        ctx.clearRect(0, 0, w, h)
+        let alive = false
+        for (const p of parts) {
+          const lt = t - p.d
+          if (lt < 0) { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ctx.fill(); alive = true; continue }
+          const k = lt / 16
+          const a = 1 - lt / 650
+          if (a <= 0) continue
+          alive = true
+          ctx.globalAlpha = a
+          ctx.fillStyle = p.c
+          ctx.beginPath()
+          ctx.arc(p.x + p.vx * k, p.y + p.vy * k + 0.09 * k * k, p.r * (0.6 + a * 0.4), 0, 6.283)
+          ctx.fill()
+          ctx.globalAlpha = 1
+        }
+        if (alive && t < 1600) raf = requestAnimationFrame(frame)
+      }
+      raf = requestAnimationFrame(frame)
+    }
+    return () => { dead = true; cancelAnimationFrame(raf) }
+  }, [src, fit, dir])
+  return <canvas ref={ref} className="vs-dust" aria-hidden />
+}
+
+// ── Confettis de papier ────────────────────────────────────────────────────
+export function PaperRain() {
+  const ref = useRef(null)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const canvas = ref.current
+    const ctx = canvas.getContext('2d')
+    const w = window.innerWidth, h = window.innerHeight
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = w * dpr; canvas.height = h * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    const colors = ['#e5322d', '#2f6dff', '#f1f0ec', '#0a0a0a']
+    const bits = Array.from({ length: w < 700 ? 70 : 140 }, () => ({
+      x: Math.random() * w, y: -20 - Math.random() * h * 0.6,
+      s: 6 + Math.random() * 12, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.25,
+      vy: 2 + Math.random() * 3.5, sway: Math.random() * 6.28, c: colors[(Math.random() * colors.length) | 0],
+      dots: Math.random() < 0.35,
+    }))
+    let raf = 0
+    const t0 = performance.now()
+    const frame = now => {
+      const t = now - t0
+      ctx.clearRect(0, 0, w, h)
+      for (const b of bits) {
+        b.y += b.vy; b.r += b.vr; b.sway += 0.04
+        const x = b.x + Math.sin(b.sway) * 18
+        ctx.save(); ctx.translate(x, b.y); ctx.rotate(b.r)
+        ctx.scale(1, Math.abs(Math.cos(b.sway * 1.3)) * 0.8 + 0.2)
+        ctx.globalAlpha = t > 3600 ? Math.max(0, 1 - (t - 3600) / 900) : 1
+        ctx.fillStyle = b.c
+        ctx.fillRect(-b.s / 2, -b.s * 0.35, b.s, b.s * 0.7)
+        if (b.dots) {
+          ctx.fillStyle = b.c === '#0a0a0a' ? '#f1f0ec' : '#0a0a0a'
+          for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j += 2) { ctx.beginPath(); ctx.arc(i * b.s * 0.28, j * b.s * 0.14, 0.9, 0, 6.283); ctx.fill() }
+        }
+        ctx.restore()
+      }
+      if (t < 4500) raf = requestAnimationFrame(frame)
+      else ctx.clearRect(0, 0, w, h)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return <canvas ref={ref} className="vs-rain" aria-hidden />
+}
+
+// ── Compteur de combo (décisions rapides) ──────────────────────────────────
+export function ComboStamp({ n }) {
+  return (
+    <motion.div className="vs-combo" key={n}
+      initial={{ scale: 1.9, rotate: -14, opacity: 0 }}
+      animate={{ scale: 1, rotate: -6, opacity: 1 }}
+      exit={{ scale: 0.6, opacity: 0, transition: { duration: 0.2 } }}
+      transition={{ type: 'spring', stiffness: 600, damping: 13 }}>
+      <small>Combo</small><b>×{n}</b>
+    </motion.div>
+  )
+}
+
+// ── Tampon de rembobinage (Annuler) ────────────────────────────────────────
+export function RewindStamp() {
+  return (
+    <motion.div className="vs-rewind" aria-hidden
+      initial={{ opacity: 0, scale: 1.6, rotate: 8 }}
+      animate={{ opacity: [0, 1, 1, 0], scale: [1.6, 1, 1, 0.9], rotate: 4 }}
+      transition={{ duration: 0.8, times: [0, 0.2, 0.75, 1] }}>
+      巻き戻し
     </motion.div>
   )
 }

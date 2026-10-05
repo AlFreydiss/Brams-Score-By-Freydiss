@@ -558,3 +558,79 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
 @media (prefers-reduced-motion: reduce) {
   .vs-card, .vs-strip i, .vs-card-tone { transition: none; }
 }
+
+/* ── Vague 3 : désintégration, combo, finale, rembobinage, confettis ── */
+.vs-dust { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.vs-rain { position: fixed; inset: 0; z-index: 10040; pointer-events: none; }
+
+.vs-combo {
+  position: absolute; top: -64px; right: 2%; z-index: 7;
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 6px 16px 8px;
+  background: #fff; color: #050505;
+  border: 3px solid #050505;
+  box-shadow: 7px 7px 0 0 var(--red);
+  font-family: 'Archivo', sans-serif; font-style: italic;
+  pointer-events: none;
+}
+.vs-combo small { font-size: 13px; font-weight: 800; font-stretch: 110%; }
+.vs-combo b { font-size: 34px; font-weight: 900; font-stretch: 125%; line-height: 1; }
+
+.vs-rewind {
+  position: absolute; left: 50%; top: 38%; z-index: 8;
+  translate: -50% -50%;
+  font-family: 'Yu Gothic', 'Hiragino Sans', 'Noto Sans JP', 'Meiryo', sans-serif;
+  font-weight: 900; font-size: clamp(40px, 6vw, 84px); color: #fff; white-space: nowrap;
+  -webkit-text-stroke: 6px #050505; paint-order: stroke fill;
+  text-shadow: 7px 7px 0 var(--blue);
+  pointer-events: none;
+}
+
+/* Finale : la page se coupe en deux camps, cases plus épaisses, 決戦 */
+.vs-page.is-final::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: linear-gradient(105deg, rgba(229,50,45,.10) 0 49.8%, rgba(47,109,255,.10) 50.2% 100%);
+}
+.vs-page.is-final .vs-card { border-width: 5px; }
+.vs-kessen {
+  display: inline-block;
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
+  font-style: normal; font-weight: 900; letter-spacing: 0;
+  font-size: .82em; color: #fff;
+  -webkit-text-stroke: 4px #050505;
+  text-shadow: -5px 0 0 var(--red), 5px 0 0 var(--blue);
+}
+.vs-beat {
+  position: absolute; left: 50%; top: 50%; z-index: 0;
+  width: 300px; height: 300px; margin: -150px 0 0 -150px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  pointer-events: none;
+}
+
+/* Kanji géant derrière le nom du tour */
+.vs-wipe-kanji {
+  position: absolute; right: 4%; top: 50%; translate: 0 -50%;
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif;
+  font-weight: 900; font-size: clamp(120px, 26vw, 380px); line-height: 1;
+  color: transparent; -webkit-text-stroke: 2px rgba(255,255,255,.22);
+  writing-mode: vertical-rl;
+  pointer-events: none;
+}
+
+/* Stats de décision sous la planche */
+.vs-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  max-width: 980px; margin: 34px auto 0; text-align: left;
+}
+.vs-stats > div { padding: 14px 16px; border: 2px solid rgba(255,255,255,.14); border-radius: 3px; background: rgba(5,5,5,.8); }
+.vs-stats dt { color: var(--mute); font-size: 13px; font-weight: 600; }
+.vs-stats dd { margin: 4px 0 0; font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: 30px; line-height: 1.1; }
+.vs-stats p { margin: 4px 0 0; color: var(--mute); font-size: 12.5px; line-height: 1.35; }
+
+@media (max-width: 900px) {
+  .vs-stats { grid-template-columns: 1fr; }
+  .vs-combo { top: -50px; }
+  .vs-combo b { font-size: 26px; }
+  .vs-wipe-kanji { right: 2%; opacity: .7; }
+}
