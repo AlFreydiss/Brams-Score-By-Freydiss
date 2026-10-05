@@ -239,7 +239,7 @@ function CursorCard({ cur, owned, equipped, affordable, busy, onBuy, onEquip, on
 
   let action
   if (equipped) {
-    action = <div style={{ ...btnBase, color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}`, cursor: 'default' }}>✓ Équipé</div>
+    action = <button onClick={() => onEquip(cur)} disabled={busy} title="Retirer ce curseur" style={{ ...btnBase, color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>{busy ? '…' : '✓ Équipé · Retirer'}</button>
   } else if (owned) {
     action = <button onClick={() => onEquip(cur)} disabled={busy} style={{ ...btnBase, color: '#0b0c0e', background: r.color, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>Équiper</button>
   } else if (soldOut) {
@@ -326,6 +326,10 @@ export default function CursorShop() {
   }, [isAuthenticated])
 
   useEffect(() => { refresh() }, [refresh, discordId])
+  useEffect(() => {
+    window.addEventListener('brams-shop-refresh', refresh)
+    return () => window.removeEventListener('brams-shop-refresh', refresh)
+  }, [refresh])
 
   // Retour de Stripe Checkout (?stripe=success&session_id=...) → finalise l'achat
   // côté serveur, flash de succès, nettoie l'URL, refetch l'inventaire.

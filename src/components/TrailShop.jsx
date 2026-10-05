@@ -90,7 +90,7 @@ function TrailCard({ trail, owned, equipped, busy, onBuy, onEquip, onGift, vip }
   const cart = useCart()
   const inCart = cart.has(trail.id)
   let action
-  if (equipped) action = <div style={{ ...btn, color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}`, cursor: 'default' }}>✓ Équipée</div>
+  if (equipped) action = <button onClick={() => onEquip(trail)} disabled={busy} title="Retirer cette traînée" style={{ ...btn, color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>{busy ? '…' : '✓ Équipée · Retirer'}</button>
   else if (owned) action = <button onClick={() => onEquip(trail)} disabled={busy} style={{ ...btn, color: '#0b0c0e', background: r.color, border: `1px solid ${r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>Équiper</button>
   else action = <button onClick={() => onBuy(trail)} disabled={busy} style={{ ...btn, color: '#0b0c0e', background: vip ? 'linear-gradient(135deg,#ffd84d,#ffb3c7)' : `linear-gradient(180deg, ${r.color}, ${r.color}cc)`, border: `1px solid ${vip ? '#ffd84d' : r.color}`, cursor: 'pointer', opacity: busy ? .6 : 1 }}>{busy ? '…' : vip ? vip.label : `Acheter · ${formatEuro(priceCents(trail))}`}</button>
 
@@ -157,6 +157,10 @@ export default function TrailShop() {
     setInventory(Array.isArray(inv) ? inv : [])
   }, [isAuthenticated])
   useEffect(() => { refresh() }, [refresh, discordId])
+  useEffect(() => {
+    window.addEventListener('brams-shop-refresh', refresh)
+    return () => window.removeEventListener('brams-shop-refresh', refresh)
+  }, [refresh])
 
   // Survol d'une traînée → masque la traînée globale équipée pour voir l'aperçu seul.
   useEffect(() => {

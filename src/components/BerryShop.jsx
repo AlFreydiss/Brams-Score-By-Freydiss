@@ -10,6 +10,7 @@ import { useOpeningBg } from '../contexts/OpeningBgContext.jsx'
 import { OPENING_BACKGROUNDS } from '../data/opening-backgrounds.js'
 import CursorShop from './CursorShop.jsx'
 import TrailShop from './TrailShop.jsx'
+import LookReset from './boutique/LookReset.jsx'
 import { track } from '../lib/analytics.js'
 import { CartProvider, useCart } from '../contexts/CartContext.jsx'
 import CartDrawer from './CartDrawer.jsx'
@@ -821,6 +822,9 @@ function BerryShopInner() {
               )
             })
           )}
+
+        {/* ─── Revenir au curseur de base (retire curseur + traînée) ─── */}
+        <LookReset />
 
         {/* ─── Catalogue de curseurs custom One Piece ─── */}
         <div id="shop-curseurs" style={{ scrollMarginTop: 90 }}>
