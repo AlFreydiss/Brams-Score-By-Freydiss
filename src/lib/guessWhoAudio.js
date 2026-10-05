@@ -240,7 +240,10 @@ export async function openMic(deviceId = getMicId()) {
   try {
     return await ask(deviceId)
   } catch (e) {
-    if (deviceId && (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError' || e?.name === 'NotReadableError')) {
+    // Micro débranché / disparu : repli sur le micro par défaut. Micro OCCUPÉ
+    // (NotReadableError) : on ne bascule plus en douce, sinon le choix du joueur
+    // « sautait » sans explication — l'erreur mic_busy le lui dit.
+    if (deviceId && (e?.name === 'OverconstrainedError' || e?.name === 'NotFoundError')) {
       setMicId('')
       return ask('')
     }
@@ -259,7 +262,7 @@ export function micError(e) {
 // ── Micro partagé (enregistrement + réglage) ──────────────────────────────────
 // Compteur de détenteurs : le micro se ferme quand plus personne ne le tient.
 // raw = flux du micro ; stream = ce qu'on enregistre (raw, ou raw débruité).
-const mic = { stream: null, raw: null, cleanup: null, denoised: false, holders: 0, opening: null, subs: new Set() }
+const mic = { stream: null, raw: null, cleanup: null, denoised: false, holders: 0, opening: null, openingId: '', subs: new Set() }
 const isLive = (s) => !!s && s.getAudioTracks().some((t) => t.readyState === 'live')
 const deviceOf = (s) => s?.getAudioTracks()[0]?.getSettings?.().deviceId || ''
 function emitMic() { mic.subs.forEach((cb) => cb(currentMic())) }
@@ -272,6 +275,7 @@ function closeMic() {
   if (had) emitMic()
 }
 
+export function currentMicDevice() { return currentMic() ? deviceOf(mic.raw) : '' }
 export function currentMic() { return isLive(mic.stream) && isLive(mic.raw) ? mic.stream : null }
 export function onMicChange(cb) { mic.subs.add(cb); return () => mic.subs.delete(cb) }
 // Le micro ouvert passe-t-il vraiment par la réduction de bruit ? (repli possible)
@@ -288,7 +292,14 @@ export function setDenoise(on) {
 
 async function ensureMic(deviceId) {
   if (currentMic() && (!deviceId || deviceId === deviceOf(mic.raw))) return mic.stream
-  if (mic.opening) return mic.opening
+  if (mic.opening) {
+    // Même micro demandé : on partage l'ouverture en cours. Autre micro (le
+    // joueur a changé d'avis pendant l'ouverture) : on attend puis on rouvre.
+    if (mic.openingId === (deviceId || '')) return mic.opening
+    await mic.opening.catch(() => {})
+    return ensureMic(deviceId)
+  }
+  mic.openingId = deviceId || ''
   mic.opening = (async () => {
     closeMic()
     const raw = await openMic(deviceId)

@@ -2,10 +2,12 @@
 // Le micro par défaut du navigateur est souvent le mauvais (casque débranché,
 // micro virtuel Discord/OBS…) : on laisse le joueur choisir et vérifier.
 // Même micro partagé que l'enregistrement : tester ne coupe pas la prise suivante.
+// Pendant le test, « M'entendre » renvoie le micro dans le casque (retour), tel
+// qu'il partira dans la prise (réduction de bruit comprise).
 import { useEffect, useRef, useState } from 'react'
 import { Btn } from './manga.jsx'
 import { T, F, LINE, RADIUS } from './theme.js'
-import { acquireMic, audioCtx, getDenoise, getMicId, listMics, micDenoised, micError, releaseMic, setDenoiseLive, setMicId, unlockAudio } from '../../lib/guessWhoAudio.js'
+import { acquireMic, audioCtx, currentMicDevice, getDenoise, getMicId, listMics, micDenoised, micError, releaseMic, setDenoiseLive, setMicId, unlockAudio } from '../../lib/guessWhoAudio.js'
 import { levelOf, micLabel } from './logic/mic.js'
 
 const ERRORS = {
@@ -25,8 +27,10 @@ export default function MicSetup({ compact = false, onError }) {
   const [silent, setSilent] = useState(false)
   const [denoise, setDenoiseOn] = useState(getDenoise)
   const [denoiseOk, setDenoiseOk] = useState(null) // null = pas encore testé
+  const [monitor, setMonitor] = useState(false)     // retour dans le casque
+  const [monVol, setMonVol] = useState(0.8)
   const bar = useRef(null)
-  const live = useRef({ held: false, source: null, raf: 0, timer: 0, n: 0 })
+  const live = useRef({ held: false, source: null, raf: 0, timer: 0, n: 0, mon: null })
 
   // La jauge est mise à jour directement dans le DOM : pas de rendu React par image.
   const stop = () => {
@@ -34,11 +38,32 @@ export default function MicSetup({ compact = false, onError }) {
     l.n++
     cancelAnimationFrame(l.raf)
     clearTimeout(l.timer)
+    try { l.mon?.disconnect() } catch { /* déjà coupé */ }
     try { l.source?.disconnect() } catch { /* déjà coupé */ }
     if (l.held) releaseMic()
-    live.current = { held: false, source: null, raf: 0, timer: 0, n: l.n }
+    live.current = { held: false, source: null, raf: 0, timer: 0, n: l.n, mon: null }
   }
   useEffect(() => stop, [])
+
+  // Casque / micro branché ou débranché pendant le réglage : la liste suit.
+  useEffect(() => {
+    const md = navigator.mediaDevices
+    if (!md?.addEventListener) return
+    const onChange = () => { listMics().then(setDevices).catch(() => {}) }
+    md.addEventListener('devicechange', onChange)
+    return () => md.removeEventListener('devicechange', onChange)
+  }, [])
+
+  // Retour casque : le micro (après réduction de bruit) envoyé vers la sortie.
+  const plugMonitor = (on, vol = monVol) => {
+    const l = live.current
+    const ctx = audioCtx()
+    if (!ctx || !l.source) return
+    if (!l.mon) { l.mon = ctx.createGain(); l.mon.gain.value = 0; l.source.connect(l.mon); l.mon.connect(ctx.destination) }
+    l.mon.gain.setTargetAtTime(on ? vol : 0, ctx.currentTime, 0.03)
+  }
+  const toggleMonitor = () => { const on = !monitor; setMonitor(on); plugMonitor(on) }
+  const changeMonVol = (x) => { setMonVol(x); if (monitor) plugMonitor(true, x) }
 
   const start = async (id = micId) => {
     unlockAudio() // dans le geste : sans ça la jauge reste à zéro sur iPhone
@@ -70,13 +95,17 @@ export default function MicSetup({ compact = false, onError }) {
         live.current.raf = requestAnimationFrame(tick)
       }
       live.current.source = source
+      if (monitor) plugMonitor(true)
       live.current.raf = requestAnimationFrame(tick)
       live.current.timer = setTimeout(() => { if (peak < 0.06) setSilent(true) }, 4000)
       setDenoiseOk(getDenoise() ? micDenoised() : null)
       setDevices(await listMics())
-      // micro réellement ouvert (peut différer si le choix précédent a disparu)
-      const used = stream.getAudioTracks()[0]?.getSettings?.().deviceId || ''
-      if (used && used !== id) { setMic(used); setMicId(used) }
+      // Micro réellement ouvert (repli si le choix a disparu). On lit l'appareil
+      // brut : le flux débruité n'expose pas de deviceId. « default » et
+      // « communications » sont des alias : on garde le choix du joueur.
+      const used = currentMicDevice()
+      const alias = id === 'default' || id === 'communications'
+      if (used && used !== id && !alias) { setMic(used); setMicId(used) }
       setStatus('live')
     } catch (e) {
       onError?.(micError(e))
@@ -112,7 +141,7 @@ export default function MicSetup({ compact = false, onError }) {
           </Btn>
         )}
         {status === 'live' && (
-          <Btn variant="ghost" onClick={() => { stop(); setStatus('idle') }} style={{ minHeight: 42 }}>Terminer le test</Btn>
+          <Btn variant="ghost" onClick={() => { stop(); setStatus('idle'); setMonitor(false) }} style={{ minHeight: 42 }}>Terminer le test</Btn>
         )}
       </div>
 
@@ -151,6 +180,28 @@ export default function MicSetup({ compact = false, onError }) {
         <>
           <div aria-label="Niveau du micro" style={{ height: 6, borderRadius: RADIUS.pill, background: T.line, overflow: 'hidden' }}>
             <div ref={bar} style={{ width: 0, height: '100%', borderRadius: RADIUS.pill, background: T.textFaint, transition: 'width 60ms linear' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <button type="button" role="switch" aria-checked={monitor} aria-label="M'entendre dans le casque" className="gw-focus gw-btn" onClick={toggleMonitor}
+              style={{
+                flexShrink: 0, width: 46, height: 28, borderRadius: RADIUS.pill, border: LINE, cursor: 'pointer', padding: 3,
+                background: monitor ? T.accent : T.surface, display: 'flex', justifyContent: monitor ? 'flex-end' : 'flex-start',
+                transition: 'background 160ms ease', touchAction: 'manipulation',
+              }}>
+              <span aria-hidden style={{ width: 20, height: 20, borderRadius: '50%', background: monitor ? T.onAccent : T.textMute }} />
+            </button>
+            <span style={{ minWidth: 0, flex: '1 1 200px' }}>
+              <span style={{ display: 'block', fontWeight: 600, fontSize: 14.5, color: T.textHi }}>M'entendre dans le casque</span>
+              <span style={{ display: 'block', fontSize: 13, color: T.textMute, marginTop: 2 }}>
+                {monitor ? 'Tu t’entends comme les autres t’entendront. Avec un casque seulement, sinon ça siffle.' : 'Retour de ta voix pour régler le micro. Mets un casque avant.'}
+              </span>
+            </span>
+            {monitor && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: T.textMute }}>
+                Volume
+                <input type="range" min="0" max="1.5" step="0.05" value={monVol} onChange={(e) => changeMonVol(+e.target.value)} style={{ width: 110, accentColor: T.accent }} />
+              </label>
+            )}
           </div>
           <p role="status" style={{ margin: 0, fontWeight: 600, fontSize: 14.5, color: heard ? T.ok : silent ? T.danger : T.textMute }}>
             {heard ? `Ton micro capte bien ✓${denoiseOk ? ' · bruit de fond filtré' : ''}` : silent ? "Aucun son capté : parle plus fort ou choisis un autre micro dans la liste." : 'Parle ou crie un coup pour tester…'}
