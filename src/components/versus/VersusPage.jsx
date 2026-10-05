@@ -5,6 +5,7 @@ import { VERSUS_CONFIGS } from '../../data/versus-data.js'
 import { generateBracket, advanceWinner, getCurrentMatch, getWinner, getTournamentProgress } from '../../lib/tournament.js'
 import BleachRadio from './BleachRadio.jsx'
 import Bracket, { makeShareImage } from './Bracket.jsx'
+import { fetchStats, recordDuel, winRate } from '../../lib/versusStats.js'
 import HalftoneField, { fx } from './HalftoneField.jsx'
 import { RoundWipe, SlashSplit, StretchTitle } from './fx.jsx'
 import { buzz, setSfxEnabled, sfx, sfxEnabled } from './sfx.js'
@@ -89,6 +90,8 @@ export default function VersusPage({ kind }) {
   const [picked, setPicked] = useState(null)
   const [zoom, setZoom] = useState(null)
   const [showBracket, setShowBracket] = useState(false)
+  const [community, setCommunity] = useState(null)       // Map id -> { wins, duels }
+  useEffect(() => { let on = true; fetchStats(config.id).then(m => { if (on) setCommunity(m) }); return () => { on = false } }, [config.id])
   const [recap, setRecap] = useState(null)                // { size, qualified }
 
   useEffect(() => { saveRun(config, run) }, [config, run])
@@ -186,6 +189,7 @@ export default function VersusPage({ kind }) {
     setTimeout(() => {
       const next = advanceWinner(rounds, match.id, p.id)
       const entry = { ms, w: p.title, l: other?.title, round: round.size }
+      recordDuel(config.id, p.id, other?.id)
       setHistory(h => [...h.slice(-60), rounds])
       setRun(r => ({ ...r, rounds: next, log: [...(r.log || []), entry] }))
       setPicked(null)
@@ -194,8 +198,8 @@ export default function VersusPage({ kind }) {
       if (roundOver && round.size > 2) {
         setRecap({ size: round.size, qualified: doneRound.matches.map(winnerOf).filter(Boolean) })
       }
-    }, 760)
-  }, [current, picked, recap, wipe, rounds, combo, isFinal])
+    }, community?.size ? 1150 : 760)   // un temps de plus pour lire le taux de la communauté
+  }, [current, picked, recap, wipe, rounds, combo, isFinal, community])
 
   const undo = useCallback(() => {
     if (!history.length || picked) return
@@ -264,14 +268,14 @@ export default function VersusPage({ kind }) {
                     className="vs-arena"
                     exit={{ opacity: 0, transition: { duration: 0.18 } }}
                   >
-                    <DuelCard side="left" color={RED} p={current.match.left} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} />
+                    <DuelCard side="left" color={RED} p={current.match.left} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} community={community} />
                     <motion.div className="vs-mark" aria-hidden
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={picked ? { opacity: 0, scale: 0.8 } : { opacity: 1, scale: 1 }}
                       transition={{ duration: 0.35, delay: picked ? 0 : 0.25, ease: [0.2, 0.8, 0.2, 1] }}>
                       {isFinal ? 'finale' : 'vs'}
                     </motion.div>
-                    <DuelCard side="right" color={BLUE} p={current.match.right} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} />
+                    <DuelCard side="right" color={BLUE} p={current.match.right} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} community={community} />
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -399,7 +403,7 @@ function Setup({ config, onStart }) {
 // Sobre : la case se révèle de bas en haut, s'incline à peine sous le curseur.
 // Au choix, le gagnant s'éclaire d'un filet blanc ; le perdant est fendu d'un
 // trait puis se dissout en points d'impression.
-function DuelCard({ side, color, p, fit, picked, onPick, onZoom }) {
+function DuelCard({ side, color, p, fit, picked, onPick, onZoom, community }) {
   const reduce = useReducedMotion()
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
@@ -459,6 +463,7 @@ function DuelCard({ side, color, p, fit, picked, onPick, onZoom }) {
         <span className="vs-cap-txt">
           <b>{p.title}</b>
           <small>{p.subtitle}</small>
+          {community && <CommunityRate stat={community.get(p.id)} show={!!picked} />}
         </span>
         <motion.i className="vs-cap-line" aria-hidden initial={{ scaleX: 0 }} animate={{ scaleX: win ? 1 : 0 }} transition={{ duration: 0.45, ease }} />
       </motion.div>
@@ -557,6 +562,7 @@ function Champion({ rounds, log, config, onRestart, onUndo, onBracket }) {
           </motion.figure>
         ))}
       </div>
+      <CommunityBoard config={config} />
       {stats && (
         <motion.dl className="vs-stats" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.4, duration: 0.5 }}>
           <div>
@@ -589,19 +595,73 @@ function Champion({ rounds, log, config, onRestart, onUndo, onBracket }) {
 const fmtS = ms => `${(ms / 1000).toFixed(1).replace('.', ',')} s`
 
 // Nombre qui défile jusqu'à sa valeur.
-function Counter({ to, decimals = 0, suffix = '' }) {
+function Counter({ to, decimals = 0, suffix = '', delay = 1400, dur = 900 }) {
   const ref = useRef(null)
   useEffect(() => {
-    const t0 = performance.now()
+    let t0 = 0
     let raf = 0
     const tick = now => {
-      const k = Math.min(1, (now - t0) / 900)
+      if (!t0) t0 = now
+      const k = Math.min(1, (now - t0) / dur)
       const e = 1 - Math.pow(1 - k, 3)
       if (ref.current) ref.current.textContent = (to * e).toFixed(decimals).replace('.', ',') + suffix
       if (k < 1) raf = requestAnimationFrame(tick)
     }
-    const d = setTimeout(() => { raf = requestAnimationFrame(tick) }, 1400)
+    const d = setTimeout(() => { raf = requestAnimationFrame(tick) }, delay)
     return () => { clearTimeout(d); cancelAnimationFrame(raf) }
-  }, [to, decimals, suffix])
+  }, [to, decimals, suffix, delay, dur])
   return <span ref={ref}>0{suffix}</span>
+}
+
+// Taux de victoire communautaire : révélé seulement après ton choix, pour ne
+// pas influencer le vote.
+function CommunityRate({ stat, show }) {
+  const rate = winRate(stat)
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.span className="vs-rate" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+          {rate == null
+            ? 'Pas encore assez de duels'
+            : <><i style={{ '--w': `${rate}%` }} /><Counter to={rate} suffix=" % de victoires" delay={120} dur={550} /></>}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// Classement de la communauté (toutes parties confondues).
+function CommunityBoard({ config }) {
+  const [rows, setRows] = useState(null)
+  useEffect(() => {
+    let on = true
+    fetchStats(config.id, { fresh: true }).then(m => {
+      if (!on || !m) return
+      const byId = new Map(config.participants.map(p => [p.id, p]))
+      const list = [...m.entries()]
+        .map(([id, s]) => ({ p: byId.get(id), s, rate: winRate(s) }))
+        .filter(r => r.p && r.rate != null)
+        .sort((a, b) => b.rate - a.rate || b.s.duels - a.s.duels)
+        .slice(0, 10)
+      setRows(list)
+    })
+    return () => { on = false }
+  }, [config])
+  if (!rows || rows.length < 3) return null
+  return (
+    <motion.section className="vs-board" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1, duration: 0.5 }}>
+      <h3>Le classement de la communauté</h3>
+      <ol>
+        {rows.map((r, i) => (
+          <li key={r.p.id}>
+            <span className="vs-board-n">{i + 1}</span>
+            <img src={r.p.img} alt="" loading="lazy" />
+            <span className="vs-board-t"><b>{r.p.title}</b><small>{r.p.subtitle} · {r.s.duels} duels</small></span>
+            <span className="vs-board-bar"><motion.i initial={{ scaleX: 0 }} animate={{ scaleX: r.rate / 100 }} transition={{ delay: 1.3 + i * 0.05, duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }} /></span>
+            <span className="vs-board-r">{r.rate} %</span>
+          </li>
+        ))}
+      </ol>
+    </motion.section>
+  )
 }

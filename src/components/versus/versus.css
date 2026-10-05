@@ -504,3 +504,26 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
   .vb-box { height: 92vh; }
   .vb-col { flex-basis: 170px; }
 }
+
+/* Taux de la communauté, révélé après le choix */
+.vs-rate { display: flex; align-items: center; gap: 8px; margin-top: 7px; font-size: 12px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.vs-card--right .vs-rate { justify-content: flex-end; }
+.vs-rate i { position: relative; display: block; width: 64px; height: 2px; background: var(--faint); overflow: hidden; }
+.vs-rate i::after { content: ''; position: absolute; inset: 0; width: var(--w); background: var(--ink); }
+.vs-card--right .vs-rate i { order: 2; }
+@media (max-width: 900px) { .vs-card--right .vs-rate { justify-content: flex-start; } .vs-card--right .vs-rate i { order: 0; } }
+
+/* Classement de la communauté */
+.vs-board { max-width: 960px; margin: 28px auto 0; text-align: left; }
+.vs-board h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--mute); }
+.vs-board ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.vs-board li { display: grid; grid-template-columns: 28px 52px minmax(0, 1fr) 140px 48px; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.vs-board-n { color: var(--mute); font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+.vs-board img { width: 52px; height: 38px; object-fit: cover; border-radius: 3px; display: block; }
+.vs-board-t { min-width: 0; }
+.vs-board-t b { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs-board-t small { display: block; color: var(--mute); font-size: 12px; }
+.vs-board-bar { height: 2px; background: var(--faint); overflow: hidden; }
+.vs-board-bar i { display: block; height: 100%; background: var(--ink); transform-origin: 0 50%; }
+.vs-board-r { font-size: 14px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) { .vs-board li { grid-template-columns: 22px 44px minmax(0, 1fr) 44px; } .vs-board-bar { display: none; } }
