@@ -5,7 +5,7 @@ import { VERSUS_CONFIGS } from '../../data/versus-data.js'
 import { generateBracket, advanceWinner, getCurrentMatch, getWinner, getTournamentProgress } from '../../lib/tournament.js'
 import BleachRadio from './BleachRadio.jsx'
 import Bracket, { makeShareImage } from './Bracket.jsx'
-import { fetchStats, recordDuel, winRate } from '../../lib/versusStats.js'
+import { fetchPair, fetchStats, recordDuel, winRate } from '../../lib/versusStats.js'
 import HalftoneField, { fx } from './HalftoneField.jsx'
 import { RoundWipe, SlashSplit, StretchTitle } from './fx.jsx'
 import { buzz, setSfxEnabled, sfx, sfxEnabled } from './sfx.js'
@@ -101,6 +101,13 @@ export default function VersusPage({ kind }) {
   const current = useMemo(() => rounds && getCurrentMatch(rounds), [rounds])
   const winner = useMemo(() => rounds && getWinner(rounds), [rounds])
   // Le total vient de la taille du tableau : les tours futurs n'ont pas encore leurs duels.
+  useEffect(() => {
+    if (winner && run && !run.saved) {
+      saveChampion(config, { id: winner.id, size: run.size, at: Date.now() })
+      setRun(r => ({ ...r, saved: true }))
+    }
+  }, [winner, run, config])
+
   const progress = useMemo(() => {
     if (!rounds) return null
     const { done } = getTournamentProgress(rounds)
@@ -116,11 +123,11 @@ export default function VersusPage({ kind }) {
     for (const m of all.slice(i + 1, i + 3)) for (const p of [m.left, m.right]) if (p) { const im = new Image(); im.src = p.img }
   }, [rounds, current])
 
-  const start = (size, pool) => {
+  const start = (size, pool, blind = false) => {
     const chosen = sample(pool, Math.min(size, pool.length))
     setHistory([])
     setRecap(null)
-    setRun({ size: chosen.length, rounds: generateBracket(chosen).rounds })
+    setRun({ size: chosen.length, rounds: generateBracket(chosen).rounds, blind, startedAt: Date.now() })
   }
 
   const [wipe, setWipe] = useState(null)                  // { label, sub, kanji }
@@ -268,14 +275,14 @@ export default function VersusPage({ kind }) {
                     className="vs-arena"
                     exit={{ opacity: 0, transition: { duration: 0.18 } }}
                   >
-                    <DuelCard side="left" color={RED} p={current.match.left} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} community={community} />
+                    <DuelCard side="left" color={RED} p={current.match.left} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} community={community} blind={!!run.blind} />
                     <motion.div className="vs-mark" aria-hidden
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={picked ? { opacity: 0, scale: 0.8 } : { opacity: 1, scale: 1 }}
                       transition={{ duration: 0.35, delay: picked ? 0 : 0.25, ease: [0.2, 0.8, 0.2, 1] }}>
                       {isFinal ? 'finale' : 'vs'}
                     </motion.div>
-                    <DuelCard side="right" color={BLUE} p={current.match.right} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} community={community} />
+                    <DuelCard side="right" color={BLUE} p={current.match.right} fit={config.fit} picked={picked} onPick={choose} onZoom={setZoom} community={community} blind={!!run.blind} />
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -355,6 +362,7 @@ function Setup({ config, onStart }) {
     return n
   })
 
+  const [blind, setBlind] = useState(false)
   // Vignettes de fond : un aperçu du pool.
   const preview = useRef(sample(all, 12)).current
 
@@ -390,11 +398,20 @@ function Setup({ config, onStart }) {
           </>
         )}
 
-        <button type="button" className="vs-go" disabled={!effective} onClick={() => onStart(effective, pool)}>
+        <label className="vs-toggle">
+          <input type="checkbox" checked={blind} onChange={e => setBlind(e.target.checked)} />
+          <span className="vs-toggle-ui" aria-hidden />
+          <span><b>Mode aveugle</b><small>Les titres restent cachés jusqu’à ton choix : seule l’image compte.</small></span>
+        </label>
+
+        <button type="button" className="vs-go" disabled={!effective} onClick={() => onStart(effective, pool, blind)}>
           Lancer le tournoi {effective ? `· ${effective}` : ''}
         </button>
         <p className="vs-setup-note">Tirage au hasard dans le pool à chaque partie.</p>
       </div>
+
+      <DailyDuel config={config} />
+      <ChampionHistory config={config} />
     </motion.div>
   )
 }
@@ -403,7 +420,7 @@ function Setup({ config, onStart }) {
 // Sobre : la case se révèle de bas en haut, s'incline à peine sous le curseur.
 // Au choix, le gagnant s'éclaire d'un filet blanc ; le perdant est fendu d'un
 // trait puis se dissout en points d'impression.
-function DuelCard({ side, color, p, fit, picked, onPick, onZoom, community }) {
+function DuelCard({ side, color, p, fit, picked, onPick, onZoom, community, blind }) {
   const reduce = useReducedMotion()
   const mx = useMotionValue(0)
   const my = useMotionValue(0)
@@ -461,8 +478,9 @@ function DuelCard({ side, color, p, fit, picked, onPick, onZoom, community }) {
         transition={{ duration: 0.5, ease, delay: lose || win ? 0 : 0.35 }}>
         <span className="vs-cap-key" aria-hidden>{side === 'left' ? '←' : '→'}</span>
         <span className="vs-cap-txt">
-          <b>{p.title}</b>
-          <small>{p.subtitle}</small>
+          {blind && !picked
+            ? <><b className="is-hidden">{side === 'left' ? 'Case de gauche' : 'Case de droite'}</b><small>Mode aveugle</small></>
+            : <><motion.b key="t" initial={blind ? { opacity: 0, y: 6 } : false} animate={{ opacity: 1, y: 0 }}>{p.title}</motion.b><small>{p.subtitle}</small></>}
           {community && <CommunityRate stat={community.get(p.id)} show={!!picked} />}
         </span>
         <motion.i className="vs-cap-line" aria-hidden initial={{ scaleX: 0 }} animate={{ scaleX: win ? 1 : 0 }} transition={{ duration: 0.45, ease }} />
@@ -663,5 +681,109 @@ function CommunityBoard({ config }) {
         ))}
       </ol>
     </motion.section>
+  )
+}
+
+// ── Historique de tes champions (localStorage) ─────────────────────────────
+const champKey = c => `versus_champs_${c.id}`
+function loadChampions(c) {
+  try { return JSON.parse(localStorage.getItem(champKey(c)) || '[]') } catch { return [] }
+}
+function saveChampion(c, entry) {
+  try { localStorage.setItem(champKey(c), JSON.stringify([entry, ...loadChampions(c)].slice(0, 24))) } catch {}
+}
+
+function ChampionHistory({ config }) {
+  const list = useMemo(() => {
+    const byId = new Map(config.participants.map(p => [p.id, p]))
+    return loadChampions(config).map(e => ({ ...e, p: byId.get(e.id) })).filter(e => e.p)
+  }, [config])
+  if (!list.length) return null
+  const fmt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' })
+  return (
+    <section className="vs-history">
+      <h3>Tes champions <small>{list.length} partie{list.length > 1 ? 's' : ''}</small></h3>
+      <div className="vs-history-row">
+        {list.map((e, i) => (
+          <motion.figure key={e.at} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.04, duration: 0.4 }}>
+            <img src={e.p.img} alt={e.p.title} loading="lazy" />
+            <figcaption><b>{e.p.title}</b><small>{fmt.format(e.at)} · {e.size}</small></figcaption>
+          </motion.figure>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ── Duel du jour : la même paire pour tout le monde, un vote par jour ──────
+function dayKey() {
+  const d = new Date()
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+}
+function hash(s) {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return h >>> 0
+}
+function dailyPair(config) {
+  const list = config.participants
+  const h = hash(config.id + dayKey())
+  const a = h % list.length
+  let b = (hash(String(h)) % (list.length - 1))
+  if (b >= a) b++
+  return [list[a], list[b]]
+}
+
+function DailyDuel({ config }) {
+  const [a, b] = useMemo(() => dailyPair(config), [config])
+  const key = `versus_daily_${config.id}_${dayKey()}`
+  const [vote, setVote] = useState(() => { try { return localStorage.getItem(key) } catch { return null } })
+  const [split, setSplit] = useState(null)
+
+  useEffect(() => {
+    if (!vote) return
+    let on = true
+    fetchPair(config.id, a.id, b.id).then(s => { if (on) setSplit(s) })
+    return () => { on = false }
+  }, [vote, config.id, a.id, b.id])
+
+  const pick = p => {
+    if (vote) return
+    try { localStorage.setItem(key, p.id) } catch {}
+    recordDuel(config.id, p.id, p.id === a.id ? b.id : a.id)
+    sfx.impact(0)
+    // laisse le temps à l'enregistrement d'arriver avant de lire la répartition
+    setTimeout(() => setVote(p.id), 350)
+  }
+
+  const total = split ? split.a + split.b : 0
+  const pa = total ? Math.round((split.a / total) * 100) : null
+
+  return (
+    <section className="vs-daily">
+      <h3>Duel du jour <small>Le même pour tout le monde, un vote par jour</small></h3>
+      <div className="vs-daily-row">
+        {[a, b].map((p, i) => {
+          const mine = vote === p.id
+          const pct = pa == null ? null : (i === 0 ? pa : 100 - pa)
+          return (
+            <button key={p.id} type="button" className={`vs-daily-card ${mine ? 'is-mine' : ''} ${vote && !mine ? 'is-other' : ''}`} onClick={() => pick(p)} disabled={!!vote}>
+              <span className="vs-daily-img"><img src={p.img} alt={p.title} loading="lazy" /></span>
+              <span className="vs-daily-cap">
+                <b>{p.title}</b>
+                <small>{p.subtitle}</small>
+              </span>
+              {vote && (
+                <span className="vs-daily-pct">
+                  <motion.i initial={{ scaleX: 0 }} animate={{ scaleX: (pct ?? 0) / 100 }} transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }} />
+                  <em>{pct == null ? (mine ? 'Ton choix' : '') : `${pct} %`}</em>
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      {vote && <p className="vs-daily-note">{total ? `${total} vote${total > 1 ? 's' : ''} sur ce duel` : 'Merci, ton vote est compté.'} Nouveau duel demain.</p>}
+    </section>
   )
 }

@@ -527,3 +527,59 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
 .vs-board-bar i { display: block; height: 100%; background: var(--ink); transform-origin: 0 50%; }
 .vs-board-r { font-size: 14px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 900px) { .vs-board li { grid-template-columns: 22px 44px minmax(0, 1fr) 44px; } .vs-board-bar { display: none; } }
+
+/* ── Mode aveugle ── */
+.vs-toggle { display: flex; align-items: flex-start; gap: 12px; margin-top: 22px; cursor: pointer; }
+.vs-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.vs-toggle-ui {
+  flex: 0 0 auto; position: relative; width: 34px; height: 20px; margin-top: 1px;
+  border: 1px solid var(--line-2); border-radius: 999px; transition: background .25s, border-color .25s;
+}
+.vs-toggle-ui::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--mute); transition: transform .3s var(--ease), background .25s;
+}
+.vs-toggle input:checked + .vs-toggle-ui { background: var(--ink); border-color: var(--ink); }
+.vs-toggle input:checked + .vs-toggle-ui::after { transform: translateX(14px); background: #000; }
+.vs-toggle input:focus-visible + .vs-toggle-ui { outline: 2px solid var(--ink); outline-offset: 2px; }
+.vs-toggle b { display: block; font-size: 14px; font-weight: 600; }
+.vs-toggle small { display: block; margin-top: 2px; color: var(--mute); font-size: 12.5px; }
+.vs-cap b.is-hidden { color: var(--mute); font-style: italic; }
+
+/* ── Duel du jour ── */
+.vs-daily, .vs-history { margin-top: 18px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0,0,0,.92); }
+.vs-daily h3, .vs-history h3 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; font-size: 15px; font-weight: 600; }
+.vs-daily h3 small, .vs-history h3 small { color: var(--mute); font-size: 12.5px; font-weight: 400; }
+.vs-daily-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vs-daily-card {
+  position: relative; display: flex; flex-direction: column; text-align: left;
+  padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--ink);
+  outline: 1px solid var(--line); outline-offset: -1px; overflow: hidden; cursor: pointer;
+  transition: outline-color .25s, opacity .3s;
+}
+.vs-daily-card:hover:not(:disabled) { outline-color: var(--line-2); }
+.vs-daily-card:disabled { cursor: default; }
+.vs-daily-card.is-mine { outline: 2px solid var(--ink); outline-offset: -2px; }
+.vs-daily-card.is-other { opacity: .6; }
+.vs-daily-img { display: block; aspect-ratio: 4 / 3; background: #050505; }
+.vs-daily-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vs-daily-cap { display: block; padding: 10px 12px 12px; }
+.vs-daily-cap b { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs-daily-cap small { display: block; margin-top: 2px; color: var(--mute); font-size: 12px; }
+.vs-daily-pct { display: flex; align-items: center; gap: 10px; padding: 0 12px 12px; }
+.vs-daily-pct i { flex: 1; height: 2px; background: var(--ink); transform-origin: 0 50%; }
+.vs-daily-pct em { font-style: normal; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+.vs-daily-note { margin: 12px 0 0; color: var(--mute); font-size: 12.5px; }
+
+/* ── Tes champions ── */
+.vs-history-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.vs-history-row figure { flex: 0 0 132px; margin: 0; }
+.vs-history-row img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; outline: 1px solid var(--line); outline-offset: -1px; display: block; }
+.vs-history-row figcaption { margin-top: 6px; }
+.vs-history-row b { display: block; font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs-history-row small { display: block; color: var(--mute); font-size: 11.5px; }
+
+@media (max-width: 900px) {
+  .vs-daily, .vs-history { padding: 16px 14px; }
+  .vs-daily-row { gap: 8px; }
+}
