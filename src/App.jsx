@@ -102,6 +102,7 @@ const DoublagePage       = lazyWithReload(() => import('./components/DoublagePag
 const DoublageStudioPage = lazyWithReload(() => import('./components/DoublageStudioPage.jsx'))
 const HigherLowerPage    = lazyWithReload(() => import('./components/HigherLowerPage.jsx'))
 const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipperPage.jsx'))
+const VersusPage         = lazyWithReload(() => import('./components/versus/VersusPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
 const GuessWhoPage       = lazyWithReload(() => import('./features/guesswho/GuessWhoPage.jsx'))
@@ -761,6 +762,9 @@ export default function App() {
         <Route path="/tournoi/rap-fr" element={<PageLayout><TournamentPage tournamentId="rapfr" /></PageLayout>} />
         <Route path="/tournoi/ost-anime" element={<PageLayout><TournamentPage tournamentId="ostanime" /></PageLayout>} />
         <Route path="/tournoi/sakuga" element={<PageLayout><TournamentPage tournamentId="sakuga" /></PageLayout>} />
+        {/* Tournois en images : clé = kind, pour remonter l'état au changement de page. */}
+        <Route path="/tournoi/bankai" element={<PageLayout><VersusPage key="bankai" kind="bankai" /></PageLayout>} />
+        <Route path="/tournoi/panels" element={<PageLayout><VersusPage key="panels" kind="panels" /></PageLayout>} />
         {/* Guerre du Doublage : pas un bracket, une série de duels VF/VOSTFR. */}
         <Route path="/tournoi/doublage" element={<PageLayout><DoublagePage /></PageLayout>} />
         {/* Studio : on double soi-même l'extrait et on repart avec le fichier. */}

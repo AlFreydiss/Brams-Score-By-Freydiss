@@ -1,8 +1,31 @@
 import { DOUBLAGE_SCENE_COUNT } from './doublage-count.js'
 import { SAKUGA_CLIPS, SAKUGA_READY } from './sakuga-data.js'
+import { BANKAI, PANELS } from './versus-data.js'
 
 // ── Tournament categories ──────────────────────────────────────────────────
 export const TOURNAMENT_CATEGORIES = [
+  {
+    id: 'bankai',
+    label: 'Bleach Bankai',
+    tagline: 'Le Bankai le plus stylé.',
+    description: `${BANKAI.length} Bankai en 1v1, de Tensa Zangetsu à Zanka no Tachi. Tu tranches, la radio Bleach tourne en fond.`,
+    icon: '卍解',
+    route: '/tournoi/bankai',
+    status: 'active',
+    activeCount: 1,
+    color: '#e5322d',
+  },
+  {
+    id: 'panels',
+    label: 'Panels cultes',
+    tagline: 'Deux cases de légende, une seule reste.',
+    description: `${PANELS.length} panels de manga archi cultes face à face : Berserk, One Piece, HxH, Vagabond…`,
+    icon: '▦',
+    route: '/tournoi/panels',
+    status: 'active',
+    activeCount: 1,
+    color: '#2f6dff',
+  },
   {
     id: 'doublage',
     label: 'Doublage',
