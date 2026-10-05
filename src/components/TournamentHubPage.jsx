@@ -92,6 +92,61 @@ const HUB_CSS = `
     outline:2px solid #f9a8d4; outline-offset:3px;
     box-shadow:0 0 0 6px rgba(249,168,212,.16) !important;
   }
+  /* ── Hero ── deux colonnes : texte à gauche, duel à l'affiche à droite.
+     Une seule couleur pleine (le bouton principal), le reste en filets. */
+  .ht-hero {
+    display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+    gap:clamp(32px,5vw,80px); align-items:center;
+    padding:clamp(56px,8vw,104px) 0 clamp(48px,6vw,72px);
+  }
+  .ht-hero--solo { grid-template-columns:minmax(0,1fr) }
+  .ht-kicker {
+    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;
+    font-size:10px; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
+    color:rgba(255,255,255,.42);
+  }
+  h1.ht-title {
+    display:block; margin:0 0 20px;
+    font-family:'Pirata One',cursive; font-weight:900;
+    font-size:clamp(64px,8.4vw,128px); line-height:.9; letter-spacing:-.01em;
+  }
+  .ht-lede {
+    margin:0 0 30px; max-width:440px;
+    font-size:clamp(15px,1.5vw,17px); line-height:1.6; color:rgba(255,255,255,.58);
+  }
+  .ht-ctas { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:22px }
+  .ht-btn {
+    padding:13px 26px; border-radius:100px; cursor:pointer;
+    font:inherit; font-size:14px; font-weight:700; letter-spacing:.01em;
+    transition:transform .25s cubic-bezier(.22,1,.36,1), background-color .25s, border-color .25s, color .25s;
+  }
+  .ht-btn:active { transform:scale(.97) }
+  .ht-btn--main { border:none; background:#f4f1f3; color:#160912 }
+  .ht-btn--main:hover { background:#fff; transform:translateY(-1px) }
+  .ht-btn--ghost { border:1px solid rgba(255,255,255,.16); background:transparent; color:rgba(255,255,255,.82) }
+  .ht-btn--ghost:hover { border-color:rgba(255,255,255,.4); color:#fff }
+  .ht-links { display:flex; flex-wrap:wrap; gap:20px }
+  .ht-link-btn {
+    padding:4px 0; border:none; background:none; cursor:pointer;
+    font:inherit; font-size:12px; font-weight:600; color:rgba(255,255,255,.42);
+    border-bottom:1px solid transparent; transition:color .2s, border-color .2s;
+  }
+  .ht-link-btn:hover { color:#fff; border-bottom-color:rgba(255,255,255,.3) }
+  .ht-btn:focus-visible, .ht-link-btn:focus-visible { outline:2px solid #f9a8d4; outline-offset:3px }
+  .ht-duel {
+    padding:clamp(16px,2vw,24px); border-radius:16px;
+    background:rgba(12,10,12,.72); border:1px solid rgba(255,255,255,.08);
+  }
+  @media (max-width: 900px) {
+    .ht-hero { grid-template-columns:minmax(0,1fr); padding-top:40px }
+  }
+  @media (max-width: 768px) {
+    /* index.css force tous les h1 à 48 px max sur mobile : le titre du hub
+       garde sa taille d'affiche. */
+    h1.ht-title { font-size:clamp(56px,17vw,84px) !important }
+    /* La barre de nav flotte au-dessus du contenu sur téléphone. */
+    .ht-hero { padding-top:88px }
+  }
   @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} .ht-letter{animation:none!important;background-position:50% 50%!important} }
 `
 
@@ -579,227 +634,280 @@ function UpcomingCard({ item, index }) {
 // ── Titre du hero ──────────────────────────────────────────────────────────
 // Les lettres tombent une à une, puis un balayage de lumière traverse le mot.
 // Le titre reste UN seul <h1> pour les lecteurs d'écran : les lettres sont des
-// <span aria-hidden> et le texte complet est porté par aria-label.
+// <span aria-hidden> et le texte complet est porté par aria-label. Chaque mot
+// est un bloc insécable : le retour à la ligne tombe entre deux mots, jamais
+// au milieu d'un.
 function HeroTitle({ text }) {
-  const letters = useMemo(() => text.split(''), [text])
+  const words = useMemo(() => text.split(' '), [text])
+  let n = 0
   return (
-    // Bloc : les lettres sont en inline-block, et sans ça le titre remonterait
-    // sur la ligne du badge qui le précède.
-    <h1
-      aria-label={text}
-      style={{
-        display: 'block',
-        fontFamily: "'Pirata One',cursive",
-        fontSize: 'clamp(56px,10vw,110px)',
-        fontWeight: 900, margin: '0 0 16px',
-        letterSpacing: '-0.01em', lineHeight: 0.95,
-      }}
-    >
-      {letters.map((ch, i) => (
-        <motion.span
-          key={i}
-          aria-hidden
-          className="ht-letter"
-          initial={{ opacity: 0, y: 26, rotateX: -55 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ delay: 0.06 + i * 0.035, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{
-            display: 'inline-block',
-            whiteSpace: ch === ' ' ? 'pre' : 'normal',
-            transformOrigin: 'bottom center',
-            // Le reflet vit DANS le dégradé de chaque lettre et se décale de
-            // proche en proche : il traverse le mot en restant rogné aux
-            // glyphes. Un calque posé par-dessus s'afficherait en rectangle,
-            // car le background-clip d'un parent ne rogne pas ses enfants.
-            animationDelay: (i * 0.07) + 's',
-          }}
-        >
-          {ch === ' ' ? ' ' : ch}
-        </motion.span>
+    <h1 aria-label={text} className="ht-title">
+      {words.map((word, w) => (
+        <span key={w} style={{ display: 'inline-block', whiteSpace: 'nowrap', marginRight: '0.22em' }}>
+          {word.split('').map((ch) => {
+            const i = n++
+            return (
+              <motion.span
+                key={i}
+                aria-hidden
+                className="ht-letter"
+                initial={{ opacity: 0, y: 26, rotateX: -55 }}
+                animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                transition={{ delay: 0.06 + i * 0.035, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  display: 'inline-block',
+                  transformOrigin: 'bottom center',
+                  // Le reflet vit DANS le dégradé de chaque lettre et se décale
+                  // de proche en proche : il traverse le mot en restant rogné
+                  // aux glyphes.
+                  animationDelay: (i * 0.07) + 's',
+                }}
+              >
+                {ch}
+              </motion.span>
+            )
+          })}
+        </span>
       ))}
     </h1>
   )
 }
 
-// ── Bandeau live du hero ───────────────────────────────────────────────────
-// Dit ce qui se joue en ce moment sur l'arène la plus avancée. S'il n'y a
-// aucun duel ouvert, la ligne disparaît plutôt que d'annoncer du vide.
-function HeroTicker({ read }) {
-  if (!read || !read.currentMatch) return null
-  const left  = read.currentMatch.left
-  const right = read.currentMatch.right
+// ── Affiche du duel en cours ───────────────────────────────────────────────
+// La pièce maîtresse du hero : le duel qui se joue sur l'arène la plus avancée,
+// en vrai (miniatures YouTube des deux morceaux). Un seul effet signature : les
+// deux camps glissent depuis leur bord, le filet central se trace, puis le VS
+// apparaît. Au survol d'un camp, l'autre s'efface.
+function ytThumb(p) {
+  return p && p.ytId ? 'https://i.ytimg.com/vi/' + p.ytId + '/hqdefault.jpg' : null
+}
+
+function sideMotion(side, hovered) {
+  const dim = hovered && hovered !== side
+  return {
+    initial: { opacity: 0, x: side === 'left' ? -28 : 28 },
+    animate: { opacity: dim ? 0.38 : 1, x: 0 },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: hovered === undefined ? 0.35 : 0 },
+  }
+}
+
+function DuelThumb({ p, side, accent, hovered, onHover }) {
+  const thumb = ytThumb(p)
+  const lit = hovered === side
+  return (
+    <motion.div
+      {...sideMotion(side, hovered)}
+      onMouseEnter={() => onHover(side)}
+      style={{
+        position: 'relative', aspectRatio: '4 / 3', borderRadius: 10, overflow: 'hidden',
+        background: thumb ? '#111' : 'linear-gradient(150deg,' + (p.color || accent) + '55, #111)',
+        border: '1px solid rgba(255,255,255,.08)',
+      }}
+    >
+      {thumb && (
+        <img
+          src={thumb} alt="" decoding="async"
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+            // hqdefault est en 4:3 avec bandes noires : on zoome pour les rogner.
+            transform: lit ? 'scale(1.42)' : 'scale(1.36)',
+            filter: lit ? 'none' : 'saturate(.5) brightness(.78)',
+            transition: 'filter .45s ease, transform .8s cubic-bezier(.22,1,.36,1)',
+          }}
+        />
+      )}
+      {/* Repère de camp : un filet de couleur sur le bord intérieur, rien de plus */}
+      <span style={{
+        position: 'absolute', top: 0, bottom: 0, width: 2,
+        [side === 'left' ? 'right' : 'left']: 0,
+        background: accent, opacity: lit ? 1 : 0.5, transition: 'opacity .3s',
+      }} />
+    </motion.div>
+  )
+}
+
+function DuelCaption({ p, side, hovered }) {
+  const sub = p.artist || p.anime || ''
+  return (
+    <motion.div {...sideMotion(side, hovered)} style={{ minWidth: 0, textAlign: side, paddingTop: 10 }}>
+      <div style={{
+        fontSize: 14, fontWeight: 700, color: '#fff',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>
+        {p.title}
+      </div>
+      {sub && (
+        <div style={{
+          marginTop: 2, fontSize: 11, color: 'rgba(255,255,255,.4)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {sub}
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+function HeroDuel({ read }) {
+  const navigate = useNavigate()
+  const [hovered, setHovered] = useState(undefined)
+  const left  = read?.currentMatch?.left
+  const right = read?.currentMatch?.right
   if (!left || !right) return null
+
+  const { done, total } = read.progress
+  const pct = total ? Math.round((done / total) * 100) : 0
+  const route = read.config.route
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 6 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.55, duration: 0.4 }}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        justifyContent: 'center', marginBottom: 26,
-        padding: '8px 18px', borderRadius: 100,
-        background: 'rgba(255,255,255,.03)',
-        border: '1px solid rgba(255,255,255,.08)',
-        maxWidth: '100%',
-      }}
+      transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="ht-duel"
     >
-      <span data-fx style={{
-        width: 6, height: 6, borderRadius: '50%', background: ACCENT_A,
-        boxShadow: '0 0 8px ' + ACCENT_A, animation: 'htPulse 1.6s ease-in-out infinite', flexShrink: 0,
-      }} />
-      <span style={{
-        fontSize: 9, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase',
-        color: 'rgba(255,255,255,.34)', flexShrink: 0,
-      }}>
-        {read.config.categoryLabel || 'Tournoi'} · {read.currentRound?.label || 'En cours'}
-      </span>
-      <span style={{ fontSize: 12, color: 'rgba(255,255,255,.62)' }}>
-        {left.title}
-        <span style={{ color: ACCENT_A, margin: '0 7px', fontWeight: 800 }}>vs</span>
-        {right.title}
-      </span>
+      {/* En-tête : quelle arène, quel tour */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <span data-fx style={{
+          width: 6, height: 6, borderRadius: '50%', background: ACCENT_A, flexShrink: 0,
+          animation: 'htPulse 1.6s ease-in-out infinite',
+        }} />
+        <span style={{
+          fontSize: 10, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase',
+          color: 'rgba(255,255,255,.5)',
+        }}>
+          À l'affiche
+        </span>
+        <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', whiteSpace: 'nowrap' }}>
+          {read.config.categoryLabel || 'Tournoi'} · {read.currentRound?.label || 'En cours'}
+        </span>
+      </div>
+
+      {/* Les deux camps, séparés par le filet et le VS. Deux rangées (images
+          puis légendes) pour que le VS se centre sur les images seules. */}
+      <div
+        style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 40px minmax(0,1fr)' }}
+        onMouseLeave={() => setHovered(null)}
+      >
+        <DuelThumb p={left} side="left" accent={ACCENT_A} hovered={hovered} onHover={setHovered} />
+        <div style={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
+          <motion.span
+            initial={{ scaleY: 0 }}
+            animate={{ scaleY: 1 }}
+            transition={{ duration: 0.6, delay: 0.55, ease: [0.65, 0, 0.35, 1] }}
+            style={{
+              position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1, transformOrigin: 'top',
+              background: 'linear-gradient(180deg, transparent, rgba(255,255,255,.22) 25%, rgba(255,255,255,.22) 75%, transparent)',
+            }}
+          />
+          <motion.span
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.95, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: 'relative', width: 34, height: 34, borderRadius: '50%',
+              display: 'grid', placeItems: 'center',
+              background: BG, border: '1px solid rgba(255,255,255,.16)',
+              fontFamily: "'Pirata One',cursive", fontSize: 15, lineHeight: 1, color: '#fff',
+            }}
+          >
+            vs
+          </motion.span>
+        </div>
+        <DuelThumb p={right} side="right" accent={ACCENT_B} hovered={hovered} onHover={setHovered} />
+        <DuelCaption p={left} side="left" hovered={hovered} />
+        <span />
+        <DuelCaption p={right} side="right" hovered={hovered} />
+      </div>
+
+      {/* Pied : avancement réel de l'arène + entrée */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 20 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ height: 2, borderRadius: 2, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: Math.max(pct, 1.5) + '%' }}
+              transition={{ duration: 0.9, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              style={{ height: '100%', background: 'linear-gradient(90deg,' + ACCENT_A + ',' + ACCENT_B + ')' }}
+            />
+          </div>
+          <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,.34)', letterSpacing: '.04em' }}>
+            {done} / {total} duels tranchés
+          </div>
+        </div>
+        {route && (
+          <button type="button" className="ht-link-btn" onClick={() => navigate(route)}>
+            Voter <span aria-hidden>→</span>
+          </button>
+        )}
+      </div>
     </motion.div>
   )
 }
 
 // ── Hero ───────────────────────────────────────────────────────────────────
-function TournamentHero({ activeRef, categoriesRef, duelRef, ticker }) {
+// Deux colonnes sur grand écran : à gauche le titre, une phrase et deux
+// actions ; à droite le duel en cours. Une seule couleur pleine (le bouton
+// principal), le reste en filets.
+function TournamentHero({ activeRef, categoriesRef, duelRef, ticker, stats }) {
   const navigate = useNavigate()
   function scrollTo(ref) {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+  const hasDuel = !!(ticker && ticker.currentMatch && ticker.currentMatch.left && ticker.currentMatch.right)
 
   return (
-    <div style={{ textAlign: 'center', padding: 'clamp(56px,9vw,110px) 0 clamp(48px,6vw,72px)' }}>
-      {/* Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: 'rgba(157,23,77,.08)', border: '1px solid rgba(157,23,77,.26)',
-          borderRadius: 100, padding: '5px 18px', marginBottom: 22,
-        }}
-      >
-        <span style={{ fontSize: 8, color: GOLD, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>
-          ✦ Événements communautaires
-        </span>
-      </motion.div>
-
-      {/* Titre : lettres révélées une à une, puis balayage de lumière */}
-      <HeroTitle text="Tournois Brams" />
-
-      {/* Tagline */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        style={{
-          fontSize: 'clamp(15px,2.2vw,20px)',
-          color: 'rgba(255,255,255,.65)', fontWeight: 500,
-          margin: '0 0 14px', letterSpacing: '-0.005em',
-        }}
-      >
-        Chaque vote fait avancer le bracket.
-      </motion.p>
-
-      {/* Description */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.28 }}
-        style={{
-          fontSize: 13, color: 'rgba(255,255,255,.30)',
-          margin: '0 0 38px', maxWidth: 560, marginInline: 'auto',
-          lineHeight: 1.75,
-        }}
-      >
-        Openings, endings, OST, personnages, théories ou wiki battles — choisis ton tournoi et fais gagner tes favoris avec la communauté.
-      </motion.p>
-
-      {/* Ce qui se joue en ce moment */}
-      <HeroTicker read={ticker} />
-
-      {/* CTAs */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.34 }}
-        style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 30 }}
-      >
-        <motion.button
-          onClick={() => scrollTo(duelRef)}
-          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(232,90,160,.42)` }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            padding: '14px 36px', borderRadius: 100,
-            border: 'none',
-            background: `linear-gradient(135deg, ${ACCENT_A}, #f06cb5 55%, ${ACCENT_B})`,
-            color: '#1a0011', fontWeight: 800, fontSize: 14,
-            cursor: 'pointer', letterSpacing: '0.04em',
-            fontFamily: "'Pirata One',cursive",
-            boxShadow: `0 6px 24px rgba(232,90,160,.3)`,
-          }}
+    <div className={'ht-hero' + (hasDuel ? '' : ' ht-hero--solo')}>
+      <div className="ht-hero-copy">
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="ht-kicker"
         >
-          ⚡ Duel du jour
-        </motion.button>
-        <motion.button
-          onClick={() => scrollTo(activeRef)}
-          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(157,23,77,.38)` }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            padding: '14px 36px', borderRadius: 100,
-            border: `1px solid ${GOLD}66`,
-            background: 'rgba(157,23,77,.14)',
-            color: '#f9a8d4', fontWeight: 800, fontSize: 14,
-            cursor: 'pointer', letterSpacing: '0.04em',
-            fontFamily: "'Pirata One',cursive",
-          }}
-        >
-          Tournois actifs
-        </motion.button>
-        <motion.button
-          onClick={() => scrollTo(categoriesRef)}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            padding: '14px 36px', borderRadius: 100,
-            border: '1px solid rgba(255,255,255,.14)',
-            background: 'rgba(255,255,255,.04)',
-            color: 'rgba(255,255,255,.65)', fontWeight: 700, fontSize: 14,
-            cursor: 'pointer', letterSpacing: '0.03em',
-          }}
-        >
-          Explorer les arènes
-        </motion.button>
-        <motion.button
-          onClick={() => navigate('/tournoi/salon')}
-          whileHover={{ scale: 1.04, boxShadow: `0 10px 32px rgba(76,29,149,.4)` }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            padding: '14px 36px', borderRadius: 100,
-            border: '1px solid rgba(124,58,237,.45)',
-            background: 'linear-gradient(135deg, rgba(124,58,237,.22), rgba(157,23,77,.18))',
-            color: '#e9d5ff', fontWeight: 800, fontSize: 14,
-            cursor: 'pointer', letterSpacing: '0.03em',
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-          }}
-        >
-          🟣 Mode multi — Salon en ligne
-        </motion.button>
-      </motion.div>
+          <span>{stats.arenas} arènes ouvertes</span>
+          <span aria-hidden style={{ opacity: 0.4 }}>/</span>
+          <span>{stats.matchesTotal.toLocaleString('fr-FR')} duels à trancher</span>
+        </motion.div>
 
-      {/* Microcopy */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {['Votes communautaires', 'Bracket', 'Résultats', 'Récompenses en berries'].map((item, i, arr) => (
-          <span key={item} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,.18)', letterSpacing: '0.04em' }}>{item}</span>
-            {i < arr.length - 1 && <span style={{ fontSize: 7, color: 'rgba(255,255,255,.12)' }}>•</span>}
-          </span>
-        ))}
+        <HeroTitle text="Tournois Brams" />
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="ht-lede"
+        >
+          Openings, endings, OST, rap FR. Deux morceaux, un vote, et le bracket avance jusqu'au champion.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="ht-ctas"
+        >
+          <button type="button" className="ht-btn ht-btn--main" onClick={() => scrollTo(duelRef)}>
+            Duel du jour
+          </button>
+          <button type="button" className="ht-btn ht-btn--ghost" onClick={() => navigate('/tournoi/salon')}>
+            Jouer à plusieurs
+          </button>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="ht-links"
+        >
+          <button type="button" className="ht-link-btn" onClick={() => scrollTo(activeRef)}>Tournois actifs ↓</button>
+          <button type="button" className="ht-link-btn" onClick={() => scrollTo(categoriesRef)}>Toutes les arènes ↓</button>
+        </motion.div>
       </div>
+
+      {hasDuel && <HeroDuel read={ticker} />}
     </div>
   )
 }
@@ -840,6 +948,7 @@ export default function TournamentHubPage() {
             categoriesRef={categoriesRef}
             duelRef={duelRef}
             ticker={stats.hottest || reads.find(r => r.currentMatch) || null}
+            stats={stats}
           />
 
           {/* ── Stats du hub ── */}
