@@ -73,19 +73,10 @@ const HUB_CSS = `
   .ht-swipe { display:none }
   @media (max-width: 760px) { .ht-swipe { display:block } }
 
-  /* Reflet du titre : une bande claire glisse dans le dégradé de chaque lettre.
-     Le décalage lettre par lettre (animationDelay en JS) donne l'impression
-     d'une lumière qui traverse le mot, et comme c'est le background de la
-     lettre elle-même, ça reste rogné aux glyphes. */
-  .ht-letter {
-    background:linear-gradient(100deg,
-      #f9a8d4 0%, #db2777 26%, #ffffff 42%, #f9a8d4 54%, #db2777 70%, #4c1d95 100%);
-    background-size:340% 100%;
-    background-position:120% 50%;
-    -webkit-background-clip:text; background-clip:text;
-    -webkit-text-fill-color:transparent; color:transparent;
-    animation:htShine 6s ease-in-out 3;
-  }
+  /* Titre : deux tons pleins, pas de dégradé. Le premier mot en blanc, le
+     dernier dans l'accent du hub. */
+  .ht-word { display:inline-block; white-space:nowrap; color:#f6f1f4 }
+  .ht-word:last-child { color:${ACCENT_A} }
   /* Anneau de focus : les cartes navigables sont atteignables au clavier, il
      faut donc voir où on est. Un outline seul se perd sur fond sombre, d'où le
      halo qui l'accompagne. */
@@ -108,8 +99,9 @@ const HUB_CSS = `
   }
   h1.ht-title {
     display:block; margin:0 0 20px;
-    font-family:'Pirata One',cursive; font-weight:900;
-    font-size:clamp(64px,8.4vw,128px); line-height:.9; letter-spacing:-.01em;
+    font-family:'Archivo','Inter',sans-serif; font-stretch:125%; font-weight:900;
+    text-transform:uppercase;
+    font-size:clamp(48px,6.2vw,96px); line-height:.92; letter-spacing:-.02em;
   }
   .ht-lede {
     margin:0 0 30px; max-width:440px;
@@ -174,11 +166,11 @@ const HUB_CSS = `
   @media (max-width: 768px) {
     /* index.css force tous les h1 à 48 px max sur mobile : le titre du hub
        garde sa taille d'affiche. */
-    h1.ht-title { font-size:clamp(56px,17vw,84px) !important }
+    h1.ht-title { font-size:clamp(44px,13vw,64px) !important }
     /* La barre de nav flotte au-dessus du contenu sur téléphone. */
     .ht-hero { padding-top:88px }
   }
-  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} .ht-letter{animation:none!important;background-position:50% 50%!important} }
+  @media (prefers-reduced-motion: reduce){ [data-fx]{animation:none!important} }
 `
 
 // ── Section heading ────────────────────────────────────────────────────────
@@ -663,8 +655,7 @@ function UpcomingCard({ item, index }) {
 }
 
 // ── Titre du hero ──────────────────────────────────────────────────────────
-// Les lettres tombent une à une, puis un balayage de lumière traverse le mot.
-// Le titre reste UN seul <h1> pour les lecteurs d'écran : les lettres sont des
+// Les lettres tombent une à une. Le titre reste UN seul <h1> pour les lecteurs d'écran : les lettres sont des
 // <span aria-hidden> et le texte complet est porté par aria-label. Chaque mot
 // est un bloc insécable : le retour à la ligne tombe entre deux mots, jamais
 // au milieu d'un.
@@ -674,25 +665,17 @@ function HeroTitle({ text }) {
   return (
     <h1 aria-label={text} className="ht-title">
       {words.map((word, w) => (
-        <span key={w} style={{ display: 'inline-block', whiteSpace: 'nowrap', marginRight: '0.22em' }}>
+        <span key={w} className="ht-word" style={{ marginRight: w < words.length - 1 ? '0.22em' : 0 }}>
           {word.split('').map((ch) => {
             const i = n++
             return (
               <motion.span
                 key={i}
                 aria-hidden
-                className="ht-letter"
                 initial={{ opacity: 0, y: 26, rotateX: -55 }}
                 animate={{ opacity: 1, y: 0, rotateX: 0 }}
                 transition={{ delay: 0.06 + i * 0.035, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                  display: 'inline-block',
-                  transformOrigin: 'bottom center',
-                  // Le reflet vit DANS le dégradé de chaque lettre et se décale
-                  // de proche en proche : il traverse le mot en restant rogné
-                  // aux glyphes.
-                  animationDelay: (i * 0.07) + 's',
-                }}
+                style={{ display: 'inline-block', transformOrigin: 'bottom center' }}
               >
                 {ch}
               </motion.span>
