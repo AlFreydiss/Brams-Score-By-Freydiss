@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { generateText } from 'ai'
+import { tryGroqModels, groqParams } from '../src/lib/groqModels.js'
 
 // Coach d'échecs = Claude via Vercel AI Gateway (auth OIDC auto sur Vercel, keyless).
 // Modèle léger/rapide, suffisant car on lui fournit la ligne moteur Stockfish vérifiée.
@@ -74,7 +75,8 @@ async function callOpenAIStyle(endpoint, key, model, system, chatHistory, messag
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model, messages, max_tokens: maxTokens, temperature,
+      model, messages, temperature,
+      ...(endpoint.includes('groq') ? groqParams(model, maxTokens) : { max_tokens: maxTokens }),
       ...(json ? { response_format: { type: 'json_object' } } : {}),
     }),
   })
@@ -118,7 +120,8 @@ async function callProviders(system, chatHistory, message, opts) {
   if (process.env.GROQ_API_KEY) {
     try {
       return {
-        text: await callOpenAIStyle('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, GROQ_MODEL, system, chatHistory, message, opts),
+        text: await tryGroqModels(process.env.GROQ_MODEL, model =>
+          callOpenAIStyle('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, model, system, chatHistory, message, opts)),
         provider: 'groq', errors,
       }
     } catch (err) { errors.push({ provider: 'groq', kind: classifyError(err), message: err?.message }) }

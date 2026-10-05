@@ -14,6 +14,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { OPENING_BACKGROUNDS } from '../src/data/opening-backgrounds.js'
 import { isStaff } from '../src/lib/roles.js'
+import { tryGroqModels, groqParams } from '../src/lib/groqModels.js'
 import { openingBgPriceCents } from '../src/lib/openingBgPricing.js'
 import { generateMoves as damesLegal, applyMove as damesApply, gameStatus as damesStatus, opp as damesOpp, rulesFromVariante as damesRules, P as DAMES_P, M as DAMES_M } from '../src/features/dames/engine/draughts-engine.js'
 
@@ -252,7 +253,7 @@ async function akOpenAICompat(url, key, model, prompt) {
   if (!key) throw new Error('no_key')
   const r = await fetch(url, {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, messages: [{ role: 'system', content: AK_SYSTEM }, { role: 'user', content: prompt }], max_tokens: 280, temperature: 0.35, response_format: { type: 'json_object' } }),
+    body: JSON.stringify({ model, messages: [{ role: 'system', content: AK_SYSTEM }, { role: 'user', content: prompt }], ...(url.includes('groq') ? groqParams(model, 280) : { max_tokens: 280 }), temperature: 0.35, response_format: { type: 'json_object' } }),
   })
   if (!r.ok) throw new Error(`${r.status}: ${await r.text()}`)
   return (await r.json()).choices?.[0]?.message?.content
@@ -267,7 +268,7 @@ async function akinator(req, res) {
   const prompt = akBuildPrompt(safeHistory.slice(-32), safeRejected.slice(-20))
   const providers = [
     () => akGemini(prompt),
-    () => akOpenAICompat('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile', prompt),
+    () => tryGroqModels(process.env.GROQ_MODEL, model => akOpenAICompat('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, model, prompt)),
     () => akOpenAICompat('https://api.x.ai/v1/chat/completions', process.env.XAI_API_KEY, process.env.XAI_MODEL || 'grok-2-1212', prompt),
   ]
   for (const fn of providers) {
@@ -1455,16 +1456,16 @@ async function generateBramsReply(username, content, parentContent) {
       body: JSON.stringify({
         model,
         messages: [{ role: 'system', content: BRAMS_PERSONA }, { role: 'user', content: prompt }],
-        max_tokens: 160, temperature: 0.8,
+        ...(apiUrl.includes('groq') ? groqParams(model, 160) : { max_tokens: 160 }), temperature: 0.8,
       }),
     })
-    if (!r.ok) throw new Error(`${apiUrl.includes('groq') ? 'groq' : 'xai'}_${r.status}`)
+    if (!r.ok) throw new Error(`${apiUrl.includes('groq') ? 'groq' : 'xai'}_${r.status}: ${(await r.text()).slice(0, 300)}`)
     const d = await r.json()
     return String(d.choices?.[0]?.message?.content || '').trim().slice(0, 480)
   }
   if (process.env.GROQ_API_KEY) {
     try {
-      const out = await openaiLike('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, process.env.GROQ_MODEL || 'llama-3.3-70b-versatile')
+      const out = await tryGroqModels(process.env.GROQ_MODEL, model => openaiLike('https://api.groq.com/openai/v1/chat/completions', process.env.GROQ_API_KEY, model))
       if (out) return out
     } catch (e) { lastErr = e }
   }
