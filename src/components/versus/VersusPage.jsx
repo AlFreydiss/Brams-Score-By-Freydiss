@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, u
 import { VERSUS_CONFIGS } from '../../data/versus-data.js'
 import { generateBracket, advanceWinner, getCurrentMatch, getWinner, getTournamentProgress } from '../../lib/tournament.js'
 import BleachRadio from './BleachRadio.jsx'
+import Bracket, { makeShareImage } from './Bracket.jsx'
 import HalftoneField, { fx } from './HalftoneField.jsx'
 import { RoundWipe, SlashSplit, StretchTitle } from './fx.jsx'
 import { buzz, setSfxEnabled, sfx, sfxEnabled } from './sfx.js'
@@ -87,6 +88,7 @@ export default function VersusPage({ kind }) {
   const [history, setHistory] = useState([])
   const [picked, setPicked] = useState(null)
   const [zoom, setZoom] = useState(null)
+  const [showBracket, setShowBracket] = useState(false)
   const [recap, setRecap] = useState(null)                // { size, qualified }
 
   useEffect(() => { saveRun(config, run) }, [config, run])
@@ -211,6 +213,8 @@ export default function VersusPage({ kind }) {
     const onKey = e => {
       if (e.target.closest?.('input, textarea')) return
       if (zoom) { if (e.key === 'Escape') setZoom(null); return }
+      if (showBracket) return
+      if ((e.key === 't' || e.key === 'T') && rounds) { setShowBracket(true); return }
       if (recap) { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') { e.preventDefault(); setRecap(null) } return }
       if (e.key === 'ArrowLeft') choose('left')
       else if (e.key === 'ArrowRight') choose('right')
@@ -218,7 +222,7 @@ export default function VersusPage({ kind }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [choose, undo, zoom, recap])
+  }, [choose, undo, zoom, recap, showBracket, rounds])
 
   useEffect(() => () => fx.lean(null), [])
 
@@ -277,15 +281,20 @@ export default function VersusPage({ kind }) {
                   <AnimatePresence>{combo >= 3 && <motion.em key="c" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>série rapide ×{combo}</motion.em>}</AnimatePresence>
                 </span>
                 <button type="button" onClick={undo} disabled={!history.length}>Annuler</button>
+                <button type="button" onClick={() => setShowBracket(true)}>Tableau <kbd>T</kbd></button>
                 <button type="button" onClick={quit}>Nouvelle partie</button>
                 <button type="button" onClick={toggleSound} aria-pressed={soundOn}>{soundOn ? 'Son activé' : 'Son coupé'}</button>
               </div>
             </>
           )}
 
-          {winner && <Champion rounds={rounds} log={run.log || []} config={config} onRestart={quit} onUndo={history.length ? undo : null} />}
+          {winner && <Champion rounds={rounds} log={run.log || []} config={config} onRestart={quit} onUndo={history.length ? undo : null} onBracket={() => setShowBracket(true)} />}
         </main>
       </div>
+
+      <AnimatePresence>
+        {showBracket && rounds && <Bracket rounds={rounds} currentId={current?.match.id} onClose={() => setShowBracket(false)} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {recap && <Recap recap={recap} onClose={() => setRecap(null)} />}
@@ -400,6 +409,7 @@ function DuelCard({ side, color, p, fit, picked, onPick, onZoom }) {
   const rotX = useTransform(sy, v => v * -3)
   const imgX = useTransform(sx, v => v * -8)
   const imgY = useTransform(sy, v => v * -6)
+  const [loaded, setLoaded] = useState(false)
 
   if (!p) return <div className={`vs-card vs-card--${side} is-empty`} />
   const dir = side === 'left' ? -1 : 1
@@ -433,7 +443,8 @@ function DuelCard({ side, color, p, fit, picked, onPick, onZoom }) {
           {!lose && (
             <motion.div className="vs-card-img" style={{ x: imgX, y: imgY }}
               initial={{ scale: 1.12 }} animate={{ scale: 1.04 }} transition={{ duration: 1.1, ease }}>
-              <motion.img layoutId={`img-${p.id}`} src={p.img} alt={p.title} style={{ objectFit: fit }} draggable={false} />
+              <motion.img layoutId={`img-${p.id}`} src={p.img} alt={p.title} style={{ objectFit: fit }} draggable={false}
+                className={loaded ? 'is-loaded' : ''} onLoad={() => setLoaded(true)} ref={el => { if (el?.complete && el.naturalWidth && !loaded) setLoaded(true) }} />
             </motion.div>
           )}
           {lose && <SlashSplit src={p.img} fit={fit} dir={dir} />}
@@ -482,7 +493,19 @@ function Recap({ recap, onClose }) {
 }
 
 // ── Champion : une planche de manga composée avec ton top 8 ────────────────
-function Champion({ rounds, log, config, onRestart, onUndo }) {
+function Champion({ rounds, log, config, onRestart, onUndo, onBracket }) {
+  const [saving, setSaving] = useState(false)
+  const download = async () => {
+    setSaving(true)
+    try {
+      const blob = await makeShareImage({ title: config.title, ranking: topRanking(rounds), url: `${window.location.origin}${config.route}` })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `top-${config.id}.png`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000)
+    } finally { setSaving(false) }
+  }
   const ranking = topRanking(rounds)
   const [champ, ...rest] = ranking
   const [copied, setCopied] = useState(false)
@@ -554,6 +577,8 @@ function Champion({ rounds, log, config, onRestart, onUndo }) {
       )}
       <div className="vs-help">
         {onUndo && <button type="button" onClick={onUndo}>↶ Revoir la finale</button>}
+        <button type="button" onClick={onBracket}>Voir le tableau</button>
+        <button type="button" onClick={download} disabled={saving}>{saving ? 'Image en cours…' : 'Télécharger l’image'}</button>
         <button type="button" onClick={share}>{copied ? '✓ Copié' : 'Copier mon top'}</button>
         <button type="button" className="is-main" onClick={onRestart}>Nouvelle partie</button>
       </div>
