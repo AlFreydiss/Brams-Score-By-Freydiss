@@ -783,7 +783,7 @@ function DailyDuel({ config }) {
           )
         })}
       </div>
-      {vote && <p className="vs-daily-note">{total ? `${total} vote${total > 1 ? 's' : ''} sur ce duel` : 'Merci, ton vote est compté.'} Nouveau duel demain.</p>}
+      {vote && <p className="vs-daily-note">{total ? `${total} vote${total > 1 ? 's' : ''} sur ce duel.` : 'Merci, ton vote est compté.'} Nouveau duel demain.</p>}
     </section>
   )
 }
