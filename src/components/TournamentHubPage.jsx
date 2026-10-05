@@ -83,7 +83,7 @@ const HUB_CSS = `
     background-position:120% 50%;
     -webkit-background-clip:text; background-clip:text;
     -webkit-text-fill-color:transparent; color:transparent;
-    animation:htShine 6s ease-in-out infinite;
+    animation:htShine 6s ease-in-out 3;
   }
   /* Anneau de focus : les cartes navigables sont atteignables au clavier, il
      faut donc voir où on est. Un outline seul se perd sur fond sombre, d'où le

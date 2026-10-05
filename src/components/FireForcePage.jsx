@@ -369,7 +369,7 @@ export default function FireForcePage({ onClose }) {
                           <div className="ff-play-btn" style={{ position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)', width:40,height:40,borderRadius:'50%', background:`${COLOR}e0`, display:'flex',alignItems:'center',justifyContent:'center', opacity:.85, boxShadow:`0 4px 18px ${COLOR}66`, fontSize:15,color:'#fff' }}>▶</div>
                           {watched && <div style={{ position:'absolute',top:8,right:8,width:20,height:20,borderRadius:'50%',background:'rgba(52,211,153,.25)',border:'1px solid rgba(52,211,153,.6)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#34d399',fontWeight:800 }}>✓</div>}
                           {isNext && !watched && <div style={{ position:'absolute',top:8,right:8,fontSize:9,fontWeight:800,background:`${COLOR}`,color:'#fff',borderRadius:100,padding:'2px 8px' }}>REPRENDRE</div>}
-                          <div style={{ position:'absolute',bottom:8,left:8,fontSize:9.5,fontWeight:900,color:'#fff',letterSpacing:'.06em',padding:'3px 8px',borderRadius:7,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)' }}>{kindLabel}</div>
+                          <div style={{ position:'absolute',bottom:8,left:8,fontSize:9.5,fontWeight:900,color:'#fff',letterSpacing:'.06em',padding:'3px 8px',borderRadius:7,background:'rgba(0,0,0,.6)'}}>{kindLabel}</div>
                           {v.badge && <div style={{ position:'absolute',bottom:8,right:8,fontSize:8.5,fontWeight:900,color:COLOR2,letterSpacing:'.06em',padding:'3px 7px',borderRadius:7,background:'rgba(0,0,0,.55)' }}>{v.badge}</div>}
                         </div>
                         <div style={{ padding:'9px 11px 11px' }}>

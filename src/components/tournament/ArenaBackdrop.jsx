@@ -93,6 +93,7 @@ export default function ArenaBackdrop({
     function onMove(e) {
       tx = (e.clientX / window.innerWidth - 0.5) * 2
       ty = (e.clientY / window.innerHeight - 0.5) * 2
+      start()
     }
     function loop() {
       // Lissage exponentiel : le décor suit la souris avec de l'inertie.
@@ -102,6 +103,9 @@ export default function ArenaBackdrop({
         const el = layerRefs.current[d.key]
         if (el) el.style.transform = 'translate3d(' + (-cx * d.ax).toFixed(2) + 'px,' + (-cy * d.ay).toFixed(2) + 'px,0)'
       }
+      // Décor arrivé à destination : on coupe la boucle (elle réécrivait les
+      // styles à chaque image, même souris immobile). pointermove la relance.
+      if (Math.abs(tx - cx) < 0.002 && Math.abs(ty - cy) < 0.002) { raf = 0; return }
       raf = requestAnimationFrame(loop)
     }
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0 } }

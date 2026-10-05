@@ -147,8 +147,7 @@ export default function AnimeCard({
           <span style={{
             position: 'absolute', top: 8, left: 8,
             padding: '3px 8px', borderRadius: 6,
-            background: 'rgba(255,255,255,0.10)', border: `1px solid ${C.hair2}`,
-            backdropFilter: 'blur(4px)',
+            background: 'rgba(255,255,255,0.10)', border: `1px solid ${C.hair2}`, 
             fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', color: C.text,
           }}>{anime.badge}</span>
         )}

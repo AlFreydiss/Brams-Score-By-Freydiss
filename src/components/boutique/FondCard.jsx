@@ -74,7 +74,7 @@ export default function FondCard({ bg, owned, equipped, equipCount = 0, onSelect
     <span style={{
       fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase',
       color: c, background: 'rgba(8,9,13,0.62)', border: `1px solid ${c}55`,
-      padding: '3px 9px', borderRadius: 999, backdropFilter: 'blur(4px)', ...extra,
+      padding: '3px 9px', borderRadius: 999,  ...extra,
     }}>{text}</span>
   )
 

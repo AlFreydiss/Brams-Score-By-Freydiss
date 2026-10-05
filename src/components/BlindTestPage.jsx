@@ -34,8 +34,8 @@ const GUESS_DELAY = 5
 // ─── CSS global (keyframes only) ───────────────────────────────────────────
 const BT_CSS = `
   @keyframes btTwinkle { 0%,100%{opacity:.08} 50%{opacity:.55} }
-  @keyframes btScan    { 0%{top:-2px} 100%{top:100%} }
-  @keyframes btWave    { 0%,100%{height:6px} 50%{height:28px} }
+  @keyframes btScan    { 0%{transform:translateY(-2px)} 100%{transform:translateY(100vh)} }
+  @keyframes btWave    { 0%,100%{transform:scaleY(.214)} 50%{transform:scaleY(1)} }
   @keyframes btFloat   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
   @keyframes btRingOut { 0%{transform:scale(.5);opacity:.9} 100%{transform:scale(2.6);opacity:0} }
   @keyframes btCountIn { 0%{opacity:0;transform:scale(2.4) translateY(-18px)} 60%{opacity:1;transform:scale(.93)} 100%{transform:scale(1)} }
@@ -116,7 +116,7 @@ function BTScanLine() {
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 4, overflow: 'hidden' }}>
       <div style={{
-        position: 'absolute', left: 0, right: 0, height: 2,
+        position: 'absolute', left: 0, right: 0, top: 0, height: 2,
         background: 'linear-gradient(90deg,transparent,rgba(212,160,23,.06),rgba(212,160,23,.13),rgba(212,160,23,.06),transparent)',
         animation: 'btScan 18s linear infinite',
       }} />
@@ -262,7 +262,7 @@ function Waveform({ playing, color }) {
           background: color || GOLD,
           opacity: playing ? 0.90 : 0.20,
           animation: playing ? `btWave ${0.5 + (i % 5) * 0.12}s ${i * 0.04}s ease-in-out infinite` : 'none',
-          height: playing ? undefined : 6,
+          height: playing ? 28 : 6,
         }} />
       ))}
     </div>

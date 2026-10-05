@@ -160,6 +160,15 @@ html.low-end * {
   will-change: auto !important;
 }
 
+/* Ordinateur qui n'arrive pas à suivre (mesuré par lib/perfProbe.js) :
+   on coupe seulement les flous d'arrière-plan, les animations restent. */
+html.perf-lite *,
+html.perf-lite *::before,
+html.perf-lite *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 /* Respect strict de la préférence système, tous appareils confondus. */
 @media (prefers-reduced-motion: reduce) {
   *,

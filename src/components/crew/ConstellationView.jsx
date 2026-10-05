@@ -343,8 +343,7 @@ function ZoomControls({ zoom, onZoom, onReset }) {
     display:    'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'background 0.15s ease, transform 0.1s ease',
-    backdropFilter: 'blur(4px)',
+    transition: 'background 0.15s ease, transform 0.1s ease', 
   }
 
   return (

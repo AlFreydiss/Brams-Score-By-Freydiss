@@ -84,7 +84,7 @@ function AmbientLegacy() {
     <div aria-hidden style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
       <style>{`
         @keyframes ah2Twinkle { 0%,100% { opacity:.12 } 50% { opacity:.65 } }
-        @keyframes ah2Scan { 0% { top:-2px } 100% { top:100% } }
+        @keyframes ah2Scan { 0% { transform: translateY(-2px) } 100% { transform: translateY(100vh) } }
         @keyframes ah2Drift { 0%,100% { transform:translate(-50%,-50%) } 50% { transform:translate(-50%,calc(-50% - 14px)) } }
         @media (prefers-reduced-motion: reduce) { .ah2-amb * { animation: none !important } }
       `}</style>
@@ -104,7 +104,7 @@ function AmbientLegacy() {
           }} />
         ))}
         <div style={{
-          position: 'absolute', left: 0, right: 0, height: 2,
+          position: 'absolute', left: 0, right: 0, top: 0, height: 2, willChange: 'transform',
           background: 'linear-gradient(90deg, transparent, rgba(224,82,74,.06), rgba(224,82,74,.14), rgba(224,82,74,.06), transparent)',
           animation: 'ah2Scan 18s linear infinite',
         }} />
@@ -1126,7 +1126,7 @@ export default function AnimeHubV2(props) {
                       <img src={wideArt(a)} alt="" loading="lazy" decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: hasKeyart(a.id) || bannerSrc(a.id) ? 'center' : (a.coverPosition || 'center') }} />
                       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(11,14,20,0.9))' }} />
                       {episode != null && (
-                        <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 8px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)' }}>Ép {episode}</span>
+                        <span style={{ position: 'absolute', top: 10, left: 10, padding: '3px 8px', borderRadius: 7, fontSize: 11.5, fontWeight: 700, background: 'rgba(0,0,0,0.62)', color: C.text}}>Ép {episode}</span>
                       )}
                       <div style={{ position: 'absolute', left: 10, bottom: 12, right: 10 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 600 }}>{a.title}</div>

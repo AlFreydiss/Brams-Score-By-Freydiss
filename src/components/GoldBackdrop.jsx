@@ -11,7 +11,7 @@ const NOTE_GLYPHS = ['♪', '♫', '♩', '♬', '𝄞']
 const CSS = `
   @keyframes gbx-breathe { 0%,100%{opacity:.45} 50%{opacity:.8} }
   @keyframes gbx-fall { 0%{transform:translateY(-12vh) rotate(-8deg);opacity:0} 10%{opacity:1} 88%{opacity:1} 100%{transform:translateY(112vh) rotate(10deg);opacity:0} }
-  @keyframes gbx-sway { 0%,100%{margin-left:-12px} 50%{margin-left:12px} }
+  @keyframes gbx-sway { 0%,100%{translate:-12px 0} 50%{translate:12px 0} }
   @keyframes gbx-sheen { 0%{transform:translateX(-30%) rotate(8deg);opacity:0} 50%{opacity:.5} 100%{transform:translateX(130%) rotate(8deg);opacity:0} }
   @keyframes gbx-eq { 0%,100%{transform:scaleY(.22)} 50%{transform:scaleY(1)} }
   @media (prefers-reduced-motion: reduce){ .gbx-note,.gbx-sheen,.gbx-eqbar{ animation:none !important } }

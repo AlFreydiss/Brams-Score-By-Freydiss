@@ -18,7 +18,7 @@ const AKI_FX = `
 @keyframes aki-float{0%{transform:translateY(8px) translateX(0);opacity:0}12%{opacity:.48}88%{opacity:.34}100%{transform:translateY(-90px) translateX(14px);opacity:0}}
 @keyframes aki-breathe{0%,100%{opacity:.020}50%{opacity:.035}}
 @keyframes aki-drop-fall{0%{transform:translateY(-12vh);opacity:0}10%{opacity:.70}88%{opacity:.45}100%{transform:translateY(112vh);opacity:0}}
-@keyframes aki-drop-sway{0%,100%{margin-left:-12px}50%{margin-left:12px}}
+@keyframes aki-drop-sway{0%,100%{translate:-12px 0}50%{translate:12px 0}}
 @media (prefers-reduced-motion:reduce){[data-fx]{animation:none!important}}
 `
 const AKI_DROPS = Array.from({ length: 20 }, (_, i) => ({

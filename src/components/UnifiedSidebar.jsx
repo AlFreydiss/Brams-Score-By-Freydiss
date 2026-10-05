@@ -109,9 +109,8 @@ function Equalizer() {
         <div key={i} style={{
           flex:1, borderRadius:'2px 2px 0 0',
           background:`linear-gradient(180deg, #d4a017, rgba(212,160,23,.35))`,
-          minHeight:4,
+          minHeight:4, height:`${b.h}%`, transformOrigin:'50% 100%',
           animation:`eqBar ${b.dur} ${b.delay} ease-in-out infinite alternate`,
-          '--h': `${b.h}%`,
         }} />
       ))}
     </div>
@@ -520,9 +519,9 @@ export default function UnifiedSidebar() {
         @keyframes hubIn     { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
         @keyframes dotBeat   { 0%,100%{transform:scale(1);opacity:.65} 50%{transform:scale(1.7);opacity:1} }
         @keyframes calToday  { 0%,100%{box-shadow:0 0 0 2px rgba(212,160,23,.55),0 0 12px rgba(212,160,23,.3)} 50%{box-shadow:0 0 0 3px rgba(212,160,23,.8),0 0 20px rgba(212,160,23,.55)} }
-        @keyframes eqBar     { 0%{height:var(--h,30%)} 100%{height:calc(var(--h,30%) / 3)} }
+        @keyframes eqBar     { 0%{transform:scaleY(1)} 100%{transform:scaleY(.333)} }
         @keyframes btPulse   { 0%,100%{opacity:.7} 50%{opacity:1} }
-        @keyframes btShimmer { 0%{left:-100%} 60%{left:130%} 100%{left:130%} }
+        @keyframes btShimmer { 0%{transform:translateX(-200%)} 60%{transform:translateX(260%)} 100%{transform:translateX(260%)} }
 
         .hub-nav-btn {
           background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09);
@@ -605,7 +604,7 @@ export default function UnifiedSidebar() {
         }
         .hub-bt-cta.secondary:hover { background:rgba(255,255,255,.09); color:#fff; border-color:rgba(255,255,255,.25); }
         .hub-bt-cta::before {
-          content:''; position:absolute; top:0; left:-100%; width:50%; height:100%;
+          content:''; position:absolute; top:0; left:0; width:50%; height:100%; transform:translateX(-200%);
           background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
           animation:btShimmer 4s 1s ease-in-out infinite;
         }

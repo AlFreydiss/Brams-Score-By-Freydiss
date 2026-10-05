@@ -11,6 +11,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import GlobalAnimations from './components/ui/GlobalAnimations.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { installLiveSync } from './lib/liveSync.js'
+import { installPerfProbe } from './lib/perfProbe.js'
 import { tryChunkReload, shouldReloadForChunkError } from './lib/lazyWithReload.js'
 
 // Synchro live de la progression (anime/scans/univers) sans rechargement manuel.
@@ -24,6 +25,9 @@ try {
     document.documentElement.classList.add('low-end')
   }
 } catch {}
+
+// Ordinateurs qui peinent : coupe les flous d'arrière-plan (voir perfProbe.js).
+try { installPerfProbe() } catch {}
 
 // Après un déploiement, les anciens chunks JS n'existent plus. Si l'onglet ouvert
 // avant le déploiement navigue vers une page lazy → 404 du chunk → page bloquée

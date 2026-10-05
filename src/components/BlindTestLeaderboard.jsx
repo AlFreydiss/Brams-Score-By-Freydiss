@@ -13,7 +13,7 @@ const GOLD = '#d4a017'
 const BT_CSS = `
   @keyframes btFadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
   @keyframes btTwinkle { 0%,100%{opacity:.10} 50%{opacity:.65} }
-  @keyframes btScan    { 0%{top:-2px} 100%{top:100%} }
+  @keyframes btScan    { 0%{transform:translateY(-2px)} 100%{transform:translateY(100vh)} }
 `
 
 function BTStars() {
@@ -52,7 +52,7 @@ export default function BlindTestLeaderboard() {
       <style>{BT_CSS}</style>
       <BTStars />
       <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:1, overflow:'hidden' }}>
-        <div style={{ position:'absolute', left:0, right:0, height:2, background:'linear-gradient(90deg,transparent,rgba(212,160,23,.12),transparent)', animation:'btScan 16s linear infinite' }} />
+        <div style={{ position:'absolute', left:0, right:0, top:0, height:2, background:'linear-gradient(90deg,transparent,rgba(212,160,23,.12),transparent)', animation:'btScan 16s linear infinite' }} />
       </div>
 
       <div style={{ position:'relative', zIndex:2, maxWidth:720, margin:'0 auto', padding:'80px 20px 100px' }}>

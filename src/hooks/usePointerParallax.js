@@ -18,6 +18,7 @@ export function usePointerParallax({
     const onMove = (event) => {
       target.x = (event.clientX / window.innerWidth - 0.5) * strength
       target.y = (event.clientY / window.innerHeight - 0.5) * strength
+      if (!raf) raf = requestAnimationFrame(tick)
     }
 
     const tick = () => {
@@ -30,6 +31,9 @@ export function usePointerParallax({
       }
 
       onFrame?.(current)
+      // Arrivé à destination : on coupe la boucle (elle réécrivait les variables
+      // CSS à chaque image, même souris immobile). pointermove la relance.
+      if (Math.abs(target.x - current.x) < 0.0005 && Math.abs(target.y - current.y) < 0.0005) { raf = 0; return }
       raf = requestAnimationFrame(tick)
     }
 

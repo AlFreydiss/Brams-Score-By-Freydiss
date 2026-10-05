@@ -20,7 +20,7 @@ const CSS = `
   @keyframes gmSwapB  { 0%,46%{opacity:.18} 54%,100%{opacity:1} }
   @keyframes gmFault  { 0%,100%{opacity:.4; transform:scaleY(1)} 50%{opacity:1; transform:scaleY(1.14)} }
   @keyframes gmSlide  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-  @keyframes gmScrub  { 0%,100%{left:6%} 50%{left:82%} }
+  @keyframes gmScrub  { 0%,100%{transform:translateX(6%)} 50%{transform:translateX(82%)} }
   @keyframes gmFlick  { 0%,100%{opacity:.85} 47%{opacity:.85} 50%{opacity:.35} 53%{opacity:.85} }
   @keyframes gmHalo   { 0%,100%{opacity:.35} 50%{opacity:.75} }
   [data-tkcard]:focus-visible { outline:2px solid #f9a8d4; outline-offset:3px; }
@@ -119,11 +119,15 @@ function HigherLowerPreview({ hot }) {
           background: 'linear-gradient(90deg, rgba(245,158,11,.7), rgba(157,90,255,.7))',
           opacity: 0.55,
         }} />
-        <span data-gmfx style={{
-          position: 'absolute', top: -4, width: 11, height: 11, borderRadius: '50%',
-          background: '#fbbf24', boxShadow: '0 0 14px rgba(251,191,36,.8)',
+        <div data-gmfx style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
           animation: 'gmScrub ' + (hot ? 2.2 : 4) + 's ease-in-out infinite',
-        }} />
+        }}>
+          <span style={{
+            position: 'absolute', top: -4, left: 0, width: 11, height: 11, borderRadius: '50%',
+            background: '#fbbf24', boxShadow: '0 0 14px rgba(251,191,36,.8)',
+          }} />
+        </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: 'rgba(255,255,255,.24)', letterSpacing: '.1em' }}>
         <span>{HL_MIN}</span><span>{HL_MAX}</span>

@@ -17,7 +17,7 @@ const CSS = `
 }
 @keyframes guardSpin { to { transform: rotate(360deg); } }
 @keyframes guardGlow { 0%,100%{ opacity:.4 } 50%{ opacity:.8 } }
-@keyframes guardShimmer { 0%{ left:-100% } 55%{ left:130% } 100%{ left:130% } }
+@keyframes guardShimmer { 0%{ transform:translateX(-200%) } 55%{ transform:translateX(260%) } 100%{ transform:translateX(260%) } }
 @keyframes guardStar { 0%,100%{ opacity:.06; transform:scale(1) } 50%{ opacity:.45; transform:scale(1.5) } }
 @keyframes guardScan { 0%{ transform:translateY(-100%) } 100%{ transform:translateY(100vh) } }
 `
@@ -134,7 +134,7 @@ export default function AuthGuard({ onClose, feature = 'ce contenu' }) {
           boxShadow: '0 48px 100px rgba(0,0,0,0.85), 0 0 0 1px rgba(224,82,74,0.04) inset',
         }}>
           {/* Card shimmer */}
-          <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(224,82,74,0.04), transparent)', animation: 'guardShimmer 6s 2s ease-in-out infinite', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, transform: 'translateX(-200%)', width: '50%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(224,82,74,0.04), transparent)', animation: 'guardShimmer 6s 2s ease-in-out infinite', pointerEvents: 'none' }} />
           {/* Top glow */}
           <div style={{ position: 'absolute', top: -70, left: '50%', transform: 'translateX(-50%)', width: 360, height: 200, background: 'radial-gradient(ellipse, rgba(224,82,74,0.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
 

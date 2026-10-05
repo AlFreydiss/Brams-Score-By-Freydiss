@@ -511,13 +511,13 @@ export default function BleachPage({ onClose }) {
                             title={dl?.status === 'active' ? 'Annuler le téléchargement' : `Télécharger ${dlFileName(v)} (FHD/UHD)`}
                             onClick={e => { e.stopPropagation(); dl?.status === 'active' ? cancelDownload(dlKey) : downloadEpisode(v) }}
                             onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); dl?.status === 'active' ? cancelDownload(dlKey) : downloadEpisode(v) } }}
-                            style={{ position:'absolute',top:8,left:8, minWidth:26,height:26,padding:'0 6px', borderRadius:8, display:'flex',alignItems:'center',justifyContent:'center', fontSize: dl?.status === 'active' ? 9.5 : 13, fontWeight:900, cursor:'pointer', backdropFilter:'blur(4px)',
+                            style={{ position:'absolute',top:8,left:8, minWidth:26,height:26,padding:'0 6px', borderRadius:8, display:'flex',alignItems:'center',justifyContent:'center', fontSize: dl?.status === 'active' ? 9.5 : 13, fontWeight:900, cursor:'pointer', 
                               background: dl?.status === 'done' ? 'rgba(52,211,153,.22)' : dl?.status === 'error' ? 'rgba(248,113,113,.22)' : 'rgba(0,0,0,.55)',
                               border: `1px solid ${dl?.status === 'done' ? 'rgba(52,211,153,.55)' : dl?.status === 'error' ? 'rgba(248,113,113,.5)' : 'rgba(255,255,255,.18)'}`,
                               color: dl?.status === 'done' ? '#34d399' : dl?.status === 'error' ? '#f87171' : '#fff' }}>
                             {dl?.status === 'active' ? `${dl.pct}%` : dl?.status === 'done' ? '✓' : dl?.status === 'error' ? '⟳' : '⬇'}
                           </div>
-                          <div style={{ position:'absolute',bottom:8,left:8,fontSize:9.5,fontWeight:900,color:'#fff',letterSpacing:'.06em',padding:'3px 8px',borderRadius:7,background:'rgba(0,0,0,.6)',backdropFilter:'blur(4px)' }}>{kindLabel}</div>
+                          <div style={{ position:'absolute',bottom:8,left:8,fontSize:9.5,fontWeight:900,color:'#fff',letterSpacing:'.06em',padding:'3px 8px',borderRadius:7,background:'rgba(0,0,0,.6)'}}>{kindLabel}</div>
                           {v.badge && <div style={{ position:'absolute',bottom:8,right:8,fontSize:8.5,fontWeight:900,color:COLOR2,letterSpacing:'.06em',padding:'3px 7px',borderRadius:7,background:'rgba(0,0,0,.55)' }}>{v.badge}</div>}
                         </div>
                         <div style={{ padding:'9px 11px 11px' }}>

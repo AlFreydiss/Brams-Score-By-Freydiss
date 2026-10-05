@@ -16,9 +16,9 @@ const GOLD   = PINK
 const GRAD   = `linear-gradient(135deg, ${PINK}, ${PURPLE})`
 
 const ARENA_CSS = `
-  @keyframes arWave { 0%,100%{height:5px} 50%{height:28px} }
+  @keyframes arWave { 0%,100%{transform:scaleY(.18)} 50%{transform:scaleY(1)} }
   @keyframes arSlowZoom { 0%,100%{transform:scale(1.02)} 50%{transform:scale(1.1)} }
-  @keyframes arWaveIdle { 0%,100%{height:3px} 50%{height:7px} }
+  @keyframes arWaveIdle { 0%,100%{transform:scaleY(.375)} 50%{transform:scaleY(.875)} }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:12px; height:12px; border-radius:50%; cursor:pointer; }
   input[type=range]::-webkit-slider-runnable-track { height:3px; border-radius:2px; }
 `

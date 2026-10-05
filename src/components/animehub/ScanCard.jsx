@@ -51,7 +51,7 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
         <div style={{ position: 'absolute', top: 8, left: 8, right: 8, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           <span style={{
             padding: '3px 7px', borderRadius: 6, fontSize: 10, fontWeight: 700, letterSpacing: '0.04em',
-            background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)',
+            background: 'rgba(0,0,0,0.62)', color: C.text, 
             boxShadow: `inset 0 -2px 0 ${scan.color}`,
           }}>SCAN</span>
           {fresh > 0 && (
@@ -64,7 +64,7 @@ export default function ScanCard({ scan, progress, width = 180, onOpen }) {
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
               padding: '3px 7px', borderRadius: 6, fontSize: 10, fontWeight: 600,
-              background: 'rgba(0,0,0,0.62)', color: C.text, backdropFilter: 'blur(4px)',
+              background: 'rgba(0,0,0,0.62)', color: C.text, 
             }}>
               <span aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
               En parution
