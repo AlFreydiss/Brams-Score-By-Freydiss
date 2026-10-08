@@ -5,14 +5,14 @@ from discord.ext import commands
 
 # /manege : fait défiler un membre dans tous les salons vocaux, de haut en bas,
 # en boucle, jusqu'à /manege_stop. Réservé à qui a « Déplacer des membres » et à OWNER_IDS.
-# Garde-fous : 1,5 s entre deux déplacements (en dessous Discord renvoie des 429
-# et le bot entier ralentit), 10 minutes max, arrêt si le membre quitte le vocal,
-# et retour dans son salon d'origine à la fin.
+# Aucune pause entre deux déplacements : discord.py attend tout seul quand
+# Discord renvoie un 429, c'est donc Discord qui fixe la cadence maximale.
+# 10 minutes max, arrêt si le membre quitte le vocal, retour dans son salon
+# d'origine à la fin.
 
 # Freydiss : autorisé partout, même sans la permission sur le serveur.
 OWNER_IDS = {1094070545248694342}
 
-STEP_SECONDS = 1.5
 MAX_SECONDS = 600
 
 
@@ -56,7 +56,7 @@ class ManegeCog(commands.Cog):
                             await member.move_to(ch, reason="/manege")
                         except discord.HTTPException:
                             pass
-                    await asyncio.sleep(STEP_SECONDS)
+                    await asyncio.sleep(0)
         finally:
             self._runs.pop((member.guild.id, member.id), None)
             if member.voice and origin and member.voice.channel != origin:
