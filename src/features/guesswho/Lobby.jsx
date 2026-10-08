@@ -29,7 +29,7 @@ const LEGACY = [
 const FULL = [
   ['lives', 'Vies', [1, 2, 3, 4, 5].map((n) => [n, String(n)])],
   ['speed', 'Chrono', [['slow', 'Lent'], ['normal', 'Normal'], ['fast', 'Rapide']]],
-  ['sounds', 'Sons', [['all', 'Tous'], ['fr', 'VF'], ['ja', 'VO'], ['technique', 'Techniques'], ['opening', 'Openings'], ['meme', 'Mèmes'], ['bankai', 'Bankai']]],
+  ['sounds', 'Sons', [['all', 'Tous'], ['fr', 'VF'], ['ja', 'VO'], ['technique', 'Techniques'], ['opening', 'Openings'], ['meme', 'Mèmes'], ['replique', 'Répliques'], ['bankai', 'Bankai']]],
   ['rounds', 'Tours', [[0, '∞'], [5, '5'], [10, '10'], [15, '15'], [20, '20']]],
 ]
 function loadSettings() {

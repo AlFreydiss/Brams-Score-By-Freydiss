@@ -290,6 +290,18 @@ test('sons par type : openings seulement', async () => {
   assert.equal((await room(db)).clip.id, 'op1')
 })
 
+test('sons par type : répliques seulement', async () => {
+  const db = await freshDb()
+  await seedClips(db, 3)
+  await db.query(`insert into guesswho_clips(id, title, anime, lang, kind, url, duration, enabled)
+                  values ('vp1', '« Ore wa saikyō da »', 'T', 'ja', 'replique', 'https://x/vp1', 3, true)`)
+  const g = await setupRoom(db, 3)
+  const res = await call(db, 'guesswho_start', g.code, g.players[0].token, { sounds: 'replique' })
+  assert.equal(res.settings.sounds, 'replique')
+  await next(db, g)
+  assert.equal((await room(db)).clip.id, 'vp1')
+})
+
 test("sons : jamais deux fois tant qu'il en reste, même après « Rejouer », puis le plus ancien", async () => {
   const db = await freshDb()
   await seedClips(db, 3)

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Répliques Guess Who</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#000; --ink:#ececec; --mute:#7c7e85; --line:rgba(255,255,255,.1); --line2:rgba(255,255,255,.24); --gold:#e8c66a; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 'Archivo', system-ui, sans-serif;
+    background-image: radial-gradient(rgba(255,255,255,.06) 1px, transparent 1.3px); background-size: 18px 18px; }
+  header { position:sticky; top:0; z-index:5; background:rgba(0,0,0,.92); border-bottom:1px solid var(--line); padding:16px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { margin:0; font-stretch:125%; font-weight:850; font-size:clamp(24px,4vw,38px); line-height:1; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
+  .count { font-stretch:125%; font-weight:800; font-size:20px; margin-right:auto; }
+  .count small { font-weight:500; font-stretch:100%; font-size:13px; color:var(--mute); margin-left:6px; }
+  button { font:inherit; font-size:13px; color:var(--ink); background:#0b0b0b; border:1px solid var(--line2); border-radius:6px; padding:8px 12px; cursor:pointer; }
+  button:hover { border-color:var(--ink); }
+  button.main { background:var(--ink); color:#000; font-weight:700; border-color:var(--ink); }
+  input[type=search] { font:inherit; font-size:13px; color:var(--ink); background:#0b0b0b; border:1px solid var(--line2); border-radius:6px; padding:8px 10px; min-width:0; flex:1 1 160px; }
+  main { padding:8px 16px 80px; }
+  h2 { font-stretch:118%; font-weight:800; font-size:17px; margin:28px 0 8px; display:flex; gap:10px; align-items:baseline; }
+  h2 small { color:var(--mute); font-weight:500; font-stretch:100%; font-size:12.5px; }
+  .row { display:grid; grid-template-columns:auto 40px 1fr auto; gap:12px; align-items:center; padding:10px 12px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px; background:#050505; transition:border-color .2s, background .2s; }
+  .row.on { border-color:var(--line2); background:#0d0d0d; }
+  .row input { width:18px; height:18px; accent-color:var(--gold); cursor:pointer; }
+  .play { width:40px; height:40px; padding:0; border-radius:50%; display:grid; place-items:center; font-size:14px; }
+  .play.is-on { background:var(--ink); color:#000; }
+  .q b { display:block; font-weight:700; }
+  .q span { display:block; color:var(--mute); font-size:12.5px; margin-top:2px; }
+  .d { color:var(--mute); font-size:12px; font-variant-numeric:tabular-nums; }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:#000; padding:10px 16px; border-radius:6px; font-weight:700; opacity:0; transition:opacity .25s; pointer-events:none; }
+  .toast.show { opacity:1; }
+  .help { color:var(--mute); font-size:13px; margin:10px 0 0; }
+  @media (max-width:600px) { .row { grid-template-columns:auto 40px 1fr; } .d { display:none; } }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Répliques Guess Who</h1>
+  <p class="help">Écoute, coche celles à garder (les meilleures sont pré-cochées), puis « Copier le SQL » et colle-le dans l'éditeur SQL Supabase. Touche Espace : rejouer la dernière.</p>
+  <div class="bar">
+    <span class="count" id="count"></span>
+    <input type="search" id="q" placeholder="Filtrer (perso, animé, réplique)">
+    <button id="all">Tout cocher</button>
+    <button id="none">Tout décocher</button>
+    <button id="list">Copier la liste</button>
+    <button class="main" id="sql">Copier le SQL</button>
+  </div>
+</div></header>
+<main class="wrap" id="main"></main>
+<div class="toast" id="toast"></div>
+<script>
+const CLIPS = /*__CLIPS__*/[];
+const MIGRATION = /*__MIGRATION__*/"";
+const KEY = 'gw_vp_choice';
+let saved = null;
+try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
+const on = new Set(saved || CLIPS.filter(c => c.pre).map(c => c.id));
+const store = () => { try { localStorage.setItem(KEY, JSON.stringify([...on])); } catch {} };
+const audio = new Audio();
+let playing = null, last = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function render() {
+  const q = $('#q').value.trim().toLowerCase();
+  const groups = new Map();
+  for (const c of CLIPS) {
+    if (q && !`${c.who} ${c.anime} ${c.title}`.toLowerCase().includes(q)) continue;
+    if (!groups.has(c.anime)) groups.set(c.anime, []);
+    groups.get(c.anime).push(c);
+  }
+  $('#main').innerHTML = [...groups].map(([anime, list]) => `
+    <h2>${esc(anime)} <small>${list.length}</small></h2>
+    ${list.map(c => `
+      <label class="row ${on.has(c.id) ? 'on' : ''}" data-id="${c.id}">
+        <input type="checkbox" ${on.has(c.id) ? 'checked' : ''}>
+        <button type="button" class="play ${playing === c.id ? 'is-on' : ''}" aria-label="Écouter">${playing === c.id ? '■' : '▶'}</button>
+        <span class="q"><b>${esc(c.title)}</b><span>${esc(c.who)} · ${c.lang === 'en' ? 'VA' : 'VO'}</span></span>
+        <span class="d">${c.dur.toFixed(1).replace('.', ',')} s</span>
+      </label>`).join('')}`).join('');
+  $('#count').innerHTML = `${on.size} <small>cochées sur ${CLIPS.length}</small>`;
+}
+function play(id) {
+  const c = CLIPS.find(x => x.id === id);
+  if (playing === id) { audio.pause(); playing = null; render(); return; }
+  audio.src = c.url; audio.currentTime = 0; audio.play();
+  playing = id; last = id; render();
+}
+audio.onended = () => { playing = null; render(); };
+$('#main').addEventListener('click', e => {
+  const row = e.target.closest('.row'); if (!row) return;
+  const id = row.dataset.id;
+  if (e.target.closest('.play')) { e.preventDefault(); play(id); return; }
+  if (e.target.matches('input')) { e.target.checked ? on.add(id) : on.delete(id); store(); render(); }
+});
+$('#q').oninput = render;
+$('#all').onclick = () => { CLIPS.forEach(c => on.add(c.id)); store(); render(); };
+$('#none').onclick = () => { on.clear(); store(); render(); };
+addEventListener('keydown', e => { if (e.code === 'Space' && last && e.target === document.body) { e.preventDefault(); play(last); } });
+const toast = t => { const el = $('#toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1600); };
+const q = s => `'${String(s).replace(/'/g, "''")}'`;
+$('#sql').onclick = async () => {
+  const picked = CLIPS.filter(c => on.has(c.id));
+  const ids = CLIPS.map(c => q(c.id)).join(', ');
+  const sql = [MIGRATION, '',
+    '-- Répliques des voice packs : on repart de zéro, seules les cochées sont actives.',
+    `delete from guesswho_clips where id in (${ids});`,
+    ...picked.map(c => `insert into guesswho_clips(id, title, anime, lang, kind, url, duration, enabled) values (${q(c.id)}, ${q(c.title)}, ${q(`${c.anime} (${c.who})`)}, ${q(c.lang)}, 'replique', ${q(c.url)}, ${c.dur}, true);`),
+  ].join('\n');
+  await navigator.clipboard.writeText(sql);
+  toast(`SQL copié · ${picked.length} répliques`);
+};
+$('#list').onclick = async () => {
+  await navigator.clipboard.writeText(CLIPS.filter(c => on.has(c.id)).map(c => `${c.id} — ${c.who} : ${c.title}`).join('\n'));
+  toast('Liste copiée');
+};
+render();
+</script>
+</body>
+</html>
