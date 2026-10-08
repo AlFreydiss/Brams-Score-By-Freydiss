@@ -5,7 +5,7 @@ import { readAll, globalStats, championsBoard } from '../lib/tournamentStats.js'
 import { loadOrCreateRounds, voteCurrentMatch } from '../lib/tournament.js'
 import { TOURNAMENT_CONFIG, OPENING_TOURNAMENT_CONFIG, ENDING_TOURNAMENT_CONFIG, RAP_VS_OST_CONFIG, RAP_FR_CONFIG, OST_ANIME_CONFIG } from '../data/tournament-data.js'
 import { TOURNAMENT_CATEGORIES, UPCOMING_TOURNAMENTS } from '../data/tournament-hub-data.js'
-import { BANKAI, PANELS } from '../data/versus-data.js'
+import { BANKAI, PANELS, VERSUS_CONFIGS } from '../data/versus-data.js'
 import { keyartSrc } from './animehub/keyart.js'
 import './tournament/hub.css'
 
@@ -44,6 +44,29 @@ function coverOf(cat, read) {
   return p ? ytThumb(p.ytId) : null
 }
 
+// Deuxième image, révélée au survol de la carte.
+const KEYART_ALT = { doublage: 'kaguya', studio: 'kaiju-no-8', sakuga: 'bleach', ost: 'bleach', opening: 'jjk' }
+function altCoverOf(cat, read) {
+  if (cat.id === 'bankai') return (BANKAI.find(b => b.id === 'true-tensa-zangetsu') || BANKAI[1])?.img
+  if (cat.id === 'panels') return (PANELS.find(p => p.id === 'vagabond-baiken') || PANELS[1])?.img
+  if (KEYART_ALT[cat.id]) return keyartSrc(KEYART_ALT[cat.id], 960)
+  const pool = (read?.config.participants || []).filter(x => isYt(x.ytId))
+  return pool[1] ? ytThumb(pool[1].ytId) : null
+}
+
+// Partie de tournoi en images en cours (VersusPage la garde en localStorage).
+const SIZE_NAME = { 2: 'Finale', 4: 'Demies', 8: 'Quarts', 16: 'Huitièmes' }
+function versusRun(cat) {
+  const c = VERSUS_CONFIGS[cat.id]
+  if (!c) return null
+  try {
+    const r = JSON.parse(localStorage.getItem(`versus_run_${c.id}_${c.version}`) || 'null')
+    if (!r?.rounds?.length) return null
+    const open = r.rounds.find(x => x.matches.some(m => m.status !== 'closed'))
+    return open ? (SIZE_NAME[open.size] || `Tour de ${open.size}`) : 'Terminé'
+  } catch { return null }
+}
+
 // ── Duel du hero ───────────────────────────────────────────────────────────
 // Le duel en cours de l'arène la plus avancée, jouable ici. Le vote passe par
 // le même bracket que la page du tournoi.
@@ -77,7 +100,7 @@ function DuelSide({ p, side, state, onPick }) {
     >
       <span className="th-side-img"><DuelImage p={p} /></span>
       <span className="th-side-cap">
-        <b>{p.title}</b>
+        <b><kbd aria-hidden>{side === 'left' ? '←' : '→'}</kbd>{p.title}</b>
         <small>{state === 'win' ? 'Passe au tour suivant' : sub}</small>
       </span>
       {state === 'win' && <motion.i className="th-side-line" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.5, ease: EASE }} />}
@@ -90,6 +113,21 @@ function HeroDuel({ read, onVote }) {
   const [mine, setMine] = useState(0)
   const timer = useRef(0)
   useEffect(() => () => clearTimeout(timer.current), [])
+  const rootRef = useRef(null)
+  const pickRef = useRef(null)
+  // ← → votent tant que le duel est à l'écran
+  useEffect(() => {
+    const onKey = e => {
+      if (e.target.closest?.('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      const r = rootRef.current?.getBoundingClientRect()
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) return
+      e.preventDefault()
+      pickRef.current?.(e.key === 'ArrowLeft' ? 'left' : 'right')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const match = read?.currentMatch
   if (!match?.left || !match?.right) return null
   const { done, total } = read.progress
@@ -101,9 +139,10 @@ function HeroDuel({ read, onVote }) {
     setPicked(side)
     timer.current = setTimeout(() => { onVote(side); setMine(n => n + 1); setPicked(null) }, 850)
   }
+  pickRef.current = pick
 
   return (
-    <div className="th-duel">
+    <div className="th-duel" ref={rootRef}>
       <div className="th-duel-head">
         <span>À toi de trancher</span>
         <span className="th-duel-where">{read.config.categoryLabel || read.config.title} · {read.currentRound?.label || 'En cours'}</span>
@@ -128,9 +167,17 @@ function HeroDuel({ read, onVote }) {
   )
 }
 
+// Vidéo YouTube supprimée : vignette grise de 120 px, on la masque.
+const hideGrey = e => { if (e.currentTarget.naturalWidth <= 120) e.currentTarget.style.visibility = 'hidden' }
+
 // ── Arène ──────────────────────────────────────────────────────────────────
 function ArenaCard({ cat, read, index, big }) {
   const cover = coverOf(cat, read)
+  const alt = altCoverOf(cat, read)
+  const run = useMemo(() => versusRun(cat), [cat])
+  const badge = run
+    ? (run === 'Terminé' ? 'Partie terminée' : `Partie en cours · ${run}`)
+    : read?.winner ? 'Terminé' : read?.progress.done ? 'En cours' : null
   const pct = read ? (read.progress.done / Math.max(1, read.progress.total)) * 100 : 0
   const meta = read
     ? (read.winner ? `Champion : ${read.winner.title}` : read.progress.done ? `${read.progress.done} / ${read.progress.total} duels` : `${read.config.participants.length} participants`)
@@ -144,9 +191,15 @@ function ArenaCard({ cat, read, index, big }) {
       transition={{ duration: 0.6, ease: EASE, delay: Math.min(index % 4, 3) * 0.06 }}
     >
       <Link to={cat.route} className="th-card-link">
-        <span className="th-card-img">
-          {cover ? <img src={cover} alt="" loading="lazy" decoding="async" onLoad={e => { if (e.currentTarget.naturalWidth <= 120) e.currentTarget.style.opacity = 0 }} /> : <span className="th-card-ph">{cat.icon}</span>}
-        </span>
+        <motion.span className="th-card-img"
+          initial={{ clipPath: 'inset(100% 0 0 0)' }}
+          whileInView={{ clipPath: 'inset(0% 0 0 0)' }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.9, ease: EASE, delay: Math.min(index % 4, 3) * 0.06 }}>
+          {cover ? <img src={cover} alt="" loading="lazy" decoding="async" onLoad={hideGrey} /> : <span className="th-card-ph">{cat.icon}</span>}
+          {alt && <img className="th-card-alt" src={alt} alt="" loading="lazy" decoding="async" onLoad={hideGrey} />}
+          {badge && <span className="th-badge">{badge}</span>}
+        </motion.span>
         <span className="th-card-body">
           <b>{cat.label}</b>
           <small>{big ? cat.description : meta}</small>
@@ -192,7 +245,8 @@ export default function TournamentHubPage() {
             <motion.p className="th-kicker" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
               {arenas.length} arènes · {stats.matchesTotal.toLocaleString('fr-FR')} duels
             </motion.p>
-            <h1 className="th-title" aria-label="Tournois">
+<div className="th-hero-top">
+                        <h1 className="th-title" aria-label="Tournois">
               {'Tournois'.split('').map((ch, i) => (
                 <motion.span key={i} aria-hidden
                   initial={{ opacity: 0, y: '0.35em', fontStretch: '70%' }}
@@ -202,6 +256,12 @@ export default function TournamentHubPage() {
                 </motion.span>
               ))}
             </h1>
+            {stats.matchesDone > 0 && <motion.dl className="th-mine" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45, duration: 0.6, ease: EASE }}>
+              <div><dt>Duels tranchés</dt><dd>{stats.matchesDone.toLocaleString('fr-FR')}</dd></div>
+              <div><dt>Tournois commencés</dt><dd>{stats.started}<small> / {stats.arenas}</small></dd></div>
+              <div><dt>Champions couronnés</dt><dd>{stats.finished}</dd></div>
+            </motion.dl>}
+            </div>
             <motion.div className="th-hero-row" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.6, ease: EASE }}>
               <p className="th-lede">Deux propositions, un vote. Le bracket avance jusqu’au champion.</p>
               <div className="th-ctas">

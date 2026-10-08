@@ -22,10 +22,11 @@
 .th-title {
   margin: 0 0 0 -0.04em;
   font-family: 'Archivo', sans-serif; font-weight: 850; font-stretch: 125%;
-  font-size: clamp(64px, 13vw, 200px) !important; line-height: 0.86; letter-spacing: -0.035em;
+  font-size: clamp(64px, 11vw, 172px) !important; line-height: 0.86; letter-spacing: -0.035em;
   color: var(--ink);
 }
 .th-title span { display: inline-block; }
+.th-hero-top .th-title { flex: 0 1 auto; width: auto; }
 .th-hero-row {
   display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 32px;
   margin: 26px 0 40px; padding-bottom: 26px; border-bottom: 1px solid var(--line);
@@ -164,3 +165,28 @@
   .th-card-body small { font-size: 12px; }
   .th-card-body em { display: none; }
 }
+
+/* Survol : la deuxième image se lève sous la première */
+.th-card-img .th-card-alt { opacity: 0; transform: scale(1.08); transition: opacity .55s var(--ease), transform 1.1s var(--ease); }
+.th-card-link:hover .th-card-img .th-card-alt, .th-card-link:focus-visible .th-card-img .th-card-alt { opacity: 1; transform: scale(1.02); }
+.th-badge {
+  position: absolute; left: 10px; top: 10px; z-index: 1;
+  padding: 5px 10px; border-radius: 999px; background: rgba(0,0,0,.72);
+  font-size: 11.5px; font-weight: 600; color: var(--ink);
+}
+.th-side-cap kbd {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 10px; vertical-align: 2px;
+  border: 1px solid var(--line-2); border-radius: 5px; font: 500 11px/1 'Inter', sans-serif; color: var(--mute);
+}
+.th-side--right .th-side-cap kbd { float: right; margin: 0 0 0 10px; }
+.th-side:not(:disabled):hover .th-side-cap kbd { color: var(--ink); border-color: var(--ink); }
+@media (hover: none) { .th-side-cap kbd { display: none; } }
+
+/* Avancement à droite du titre */
+.th-hero-top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px 40px; }
+.th-mine { display: flex; gap: 28px; margin: 0 0 10px; }
+.th-mine div { min-width: 0; }
+.th-mine dt { font-size: 12px; color: var(--mute); }
+.th-mine dd { margin: 4px 0 0; font-family: 'Archivo', sans-serif; font-weight: 800; font-stretch: 120%; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.th-mine dd small { font-family: 'Inter', sans-serif; font-weight: 500; font-stretch: 100%; font-size: 14px; color: var(--faint); }
+@media (max-width: 720px) { .th-mine { gap: 18px; } .th-mine dd { font-size: 22px; } }
