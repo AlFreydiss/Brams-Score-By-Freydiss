@@ -4,13 +4,25 @@ from discord import app_commands
 from discord.ext import commands
 
 # /manege : fait défiler un membre dans tous les salons vocaux, de haut en bas,
-# en boucle, jusqu'à /manege_stop. Réservé à qui a « Déplacer des membres ».
+# en boucle, jusqu'à /manege_stop. Réservé à qui a « Déplacer des membres » et à OWNER_IDS.
 # Garde-fous : 1,5 s entre deux déplacements (en dessous Discord renvoie des 429
 # et le bot entier ralentit), 10 minutes max, arrêt si le membre quitte le vocal,
 # et retour dans son salon d'origine à la fin.
 
+# Freydiss : autorisé partout, même sans la permission sur le serveur.
+OWNER_IDS = {1094070545248694342}
+
 STEP_SECONDS = 1.5
 MAX_SECONDS = 600
+
+
+def _allowed(interaction: discord.Interaction) -> bool:
+    if interaction.user.id in OWNER_IDS:
+        return True
+    perms = getattr(interaction.user, "guild_permissions", None)
+    if perms and perms.move_members:
+        return True
+    raise app_commands.MissingPermissions(["move_members"])
 
 
 class ManegeCog(commands.Cog):
@@ -55,8 +67,7 @@ class ManegeCog(commands.Cog):
 
     @app_commands.command(name="manege", description="🎠 Fait tourner un membre dans tous les vocaux, de haut en bas, en boucle")
     @app_commands.describe(membre="Le membre à faire tourner (il doit être en vocal)")
-    @app_commands.default_permissions(move_members=True)
-    @app_commands.checks.has_permissions(move_members=True)
+    @app_commands.check(_allowed)
     @app_commands.guild_only()
     async def manege(self, interaction: discord.Interaction, membre: discord.Member):
         key = (interaction.guild_id, membre.id)
@@ -64,8 +75,6 @@ class ManegeCog(commands.Cog):
             return await interaction.response.send_message(f"{membre.mention} est déjà sur le manège. `/manege_stop` pour l'arrêter.", ephemeral=True)
         if not membre.voice or not membre.voice.channel:
             return await interaction.response.send_message(f"{membre.mention} n'est pas en vocal.", ephemeral=True)
-        if membre.top_role >= interaction.guild.me.top_role:
-            return await interaction.response.send_message("Je ne peux pas déplacer ce membre (rôle au-dessus du mien).", ephemeral=True)
         route = self._route(membre)
         if len(route) < 2:
             return await interaction.response.send_message("Il me faut au moins deux salons vocaux accessibles.", ephemeral=True)
@@ -77,8 +86,7 @@ class ManegeCog(commands.Cog):
 
     @app_commands.command(name="manege_stop", description="🛑 Arrête le manège d'un membre (ou de tout le monde)")
     @app_commands.describe(membre="Le membre à faire descendre (vide = tout le monde)")
-    @app_commands.default_permissions(move_members=True)
-    @app_commands.checks.has_permissions(move_members=True)
+    @app_commands.check(_allowed)
     @app_commands.guild_only()
     async def manege_stop(self, interaction: discord.Interaction, membre: discord.Member | None = None):
         keys = [k for k in self._runs if k[0] == interaction.guild_id and (membre is None or k[1] == membre.id)]
