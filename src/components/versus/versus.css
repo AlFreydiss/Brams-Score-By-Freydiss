@@ -150,8 +150,10 @@
 .vs-card--right .vs-cap-line { transform-origin: 100% 50%; }
 
 .vs-mark {
-  align-self: center;
-  margin-top: -40px;
+  position: relative; z-index: 2;
+  align-self: start;
+  display: grid; place-items: center;
+  height: min(60vh, 680px); min-height: 320px;
   text-align: center;
   font-family: 'Archivo', sans-serif; font-stretch: 100%; font-style: italic;
   font-size: 13px; font-weight: 600; color: var(--mute);
@@ -242,7 +244,6 @@
 .vs-wipe {
   position: fixed; inset: 0; z-index: 10070;
   display: grid; place-items: center;
-  background: rgba(0,0,0,.9);
   pointer-events: none;
 }
 .vs-wipe-txt { text-align: center; padding: 0 16px; }
@@ -434,7 +435,8 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
   .vr { position: relative; top: 0; }
   .vs-back { position: static; display: inline-block; margin-bottom: 10px; }
   .vs-arena { grid-template-columns: 1fr; }
-  .vs-mark { margin: 2px 0 10px; }
+  .vs-mark { height: auto; min-height: 0; margin: 2px 0 10px; }
+  .vs-mark-line { display: none; }
   .vs-frame { height: 32vh; min-height: 210px; }
   .vs-card--right .vs-cap { flex-direction: row; text-align: left; }
   .vs-card--right .vs-cap-line { transform-origin: 0 50%; }
@@ -583,3 +585,25 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
   .vs-daily, .vs-history { padding: 16px 14px; }
   .vs-daily-row { gap: 8px; }
 }
+
+/* ── Motions du duel ── */
+.vs-mark span { position: relative; display: inline-block; padding: 8px 2px; background: #000; }
+.vs-mark-line {
+  position: absolute; left: 50%; top: 6%; bottom: 6%; width: 1px; margin-left: -0.5px;
+  background: linear-gradient(transparent, rgba(255,255,255,.75) 22%, rgba(255,255,255,.75) 78%, transparent);
+  transform-origin: 50% 50%;
+}
+.vs-sheen { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; }
+.vs-glint {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.22) 50%, transparent 62%);
+}
+.vs-flight {
+  position: fixed; z-index: 10060; margin: 0;
+  object-fit: cover; pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.vs-iris { position: absolute; inset: 0; width: 100%; height: 100%; }
+.vs-wipe-txt { position: relative; }
+.vs-assemble { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }

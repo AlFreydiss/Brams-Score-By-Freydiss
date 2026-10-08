@@ -132,13 +132,68 @@ export function StretchTitle({ text }) {
 }
 
 // ── Changement de tour ─────────────────────────────────────────────────────
-// Un voile, le nom du tour qui s'étire lettre à lettre, et c'est tout.
+// Iris de trame : des points noirs gonflent depuis le centre jusqu'à manger
+// l'écran (un liseré de points blancs court sur le front), le nom du tour
+// s'étire, puis la trame se rétracte du centre vers les bords.
+const WIPE_MS = 1250
+function DotIris() {
+  const ref = useRef(null)
+  useEffect(() => {
+    const canvas = ref.current
+    const ctx = canvas.getContext('2d')
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const w = window.innerWidth, h = window.innerHeight
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = w * dpr; canvas.height = h * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    const step = w < 700 ? 14 : 18
+    const cx = w / 2, cy = h / 2, R = Math.hypot(cx, cy)
+    const full = step * 0.74   // au-delà de step·√2/2 les disques se recouvrent
+    const pts = []
+    for (let y = step / 2; y < h + step; y += step) for (let x = step / 2; x < w + step; x += step) {
+      pts.push([x, y, Math.hypot(x - cx, y - cy) / R])
+    }
+    const smooth = k => (k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k))
+    const t0 = performance.now()
+    let raf = 0
+    const frame = now => {
+      const t = (now - t0) / WIPE_MS
+      // entrée 0 → 0,32, maintien, sortie 0,7 → 1 (le centre se libère d'abord)
+      const fin = reduce ? 1 : t / 0.32
+      const fout = reduce ? (t > 0.85 ? 1 : 0) : (t - 0.7) / 0.3
+      ctx.clearRect(0, 0, w, h)
+      ctx.fillStyle = '#000'
+      ctx.beginPath()
+      const front = []
+      for (const [x, y, d] of pts) {
+        const kin = smooth((fin * 1.35 - d) / 0.35)
+        const kout = smooth((fout * 1.35 - d) / 0.35)
+        const k = kin * (1 - kout)
+        if (k <= 0.02) continue
+        ctx.moveTo(x + full * k, y); ctx.arc(x, y, full * k, 0, 6.2832)
+        if (k < 0.55 && k > 0.12) front.push([x, y, k])
+      }
+      ctx.fill()
+      ctx.fillStyle = 'rgba(236,236,236,.5)'
+      ctx.beginPath()
+      for (const [x, y, k] of front) { const r = 0.6 + k * 2.2; ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, 6.2832) }
+      ctx.fill()
+      if (t < 1) raf = requestAnimationFrame(frame)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return <canvas ref={ref} className="vs-iris" aria-hidden />
+}
+
 export function RoundWipe({ label, sub }) {
   return (
     <motion.div className="vs-wipe" aria-live="polite"
-      initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }}
-      transition={{ duration: 1.25, times: [0, 0.18, 0.75, 1], ease: 'easeInOut' }}>
-      <div className="vs-wipe-txt">
+      initial={{ opacity: 1 }} animate={{ opacity: 1 }}>
+      <DotIris />
+      <motion.div className="vs-wipe-txt"
+        initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 1, 0] }}
+        transition={{ duration: WIPE_MS / 1000, times: [0.18, 0.3, 0.66, 0.78] }}>
         <h2>
           {[...label].map((ch, i) => (
             <motion.span key={i}
@@ -151,8 +206,105 @@ export function RoundWipe({ label, sub }) {
         </h2>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45, duration: 0.4 }}>{sub}</motion.p>
         <motion.i initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.2, duration: 0.8, ease }} />
-      </div>
+      </motion.div>
     </motion.div>
+  )
+}
+
+// ── Assemblage en trame (champion) ─────────────────────────────────────────
+// Inverse de DotDust : des points d'impression arrivent de partout et se
+// posent à leur place jusqu'à recomposer l'image, qui apparaît par-dessus.
+export function DotAssemble({ src, fit = 'contain', delay = 0, dur = 1300, onDone }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { onDone?.(); return }
+    const ctx = canvas.getContext('2d')
+    const r = canvas.getBoundingClientRect()
+    const w = Math.max(1, r.width), h = Math.max(1, r.height)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = w * dpr; canvas.height = h * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    let raf = 0, dead = false, timer = 0
+    const img = new Image()
+    img.src = src
+    img.onload = () => {
+      if (dead) return
+      const step = w < 400 ? 7 : 9
+      const cols = Math.ceil(w / step), rows = Math.ceil(h / step)
+      const off = document.createElement('canvas')
+      off.width = cols; off.height = rows
+      const o = off.getContext('2d')
+      const s = fit === 'cover' ? Math.max(cols / img.width, rows / img.height) : Math.min(cols / img.width, rows / img.height)
+      const iw = img.width * s, ih = img.height * s
+      o.drawImage(img, (cols - iw) / 2, (rows - ih) / 2, iw, ih)
+      let data
+      try { data = o.getImageData(0, 0, cols, rows).data } catch { onDone?.(); return }
+      const parts = []
+      const cx = w / 2, cy = h / 2
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        const i = (y * cols + x) * 4
+        if (data[i + 3] < 40) continue
+        const lum = (data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11) / 255
+        if (lum < 0.06) continue
+        const tx = x * step + step / 2, ty = y * step + step / 2
+        const a = Math.random() * 6.2832, far = (0.6 + Math.random() * 0.8) * Math.hypot(w, h)
+        parts.push({
+          tx, ty, sx: cx + Math.cos(a) * far, sy: cy + Math.sin(a) * far,
+          r: lum * step * 0.5 + 0.5, c: `rgb(${data[i]},${data[i + 1]},${data[i + 2]})`,
+          // les points clairs (le sujet) arrivent en premier
+          d: (1 - lum) * dur * 0.35 + Math.random() * dur * 0.2,
+        })
+      }
+      const t0 = performance.now() + delay
+      const out = k => 1 - Math.pow(1 - k, 4)
+      let told = false
+      const frame = now => {
+        const t = now - t0
+        ctx.clearRect(0, 0, w, h)
+        if (t < 0) { raf = requestAnimationFrame(frame); return }
+        let left = 0
+        for (const p of parts) {
+          const k = Math.max(0, Math.min(1, (t - p.d) / (dur * 0.45)))
+          if (k === 0) { left++; continue }
+          if (k < 1) left++
+          const e = out(k)
+          ctx.globalAlpha = Math.min(1, k * 3)
+          ctx.fillStyle = p.c
+          ctx.beginPath()
+          ctx.arc(p.sx + (p.tx - p.sx) * e, p.sy + (p.ty - p.sy) * e, p.r * (0.4 + e * 0.6), 0, 6.2832)
+          ctx.fill()
+        }
+        ctx.globalAlpha = 1
+        if (!left && !told) { told = true; onDone?.() }
+        if (t < dur + 900) raf = requestAnimationFrame(frame)
+        else ctx.clearRect(0, 0, w, h)
+      }
+      raf = requestAnimationFrame(frame)
+    }
+    img.onerror = () => { timer = setTimeout(() => onDone?.(), delay) }
+    return () => { dead = true; cancelAnimationFrame(raf); clearTimeout(timer) }
+    // onDone volontairement hors dépendances : appelé une seule fois
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src, fit, delay, dur])
+  return <canvas ref={ref} className="vs-assemble" aria-hidden />
+}
+
+// ── Vol du gagnant vers la bande du tour ───────────────────────────────────
+// Une copie de l'image part de la case, rétrécit jusqu'à la largeur du trait
+// de son duel puis s'y aplatit : « classé ».
+export function WinnerFlight({ flight }) {
+  const { src, from, to } = flight
+  const s = Math.max(0.04, Math.min(1, (to.width * 2.4) / from.width))
+  const dx = to.left + to.width / 2 - (from.left + from.width / 2)
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2)
+  return (
+    <motion.img className="vs-flight" src={src} alt="" aria-hidden
+      style={{ left: from.left, top: from.top, width: from.width, height: from.height }}
+      initial={{ x: 0, y: 0, scale: 1, scaleY: 1, opacity: 1, borderRadius: 6 }}
+      animate={{ x: [0, dx * 0.15, dx], y: [0, -40, dy], scale: [1, 0.55, s], scaleY: [1, 1, 0.08], opacity: [1, 1, 0.9, 0], borderRadius: [6, 10, 2] }}
+      transition={{ duration: 0.62, times: [0, 0.35, 1], ease: [0.6, 0, 0.2, 1], opacity: { duration: 0.7, times: [0, 0.6, 0.88, 1] } }} />
   )
 }
 
