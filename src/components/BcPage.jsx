@@ -26,11 +26,10 @@ const AWARDS = [
 
 const COVER = '/bc-poster.jpg'
 
-// Anime : saisons et film, avec bande-annonce officielle (YouTube, chargée au
-// clic) et la plateforme qui les diffuse légalement en France. Aucun épisode
-// hébergé sur Brams. Données AniList / oEmbed YouTube vérifiées le 2026-10-03.
+// Saisons et film : bande-annonce officielle, et la plateforme légale en France.
+// La saison 2 en cours est lisible sur la page dès qu'un épisode est dans le catalogue.
 const SEASONS = [
-  { key: 's2', title: 'Saison 2', sub: 'Le raid sur le royaume de Spade', year: '2026', info: 'En cours · un épisode par semaine depuis le 3 octobre 2026',
+  { key: 's2', title: 'Saison 2', sub: 'Le raid sur le royaume de Spade', year: '2026', info: 'En cours · épisode 171 en ligne, VOSTFR',
     cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx195604-tSZcfKbVqSEG.jpg', trailer: '4MYo8FfiXMA', where: 'crunchyroll', live: true },
   { key: 's1', title: 'Saison 1', sub: "D'Hage au Taureau noir", year: '2017 à 2021', info: '170 épisodes',
     cover: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx97940-fyh8o7gNbha0.png', trailer: 'vUjAxk1qYzQ', where: 'crunchyroll' },
@@ -151,9 +150,9 @@ function Trailer({ id, title }) {
   )
 }
 
-function Seasons() {
+function Seasons({ onPlay }) {
   return (
-    <section aria-labelledby="bc-anime" style={{ display:'grid', gap:14, padding:0 }}>
+    <section aria-labelledby="bc-anime" style={{ display:'grid', gap:14, padding:0, marginTop:28 }}>
       <h3 id="bc-anime" style={{ margin:0, fontSize:18, fontWeight:900, color:'#fff' }}>Anime</h3>
       {SEASONS.map((s) => {
         const p = PLATFORMS[s.where]
@@ -169,6 +168,12 @@ function Seasons() {
               <div style={{ fontSize:13, color:'rgba(255,255,255,.6)', marginTop:3 }}>{s.sub}</div>
               <div style={{ fontSize:12, fontWeight:700, color: s.live ? COLOR2 : 'rgba(255,255,255,.4)', marginTop:6 }}>{s.info}</div>
               <Trailer id={s.trailer} title={`Black Clover, ${s.title}`} />
+              {s.key === 's2' && onPlay && (
+                <button type="button" className="bc-cta" onClick={onPlay}
+                  style={{ display:'inline-flex', alignItems:'center', gap:8, marginTop:12, marginRight:8, padding:'10px 16px', borderRadius:11, background:COLOR, border:0, color:'#fff', fontSize:13.5, fontWeight:800, cursor:'pointer', fontFamily:'var(--body)' }}>
+                  ▶ Regarder l'épisode 171
+                </button>
+              )}
               {p && (
                 <a href={p.url} target="_blank" rel="noopener noreferrer" className="bc-cta"
                   style={{ display:'inline-flex', alignItems:'center', gap:8, marginTop:12, padding:'10px 16px', borderRadius:11, background:p.color,
@@ -269,10 +274,10 @@ function InfoPanel({ watchedCount, total, lastWatchedIdx, onResume, chapterCount
             { label:'Chapitres', value:String(chapterCount), dot:'#f97316' },
             { label:'Note', value:'★ 7.9', dot:'#f97316' },
           ] : [
-            { label:'Épisodes', value:String(VIDEOS.filter(v=>!v.kind).length), dot:COLOR2 },
-            { label:'OAV', value:String(VIDEOS.filter(v=>v.kind==='ova').length), dot:'#34d399' },
-            { label:'Audio', value:'VF + VO', dot:'#f97316' },
-            { label:'Note', value:'★ 8.0', dot:'#f97316' },
+            { label:'Saison 2', value:String(VIDEOS.filter(v=>!v.kind && v.src).length), dot:COLOR2 },
+            { label:'Audio', value:'Japonais', dot:'#34d399' },
+            { label:'Sous-titres', value:'FR', dot:'#f97316' },
+            { label:'Note', value:'★ 7.9', dot:'#f97316' },
           ]).map(s => (
             <div key={s.label} style={{ padding:'10px 12px',borderRadius:12,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)' }}>
               <div style={{ display:'flex',alignItems:'center',gap:5,marginBottom:3 }}>
@@ -342,7 +347,7 @@ export default function BcPage({ onClose }) {
   }, [markWatched])
   const playHandlers = useMemo(() => VIDEOS.map((_, i) => () => openDetail(i)), [openDetail])
 
-  const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind)
+  const episodes = VIDEOS.map((v, i) => ({ v, i })).filter(x => !x.v.kind && x.v.src)
   const ovas = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'ova')
   const films = VIDEOS.map((v, i) => ({ v, i })).filter(x => x.v.kind === 'film')
   const chapterCount = CHAPTERS.length || 280
@@ -395,7 +400,20 @@ export default function BcPage({ onClose }) {
               <InfoPanel watchedCount={watchedCount} total={VIDEOS.length} lastWatchedIdx={resumeIdx} onResume={() => openDetail(resumeIdx)} chapterCount={chapterCount}
                 scansRead={scansRead} scanResume={CHAPTERS[scanResumeIdx]} onReadScan={() => setReading(scanResumeIdx)} />
               <div>
-                <Seasons />
+                {episodes.length > 0 && (
+                  <section aria-labelledby="bc-s2">
+                    <div style={{ marginBottom:16 }}>
+                      <h3 id="bc-s2" style={{ margin:'0 0 3px', fontSize:18, fontWeight:900, color:'#fff' }}>Saison 2</h3>
+                      <div style={{ fontSize:12, color:'rgba(255,255,255,.4)', fontWeight:700 }}>Le raid sur le royaume de Spade · japonais, sous-titres français</div>
+                    </div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14 }}>
+                      {episodes.map(({ v, i }) => (
+                        <EpCard key={keyOf(v)} video={v} index={i} watched={!!progress[keyOf(v)]?.completed} onPlay={playHandlers[i]} />
+                      ))}
+                    </div>
+                  </section>
+                )}
+                <Seasons onPlay={episodes[0] ? playHandlers[episodes[0].i] : null} />
                 <ScanList progress={scanProg} onRead={setReading} />
                 {reading !== null && CHAPTERS[reading] && (
                   <div style={{ position:'fixed', inset:0, zIndex:9999, background:'#0a0814' }}>

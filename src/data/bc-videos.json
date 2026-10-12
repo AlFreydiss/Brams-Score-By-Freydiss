@@ -2,8 +2,25 @@
   {
     "episode": 171,
     "title": "L'ouverture des hostilités",
-    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/black-clover/S02E01.mkv",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/black-clover-jp/S02E01.mp4",
     "season": 2,
-    "arc": "Saison 2"
+    "arc": "Saison 2",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/black-clover-jp/S02E01.mp4"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/black-clover-subtitles/S02E01.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/black-clover-thumbnails/S02E01.jpg"
   }
 ]

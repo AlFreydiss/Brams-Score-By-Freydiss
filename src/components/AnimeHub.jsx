@@ -582,8 +582,8 @@ export const ANIMES = [
     genres: ['Action', 'Fantasy', 'Shōnen'],
     description: "Asta, né sans magie dans un monde où tout le monde en a, rêve de devenir Sorcier Empereur grâce à sa ténacité et à son grimoire à cinq feuilles.",
     stats: [
-      { label: 'Vidéos', value: videoCountLabel(BC_VIDEOS.length, 170) },
-      { label: 'Statut', value: availabilityLabel(BC_VIDEOS.length) },
+      { label: 'Saison 2', value: videoCountLabel(BC_VIDEOS.filter(v => v.src).length, 1) },
+      { label: 'Statut', value: availabilityLabel(BC_VIDEOS.filter(v => v.src).length) },
     ],
     action: '▶ Accéder',
     badge: 'NOUVEAU',
