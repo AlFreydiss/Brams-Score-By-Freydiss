@@ -1,39 +1,1075 @@
 [
-  { "episode": 1, "title": "Renaissance", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep01.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 2, "title": "Confrontation", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep02.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 3, "title": "Pacte", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep03.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 4, "title": "Poursuite", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep04.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 5, "title": "Tactique", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep05.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 6, "title": "Déchirure", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep06.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 7, "title": "Temps couvert", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep07.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 8, "title": "Regard", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep08.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 9, "title": "Contact", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep09.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 10, "title": "Doute", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep10.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 11, "title": "Assaut", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep11.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 12, "title": "Amour", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep12.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 13, "title": "Confession", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep13.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 14, "title": "Ami", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep14.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 15, "title": "Pari", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep15.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 16, "title": "Décision", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep16.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 17, "title": "Exécution", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep17.mkv", "season": 1, "arc": "Affaire Kira" },
-  { "episode": 18, "title": "Allié", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep18.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 19, "title": "Matsuda", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep19.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 20, "title": "Expédient", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep20.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 21, "title": "Performance", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep21.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 22, "title": "Conduite", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep22.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 23, "title": "Frénésie", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep23.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 24, "title": "Résurrection", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep24.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 25, "title": "Silence", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep25.mkv", "season": 1, "arc": "Yotsuba" },
-  { "episode": 26, "title": "Reprise", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep26.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 27, "title": "Enlèvement", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep27.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 28, "title": "Impatience", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep28.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 29, "title": "Père", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep29.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 30, "title": "Justice", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep30.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 31, "title": "Transfert", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep31.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 32, "title": "Choix", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep32.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 33, "title": "Arrogance", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep33.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 34, "title": "Vigilance", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep34.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 35, "title": "Tentative de meurtre", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep35.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 36, "title": "28 janvier", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep36.mkv", "season": 1, "arc": "Near et Mello" },
-  { "episode": 37, "title": "Le nouveau monde", "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note/Ep37.mkv", "season": 1, "arc": "Near et Mello" }
+  {
+    "episode": 1,
+    "title": "Renaissance",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep01.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep01.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep01.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep01.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep01.jpg"
+  },
+  {
+    "episode": 2,
+    "title": "Confrontation",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep02.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep02.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep02.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep02.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep02.jpg"
+  },
+  {
+    "episode": 3,
+    "title": "Pacte",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep03.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep03.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep03.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep03.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep03.jpg"
+  },
+  {
+    "episode": 4,
+    "title": "Poursuite",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep04.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep04.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep04.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep04.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep04.jpg"
+  },
+  {
+    "episode": 5,
+    "title": "Tactique",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep05.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep05.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep05.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep05.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep05.jpg"
+  },
+  {
+    "episode": 6,
+    "title": "Déchirure",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep06.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep06.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep06.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep06.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep06.jpg"
+  },
+  {
+    "episode": 7,
+    "title": "Temps couvert",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep07.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep07.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep07.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep07.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep07.jpg"
+  },
+  {
+    "episode": 8,
+    "title": "Regard",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep08.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep08.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep08.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep08.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep08.jpg"
+  },
+  {
+    "episode": 9,
+    "title": "Contact",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep09.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep09.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep09.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep09.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep09.jpg"
+  },
+  {
+    "episode": 10,
+    "title": "Doute",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep10.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep10.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep10.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep10.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep10.jpg"
+  },
+  {
+    "episode": 11,
+    "title": "Assaut",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep11.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep11.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep11.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep11.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep11.jpg"
+  },
+  {
+    "episode": 12,
+    "title": "Amour",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep12.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep12.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep12.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep12.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep12.jpg"
+  },
+  {
+    "episode": 13,
+    "title": "Confession",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep13.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep13.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep13.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep13.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep13.jpg"
+  },
+  {
+    "episode": 14,
+    "title": "Ami",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep14.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep14.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep14.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep14.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep14.jpg"
+  },
+  {
+    "episode": 15,
+    "title": "Pari",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep15.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep15.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep15.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep15.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep15.jpg"
+  },
+  {
+    "episode": 16,
+    "title": "Décision",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep16.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep16.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep16.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep16.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep16.jpg"
+  },
+  {
+    "episode": 17,
+    "title": "Exécution",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep17.mp4",
+    "season": 1,
+    "arc": "Affaire Kira",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep17.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep17.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep17.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep17.jpg"
+  },
+  {
+    "episode": 18,
+    "title": "Allié",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep18.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep18.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep18.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep18.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep18.jpg"
+  },
+  {
+    "episode": 19,
+    "title": "Matsuda",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep19.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep19.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep19.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep19.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep19.jpg"
+  },
+  {
+    "episode": 20,
+    "title": "Expédient",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep20.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep20.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep20.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep20.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep20.jpg"
+  },
+  {
+    "episode": 21,
+    "title": "Performance",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep21.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep21.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep21.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep21.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep21.jpg"
+  },
+  {
+    "episode": 22,
+    "title": "Conduite",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep22.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep22.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep22.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep22.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep22.jpg"
+  },
+  {
+    "episode": 23,
+    "title": "Frénésie",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep23.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep23.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep23.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep23.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep23.jpg"
+  },
+  {
+    "episode": 24,
+    "title": "Résurrection",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep24.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep24.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep24.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep24.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep24.jpg"
+  },
+  {
+    "episode": 25,
+    "title": "Silence",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep25.mp4",
+    "season": 1,
+    "arc": "Yotsuba",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep25.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep25.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep25.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep25.jpg"
+  },
+  {
+    "episode": 26,
+    "title": "Reprise",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep26.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep26.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep26.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep26.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep26.jpg"
+  },
+  {
+    "episode": 27,
+    "title": "Enlèvement",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep27.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep27.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep27.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep27.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep27.jpg"
+  },
+  {
+    "episode": 28,
+    "title": "Impatience",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep28.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep28.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep28.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep28.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep28.jpg"
+  },
+  {
+    "episode": 29,
+    "title": "Père",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep29.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep29.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep29.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep29.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep29.jpg"
+  },
+  {
+    "episode": 30,
+    "title": "Justice",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep30.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep30.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep30.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep30.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep30.jpg"
+  },
+  {
+    "episode": 31,
+    "title": "Transfert",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep31.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep31.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep31.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep31.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep31.jpg"
+  },
+  {
+    "episode": 32,
+    "title": "Choix",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep32.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep32.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep32.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep32.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep32.jpg"
+  },
+  {
+    "episode": 33,
+    "title": "Arrogance",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep33.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep33.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep33.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep33.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep33.jpg"
+  },
+  {
+    "episode": 34,
+    "title": "Vigilance",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep34.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep34.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep34.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep34.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep34.jpg"
+  },
+  {
+    "episode": 35,
+    "title": "Tentative de meurtre",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep35.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep35.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep35.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep35.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep35.jpg"
+  },
+  {
+    "episode": 36,
+    "title": "28 janvier",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep36.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep36.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep36.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep36.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep36.jpg"
+  },
+  {
+    "episode": 37,
+    "title": "Le nouveau monde",
+    "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep37.mp4",
+    "season": 1,
+    "arc": "Near et Mello",
+    "badge": "VOSTFR",
+    "audio": [
+      {
+        "label": "Japonais",
+        "srclang": "ja",
+        "default": true,
+        "mediaSrc": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-jp/Ep37.mp4"
+      },
+      {
+        "label": "VF",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-audio-fr/Ep37.m4a"
+      }
+    ],
+    "subtitles": [
+      {
+        "label": "Francais",
+        "srclang": "fr",
+        "src": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-subtitles/Ep37.fr.vtt"
+      }
+    ],
+    "thumbnail": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/anime/death-note-thumbnails/Ep37.jpg"
+  }
 ]
