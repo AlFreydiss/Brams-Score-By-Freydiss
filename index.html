@@ -18,6 +18,9 @@
     <meta property="og:description" content="Anime en streaming VOSTFR, scans manga, tier list, Akinator anime, tournois d'openings et Blind Test. La communauté One Piece ultime." />
     <meta property="og:url" content="https://brams.community/" />
     <meta property="og:image" content="https://brams.community/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Brams Community — anime en streaming VOSTFR, scans manga, tier list, tournois" />
     <meta property="og:locale" content="fr_FR" />
 
     <!-- Twitter -->
@@ -30,16 +33,31 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Brams Community",
-      "url": "https://brams.community/",
-      "description": "Anime en streaming VOSTFR, scans manga, tier list, Akinator anime, tournois d'openings et Blind Test. Communauté Discord One Piece.",
-      "inLanguage": "fr-FR",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://brams.community/fil/recherche?q={search_term_string}",
-        "query-input": "required name=search_term_string"
-      }
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://brams.community/#website",
+          "name": "Brams Community",
+          "url": "https://brams.community/",
+          "description": "Anime en streaming VOSTFR, scans manga, tier list, Akinator anime, tournois d'openings et Blind Test. Communauté Discord One Piece.",
+          "inLanguage": "fr-FR",
+          "publisher": { "@id": "https://brams.community/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://brams.community/fil/recherche?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://brams.community/#organization",
+          "name": "Brams Community",
+          "url": "https://brams.community/",
+          "logo": "https://brams.community/favicon.svg",
+          "image": "https://brams.community/og.jpg",
+          "sameAs": ["https://discord.gg/4FgezPpnGU"]
+        }
+      ]
     }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

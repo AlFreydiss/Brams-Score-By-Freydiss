@@ -13,4 +13,18 @@
   <url><loc>https://brams.community/fil</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://brams.community/equipage</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://brams.community/undercover</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <!-- scans:start (genere par scripts/gen-scans-catalog.mjs) -->
+  <url><loc>https://brams.community/manga/aot</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/black-clover</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/blue-lock</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/boruto</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/chainsaw-man</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/dr-stone</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/fire-force</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/jjk</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/kingdom</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/kny</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/mha</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://brams.community/manga/solo-leveling</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <!-- scans:end -->
 </urlset>

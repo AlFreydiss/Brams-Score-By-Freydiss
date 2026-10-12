@@ -93,5 +93,18 @@ const body = `// GENERE PAR scripts/gen-scans-catalog.mjs — NE PAS EDITER A LA
 export const SCANS = ${JSON.stringify(out, null, 2)}
 `
 writeFileSync(join(ROOT, 'src', 'data', 'scans-catalog.js'), body)
+
+// Les pages /manga/<slug> vont aussi dans le sitemap, sinon Google ne les
+// decouvre qu'en suivant les liens du hub, rendus en JS.
+const sitemapPath = join(ROOT, 'public', 'sitemap.xml')
+const sitemap = readFileSync(sitemapPath, 'utf8')
+const START = '<!-- scans:start (genere par scripts/gen-scans-catalog.mjs) -->'
+const END = '<!-- scans:end -->'
+if (sitemap.includes(START) && sitemap.includes(END)) {
+  const urls = out.map(s => `  <url><loc>https://brams.community/manga/${s.slug}</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>`)
+  writeFileSync(sitemapPath, sitemap.slice(0, sitemap.indexOf(START) + START.length) + '\n' + urls.join('\n') + '\n  ' + sitemap.slice(sitemap.indexOf(END)))
+} else {
+  console.warn('  ! sitemap.xml sans marqueurs scans:start/end, pages manga non ajoutees')
+}
 console.log(`${out.length} series · ${out.reduce((n, s) => n + s.chapters, 0)} chapitres`)
 console.log(out.map(s => `  ${s.slug.padEnd(14)} ${String(s.chapters).padStart(4)} ch${s.animeId ? '' : '  (pas d anime associe)'}`).join('\n'))

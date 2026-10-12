@@ -3,6 +3,7 @@
 // ces titres ; les balises Open Graph de base restent dans index.html.
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { SCANS } from '../data/scans-catalog.js'
 
 const SUFFIX = ' — Brams Community'
 const DEFAULT = {
@@ -12,7 +13,7 @@ const DEFAULT = {
 
 // Clés = préfixe de path. La plus longue correspondance gagne.
 const SEO = {
-  '/animes-scan':    { title: 'Anime en streaming VOSTFR' + SUFFIX,            desc: 'Regarde tes animes préférés en streaming VOSTFR gratuitement : One Piece, et bien plus. Lecteur HD, sous-titres FR.' },
+  '/animes-scan':    { title: 'Anime en streaming VOSTFR & scans manga' + SUFFIX, desc: `Regarde tes animes en streaming VOSTFR et lis ${SCANS.length} mangas en scan : ${SCANS.slice(0, 6).map(s => s.title).join(', ')}… Lecteur HD, sous-titres FR, gratuit.` },
   '/tier-list':      { title: 'Tier List Anime & One Piece' + SUFFIX,          desc: 'Crée et partage ta tier list anime et One Piece. Classe personnages, openings, arcs et compare avec la communauté.' },
   '/tournoi':        { title: 'Tournoi Anime & Openings' + SUFFIX,             desc: 'Participe aux tournois d\'openings, endings et OST anime. Vote pour tes favoris et désigne le champion.' },
   '/akinator':       { title: 'Akinator Anime — devine ton personnage' + SUFFIX, desc: "Pense à un personnage d'anime, l'Akinator de Brams le devine. Spécial One Piece et animes populaires." },
@@ -24,6 +25,15 @@ const SEO = {
   '/fil':            { title: 'Le Fil — réseau anime' + SUFFIX,                desc: 'Le réseau social de la communauté anime Brams : publications, stories et discussions.' },
   '/equipage':       { title: 'Équipages' + SUFFIX,                            desc: 'Rejoins ou crée ton équipage pirate dans la communauté Brams.' },
   '/undercover':     { title: 'Undercover — jeu d\'imposteur' + SUFFIX,        desc: 'Joue à Undercover, le jeu d\'imposteur multijoueur de Brams Community.' },
+}
+
+// Une entrée par série du lecteur générique, tirée du catalogue des scans.
+for (const s of SCANS) {
+  const range = s.first != null ? ` (ch. ${s.first} à ${s.last})` : ''
+  SEO[`/manga/${s.slug}`] = {
+    title: `${s.title} — scan manga en ligne` + SUFFIX,
+    desc: `Lis ${s.title}${s.author ? ` de ${s.author}` : ''} en scan : ${s.chapters} chapitres${range}, gratuit, avec reprise de lecture.`,
+  }
 }
 
 export default function RouteSEO() {
