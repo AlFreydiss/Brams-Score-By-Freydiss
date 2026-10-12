@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { ProgressRing } from './ProgressRing.jsx'
 import AnimeBackdrop, { ANIME_MOTIFS } from './AnimeBackdrop.jsx'
 import VIDEOS_RAW from '../data/death-note-videos.json'
-import RecommendedBanner from './RecommendedBanner.jsx'
 import EpisodeWatch from './EpisodeWatch.jsx'
 import SeasonDivider from './SeasonDivider.jsx'
 
@@ -276,7 +275,6 @@ export default function DeathNotePage({ onClose }) {
                   </span>
                 </div>
 
-                <RecommendedBanner color2={COLOR2} withHakuji />
               </div>
             </div>
           </div>
