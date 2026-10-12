@@ -141,6 +141,7 @@ const MANGA_REGISTRY = {
   dbs:             { title: 'Dragon Ball Super',        color: '#f97316' },
   tpn:             { title: 'The Promised Neverland',   color: '#6c5ce7' },
   boruto:          { title: 'Boruto: Two Blue Vortex',  color: '#1d7fd4' },
+  'chainsaw-man':  { title: 'Chainsaw Man',             color: '#e0524a' },
 }
 
 function AuthLoadingScreen({ zIndex = 500 }) {

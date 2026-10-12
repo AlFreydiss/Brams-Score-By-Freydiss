@@ -78,6 +78,25 @@ export const SCANS = [
     "animeId": null
   },
   {
+    "slug": "chainsaw-man",
+    "title": "Chainsaw Man",
+    "color": "#e0524a",
+    "chapters": 145,
+    "first": 80,
+    "last": 231,
+    "cover": "https://pub-d5e23a54185c409aba2673d9a21d2b1d.r2.dev/manga/covers/chainsaw-man.webp",
+    "author": "Tatsuki Fujimoto",
+    "year": 2018,
+    "status": "termine",
+    "score": 84,
+    "genres": [
+      "Action",
+      "Horreur",
+      "Surnaturel"
+    ],
+    "animeId": null
+  },
+  {
     "slug": "dr-stone",
     "title": "Dr. Stone",
     "color": "#16a34a",

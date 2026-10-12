@@ -54,6 +54,7 @@ const META = {
   'black-clover':  { author: 'Yūki Tabata',                     year: 2014, status: 'termine', score: 69, genres: ['Action', 'Comédie', 'Fantasy'] },
   'blue-lock':     { author: 'Muneyuki Kaneshiro · Yūsuke Nomura', year: 2018, status: 'encours', score: 82, genres: ['Sport', 'Drame'] },
   boruto:          { author: 'Masashi Kishimoto · Mikio Ikemoto', year: 2023, status: 'encours', score: 75, genres: ['Action', 'Aventure'] },
+  'chainsaw-man':  { author: 'Tatsuki Fujimoto',                year: 2018, status: 'termine', score: 84, genres: ['Action', 'Horreur', 'Surnaturel'] },
   'dr-stone':      { author: 'Riichirō Inagaki · Boichi',       year: 2017, status: 'termine', score: 81, genres: ['Aventure', 'Science-fiction'] },
   'fire-force':    { author: 'Atsushi Ōkubo',                   year: 2015, status: 'termine', score: 78, genres: ['Action', 'Surnaturel'] },
   jjk:             { author: 'Gege Akutami',                    year: 2018, status: 'termine', score: 80, genres: ['Action', 'Surnaturel'] },
