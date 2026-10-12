@@ -24,7 +24,7 @@ export default function AboutModal({ onClose }) {
           </h2>
           <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.7 }}>
             Un serveur communautaire One Piece animé par le bot <strong style={{ color: '#fff' }}>Brams Score</strong>.
-            Système de rangs vocal, économie Berry, quiz animé et bien plus.
+            Système de rangs vocal, économie Berry, tournois anime (Bankai, OST, openings, endings) et bien plus.
           </p>
         </div>
 

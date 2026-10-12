@@ -21,10 +21,10 @@ const FEATURES = [
     stat: 'Top 100 en live',
   },
   {
-    emoji: '🎯', title: 'Quiz Animé', color: '#34D399',
-    desc: 'Des questions sur One Piece, Naruto, Dragon Ball et des dizaines d\'autres animes. Teste ta culture otaku face à la communauté.',
-    cmds: ['/question'],
-    stat: '500+ questions disponibles',
+    emoji: '⚔️', title: 'Tournois Anime', color: '#34D399',
+    desc: 'Bankai de Bleach, OST, openings, endings, rap FR, panels cultes, doublage VF contre VOSTFR : vote en 1v1 jusqu\'au champion.',
+    cmds: ['Bankai', 'OST', 'Openings', 'Endings'],
+    stat: 'Une dizaine de tournois',
   },
   {
     emoji: '🏦', title: 'Banque & Coffre', color: '#9B59B6',
@@ -156,7 +156,7 @@ export default function BotFeatures() {
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
               <div>
                 <h2 className="h2">Tout ce que Brams Score peut faire</h2>
-                <p className="sub">Un bot 100% custom. Économie, classements, quiz, profils — tout est pensé pour la communauté.</p>
+                <p className="sub">Un bot 100% custom. Économie, classements, tournois, profils — tout est pensé pour la communauté.</p>
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
