@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { useInView } from '../hooks/useInView.js'
+import { SCANS } from '../data/scans-catalog.js'
 
 const FEATURES = [
   {
     emoji: '💰', title: 'Économie Berry', color: '#FFD700',
-    desc: 'Gagne des Berrys en étant actif en vocal. Dépose-les en banque, surveille ta fortune et dépense-les dans la boutique pirate.',
-    cmds: ['/banque', '/retrait', '/depot'],
+    desc: 'Gagne des Berrys en étant actif en vocal et dépense-les dans la boutique : fonds d\'opening animés, curseurs custom et plus.',
+    cmds: ['Boutique'],
     stat: '∞ Berrys en circulation',
   },
   {
-    emoji: '📊', title: 'Stats vocales', color: '#3B82F6',
-    desc: 'Suis tes heures vocales en temps réel. Vois combien il te reste pour atteindre le rang suivant et compare avec les autres.',
+    emoji: '🏴‍☠️', title: 'Rangs vocaux', color: '#3B82F6',
+    desc: 'Monte en grade avec tes heures en vocal : Pirate, Shichibukai, Amiral, Yonkou, jusqu\'à Roi des pirates. Chaque rang débloque son rôle et sa carte.',
     cmds: ['/stats'],
-    stat: 'Mis à jour en temps réel',
+    stat: '5 rangs à décrocher',
   },
   {
     emoji: '🏆', title: 'Classement', color: '#E0524A',
@@ -22,21 +23,21 @@ const FEATURES = [
   },
   {
     emoji: '⚔️', title: 'Tournois Anime', color: '#34D399',
-    desc: 'Bankai de Bleach, OST, openings, endings, rap FR, panels cultes, doublage VF contre VOSTFR : vote en 1v1 jusqu\'au champion.',
+    desc: 'Bankai de Bleach, OST, openings, endings, rap FR, panels cultes : vote en 1v1 jusqu\'au champion.',
     cmds: ['Bankai', 'OST', 'Openings', 'Endings'],
     stat: 'Une dizaine de tournois',
   },
   {
-    emoji: '🏦', title: 'Banque & Coffre', color: '#9B59B6',
-    desc: 'Gère ton coffre, surveille tes revenus passifs et ta fortune accumulée. Fais des virements à tes nakamas.',
-    cmds: ['/banque', '/coffre', '/virement'],
-    stat: 'Intérêts quotidiens',
+    emoji: '📖', title: 'Scans Manga', color: '#9B59B6',
+    desc: 'Chainsaw Man, Kingdom, Jujutsu Kaisen, Solo Leveling, Blue Lock et d\'autres en scan, avec reprise de lecture là où tu t\'es arrêté.',
+    cmds: ['Chainsaw Man', 'Kingdom', 'JJK'],
+    stat: `${SCANS.length} mangas en ligne`,
   },
   {
-    emoji: '👤', title: 'Profil & Wanted', color: '#F97316',
-    desc: 'Personnalise ton profil, génère ta fiche d\'avis de recherche style One Piece et affiche ta prime aux autres membres.',
-    cmds: ['/monprofil', '/modifprofil'],
-    stat: 'Carte personnalisable',
+    emoji: '🎧', title: 'Blind Test & Akinator', color: '#F97316',
+    desc: 'Reconnais les openings en quelques secondes face aux autres, ou pense à un perso d\'anime et laisse l\'Akinator le deviner.',
+    cmds: ['Blind Test', 'Akinator'],
+    stat: 'Openings & persos anime',
   },
 ]
 
@@ -156,7 +157,7 @@ export default function BotFeatures() {
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
               <div>
                 <h2 className="h2">Tout ce que Brams Score peut faire</h2>
-                <p className="sub">Un bot 100% custom. Économie, classements, tournois, profils — tout est pensé pour la communauté.</p>
+                <p className="sub">Un bot 100% custom. Rangs, classements, tournois, scans — tout est pensé pour la communauté.</p>
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,

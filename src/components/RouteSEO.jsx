@@ -15,7 +15,7 @@ const DEFAULT = {
 const SEO = {
   '/animes-scan':    { title: 'Anime en streaming VOSTFR & scans manga' + SUFFIX, desc: `Regarde tes animes en streaming VOSTFR et lis ${SCANS.length} mangas en scan : ${SCANS.slice(0, 6).map(s => s.title).join(', ')}… Lecteur HD, sous-titres FR, gratuit.` },
   '/tier-list':      { title: 'Tier List Anime & One Piece' + SUFFIX,          desc: 'Crée et partage ta tier list anime et One Piece. Classe personnages, openings, arcs et compare avec la communauté.' },
-  '/tournoi':        { title: 'Tournoi Anime & Openings' + SUFFIX,             desc: 'Tournois anime en 1v1 : Bankai de Bleach, OST, openings, endings, rap FR, panels cultes, doublage VF contre VOSTFR. Vote pour tes favoris et désigne le champion.' },
+  '/tournoi':        { title: 'Tournoi Anime & Openings' + SUFFIX,             desc: 'Tournois anime en 1v1 : Bankai de Bleach, OST, openings, endings, rap FR, panels cultes. Vote pour tes favoris et désigne le champion.' },
   '/akinator':       { title: 'Akinator Anime — devine ton personnage' + SUFFIX, desc: "Pense à un personnage d'anime, l'Akinator de Brams le devine. Spécial One Piece et animes populaires." },
   '/blind-test':     { title: 'Blind Test Anime & Openings' + SUFFIX,          desc: 'Teste tes connaissances : reconnais les openings anime en un temps record. Blind Test multijoueur.' },
   '/wiki':           { title: 'Wiki & Scans Manga One Piece' + SUFFIX,         desc: 'Wiki communautaire One Piece : scans manga, fiches personnages, arcs et lore détaillé.' },
