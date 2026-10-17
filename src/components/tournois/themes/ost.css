@@ -1,0 +1,117 @@
+/* OST — « Générique ». Noir profond et or, serif élégante, une diagonale
+   dorée qui fend la scène. Le rouge et le bleu ne marquent que les côtés. */
+
+[data-t="ost"] {
+  --t-bg: #08090c;
+  --t-bg2: #101217;
+  --t-panel: #14161c;
+  --t-ink: #f4f0e8;
+  --t-mute: #a5a7b0;
+  --t-line: rgba(255, 255, 255, 0.12);
+  --t-accent: #c6a56b;
+  --t-accent-2: #e8d4a5;
+  --t-on-accent: #08090c;
+  --t-left: #e85d68;
+  --t-right: #66a7ff;
+  --t-seam: #e8d4a5;
+  --t-display: var(--t-serif-ost), Georgia, "Times New Roman", serif;
+  --t-ui: var(--t-ui-inter), system-ui, sans-serif;
+  --t-title-size: clamp(46px, 5.4vw, 104px);
+  --t-title-weight: 600;
+  --t-title-lh: 0.92;
+  --t-title-track: -0.005em;
+  --t-veil: rgba(8, 9, 12, 0.92);
+  --t-dim: brightness(0.6) saturate(0.95);
+  --t-lit: brightness(0.86) saturate(1.05);
+}
+
+/* Couronne et nom en or. */
+[data-t="ost"] .t-brand-name {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--t-accent-2);
+}
+
+/* Le carton : le tour en petit, le numéro du duel en grande serif. */
+[data-t="ost"] .t-card b {
+  font-weight: 500;
+  color: var(--t-accent-2);
+}
+
+/* Le trait doré, légèrement plus marqué qu'un filet. */
+[data-t="ost"] .t-seam-line {
+  stroke-width: 1.6;
+}
+
+/* Bouton d'écoute : un rond doré, le libellé à côté. */
+[data-t="ost"] .t-btn--play {
+  height: 48px;
+  padding: 0 18px 0 6px;
+  border-color: transparent;
+  background: transparent;
+}
+[data-t="ost"] .t-btn--play svg {
+  box-sizing: content-box;
+  padding: 11px;
+  border: 1px solid var(--t-accent);
+  border-radius: 50%;
+  color: var(--t-accent-2);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+[data-t="ost"] .t-btn--play:hover:not(:disabled) svg,
+[data-t="ost"] .t-btn--play[aria-pressed="true"] svg {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+}
+[data-t="ost"] .t-btn--play:hover:not(:disabled),
+[data-t="ost"] .t-btn--play[aria-pressed="true"] {
+  border-color: transparent;
+  background: transparent;
+}
+[data-t="ost"] .t-half--right .t-btn--play {
+  flex-direction: row-reverse;
+  padding: 0 6px 0 18px;
+}
+
+/* Choisir : contour fin, couleur du côté. */
+[data-t="ost"] .t-choose {
+  min-width: 220px;
+  font-family: var(--t-ui);
+}
+
+[data-t="ost"] .t-sub {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: var(--t-accent-2);
+}
+[data-t="ost"] .t-artist {
+  font-style: italic;
+  font-family: var(--t-display);
+  font-size: 19px;
+}
+
+/* Accueil : le titre en or clair. */
+[data-t="ost"] .t-setup-title {
+  font-weight: 600;
+}
+[data-t="ost"] .t-setup-title,
+[data-t="ost"] .t-page-title {
+  color: var(--t-ink);
+}
+[data-t="ost"] .t-eyebrow {
+  font-family: var(--t-display);
+  font-style: italic;
+  font-size: 20px;
+}
+
+@media (max-width: 760px) {
+  [data-t="ost"] .t-half--right .t-btn--play {
+    flex-direction: row;
+    padding: 0 18px 0 6px;
+  }
+  [data-t="ost"] .t-choose {
+    min-width: 0;
+  }
+}

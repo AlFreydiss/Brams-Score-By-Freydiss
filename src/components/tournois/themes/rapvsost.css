@@ -1,0 +1,143 @@
+/* Rap FR contre OST — « Clash ». Deux camps, deux couleurs : ambre pour le
+   rap, violet pour l'OST. La coupe est un éclair, les moitiés se percutent,
+   une barre en haut montre quel camp tient encore. */
+
+[data-t="rapvsost"] {
+  --rap: #f5b700;
+  --ost: #9b7bff;
+  --t-bg: #09090e;
+  --t-bg2: #111118;
+  --t-panel: #15151e;
+  --t-ink: #ffffff;
+  --t-mute: #a0a0b2;
+  --t-line: rgba(255, 255, 255, 0.12);
+  --t-accent: #ffffff;
+  --t-accent-2: #ffffff;
+  --t-on-accent: #09090e;
+  --t-left: var(--rap);
+  --t-right: var(--ost);
+  --t-seam: #ffffff;
+  --t-display: var(--t-display-clash), Impact, sans-serif;
+  --t-ui: var(--t-ui-inter), system-ui, sans-serif;
+  --t-title-size: clamp(54px, 6.4vw, 124px);
+  --t-title-weight: 900;
+  --t-title-lh: 0.86;
+  --t-title-track: 0.01em;
+  --t-title-case: uppercase;
+  --t-radius: 0;
+  --t-veil: rgba(9, 9, 14, 0.9);
+  --t-dim: brightness(0.5) contrast(1.08);
+  --t-lit: brightness(0.85) contrast(1.05);
+}
+
+/* Couleur du camp : liseré du côté, voile teinté, bouton. */
+[data-t="rapvsost"] [data-camp="rap"] {
+  --camp: var(--rap);
+}
+[data-t="rapvsost"] [data-camp="ost"] {
+  --camp: var(--ost);
+}
+[data-t="rapvsost"] .t-media::after {
+  background:
+    linear-gradient(to bottom, var(--t-veil) 0%, transparent 18%),
+    linear-gradient(to top, color-mix(in srgb, var(--camp, #000) 30%, var(--t-veil)) 0%, color-mix(in srgb, var(--t-veil) 50%, transparent) 36%, transparent 62%);
+}
+[data-t="rapvsost"] .t-side,
+[data-t="rapvsost"] .t-half--right .t-side {
+  color: var(--camp);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+[data-t="rapvsost"] .t-side::before,
+[data-t="rapvsost"] .t-half--right .t-side::before {
+  background: var(--camp);
+}
+[data-t="rapvsost"] .t-choose,
+[data-t="rapvsost"] .t-half--right .t-choose {
+  border: 2px solid var(--camp);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+[data-t="rapvsost"] .t-choose:hover:not(:disabled),
+[data-t="rapvsost"] .t-half--right .t-choose:hover:not(:disabled) {
+  background: var(--camp);
+  border-color: var(--camp);
+  color: #09090e;
+}
+
+/* L'éclair. */
+[data-t="rapvsost"] .t-seam-line {
+  stroke-width: 3;
+  stroke-linejoin: miter;
+  animation-duration: 0.22s;
+  animation-delay: 0.3s;
+}
+
+/* Entrée : les deux moitiés se percutent au centre. */
+[data-t="rapvsost"] .t-half--left .t-media {
+  animation: t-clash-l 0.5s cubic-bezier(0.3, 1.35, 0.5, 1) 0.45s both;
+}
+[data-t="rapvsost"] .t-half--right .t-media {
+  animation: t-clash-r 0.5s cubic-bezier(0.3, 1.35, 0.5, 1) 0.45s both;
+}
+[data-t="rapvsost"] .t-card {
+  animation: t-card-out 0.2s ease 0.4s forwards;
+}
+[data-t="rapvsost"] .t-card b {
+  font-size: clamp(80px, 14vw, 220px);
+}
+
+/* Rapport de force entre les camps. */
+.t-camps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  margin-right: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.t-camps span:first-child {
+  color: var(--rap);
+}
+.t-camps span:last-child {
+  color: var(--ost);
+}
+.t-camps i {
+  --r: 50%;
+  display: block;
+  width: 140px;
+  height: 6px;
+  background: linear-gradient(90deg, var(--rap) var(--r), var(--ost) var(--r));
+  transition: background 0.6s;
+}
+
+@keyframes t-clash-l {
+  from {
+    opacity: 0;
+    translate: -14% 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes t-clash-r {
+  from {
+    opacity: 0;
+    translate: 14% 0;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .t-camps {
+    display: none;
+  }
+}

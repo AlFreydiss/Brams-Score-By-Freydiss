@@ -1,0 +1,243 @@
+/* Panels — « Planche ». Une page de manga : papier, encre, deux cases
+   cerclées de noir séparées par la gouttière blanche. Le texte est dans des
+   cartouches de narration. Le perdant se tourne comme une page. */
+
+[data-t="panels"] {
+  --t-bg: #f1ece1;
+  --t-bg2: #e8e1d2;
+  --t-panel: #fbf8f1;
+  --t-ink: #121212;
+  --t-mute: #5a564e;
+  --t-line: rgba(18, 18, 18, 0.2);
+  --t-accent: #121212;
+  --t-accent-2: #c8202a;
+  --t-on-accent: #fbf8f1;
+  --t-left: #121212;
+  --t-right: #121212;
+  --t-seam: transparent;
+  --t-display: var(--t-display-pn), "Arial Black", sans-serif;
+  --t-ui: var(--t-ui-zen), "Yu Gothic UI", sans-serif;
+  --t-title-size: clamp(26px, 2.7vw, 48px);
+  --t-title-weight: 400;
+  --t-title-lh: 1.15;
+  --t-title-track: 0;
+  --t-radius: 0;
+  --t-veil: transparent;
+  --t-dim: contrast(1.04) brightness(0.97);
+  --t-lit: contrast(1.08) brightness(1);
+  --t-out: grayscale(1) brightness(0.8);
+}
+
+/* Marge de page autour des cases. */
+[data-t="panels"] .t-stage {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(18, 18, 18, 0.06) 1px, transparent 1.5px) 0 0 / 7px 7px,
+    var(--t-bg);
+}
+[data-t="panels"] .t-scene {
+  inset: 70px 22px 78px;
+}
+[data-t="panels"] .t-media {
+  background: #fff;
+}
+[data-t="panels"] .t-media::after {
+  display: none;
+}
+[data-t="panels"] .t-seam {
+  display: none;
+}
+
+/* Le cadre noir de chaque case, tracé à l'entrée. */
+[data-t="panels"] .t-frame path {
+  fill: none;
+  stroke: var(--t-ink);
+  stroke-width: 10;
+  stroke-linejoin: miter;
+  stroke-dasharray: 6000;
+  stroke-dashoffset: 6000;
+  animation: t-draw 0.9s cubic-bezier(0.6, 0, 0.3, 1) 0.15s forwards;
+}
+[data-t="panels"] .t-half--right .t-frame path {
+  animation-delay: 0.3s;
+}
+[data-t="panels"] .t-media {
+  animation: t-ink 0.6s ease 0.8s both;
+}
+
+/* Cartouches de narration. */
+[data-t="panels"] .t-info,
+[data-t="panels"] .t-half--right .t-info {
+  bottom: 22px;
+  max-width: min(32vw, 420px);
+  padding: 14px 16px 16px;
+  border: 2.5px solid var(--t-ink);
+  background: var(--t-panel);
+  box-shadow: 5px 5px 0 var(--t-ink);
+  text-align: left;
+}
+[data-t="panels"] .t-half--left .t-info {
+  left: 26px;
+}
+[data-t="panels"] .t-half--right .t-info {
+  right: 26px;
+}
+[data-t="panels"] .t-half--right .t-ctrl {
+  justify-content: flex-start;
+}
+[data-t="panels"] .t-side {
+  display: none;
+}
+[data-t="panels"] .t-sub {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--t-accent-2);
+}
+[data-t="panels"] .t-artist {
+  margin-top: 6px;
+  font-size: 13px;
+}
+[data-t="panels"] .t-ctrl {
+  margin-top: 12px;
+}
+[data-t="panels"] .t-btn {
+  height: 40px;
+  border: 2px solid var(--t-ink);
+  background: var(--t-panel);
+  color: var(--t-ink);
+}
+[data-t="panels"] .t-btn--icon {
+  width: 40px;
+}
+[data-t="panels"] .t-fav.is-on {
+  color: var(--t-accent-2);
+  border-color: var(--t-ink);
+}
+[data-t="panels"] .t-choose,
+[data-t="panels"] .t-half--right .t-choose {
+  width: 100%;
+  height: 44px;
+  margin-top: 10px;
+  border: 0;
+  background: var(--t-ink);
+  color: var(--t-on-accent);
+  font-family: var(--t-display);
+  font-weight: 400;
+}
+[data-t="panels"] .t-choose:hover:not(:disabled),
+[data-t="panels"] .t-half--right .t-choose:hover:not(:disabled) {
+  background: var(--t-accent-2);
+}
+
+/* Barres en encre sur papier. */
+[data-t="panels"] .t-round {
+  color: var(--t-ink);
+  text-shadow: none;
+}
+[data-t="panels"] .t-round b {
+  color: var(--t-accent-2);
+}
+[data-t="panels"] .t-tools a,
+[data-t="panels"] .t-tools button {
+  border: 2px solid var(--t-ink);
+  background: var(--t-panel);
+  color: var(--t-ink);
+}
+[data-t="panels"] .t-top-progress i {
+  background: var(--t-accent-2);
+}
+[data-t="panels"] .t-bar {
+  border-top: 2px solid var(--t-ink);
+  background: var(--t-bg);
+  backdrop-filter: none;
+}
+[data-t="panels"] .t-card b {
+  color: var(--t-ink);
+}
+[data-t="panels"] .t-card {
+  animation: t-card-out 0.3s ease 0.2s forwards;
+}
+[data-t="panels"] .t-toast {
+  border: 2.5px solid var(--t-ink);
+  box-shadow: 4px 4px 0 var(--t-ink);
+  color: var(--t-ink);
+}
+
+/* Le perdant se tourne comme une page. */
+[data-t="panels"] .t-half--left.is-lose {
+  transform-origin: left center;
+  animation: t-turn-l 0.8s cubic-bezier(0.5, 0, 0.7, 0.4) forwards;
+}
+[data-t="panels"] .t-half--right.is-lose {
+  transform-origin: right center;
+  animation: t-turn-r 0.8s cubic-bezier(0.5, 0, 0.7, 0.4) forwards;
+}
+
+@keyframes t-ink {
+  from {
+    opacity: 0;
+    filter: contrast(2) brightness(1.6);
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes t-turn-l {
+  to {
+    rotate: y 100deg;
+    opacity: 0;
+  }
+}
+@keyframes t-turn-r {
+  to {
+    rotate: y -100deg;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  [data-t="panels"] .t-scene {
+    inset: 60px 12px 66px;
+  }
+  [data-t="panels"] .t-info,
+  [data-t="panels"] .t-half--right .t-info {
+    max-width: calc(100% - 40px);
+  }
+  [data-t="panels"] .t-half--left .t-info {
+    top: 12px;
+    bottom: auto;
+    left: 12px;
+  }
+  [data-t="panels"] .t-half--right .t-info {
+    left: 12px;
+    right: auto;
+    bottom: 12px;
+  }
+}
+
+/* Mobile : cartouche compact, l'image reste visible. */
+@media (max-width: 760px) {
+  [data-t="panels"] .t-info,
+  [data-t="panels"] .t-half--right .t-info {
+    padding: 10px 12px 12px;
+    box-shadow: 3px 3px 0 var(--t-ink);
+  }
+  [data-t="panels"] .t-title {
+    font-size: clamp(18px, 5.4vw, 24px) !important;
+  }
+  [data-t="panels"] .t-btn--play span {
+    display: none;
+  }
+  [data-t="panels"] .t-btn--play {
+    width: 40px;
+    padding: 0;
+  }
+  [data-t="panels"] .t-ctrl {
+    margin-top: 8px;
+  }
+  [data-t="panels"] .t-choose,
+  [data-t="panels"] .t-half--right .t-choose {
+    height: 38px;
+    margin-top: 8px;
+  }
+}

@@ -1,0 +1,645 @@
+import { BookOpenText, Expand, Heart, Maximize, Minimize, Network, Pause, Play, RotateCcw, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Seam } from "@/lib/tournois/catalog";
+import { edgeFor, gapFor, shape } from "@/lib/tournois/geometry";
+import { runStatus } from "@/lib/tournois/stats";
+import { fetchPair } from "@/lib/versusStats.js";
+import { actions } from "@/lib/tournois/store";
+import type { Participant } from "@/lib/tournois/types";
+import { SeekBar } from "./progress";
+import { useTournament } from "./provider";
+import { Visual } from "./visual";
+
+export type Side = "left" | "right";
+
+export type RoundInfo = {
+  label: string;
+  index: number;
+  total: number;
+  remaining: number;
+  /** Avancement du tournoi entier, 0 → 1. */
+  progress: number;
+};
+
+type Props = {
+  left: Participant;
+  right: Participant;
+  round: RoundInfo | null;
+  isFinal?: boolean;
+  practice?: boolean;
+  blind?: boolean;
+  canUndo?: boolean;
+  onUndo?: () => void;
+  /** Enregistre le choix ; false = refusé (duel déjà tranché). */
+  onChoose: (side: Side, ms: number) => boolean;
+  /** Fin de l'animation du choix : la page peut afficher la suite. */
+  onDone: () => void;
+};
+
+// Durée de l'entrée propre à chaque univers avant que le duel soit jouable.
+const ENTER_MS: Record<Seam, number> = { diag: 1050, screens: 1250, feather: 1300, tape: 900, zigzag: 850, slash: 1000, gutter: 1150 };
+// Écart (px) entre les deux moitiés une fois coupées.
+const PART_PX: Record<Seam, number> = { diag: 6, screens: 0, feather: 0, tape: 0, zigzag: 4, slash: 0, gutter: 0 };
+
+const EASE = [0.2, 0.8, 0.2, 1] as const;
+const CUT = [0.7, 0, 0.2, 1] as const;
+
+function useNarrow() {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return narrow;
+}
+
+export function DuelScreen(props: Props) {
+  const narrow = useNarrow();
+  // Changer d'orientation recalcule toute la géométrie : on remonte la scène.
+  return <Stage key={narrow ? "v" : "h"} vertical={narrow} {...props} />;
+}
+
+function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, onChoose, onDone, vertical }: Props & { vertical: boolean }) {
+  const { meta, player, saved } = useTournament();
+  const navigate = useNavigate();
+  const reduce = useReducedMotion();
+  const seam = meta.seam;
+  const audio = meta.mode === "audio";
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const [phase, setPhase] = useState<"enter" | "open" | "picked">(reduce ? "open" : "enter");
+  const [picked, setPicked] = useState<Side | null>(null);
+  const [focus, setFocus] = useState<Side>("left");
+  const [toast, setToast] = useState<{ text: string; tone: "ok" | "err" } | null>(null);
+  const [settings, setSettings] = useState(false);
+  const [zoom, setZoom] = useState<Participant | null>(null);
+  const [full, setFull] = useState(false);
+  // Répartition des votes du site sur ce duel, lue juste après le choix.
+  const [split, setSplit] = useState<{ share: number; total: number } | null>(null);
+  const alive = useRef(true);
+  useEffect(
+    () => () => {
+      alive.current = false;
+    },
+    [],
+  );
+  const shownAt = useRef(0);
+
+  const s = useMotionValue(50);
+  const open = useMotionValue(reduce ? 1 : 0);
+  const w = useMotionValue(1200);
+  const h = useMotionValue(800);
+
+  // Le duel occupe tout l'écran sous les barres : on le remet en place s'il a
+  // défilé (bouton de départ cliqué plus bas dans la page, par exemple).
+  useEffect(() => {
+    if (window.scrollY > 0 && !document.fullscreenElement) window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  // Taille réelle de la scène (marges comprises pour la planche) : sert aux
+  // écarts en pixels et au tracé du trait.
+  useEffect(() => {
+    const el = sceneRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => {
+      w.set(e.contentRect.width);
+      h.set(e.contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [w, h]);
+
+  const geo = () => shape(seam, s.get(), vertical, gapFor(seam, vertical ? h.get() : w.get()));
+  const clipL = useTransform(() => geo().left);
+  const clipR = useTransform(() => geo().right);
+  const boxL = useTransform(() => `${geo().leftBox}%`);
+  const boxR = useTransform(() => `${geo().rightBox}%`);
+  const seamPath = useTransform(() => {
+    const pts = geo().seam;
+    const W = w.get();
+    const H = h.get();
+    return pts.map(([x, y], i) => `${i ? "L" : "M"}${((x * W) / 100).toFixed(1)} ${((y * H) / 100).toFixed(1)}`).join(" ");
+  });
+  const outlineL = useTransform(() => polyPath(geo().left, w.get(), h.get()));
+  const outlineR = useTransform(() => polyPath(geo().right, w.get(), h.get()));
+  const featherVar = useTransform(() => `${s.get()}%`);
+  const partL = useTransform(open, (o) => -o * PART_PX[seam]);
+  const partR = useTransform(open, (o) => o * PART_PX[seam]);
+
+  // Entrée : chaque univers a sa propre ouverture (CSS, selon data-phase), puis
+  // les deux moitiés s'écartent et le duel devient jouable.
+  useEffect(() => {
+    if (reduce) {
+      shownAt.current = performance.now();
+      return;
+    }
+    const enter = ENTER_MS[seam];
+    const a = animate(open, 1, { delay: (enter * 0.72) / 1000, duration: 0.8, ease: EASE });
+    const t = setTimeout(() => {
+      setPhase("open");
+      shownAt.current = performance.now();
+    }, enter);
+    return () => {
+      a.stop();
+      clearTimeout(t);
+    };
+  }, [reduce, seam, open]);
+
+  // Lecture automatique de la piste A, seulement si l'utilisateur l'a demandée.
+  useEffect(() => {
+    if (phase !== "open" || !audio || !saved.settings.autoplay) return;
+    const first = player.failed.has(left.id) ? right : left;
+    player.play(first);
+    // Une seule fois par duel, à l'ouverture.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // Le duel suivant repart d'un lecteur propre.
+  const { stop } = player;
+  useEffect(() => () => stop(), [stop]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const lean = (side: Side | null) => {
+    // Des écrans de régie ne bougent pas : pas de bascule au survol.
+    if (vertical || picked || phase !== "open" || seam === "screens") return;
+    animate(s, side === "left" ? 53 : side === "right" ? 47 : 50, { type: "spring", stiffness: 260, damping: 30 });
+  };
+
+  const choose = useCallback(
+    (side: Side) => {
+      if (picked || phase !== "open") return;
+      const ok = onChoose(side, Math.round(performance.now() - shownAt.current));
+      if (!ok) {
+        setToast({ text: "Ce duel est déjà tranché. Recharge la page pour reprendre.", tone: "err" });
+        return;
+      }
+      setPicked(side);
+      setPhase("picked");
+      setToast({ text: practice ? "Duel test : ce choix ne compte pas." : "Vote enregistré. L'aventure continue.", tone: "ok" });
+      animate(s, edgeFor(seam, side, vertical), { duration: reduce ? 0 : 0.8, ease: CUT });
+      if (meta.statsId) {
+        const statsId = meta.statsId;
+        // Laisse le vote arriver en base avant de lire la répartition.
+        setTimeout(() => {
+          fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
+            if (!r || !alive.current) return;
+            const total = r.a + r.b;
+            const mine = side === "left" ? r.a : r.b;
+            setSplit({ share: total ? Math.round((mine / total) * 100) : 0, total });
+          });
+        }, 400);
+      }
+      setTimeout(onDone, reduce ? 900 : meta.statsId ? 1900 : 1500);
+    },
+    [picked, phase, onChoose, practice, s, seam, vertical, reduce, onDone, meta.statsId, left.id, right.id],
+  );
+
+  const listen = useCallback(
+    (side: Side) => {
+      const p = side === "left" ? left : right;
+      setFocus(side);
+      if (!audio || player.failed.has(p.id)) return;
+      player.toggle(p);
+    },
+    [audio, left, right, player],
+  );
+
+  const toggleFull = useCallback(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else el.requestFullscreen?.().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const on = () => setFull(document.fullscreenElement === stageRef.current);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+
+  // Clavier : ← → écouter (ou choisir, pour les images), Entrée choisir,
+  // Espace pause, F favori, T tableau, Retour arrière annuler.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (zoom || settings) return;
+      const k = e.key;
+      if (k === "ArrowLeft" || k === "ArrowRight") {
+        e.preventDefault();
+        const side: Side = k === "ArrowLeft" ? "left" : "right";
+        if (audio) listen(side);
+        else choose(side);
+      } else if (k === "Enter" && t === document.body) {
+        e.preventDefault();
+        choose(focus);
+      } else if (k === " " && t === document.body && audio) {
+        e.preventDefault();
+        listen(focus);
+      } else if (k === "f" || k === "F") {
+        actions.toggleFavorite(meta.slug, (focus === "left" ? left : right).id);
+      } else if ((k === "t" || k === "T") && !practice) {
+        navigate(`/tournoi/${meta.path}/tableau`);
+      } else if (k === "Backspace" && canUndo && onUndo && !picked) {
+        e.preventDefault();
+        onUndo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [audio, listen, choose, focus, zoom, settings, meta.slug, left, right, practice, navigate, canUndo, onUndo, picked]);
+
+  const halves: { side: Side; p: Participant; clip: typeof clipL; box: typeof boxL; part: typeof partL; outline: typeof outlineL }[] = [
+    { side: "left", p: left, clip: clipL, box: boxL, part: partL, outline: outlineL },
+    { side: "right", p: right, clip: clipR, box: boxR, part: partR, outline: outlineR },
+  ];
+
+  return (
+    <div
+      ref={stageRef}
+      className={`t-stage ${vertical ? "is-v" : "is-h"} ${full ? "is-full" : ""}`}
+      data-seam={seam}
+      data-phase={phase}
+      data-picked={picked ?? undefined}
+      onPointerLeave={() => lean(null)}
+    >
+      <motion.div
+        ref={sceneRef}
+        className="t-scene"
+        initial={reduce ? { opacity: 0 } : "hidden"}
+        animate={reduce ? { opacity: 1 } : "shown"}
+        exit={reduce ? { opacity: 0 } : "gone"}
+        variants={SCENE_VARIANTS[seam]}
+        style={seam === "feather" ? ({ "--s": featherVar } as never) : undefined}
+      >
+        {halves.map(({ side, p, clip, box, part, outline }) => {
+          const loaded = player.id === p.id;
+          const playing = loaded && player.playing;
+          const loading = loaded && player.loading;
+          const failed = player.failed.has(p.id);
+          const fav = saved.favorites.includes(p.id);
+          const win = picked === side;
+          const lose = !!picked && !win;
+          const hidden = blind && !picked;
+          const sideName = meta.balanced && p.camp ? (p.camp === "rap" ? "Rap FR" : "OST anime") : meta.sides[side === "left" ? 0 : 1];
+          return (
+            <motion.section
+              key={side}
+              data-camp={p.camp}
+              aria-label={`${sideName} : ${hidden ? "titre caché" : `${p.title}, ${p.sub ?? ""}`}`}
+              className={`t-half t-half--${side} ${playing ? "is-playing" : ""} ${focus === side ? "is-focus" : ""} ${win ? "is-win" : ""} ${lose ? "is-lose" : ""} ${failed ? "is-failed" : ""}`}
+              style={{ clipPath: seam === "feather" ? undefined : clip, [vertical ? "y" : "x"]: part }}
+              onPointerEnter={(e) => e.pointerType !== "touch" && lean(side)}
+            >
+              <motion.div className="t-media" style={{ [vertical ? "height" : "width"]: box }}>
+                {hidden ? (
+                  <span className="t-blind" aria-hidden>
+                    {side === "left" ? "A" : "B"}
+                  </span>
+                ) : (
+                  <Visual p={p} player={player} posterAt={meta.posterAt} />
+                )}
+              </motion.div>
+              <button
+                type="button"
+                className="t-hit"
+                tabIndex={-1}
+                aria-hidden
+                disabled={phase !== "open"}
+                onClick={() => (audio ? listen(side) : choose(side))}
+              />
+              <div className="t-info">
+                {win ? <p className="t-kept">{practice ? "Ton choix (essai)" : isFinal ? meta.championLabel : "Qualifiée pour le tour suivant"}</p> : null}
+                <p className="t-side">{sideName}</p>
+                <p className="t-sub">{hidden ? "Titre caché jusqu'à ton choix" : p.sub}</p>
+                <h2 className={`t-title ${!hidden && p.title.length > 24 ? "is-long" : ""}`}>{hidden ? "À l'aveugle" : p.title}</h2>
+                {!hidden && (p.artist || p.note) ? (
+                  <p className="t-artist">{[p.artist, p.note].filter(Boolean).join(", ")}</p>
+                ) : null}
+                {win && split ? (
+                  <p className="t-rate">
+                    {split.total
+                      ? `Sur le site, ${split.share} % des votes de ce duel vont à ce choix (${split.total} vote${split.total > 1 ? "s" : ""}).`
+                      : "Aucun autre vote sur ce duel pour l’instant."}
+                  </p>
+                ) : null}
+                {failed ? <p className="t-fail">Lecture impossible : la source ne répond pas. Tu peux quand même voter.</p> : null}
+                {!picked ? (
+                  <>
+                    <div className="t-ctrl">
+                      {audio ? (
+                        <button
+                          type="button"
+                          className="t-btn t-btn--play"
+                          onClick={() => listen(side)}
+                          disabled={failed || phase === "enter"}
+                          aria-pressed={playing}
+                          aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${hidden ? sideName : p.title}`}
+                        >
+                          {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                          <span>{failed ? "Indisponible" : loading ? "Chargement…" : playing ? "Pause" : loaded && player.ended ? "Réécouter" : loaded ? "Reprendre" : "Écouter"}</span>
+                        </button>
+                      ) : (
+                        <button type="button" className="t-btn t-btn--play" onClick={() => setZoom(p)} disabled={hidden}>
+                          <Expand size={16} />
+                          <span>Agrandir</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className={`t-btn t-btn--icon t-fav ${fav ? "is-on" : ""}`}
+                        onClick={() => actions.toggleFavorite(meta.slug, p.id)}
+                        aria-pressed={fav}
+                        aria-label={fav ? `Retirer ${p.title} des favoris` : `Ajouter ${p.title} aux favoris`}
+                        title={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        disabled={hidden}
+                      >
+                        <Heart size={18} fill={fav ? "currentColor" : "none"} />
+                      </button>
+                    </div>
+                    {audio ? <SeekBar player={player} active={loaded} label={`Position dans ${hidden ? sideName : p.title}`} /> : null}
+                    <button
+                      type="button"
+                      className="t-choose"
+                      onClick={() => choose(side)}
+                      disabled={phase !== "open"}
+                      aria-label={`${meta.choose} : ${hidden ? sideName : p.title}`}
+                    >
+                      {meta.choose}
+                    </button>
+                  </>
+                ) : null}
+              </div>
+              {seam === "gutter" ? (
+                <svg className="t-frame" aria-hidden>
+                  <motion.path d={outline} />
+                </svg>
+              ) : null}
+            </motion.section>
+          );
+        })}
+
+        <svg className="t-seam" aria-hidden>
+          <defs>
+            <motion.path id={`seam-${meta.slug}`} d={seamPath} />
+          </defs>
+          <motion.path className="t-seam-line" d={seamPath} />
+          {seam === "tape" ? (
+            <>
+              <motion.path className="t-tape" d={seamPath} />
+              <text className="t-tape-text">
+                <textPath href={`#seam-${meta.slug}`} startOffset="50%" textAnchor="middle">
+                  {meta.sides[0]}  ·  {meta.sides[1]}
+                </textPath>
+              </text>
+            </>
+          ) : null}
+        </svg>
+
+        <div className="t-card" aria-hidden>
+          <Card seam={seam} round={round} isFinal={isFinal} practice={practice} />
+        </div>
+      </motion.div>
+
+      <div className="t-top">
+        <div className="t-top-progress" aria-hidden>
+          <i style={{ transform: `scaleX(${round?.progress ?? 0})` }} />
+        </div>
+        <p className="t-round">
+          {practice ? (
+            <span>Duel test : rien n’est enregistré</span>
+          ) : round ? (
+            <>
+              <span>{round.label}</span>
+              <b>
+                Duel {round.index} / {round.total}
+              </b>
+              <small>
+                {round.remaining} duel{round.remaining > 1 ? "s" : ""} restant{round.remaining > 1 ? "s" : ""} avant le champion
+              </small>
+            </>
+          ) : null}
+        </p>
+        {meta.balanced && !practice ? <CampMeter /> : null}
+        <div className="t-tools">
+          {canUndo && onUndo ? (
+            <button type="button" onClick={onUndo} title="Annuler mon dernier choix (Retour arrière)" disabled={!!picked}>
+              <RotateCcw size={16} />
+              <span>Annuler</span>
+            </button>
+          ) : null}
+          {!practice ? (
+            <Link to={`/tournoi/${meta.path}/tableau`} title="Voir tout le tableau (T)">
+              <Network size={16} />
+              <span>Tableau</span>
+            </Link>
+          ) : null}
+          <Link to={`/tournoi/${meta.path}/regles`} title="Règles du tournoi">
+            <BookOpenText size={16} />
+            <span>Règles</span>
+          </Link>
+          {audio ? (
+            <button type="button" onClick={() => setSettings((v) => !v)} aria-expanded={settings} title="Paramètres">
+              <Settings size={16} />
+              <span>Paramètres</span>
+            </button>
+          ) : null}
+        </div>
+        {settings ? (
+          <div className="t-settings" role="dialog" aria-label="Paramètres du duel">
+            <label className="t-switch">
+              <input type="checkbox" checked={saved.settings.autoplay} onChange={(e) => actions.setAutoplay(meta.slug, e.target.checked)} />
+              <span aria-hidden />
+              <span>
+                <b>Lancer la première piste à chaque duel</b>
+                <small>Désactivé par défaut : rien ne joue sans que tu le demandes.</small>
+              </span>
+            </label>
+            <p className="t-keys">
+              <kbd>←</kbd> <kbd>→</kbd> écouter, <kbd>Entrée</kbd> choisir, <kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
+            </p>
+            <button type="button" className="t-close" onClick={() => setSettings(false)} aria-label="Fermer les paramètres">
+              <X size={16} />
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <AudioBar left={left} right={right} audio={audio} full={full} onFull={toggleFull} />
+
+      <div className="t-toast-slot" role="status" aria-live="polite">
+        {toast ? <p className={`t-toast t-toast--${toast.tone}`}>{toast.text}</p> : null}
+      </div>
+
+      {zoom ? (
+        <div className="t-zoom" role="dialog" aria-label={zoom.title} onClick={() => setZoom(null)}>
+          <img src={zoom.visual.k === "img" ? zoom.visual.src : zoom.thumb} alt={zoom.title} />
+          <p>
+            {zoom.title} <small>{zoom.sub}</small>
+          </p>
+          <button type="button" className="t-close" onClick={() => setZoom(null)} aria-label="Fermer">
+            <X size={18} />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function polyPath(poly: string, W: number, H: number) {
+  const pts = poly
+    .slice(8, -1)
+    .split(",")
+    .map((pair) => pair.trim().split(" ").map((v) => parseFloat(v)));
+  return pts.map(([x, y], i) => `${i ? "L" : "M"}${((x * W) / 100).toFixed(1)} ${((y * H) / 100).toFixed(1)}`).join(" ") + " Z";
+}
+
+// Ouverture et fermeture de la scène, propres à chaque univers.
+const SCENE_VARIANTS: Record<Seam, Variants> = {
+  diag: {
+    hidden: { clipPath: "inset(50% 0% 50% 0%)" },
+    shown: { clipPath: "inset(0% 0% 0% 0%)", transition: { duration: 0.46, ease: CUT } },
+    gone: { clipPath: "inset(50% 0% 50% 0%)", transition: { duration: 0.36, ease: CUT } },
+  },
+  screens: {
+    hidden: { opacity: 1 },
+    shown: { opacity: 1 },
+    gone: { scaleY: 0.004, opacity: 0.6, transition: { duration: 0.28, ease: "easeIn" } },
+  },
+  feather: {
+    hidden: { opacity: 0 },
+    shown: { opacity: 1, transition: { duration: 1.1, ease: "easeOut" } },
+    gone: { opacity: 0, transition: { duration: 0.6 } },
+  },
+  tape: {
+    hidden: { opacity: 0, y: 24 },
+    shown: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
+    gone: { opacity: 0, y: -18, transition: { duration: 0.3 } },
+  },
+  zigzag: {
+    hidden: { opacity: 0, scale: 1.04 },
+    shown: { opacity: 1, scale: 1, transition: { duration: 0.35, ease: EASE } },
+    gone: { opacity: 0, scale: 0.98, transition: { duration: 0.25 } },
+  },
+  slash: {
+    hidden: { opacity: 1 },
+    shown: { opacity: 1 },
+    gone: { opacity: 0, transition: { duration: 0.35 } },
+  },
+  gutter: {
+    hidden: { opacity: 0, rotateY: -8, x: 40 },
+    shown: { opacity: 1, rotateY: 0, x: 0, transition: { duration: 0.6, ease: EASE } },
+    gone: { opacity: 0, rotateY: 12, x: -60, transition: { duration: 0.4, ease: "easeIn" } },
+  },
+};
+
+// Carton affiché avant la coupe, dans le ton de chaque univers.
+function Card({ seam, round, isFinal, practice }: { seam: Seam; round: RoundInfo | null; isFinal?: boolean; practice?: boolean }) {
+  const n = practice ? "Essai" : isFinal ? "Finale" : `${round?.index ?? ""}`;
+  const label = practice ? "Duel test" : (round?.label ?? "");
+  if (seam === "screens") {
+    return (
+      <>
+        <span className="t-bars" />
+        <b>{n}</b>
+      </>
+    );
+  }
+  if (seam === "slash") {
+    return (
+      <>
+        <span className="t-kanji">卍解</span>
+        <p>{label}</p>
+      </>
+    );
+  }
+  if (seam === "gutter") {
+    return (
+      <>
+        <p>Planche</p>
+        <b>{n}</b>
+      </>
+    );
+  }
+  return (
+    <>
+      <p>{label}</p>
+      <b>{n}</b>
+    </>
+  );
+}
+
+// Barre audio globale : une seule piste active, nommée, jamais d'ambiguïté.
+function AudioBar({ left, right, audio, full, onFull }: { left: Participant; right: Participant; audio: boolean; full: boolean; onFull: () => void }) {
+  const { player } = useTournament();
+  const active = player.id === left.id ? left : player.id === right.id ? right : null;
+  return (
+    <div className="t-bar">
+      {audio ? (
+        <>
+          <button
+            type="button"
+            className="t-bar-play"
+            onClick={() => active && player.toggle(active)}
+            disabled={!active}
+            aria-label={active ? (player.playing ? `Mettre en pause ${active.title}` : `Reprendre ${active.title}`) : "Aucune piste en lecture"}
+          >
+            {player.playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+          </button>
+          <p className="t-bar-now">
+            {active ? (
+              <>
+                <b>{active.title}</b>
+                <small>{active.sub}</small>
+              </>
+            ) : (
+              <small>Aucune piste en lecture. Lance l’une des deux pour comparer.</small>
+            )}
+          </p>
+          <SeekBar player={player} active={!!active} label={active ? `Position dans ${active.title}` : "Aucune piste en lecture"} className="t-bar-seek" />
+          <div className="t-vol">
+            <button type="button" onClick={player.toggleMute} aria-pressed={player.muted} aria-label={player.muted ? "Rétablir le son" : "Couper le son"} title={player.muted ? "Rétablir le son" : "Couper le son"}>
+              {player.muted || player.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+            <input type="range" min={0} max={100} value={player.muted ? 0 : player.volume} onChange={(e) => player.setVolume(Number(e.target.value))} aria-label="Volume" style={{ "--p": `${player.muted ? 0 : player.volume}%` } as React.CSSProperties} />
+          </div>
+        </>
+      ) : (
+        <p className="t-bar-now">
+          <small>Clique sur une moitié ou utilise ← → pour choisir.</small>
+        </p>
+      )}
+      <button type="button" className="t-bar-full" onClick={onFull} aria-label={full ? "Quitter le plein écran" : "Plein écran"} title={full ? "Quitter le plein écran" : "Plein écran"}>
+        {full ? <Minimize size={18} /> : <Maximize size={18} />}
+      </button>
+    </div>
+  );
+}
+
+// Rap contre OST : combien de chaque camp sont encore en lice.
+function CampMeter() {
+  const { saved } = useTournament();
+  const run = saved.run;
+  if (!run) return null;
+  const alive = { rap: 0, ost: 0 };
+  for (const m of run.rounds[0]?.matches ?? [])
+    for (const p of [m.left, m.right]) if (p && runStatus(run, p.id).kind !== "out") alive[p.camp === "rap" ? "rap" : "ost"]++;
+  const total = alive.rap + alive.ost || 1;
+  return (
+    <div className="t-camps" role="img" aria-label={`Encore en lice : ${alive.rap} rap, ${alive.ost} OST`}>
+      <span>Rap FR {alive.rap}</span>
+      <i style={{ "--r": `${(alive.rap / total) * 100}%` } as React.CSSProperties} />
+      <span>{alive.ost} OST anime</span>
+    </div>
+  );
+}

@@ -102,8 +102,8 @@ const DoublagePage       = lazyWithReload(() => import('./components/DoublagePag
 const DoublageStudioPage = lazyWithReload(() => import('./components/DoublageStudioPage.jsx'))
 const HigherLowerPage    = lazyWithReload(() => import('./components/HigherLowerPage.jsx'))
 const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipperPage.jsx'))
-const VersusPage         = lazyWithReload(() => import('./components/versus/VersusPage.jsx'))
-const OstArenaPage       = lazyWithReload(() => import('./components/ost/OstArenaPage.jsx'))
+// Tournois en duels plein écran (OST, openings, endings, rap, Bankai, cases) : une section par tournoi.
+const TournamentSection  = lazyWithReload(() => import('./components/tournois/section.tsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
 const GuessWhoPage       = lazyWithReload(() => import('./features/guesswho/GuessWhoPage.jsx'))
@@ -754,19 +754,18 @@ export default function App() {
         <Route path="/guess-who"        element={<GameLayout><GuessWhoPage /></GameLayout>} />
         {GuessWhoDemo && <Route path="/guess-who/demo" element={<GameLayout><GuessWhoDemo /></GameLayout>} />}
         <Route path="/guess-who/:code"  element={<GameLayout><GuessWhoPage /></GameLayout>} />
-        <Route path="/tournoi/ost" element={<PageLayout><OstArenaPage /></PageLayout>} />
+        <Route path="/tournoi/ost/*" element={<PageLayout><TournamentSection key="ost" slug="ost" /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
-        <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
-        <Route path="/tournoi/opening" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
-        <Route path="/tournoi/endings" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
-        <Route path="/tournoi/ending" element={<PageLayout><TournamentPage tournamentId="ending" /></PageLayout>} />
-        <Route path="/tournoi/rap-vs-ost" element={<PageLayout><TournamentPage tournamentId="rapvsost" /></PageLayout>} />
-        <Route path="/tournoi/rap-fr" element={<PageLayout><TournamentPage tournamentId="rapfr" /></PageLayout>} />
+        <Route path="/tournoi/openings/*" element={<PageLayout><TournamentSection key="openings" slug="openings" /></PageLayout>} />
+        <Route path="/tournoi/opening" element={<Navigate to="/tournoi/openings" replace />} />
+        <Route path="/tournoi/endings/*" element={<PageLayout><TournamentSection key="endings" slug="endings" /></PageLayout>} />
+        <Route path="/tournoi/ending" element={<Navigate to="/tournoi/endings" replace />} />
+        <Route path="/tournoi/rap-vs-ost/*" element={<PageLayout><TournamentSection key="rapvsost" slug="rapvsost" /></PageLayout>} />
+        <Route path="/tournoi/rap-fr/*" element={<PageLayout><TournamentSection key="rap" slug="rap" /></PageLayout>} />
         <Route path="/tournoi/ost-anime" element={<PageLayout><TournamentPage tournamentId="ostanime" /></PageLayout>} />
         <Route path="/tournoi/sakuga" element={<PageLayout><TournamentPage tournamentId="sakuga" /></PageLayout>} />
-        {/* Tournois en images : clé = kind, pour remonter l'état au changement de page. */}
-        <Route path="/tournoi/bankai" element={<PageLayout><VersusPage key="bankai" kind="bankai" /></PageLayout>} />
-        <Route path="/tournoi/panels" element={<PageLayout><VersusPage key="panels" kind="panels" /></PageLayout>} />
+        <Route path="/tournoi/bankai/*" element={<PageLayout><TournamentSection key="bankai" slug="bankai" /></PageLayout>} />
+        <Route path="/tournoi/panels/*" element={<PageLayout><TournamentSection key="panels" slug="panels" /></PageLayout>} />
         {/* Guerre du Doublage : pas un bracket, une série de duels VF/VOSTFR. */}
         <Route path="/tournoi/doublage" element={<PageLayout><DoublagePage /></PageLayout>} />
         {/* Studio : on double soi-même l'extrait et on repart avec le fichier. */}

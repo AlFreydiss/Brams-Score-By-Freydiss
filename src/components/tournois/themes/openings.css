@@ -1,0 +1,193 @@
+/* Openings — « Régie ». Deux écrans de contrôle côte à côte : mire de barres,
+   allumage cathodique, liseré rouge sur l'écran qui passe à l'antenne. Le
+   générique joue dans son propre écran. */
+
+[data-t="openings"] {
+  --t-bg: #050505;
+  --t-bg2: #0d0d0d;
+  --t-panel: #121212;
+  --t-ink: #f2f5f7;
+  --t-mute: #98a1a8;
+  --t-line: rgba(255, 255, 255, 0.1);
+  --t-accent: #ff3b30;
+  --t-accent-2: #f2f5f7;
+  --t-on-accent: #ffffff;
+  --t-left: #f2f5f7;
+  --t-right: #f2f5f7;
+  --t-seam: transparent;
+  --t-display: var(--t-display-op), Impact, sans-serif;
+  --t-ui: var(--t-ui-zen), "Yu Gothic UI", sans-serif;
+  --t-title-size: clamp(30px, 3.3vw, 60px);
+  --t-title-weight: 400;
+  --t-title-lh: 1.08;
+  --t-title-track: 0;
+  --t-radius: 0;
+  --t-veil: rgba(0, 0, 0, 0.6);
+  --t-dim: brightness(0.5) saturate(0.55) contrast(1.05);
+  --t-lit: brightness(1) saturate(1);
+}
+
+/* Cadre d'écran + étiquette de source en haut à gauche de chaque écran. */
+[data-t="openings"] .t-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.25s;
+}
+[data-t="openings"] .t-half.is-playing .t-media::before,
+[data-t="openings"] .t-half.is-win .t-media::before {
+  box-shadow: inset 0 0 0 4px var(--t-accent);
+}
+[data-t="openings"] .t-media::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 42%);
+}
+
+/* Bandeau d'incrustation, aligné à gauche dans les deux écrans. */
+[data-t="openings"] .t-half--right .t-info {
+  right: auto;
+  left: calc(50% + 32px);
+  text-align: left;
+}
+[data-t="openings"] .t-half--right .t-ctrl,
+[data-t="openings"] .t-half--right .t-seek {
+  justify-content: flex-start;
+}
+[data-t="openings"] .t-side {
+  padding: 4px 8px;
+  background: #000;
+  color: var(--t-ink);
+  letter-spacing: 0.06em;
+}
+[data-t="openings"] .t-side::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+}
+[data-t="openings"] .t-half.is-playing .t-side::before {
+  background: var(--t-accent);
+}
+[data-t="openings"] .t-half.is-playing .t-side::after {
+  content: "À l'antenne";
+  color: var(--t-accent);
+}
+[data-t="openings"] .t-half--right .t-side {
+  flex-direction: row;
+}
+[data-t="openings"] .t-sub {
+  display: inline-block;
+  margin: 0;
+  padding: 6px 12px;
+  border-left: 4px solid var(--t-accent);
+  background: #000;
+  color: var(--t-ink);
+  font-weight: 700;
+}
+[data-t="openings"] .t-title {
+  display: block;
+  margin-top: 2px;
+}
+[data-t="openings"] .t-title {
+  width: fit-content;
+  padding: 8px 14px 6px;
+  background: var(--t-ink);
+  color: #050505;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+[data-t="openings"] .t-artist {
+  display: inline-block;
+  margin: 2px 0 0;
+  padding: 5px 12px;
+  background: rgba(0, 0, 0, 0.85);
+  color: var(--t-ink);
+  font-size: 13.5px;
+}
+[data-t="openings"] .t-btn,
+[data-t="openings"] .t-choose {
+  background: rgba(0, 0, 0, 0.7);
+}
+[data-t="openings"] .t-choose,
+[data-t="openings"] .t-half--right .t-choose {
+  border-color: var(--t-accent);
+}
+[data-t="openings"] .t-choose:hover:not(:disabled),
+[data-t="openings"] .t-half--right .t-choose:hover:not(:disabled) {
+  background: var(--t-accent);
+  border-color: var(--t-accent);
+}
+
+/* Entrée : mire de barres, puis chaque écran s'allume comme un tube. */
+[data-t="openings"] .t-card {
+  animation: t-card-out 0.25s linear 0.85s forwards;
+}
+[data-t="openings"] .t-bars {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(to bottom, transparent 0 74%, #000 74% 76%, transparent 76%),
+    linear-gradient(90deg, #c0c0c0 0 14.28%, #c0c000 0 28.57%, #00c0c0 0 42.85%, #00c000 0 57.14%, #c000c0 0 71.42%, #c00000 0 85.71%, #0000c0 0);
+}
+[data-t="openings"] .t-card b {
+  padding: 6px 28px 2px;
+  background: #050505;
+  color: var(--t-ink);
+  font-size: clamp(56px, 8vw, 120px);
+}
+[data-t="openings"] .t-media {
+  animation: t-crt-on 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) 0.95s both;
+}
+[data-t="openings"] .t-half--right .t-media {
+  animation-delay: 1.05s;
+}
+[data-t="openings"] .t-half.is-lose .t-media {
+  animation: t-crt-off 0.45s ease-in forwards;
+}
+
+@keyframes t-crt-on {
+  0% {
+    opacity: 0;
+    transform: scale(0.85, 0.004);
+    filter: brightness(4);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1, 0.004);
+    filter: brightness(4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1, 1);
+  }
+}
+@keyframes t-crt-off {
+  0% {
+    transform: scale(1, 1);
+  }
+  60% {
+    transform: scale(1, 0.004);
+    filter: brightness(3);
+  }
+  100% {
+    transform: scale(0, 0.004);
+    filter: brightness(3);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  [data-t="openings"] .t-half--right .t-info {
+    left: 16px;
+  }
+}
+
+/* La ligne du tour en incrustation, lisible sur n'importe quelle image. */
+[data-t="openings"] .t-round {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.85);
+  text-shadow: none;
+}

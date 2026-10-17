@@ -1,0 +1,145 @@
+/* Rap FR — « Mixtape ». Bitume, jaune fluo, et une bande de scotch posée sur
+   la coupe : face A d'un côté, face B de l'autre. Le clip tourne derrière. */
+
+[data-t="rap"] {
+  --t-bg: #0f0f0f;
+  --t-bg2: #181818;
+  --t-panel: #1c1c1c;
+  --t-ink: #fafafa;
+  --t-mute: #a3a3a3;
+  --t-line: rgba(255, 255, 255, 0.12);
+  --t-accent: #f5e100;
+  --t-accent-2: #f5e100;
+  --t-on-accent: #0f0f0f;
+  --t-left: #f5e100;
+  --t-right: #f5e100;
+  --t-seam: #0f0f0f;
+  --t-display: var(--t-display-rap), Impact, sans-serif;
+  --t-ui: var(--t-ui-inter), system-ui, sans-serif;
+  --t-hand: var(--t-hand-rap), "Comic Sans MS", cursive;
+  --t-title-size: clamp(50px, 6vw, 116px);
+  --t-title-weight: 400;
+  --t-title-lh: 0.9;
+  --t-title-track: 0.005em;
+  --t-title-case: uppercase;
+  --t-radius: 0;
+  --t-veil: rgba(10, 10, 10, 0.9);
+  --t-dim: grayscale(0.6) contrast(1.1) brightness(0.5);
+  --t-lit: grayscale(0) contrast(1.05) brightness(0.82);
+}
+
+/* Le scotch : une bande jaune épaisse sur le trait, texte gravé dedans. */
+[data-t="rap"] .t-seam-line {
+  display: none;
+}
+[data-t="rap"] .t-tape,
+[data-t="rap"] .t-tape-text {
+  display: block;
+}
+[data-t="rap"] .t-tape {
+  fill: none;
+  stroke: var(--t-accent);
+  stroke-width: 46;
+  stroke-dasharray: 4000;
+  stroke-dashoffset: 4000;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.6));
+  animation: t-draw 0.42s cubic-bezier(0.7, 0, 0.2, 1) 0.35s forwards;
+}
+[data-t="rap"] .t-tape-text {
+  fill: #0f0f0f;
+  font: 800 14px var(--t-ui);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  dominant-baseline: middle;
+  opacity: 0;
+  animation: t-dusk 0.3s ease 0.75s forwards;
+}
+[data-picked] .t-tape,
+[data-picked] .t-tape-text {
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+/* Étiquette de cassette : l'artiste au marqueur, le titre en gros. */
+[data-t="rap"] .t-sub {
+  font-family: var(--t-hand);
+  font-size: 26px;
+  color: var(--t-accent);
+  transform: rotate(-2deg);
+  transform-origin: left;
+}
+[data-t="rap"] .t-half--right .t-sub {
+  transform-origin: right;
+}
+[data-t="rap"] .t-side {
+  color: var(--t-ink);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+[data-t="rap"] .t-side::before {
+  height: 10px;
+  width: 10px;
+  background: var(--t-accent);
+}
+[data-t="rap"] .t-btn {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.55);
+}
+[data-t="rap"] .t-choose,
+[data-t="rap"] .t-half--right .t-choose {
+  border: 0;
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+[data-t="rap"] .t-choose:hover:not(:disabled),
+[data-t="rap"] .t-half--right .t-choose:hover:not(:disabled) {
+  background: #fff;
+}
+
+/* Entrée : les deux faces arrivent de haut et de bas. */
+[data-t="rap"] .t-half--left .t-media {
+  animation: t-face-a 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.55s both;
+}
+[data-t="rap"] .t-half--right .t-media {
+  animation: t-face-b 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s both;
+}
+[data-t="rap"] .t-card {
+  animation: t-card-out 0.25s ease 0.5s forwards;
+}
+[data-t="rap"] .t-card b {
+  font-size: clamp(80px, 13vw, 200px);
+  color: var(--t-accent);
+}
+
+@keyframes t-face-a {
+  from {
+    opacity: 0;
+    translate: 0 -6%;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes t-face-b {
+  from {
+    opacity: 0;
+    translate: 0 6%;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (max-width: 760px) {
+  [data-t="rap"] .t-tape {
+    stroke-width: 34;
+  }
+  [data-t="rap"] .t-sub {
+    font-size: 20px;
+  }
+}

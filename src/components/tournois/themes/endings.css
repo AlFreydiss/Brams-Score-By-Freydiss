@@ -1,0 +1,208 @@
+/* Endings — « Générique de fin ». La nuit après l'épisode : pas de trait, les
+   deux génériques se fondent l'un dans l'autre au milieu, le texte monte
+   lentement, centré, comme un générique qui défile. */
+
+[data-t="endings"] {
+  --t-bg: #0d0c18;
+  --t-bg2: #15142a;
+  --t-panel: #191831;
+  --t-ink: #f3ead8;
+  --t-mute: #a8a1bd;
+  --t-line: rgba(243, 234, 216, 0.13);
+  --t-accent: #e8b4a0;
+  --t-accent-2: #f6d5c6;
+  --t-on-accent: #1a1024;
+  --t-left: #e8b4a0;
+  --t-right: #b9b1e3;
+  --t-seam: transparent;
+  --t-display: var(--t-serif-ed), Georgia, serif;
+  --t-ui: var(--t-ui-karla), system-ui, sans-serif;
+  --t-title-size: clamp(48px, 5.4vw, 100px);
+  --t-title-weight: 400;
+  --t-title-style: italic;
+  --t-title-lh: 1;
+  --t-title-track: -0.01em;
+  --t-radius: 0;
+  --t-veil: rgba(13, 12, 24, 0.9);
+  --t-dim: saturate(0.5) sepia(0.22) brightness(0.52);
+  --t-lit: saturate(0.95) sepia(0.05) brightness(0.86);
+  --t-out: saturate(0) brightness(0.15);
+}
+
+/* Fondu au milieu : chaque moitié s'efface en dégradé vers l'autre. */
+[data-t="endings"] .t-half--left {
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--s, 50%) - 9%), transparent calc(var(--s, 50%) + 9%));
+  mask-image: linear-gradient(90deg, #000 calc(var(--s, 50%) - 9%), transparent calc(var(--s, 50%) + 9%));
+}
+[data-t="endings"] .t-half--right {
+  -webkit-mask-image: linear-gradient(90deg, transparent calc(var(--s, 50%) - 9%), #000 calc(var(--s, 50%) + 9%));
+  mask-image: linear-gradient(90deg, transparent calc(var(--s, 50%) - 9%), #000 calc(var(--s, 50%) + 9%));
+}
+[data-t="endings"] .t-half--left .t-media {
+  width: calc(var(--s, 50%) + 10%) !important;
+}
+[data-t="endings"] .t-half--right .t-media {
+  width: calc(100% - var(--s, 50%) + 10%) !important;
+}
+[data-t="endings"] .is-v .t-half--left {
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(var(--s, 50%) - 7%), transparent calc(var(--s, 50%) + 7%));
+  mask-image: linear-gradient(180deg, #000 calc(var(--s, 50%) - 7%), transparent calc(var(--s, 50%) + 7%));
+}
+[data-t="endings"] .is-v .t-half--right {
+  -webkit-mask-image: linear-gradient(180deg, transparent calc(var(--s, 50%) - 7%), #000 calc(var(--s, 50%) + 7%));
+  mask-image: linear-gradient(180deg, transparent calc(var(--s, 50%) - 7%), #000 calc(var(--s, 50%) + 7%));
+}
+[data-t="endings"] .is-v .t-half--left .t-media {
+  height: calc(var(--s, 50%) + 8%) !important;
+}
+[data-t="endings"] .is-v .t-half--right .t-media {
+  height: calc(100% - var(--s, 50%) + 8%) !important;
+}
+[data-t="endings"] .t-seam {
+  display: none;
+}
+
+/* Texte centré dans chaque moitié. */
+[data-t="endings"] .t-half--left .t-info,
+[data-t="endings"] .t-half--right .t-info {
+  left: 6%;
+  right: auto;
+  width: 38%;
+  max-width: none;
+  text-align: center;
+}
+[data-t="endings"] .t-half--right .t-info {
+  left: 56%;
+}
+[data-t="endings"] .t-ctrl,
+[data-t="endings"] .t-seek,
+[data-t="endings"] .t-half--right .t-ctrl,
+[data-t="endings"] .t-half--right .t-seek {
+  justify-content: center;
+}
+[data-t="endings"] .t-side {
+  display: none;
+}
+[data-t="endings"] .t-sub {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--t-mute);
+}
+[data-t="endings"] .t-artist {
+  margin-top: 14px;
+  font-family: var(--t-display);
+  font-size: 22px;
+  color: var(--t-accent-2);
+}
+[data-t="endings"] .t-info {
+  animation: t-credits 1.9s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+[data-t="endings"] .t-half--right .t-info {
+  animation-delay: 0.85s;
+}
+
+/* Boutons en texte : souligné fin, pas de cadre. */
+[data-t="endings"] .t-btn,
+[data-t="endings"] .t-btn[aria-pressed="true"] {
+  border-color: transparent;
+  background: transparent;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--t-ink) 35%, transparent);
+  text-underline-offset: 6px;
+}
+[data-t="endings"] .t-btn:hover:not(:disabled) {
+  border-color: transparent;
+  text-decoration-color: var(--t-accent);
+}
+[data-t="endings"] .t-fav.is-on {
+  border-color: transparent;
+}
+[data-t="endings"] .t-choose,
+[data-t="endings"] .t-half--right .t-choose {
+  height: auto;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid var(--t-accent);
+  background: transparent;
+  font-family: var(--t-display);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 400;
+}
+[data-t="endings"] .t-choose:hover:not(:disabled),
+[data-t="endings"] .t-half--right .t-choose:hover:not(:disabled) {
+  background: transparent;
+  color: var(--t-accent-2);
+  border-color: var(--t-accent-2);
+}
+
+/* Entrée : tout sort du noir, lentement. */
+[data-t="endings"] .t-media {
+  animation: t-dusk 1.6s ease-out 0.2s both;
+}
+[data-t="endings"] .t-card {
+  animation: t-card-out 0.7s ease 0.5s forwards;
+}
+[data-t="endings"] .t-card b {
+  font-weight: 400;
+  color: var(--t-accent);
+}
+[data-t="endings"] .t-half.is-lose {
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+@keyframes t-credits {
+  from {
+    opacity: 0;
+    translate: 0 48px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes t-dusk {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  [data-t="endings"] .t-half--left .t-info,
+  [data-t="endings"] .t-half--right .t-info {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}
+
+/* Un masque ne limite pas les clics : chaque moitié ne réagit que sur sa
+   propre zone, sinon celle de droite capterait toute la scène. */
+[data-t="endings"] .t-half {
+  pointer-events: none;
+}
+[data-t="endings"] .t-hit,
+[data-t="endings"] .t-info {
+  pointer-events: auto;
+}
+[data-t="endings"] .t-half--left .t-hit {
+  clip-path: polygon(0 0, var(--s, 50%) 0, var(--s, 50%) 100%, 0 100%);
+}
+[data-t="endings"] .t-half--right .t-hit {
+  clip-path: polygon(var(--s, 50%) 0, 100% 0, 100% 100%, var(--s, 50%) 100%);
+}
+[data-t="endings"] .is-v .t-half--left .t-hit {
+  clip-path: polygon(0 0, 100% 0, 100% var(--s, 50%), 0 var(--s, 50%));
+}
+[data-t="endings"] .is-v .t-half--right .t-hit {
+  clip-path: polygon(0 var(--s, 50%), 100% var(--s, 50%), 100% 100%, 0 100%);
+}
+[data-t="endings"] .t-kept,
+[data-t="endings"] .t-half--right .t-kept {
+  margin-left: auto;
+  margin-right: auto;
+}
