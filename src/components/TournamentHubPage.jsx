@@ -71,7 +71,8 @@ function versusRun(cat) {
 // Le duel en cours de l'arène la plus avancée, jouable ici. Le vote passe par
 // le même bracket que la page du tournoi.
 function DuelImage({ p }) {
-  const [src, setSrc] = useState(() => (isYt(p.ytId) ? ytThumb(p.ytId, 'maxresdefault') : null))
+  // Les pistes du tournoi OST ont leur photo d'anime : pas de vignette YouTube.
+  const [src, setSrc] = useState(() => p.photo || (isYt(p.ytId) ? ytThumb(p.ytId, 'maxresdefault') : null))
   if (!src) return <span className="th-duel-ph" style={{ background: `linear-gradient(150deg, ${p.color || '#333'}55, #0b0b0c)` }} />
   return (
     <img

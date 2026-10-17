@@ -486,7 +486,7 @@ html.low-end .vr-eq.is-on i { animation-duration: .9s !important; animation-iter
 .vb-head button:hover { color: var(--ink); border-color: var(--line-2); }
 .vb-scroll { flex: 1; overflow: auto; padding: 18px 20px 24px; }
 .vb-grid { display: flex; gap: 18px; width: max-content; min-height: 100%; }
-.vb-col { flex: 0 0 210px; display: flex; flex-direction: column; }
+.vb-col { flex: 0 0 210px; display: flex; flex-direction: column; padding: 0; }
 .vb-col h3 { position: sticky; top: -18px; z-index: 1; margin: 0 0 10px; padding: 6px 0; background: #000; color: var(--mute); font-size: 12px; font-weight: 600; }
 .vb-matches { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; }
 .vb-match { border-radius: 6px; outline: 1px solid var(--line); outline-offset: -1px; overflow: hidden; }

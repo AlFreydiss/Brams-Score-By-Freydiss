@@ -103,6 +103,7 @@ const DoublageStudioPage = lazyWithReload(() => import('./components/DoublageStu
 const HigherLowerPage    = lazyWithReload(() => import('./components/HigherLowerPage.jsx'))
 const SakugaClipperPage  = lazyWithReload(() => import('./components/SakugaClipperPage.jsx'))
 const VersusPage         = lazyWithReload(() => import('./components/versus/VersusPage.jsx'))
+const OstArenaPage       = lazyWithReload(() => import('./components/ost/OstArenaPage.jsx'))
 const UndercoverPage     = lazyWithReload(() => import('./components/UndercoverPage.jsx'))
 const BramsPhonePage     = lazyWithReload(() => import('./features/garticphone/BramsPhonePage.jsx'))
 const GuessWhoPage       = lazyWithReload(() => import('./features/guesswho/GuessWhoPage.jsx'))
@@ -753,7 +754,7 @@ export default function App() {
         <Route path="/guess-who"        element={<GameLayout><GuessWhoPage /></GameLayout>} />
         {GuessWhoDemo && <Route path="/guess-who/demo" element={<GameLayout><GuessWhoDemo /></GameLayout>} />}
         <Route path="/guess-who/:code"  element={<GameLayout><GuessWhoPage /></GameLayout>} />
-        <Route path="/tournoi/ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
+        <Route path="/tournoi/ost" element={<PageLayout><OstArenaPage /></PageLayout>} />
         <Route path="/tournoi-ost" element={<PageLayout><TournamentPage tournamentId="ost" /></PageLayout>} />
         <Route path="/tournoi/openings" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />
         <Route path="/tournoi/opening" element={<PageLayout><TournamentPage tournamentId="opening" /></PageLayout>} />

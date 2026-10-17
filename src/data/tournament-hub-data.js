@@ -66,8 +66,8 @@ export const TOURNAMENT_CATEGORIES = [
   {
     id: 'ost',
     label: 'OST Arena',
-    tagline: 'Écoute, compare, vote.',
-    description: 'BGM, thèmes instrumentaux et classiques cultes. Deux musiques s\'affrontent, une seule avance.',
+    tagline: 'Rien que le son.',
+    description: '128 BGM d\'anime, sans vidéo : deux thèmes s\'affrontent, tu gardes ton préféré.',
     icon: '♪',
     route: '/tournoi/ost',
     status: 'active',   // 'active' | 'soon' | 'testing'
