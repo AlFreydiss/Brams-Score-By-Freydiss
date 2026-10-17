@@ -206,3 +206,7 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+[data-t="endings"] {
+  --viz: #f6d5c6;
+}

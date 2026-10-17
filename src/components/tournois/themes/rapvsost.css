@@ -141,3 +141,12 @@
     display: none;
   }
 }
+
+[data-t="rapvsost"] .t-viz {
+  --viz: var(--camp, #fff);
+}
+/* L'éclair s'épaissit sur les basses. */
+[data-t="rapvsost"] .t-seam-line {
+  stroke-width: calc(3px + var(--energy, 0) * 4px);
+  filter: drop-shadow(0 0 calc(var(--energy, 0) * 12px) rgba(255, 255, 255, 0.8));
+}

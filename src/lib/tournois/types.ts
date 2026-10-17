@@ -4,7 +4,9 @@ export type Visual =
   | { k: "img"; src: string; pos?: string; fallback?: string }
   | { k: "video"; src: string };
 
-export type Sound = { k: "yt"; id: string; start?: number; end?: number } | { k: "video"; end?: number };
+// « video » : la vidéo R2 du site, affichée dans la moitié et démutée pour l'écoute.
+// « audio » : un extrait officiel (Apple Music, 30 s), lu par le lecteur du site.
+export type Sound = { k: "video"; end?: number } | { k: "audio"; src: string; link?: string; preview?: boolean };
 
 export type Participant = {
   id: string;

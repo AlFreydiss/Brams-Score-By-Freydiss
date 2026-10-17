@@ -115,3 +115,13 @@
     min-width: 0;
   }
 }
+
+/* La diagonale respire avec les basses de la piste en cours. */
+[data-t="ost"] {
+  --viz: #c6a56b;
+}
+[data-t="ost"] .t-seam-line {
+  stroke-width: calc(1.6px + var(--energy, 0) * 3.2px);
+  filter: drop-shadow(0 0 calc(var(--energy, 0) * 14px) rgba(232, 212, 165, 0.7));
+  transition: stroke-width 0.08s linear;
+}

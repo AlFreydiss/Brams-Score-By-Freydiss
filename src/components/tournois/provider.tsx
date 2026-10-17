@@ -1,6 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { tournament, type TournamentMeta } from "@/lib/tournois/catalog";
-import { useSaved, type Saved } from "@/lib/tournois/store";
+import { reconcile, useSaved, type Saved } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
 import { usePlayer, type Player } from "./use-player";
 
@@ -39,6 +39,9 @@ export function TournamentProvider({ slug, participants, children }: { slug: str
     [register, toggle],
   );
 
+  // Partie sauvegardée avant un changement du catalogue : remise à jour avant l'affichage.
+  useLayoutEffect(() => reconcile(slug, byId), [slug, byId]);
+
   // Quitter les pages du tournoi coupe le son.
   useEffect(() => () => stop(), [stop]);
 
@@ -46,7 +49,7 @@ export function TournamentProvider({ slug, participants, children }: { slug: str
   return (
     <TournamentContext.Provider value={value}>
       {children}
-      <video ref={deck} className="hidden" playsInline preload="none" aria-hidden />
+      <video ref={deck} className="hidden" crossOrigin="anonymous" playsInline preload="none" aria-hidden />
     </TournamentContext.Provider>
   );
 }

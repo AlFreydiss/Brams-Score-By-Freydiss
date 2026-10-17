@@ -76,6 +76,32 @@ export function useSaved(slug: string): Saved {
 }
 
 /**
+ * Une partie fige ses participants. Quand le catalogue change (son, image,
+ * titre), ils sont remplacés par leur version actuelle ; si l'un d'eux a
+ * quitté le catalogue, la partie en cours est abandonnée. L'historique, les
+ * favoris et les champions restent.
+ */
+export function reconcile(slug: string, byId: Map<string, Participant>) {
+  const s = load(slug);
+  if (!s.run) return;
+  let missing = false;
+  let changed = false;
+  const fresh = (p: Participant | null) => {
+    if (!p) return p;
+    const cur = byId.get(p.id);
+    if (!cur) {
+      missing = true;
+      return p;
+    }
+    if (JSON.stringify(cur) !== JSON.stringify(p)) changed = true;
+    return cur;
+  };
+  const rounds = s.run.rounds.map((r) => ({ ...r, matches: r.matches.map((m) => ({ ...m, left: fresh(m.left), right: fresh(m.right) })) }));
+  if (missing) save(slug, { ...s, run: null, undo: null });
+  else if (changed) save(slug, { ...s, run: { ...s.run, rounds }, undo: null });
+}
+
+/**
  * Tire `size` participants du pool. « balanced » (Rap contre OST) prend autant
  * dans chaque camp et les apparie : au premier tour, chaque duel oppose un son
  * de rap à une OST, chacun d'un côté tiré au hasard.

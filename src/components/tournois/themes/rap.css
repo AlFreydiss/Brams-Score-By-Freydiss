@@ -143,3 +143,7 @@
     font-size: 20px;
   }
 }
+
+[data-t="rap"] {
+  --viz: #f5e100;
+}

@@ -26,12 +26,19 @@ export function Recap({ size, qualified, onClose }: { size: number; qualified: P
   }, [onClose]);
 
   return (
-    <div className="t-recap" role="dialog" aria-label={`${roundName(size)} terminés`}>
+    <motion.div
+      className="t-recap"
+      role="dialog"
+      aria-label={`${roundName(size)} terminés`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1, transition: { duration: 0.35 } }}
+      exit={{ opacity: 0, transition: { duration: 0.25 } }}
+    >
       <div className="t-recap-box">
         <p className="t-eyebrow">{roundName(size)} terminés</p>
-        <h2 className="t-recap-title">
+        <motion.h2 className="t-recap-title" initial={reduce ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }}>
           {qualified.length} {meta.unit} passent en {size === 4 ? "finale" : roundName(size / 2).toLowerCase()}
-        </h2>
+        </motion.h2>
         <ul className={`t-recap-grid ${dense ? "is-dense" : ""}`}>
           {qualified.map((p, i) => (
             <motion.li
@@ -50,6 +57,6 @@ export function Recap({ size, qualified, onClose }: { size: number; qualified: P
           Continuer vers {next}
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

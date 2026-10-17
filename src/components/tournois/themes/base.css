@@ -827,30 +827,6 @@
   overflow: hidden;
   isolation: isolate;
 }
-.t-setup-bg {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-}
-.t-setup-half {
-  position: absolute;
-  inset: 0;
-}
-.t-setup-half--left {
-  clip-path: polygon(0 0, 58% 0, 50% 100%, 0 100%);
-}
-.t-setup-half--right {
-  clip-path: polygon(58% 0, 100% 0, 100% 100%, 50% 100%);
-}
-.t-setup-half .t-visual {
-  filter: brightness(0.45) saturate(0.85);
-}
-.t-setup-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, var(--t-bg) 0%, color-mix(in srgb, var(--t-bg) 92%, transparent) 34%, color-mix(in srgb, var(--t-bg) 40%, transparent) 64%, transparent 100%);
-}
 .t-setup-box {
   position: relative;
   max-width: 680px;
@@ -1272,19 +1248,6 @@
   color: var(--t-mute);
 }
 
-/* Accueil du tournoi */
-.t-home-hero {
-  position: relative;
-  min-height: min(78dvh, 760px);
-  display: flex;
-  align-items: flex-end;
-  overflow: hidden;
-  isolation: isolate;
-}
-.t-home-copy {
-  max-width: 720px;
-  padding: 72px var(--t-side) 56px;
-}
 .t-home-ctas {
   display: flex;
   flex-wrap: wrap;
@@ -1791,15 +1754,6 @@
     white-space: normal;
     max-width: calc(100vw - 32px);
   }
-  .t-setup-half--left {
-    clip-path: polygon(0 0, 100% 0, 100% 24%, 0 32%);
-  }
-  .t-setup-half--right {
-    clip-path: polygon(0 32%, 100% 24%, 100% 56%, 0 56%);
-  }
-  .t-setup-bg::after {
-    background: linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--t-bg) 60%, transparent) 30%, var(--t-bg) 56%);
-  }
   .t-setup-box {
     padding-top: 30vh;
   }
@@ -1987,4 +1941,206 @@
   font-size: 14px;
   color: var(--t-accent-2);
   animation: t-rise 0.4s ease both;
+}
+
+/* ── Mouvement : jetons communs ───────────────────────────────────── */
+:where(.t-root) {
+  --t-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-ease-cut: cubic-bezier(0.7, 0, 0.2, 1);
+  --t-fast: 0.18s;
+  --t-mid: 0.42s;
+}
+.t-root {
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+}
+
+/* ── Vie des images ───────────────────────────────────────────────── */
+/* Fondu à l'arrivée : l'image n'apparaît qu'une fois décodée. */
+.t-visual {
+  opacity: 0;
+  transition:
+    opacity 0.6s var(--t-ease),
+    filter 0.7s var(--t-ease);
+}
+.t-visual.is-ready {
+  opacity: 1;
+}
+/* Pendant l'écoute, la photo avance lentement vers toi (et s'arrête avec la musique). */
+.t-stage .t-visual {
+  animation: t-kb 34s linear both paused;
+  translate: calc(var(--mx, 0) * -10px) calc(var(--my, 0) * -7px);
+  transition:
+    opacity 0.6s var(--t-ease),
+    filter 0.7s var(--t-ease),
+    translate 0.9s var(--t-ease);
+}
+.t-stage .t-half.is-playing .t-visual {
+  animation-play-state: running;
+}
+@keyframes t-kb {
+  from {
+    scale: 1.02;
+  }
+  to {
+    scale: 1.09;
+  }
+}
+
+/* ── Visualiseurs ─────────────────────────────────────────────────── */
+.t-viz {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--t-ease);
+}
+.t-viz.is-on {
+  opacity: 1;
+}
+.t-viz--spectrum,
+.t-viz--eq {
+  top: 58px;
+  height: 22%;
+  width: 46%;
+}
+.t-half--left .t-viz--spectrum,
+.t-half--left .t-viz--eq {
+  left: 0;
+}
+.t-half--right .t-viz--spectrum,
+.t-half--right .t-viz--eq {
+  right: 0;
+}
+.t-viz--eq {
+  top: 72px;
+  width: 34%;
+  height: 18%;
+}
+.t-half--left .t-viz--eq {
+  left: var(--t-side);
+}
+.t-half--right .t-viz--eq {
+  right: var(--t-side);
+}
+.t-viz--vu {
+  top: 26%;
+  height: 40%;
+  width: 28px;
+}
+.t-half--left .t-viz--vu {
+  left: 22px;
+}
+.t-half--right .t-viz--vu {
+  right: 22px;
+}
+.t-viz--wave {
+  top: 22%;
+  height: 16%;
+  width: 46%;
+}
+.t-half--left .t-viz--wave {
+  left: 2%;
+}
+.t-half--right .t-viz--wave {
+  right: 2%;
+}
+.is-v .t-viz--spectrum,
+.is-v .t-viz--eq,
+.is-v .t-viz--wave {
+  width: 100%;
+  left: 0;
+  right: 0;
+}
+.is-v .t-half--left .t-viz {
+  display: none;
+}
+
+/* Lien d'attribution des extraits. */
+/* Ligne à part : le lien ne colle jamais au bouton de choix. */
+.t-src-line {
+  margin: 8px 0 14px;
+  line-height: 1.3;
+}
+.t-src {
+  font-size: 12px;
+  color: var(--t-mute);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--t-mute) 40%, transparent);
+  text-underline-offset: 3px;
+}
+.t-src:hover {
+  color: var(--t-ink);
+}
+
+/* ── Boutons : réaction au geste ──────────────────────────────────── */
+.t-btn,
+.t-choose,
+.t-go,
+.t-ghost,
+.t-tools a,
+.t-tools button,
+.t-formats button,
+.t-chips button {
+  transition:
+    background var(--t-fast) ease,
+    border-color var(--t-fast) ease,
+    color var(--t-fast) ease,
+    scale 0.12s ease;
+}
+.t-btn:active:not(:disabled),
+.t-choose:active:not(:disabled),
+.t-go:active:not(:disabled),
+.t-formats button:active:not(:disabled) {
+  scale: 0.97;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-stage .t-visual {
+    animation: none;
+    translate: none;
+  }
+  .t-viz {
+    display: none;
+  }
+}
+
+/* ── Moments ──────────────────────────────────────────────────────── */
+/* Le gagnant s'affirme : le titre prend un peu d'ampleur, l'étiquette glisse. */
+.t-half.is-win .t-title {
+  animation: t-win 0.7s var(--t-ease) both;
+  transform-origin: left bottom;
+}
+.t-half--right.is-win .t-title {
+  transform-origin: right bottom;
+}
+.t-half.is-win .t-kept {
+  animation: t-rise 0.5s var(--t-ease) both;
+}
+@keyframes t-win {
+  from {
+    scale: 1;
+  }
+  45% {
+    scale: 1.06;
+  }
+  to {
+    scale: 1.03;
+  }
+}
+/* Champion : le classement de fin arrive en cascade. */
+.t-champ .t-rank-list li {
+  animation: t-rise 0.55s var(--t-ease) both;
+  animation-delay: calc(0.7s + var(--i, 0) * 70ms);
+}
+.t-champ .t-title {
+  animation: t-rise 0.9s var(--t-ease) 0.35s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-half.is-win .t-title,
+  .t-champ .t-rank-list li,
+  .t-champ .t-title {
+    animation: none;
+  }
 }

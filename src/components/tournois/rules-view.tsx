@@ -1,20 +1,25 @@
 import { Link } from "react-router-dom";
+import { fill } from "@/lib/tournois/catalog";
 import { useTournament } from "./provider";
 
 export function RulesView() {
   const { meta, participants } = useTournament();
   const audio = meta.mode === "audio";
-  const source =
-    meta.slug === "ost"
-      ? "Le son vient du lecteur YouTube officiel, intégré à la page sans son image : seule la photo de l'anime est affichée."
-      : meta.slug === "bankai" || meta.slug === "panels"
-        ? "Les images viennent des wikis de chaque série."
-        : "Les génériques et les clips sont lus depuis les vidéos du site ; quelques titres absents passent par le lecteur YouTube intégré.";
+  const SOURCES: Record<string, string> = {
+    ost: "Chaque piste est un extrait officiel de 30 secondes (Apple Music), lu par le lecteur du site. Le lien sous la barre de lecture mène au morceau complet.",
+    openings: "Le son vient des fichiers du site, les photos des séries de The Movie Database (TMDB). Quelques titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music).",
+    endings: "Le son vient des fichiers du site, les photos des séries de The Movie Database (TMDB). Quelques titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music).",
+    rap: "Les clips sont lus depuis les fichiers du site. Les titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music), avec la pochette du single.",
+    rapvsost: "Côté rap, les clips viennent des fichiers du site. Côté OST, un extrait officiel de 30 secondes (Apple Music) et une photo de la série (TMDB).",
+    bankai: "Les images viennent des wikis de chaque série.",
+    panels: "Les images viennent des wikis de chaque série.",
+  };
+  const source = SOURCES[meta.slug];
 
   return (
     <div className="t-page t-rules">
       <h1 className="t-page-title">Règles</h1>
-      <p className="t-lead">{meta.lead}</p>
+      <p className="t-lead">{fill(meta.lead, participants)}</p>
 
       <section>
         <h2>Le principe</h2>

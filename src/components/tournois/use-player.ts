@@ -1,66 +1,25 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Participant } from "@/lib/tournois/types";
 
-// Un seul son à la fois, d'où qu'il vienne :
-// - « yt » : lecteur YouTube présent dans la page mais jamais montré (OST) ;
-// - « video » : la vidéo R2 affichée dans la moitié, qu'on démute pour l'écouter.
-// Rien ne démarre sans un geste de l'utilisateur (le navigateur l'exige).
-
-type YTPlayer = {
-  loadVideoById(o: { videoId: string; startSeconds?: number; endSeconds?: number }): void;
-  playVideo(): void;
-  pauseVideo(): void;
-  seekTo(s: number, allowSeekAhead: boolean): void;
-  setVolume(v: number): void;
-  getCurrentTime(): number;
-  getDuration(): number;
-  destroy(): void;
-};
-type YTNamespace = { Player: new (el: HTMLElement, o: object) => YTPlayer };
-declare global {
-  interface Window {
-    YT?: YTNamespace;
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
-
-let ytPromise: Promise<YTNamespace> | null = null;
-function loadYT(): Promise<YTNamespace> {
-  if (window.YT?.Player) return Promise.resolve(window.YT);
-  if (ytPromise) return ytPromise;
-  ytPromise = new Promise((resolve) => {
-    const done = () => {
-      clearInterval(poll);
-      resolve(window.YT as YTNamespace);
-    };
-    const poll = setInterval(() => window.YT?.Player && done(), 200);
-    const prev = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
-      prev?.();
-      done();
-    };
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-  });
-  return ytPromise;
-}
+// Lecteur des tournois, sans YouTube. Un seul son à la fois :
+// - « video » : la vidéo R2 affichée dans la moitié, démutée pour l'écoute ;
+// - « audio » : un extrait officiel lu par un élément <audio> partagé.
+// Les deux passent par un analyseur Web Audio : les visualiseurs lisent le
+// vrai signal (les sources autorisent le cross-origin). Rien ne démarre sans
+// un geste de l'utilisateur.
 
 const VOL_KEY = "tournoi_volume";
 
-// Le volume d'une vidéo se règle sur l'élément lui-même.
-function setElementVolume(el: HTMLVideoElement | null | undefined | false, v: number) {
-  if (el) el.volume = v;
-}
-// Volume mémorisé pour tout le site. Lu via useSyncExternalStore : 70 côté
-// serveur, la vraie valeur dans le navigateur, sans écart d'hydratation.
+// Volume mémorisé pour tout le site, lu via useSyncExternalStore : 70 côté
+// serveur, la vraie valeur dans le navigateur.
 let volCache: number | null = null;
 const volListeners = new Set<() => void>();
 function readVolume() {
   if (volCache != null) return volCache;
   try {
-    const v = Number(localStorage.getItem(VOL_KEY));
-    volCache = Number.isFinite(v) && v >= 0 && localStorage.getItem(VOL_KEY) != null ? v : 70;
+    const raw = localStorage.getItem(VOL_KEY);
+    const v = Number(raw);
+    volCache = raw != null && Number.isFinite(v) && v >= 0 ? v : 70;
   } catch {
     volCache = 70;
   }
@@ -78,6 +37,43 @@ function subscribeVolume(cb: () => void) {
   return () => {
     volListeners.delete(cb);
   };
+}
+
+// Les propriétés d'un élément média se règlent sur l'élément lui-même.
+function setMedia(el: HTMLMediaElement | null | undefined, patch: { volume?: number; muted?: boolean }) {
+  if (!el) return;
+  if (patch.volume != null) el.volume = patch.volume;
+  if (patch.muted != null) el.muted = patch.muted;
+}
+
+// Graphe audio commun : chaque élément est branché une seule fois sur l'analyseur.
+let ctx: AudioContext | null = null;
+let analyser: AnalyserNode | null = null;
+const sources = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+function wire(el: HTMLMediaElement) {
+  try {
+    if (!ctx) {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctx = new AC();
+      analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.78;
+      analyser.connect(ctx.destination);
+    }
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    if (!sources.has(el) && analyser) {
+      const src = ctx.createMediaElementSource(el);
+      src.connect(analyser);
+      sources.set(el, src);
+    }
+  } catch {
+    // Sans Web Audio, la lecture continue : seul le visualiseur reste immobile.
+  }
+}
+export const getAnalyser = () => analyser;
+function unwire(el: HTMLMediaElement) {
+  sources.get(el)?.disconnect();
+  sources.delete(el);
 }
 
 export type PlayerState = {
@@ -98,22 +94,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   const current = useRef<Participant | null>(null);
   const videos = useRef(new Map<string, HTMLVideoElement>());
   const started = useRef(new WeakSet<HTMLVideoElement>());
-  const yt = useRef<YTPlayer | null>(null);
-  const ytReady = useRef(false);
-  const ytPending = useRef<Participant | null>(null);
-
-  const level = () => (mute.current ? 0 : readVolume());
-
-  useEffect(
-    () => () => {
-      try {
-        yt.current?.destroy();
-      } catch {}
-      yt.current = null;
-      ytReady.current = false;
-    },
-    [],
-  );
+  const audio = useRef<HTMLAudioElement | null>(null);
 
   const set = useCallback((id: string, patch: Partial<PlayerState>) => {
     setState((s) => ({ ...(s.id === id ? s : { ...IDLE, id }), ...patch }));
@@ -127,124 +108,125 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
     [set],
   );
 
-  const loadYt = useCallback((p: Participant) => {
-    if (p.sound?.k !== "yt") return;
-    yt.current?.loadVideoById({
-      videoId: p.sound.id,
-      startSeconds: p.sound.start || 0,
-      ...(p.sound.end ? { endSeconds: p.sound.end } : {}),
-    });
-  }, []);
-
-  const ensureYt = useCallback(async () => {
-    if (yt.current) return;
-    const YT = await loadYT();
-    if (yt.current) return;
-    let host = document.getElementById("t-yt-host");
-    if (!host) {
-      host = document.createElement("div");
-      host.id = "t-yt-host";
-      host.setAttribute("aria-hidden", "true");
-      host.style.cssText = "position:fixed;right:0;bottom:0;width:200px;height:200px;opacity:0;pointer-events:none;z-index:-1";
-      document.body.appendChild(host);
-    }
-    host.replaceChildren(document.createElement("div"));
-    yt.current = new YT.Player(host.firstChild as HTMLElement, {
-      width: 200,
-      height: 200,
-      playerVars: { autoplay: 1, controls: 0, rel: 0, playsinline: 1, disablekb: 1, iv_load_policy: 3, origin: window.location.origin },
-      events: {
-        onReady: (e: { target: YTPlayer }) => {
-          ytReady.current = true;
-          e.target.setVolume(level());
-          if (ytPending.current) {
-            loadYt(ytPending.current);
-            ytPending.current = null;
-          }
-        },
-        onStateChange: (e: { data: number }) => {
-          const p = current.current;
-          if (!p || p.sound?.k !== "yt") return;
-          if (e.data === 1) set(p.id, { playing: true, loading: false, ended: false });
-          else if (e.data === 2) set(p.id, { playing: false, loading: false });
-          else if (e.data === 0) set(p.id, { playing: false, loading: false, ended: true });
-          else if (e.data === 3) set(p.id, { loading: true });
-        },
-        onError: () => current.current && fail(current.current.id),
-      },
-    });
-  }, [loadYt, fail, set]);
-
-  // Les moitiés vidéo s'enregistrent ici ; leurs évènements pilotent l'état.
-  const register = useCallback(
-    (p: Participant, el: HTMLVideoElement | null) => {
-      if (!el) return;
-      if (videos.current.get(p.id) === el) return;
-      videos.current.set(p.id, el);
-      const mine = () => current.current?.id === p.id && videos.current.get(p.id) === el;
-      el.addEventListener("playing", () => mine() && set(p.id, { playing: true, loading: false, ended: false }));
-      el.addEventListener("pause", () => mine() && set(p.id, { playing: false, loading: false }));
-      el.addEventListener("ended", () => mine() && set(p.id, { playing: false, loading: false, ended: true }));
-      el.addEventListener("waiting", () => mine() && set(p.id, { loading: true }));
-      el.addEventListener("error", () => fail(p.id));
+  // Évènements communs d'un élément média, attribués à la piste en cours.
+  const bind = useCallback(
+    (el: HTMLMediaElement, owner: () => Participant | null) => {
+      const mine = () => {
+        const p = owner();
+        return p && current.current?.id === p.id ? p : null;
+      };
+      el.addEventListener("playing", () => {
+        const p = mine();
+        if (p) set(p.id, { playing: true, loading: false, ended: false });
+      });
+      el.addEventListener("pause", () => {
+        const p = mine();
+        if (p) set(p.id, { playing: false, loading: false });
+      });
+      el.addEventListener("ended", () => {
+        const p = mine();
+        if (p) set(p.id, { playing: false, loading: false, ended: true });
+      });
+      el.addEventListener("waiting", () => {
+        const p = mine();
+        if (p) set(p.id, { loading: true });
+      });
+      el.addEventListener("error", () => {
+        const p = owner();
+        if (p) fail(p.id);
+      });
       el.addEventListener("timeupdate", () => {
-        const end = p.sound?.k === "video" ? p.sound.end : undefined;
-        if (end && el.currentTime >= end && !el.paused) {
+        const p = mine();
+        const end = p?.sound?.k === "video" ? p.sound.end : undefined;
+        if (p && end && el.currentTime >= end && !el.paused) {
           el.pause();
-          if (mine()) set(p.id, { playing: false, ended: true });
+          set(p.id, { playing: false, ended: true });
         }
       });
     },
-    [fail, set],
+    [set, fail],
   );
+
+  // L'élément <audio> partagé des extraits, créé au premier besoin.
+  const audioEl = useCallback(() => {
+    if (!audio.current) {
+      const a = new Audio();
+      a.crossOrigin = "anonymous";
+      a.preload = "auto";
+      audio.current = a;
+      bind(a, () => (current.current?.sound?.k === "audio" ? current.current : null));
+    }
+    return audio.current;
+  }, [bind]);
+
+  useEffect(
+    () => () => {
+      audio.current?.pause();
+      audio.current = null;
+    },
+    [],
+  );
+
+  // Les moitiés vidéo s'enregistrent ici.
+  const register = useCallback(
+    (p: Participant, el: HTMLVideoElement | null) => {
+      if (!el || videos.current.get(p.id) === el) return;
+      videos.current.set(p.id, el);
+      bind(el, () => (videos.current.get(p.id) === el ? p : null));
+    },
+    [bind],
+  );
+
+  // Une vidéo qui quitte l'écran libère son branchement audio.
+  const release = useCallback((p: Participant, el: HTMLVideoElement) => {
+    if (videos.current.get(p.id) === el) videos.current.delete(p.id);
+    unwire(el);
+  }, []);
+
+  const elementOf = useCallback((p: Participant | null): HTMLMediaElement | null => {
+    if (!p?.sound) return null;
+    return p.sound.k === "video" ? (videos.current.get(p.id) ?? null) : audio.current;
+  }, []);
 
   const silence = useCallback(() => {
     const p = current.current;
-    if (!p) return;
-    if (p.sound?.k === "yt") {
-      try {
-        yt.current?.pauseVideo();
-      } catch {}
-    } else {
-      const el = videos.current.get(p.id);
-      if (el) {
-        el.pause();
-        el.muted = true;
-      }
-    }
-  }, []);
+    const el = elementOf(p);
+    if (!el) return;
+    el.pause();
+    if (p?.sound?.k === "video") setMedia(el, { muted: true });
+  }, [elementOf]);
+
+  const level = () => (mute.current ? 0 : readVolume() / 100);
 
   const play = useCallback(
-    async (p: Participant | null | undefined) => {
+    (p: Participant | null | undefined) => {
       if (!p?.sound) return;
-      const same = current.current?.id === p.id;
-      if (!same) silence();
+      if (current.current?.id !== p.id) silence();
       current.current = p;
+      let el: HTMLMediaElement | null;
       if (p.sound.k === "video") {
-        const el = videos.current.get(p.id);
-        if (!el) return;
-        if (!started.current.has(el) || el.ended) {
-          started.current.add(el);
-          el.currentTime = playFrom;
+        const v = videos.current.get(p.id) ?? null;
+        if (v && (!started.current.has(v) || v.ended)) {
+          started.current.add(v);
+          v.currentTime = playFrom;
         }
-        el.muted = false;
-        el.volume = level() / 100;
-        set(p.id, { loading: true, ended: false });
-        el.play().catch(() => set(p.id, { playing: false, loading: false }));
-        return;
+        el = v;
+      } else {
+        el = audioEl();
+        if (el.dataset.id !== p.id) {
+          el.src = p.sound.src;
+          el.dataset.id = p.id;
+        } else if (el.ended) el.currentTime = 0;
       }
-      if (same && ytReady.current) {
-        if (state.ended) yt.current?.seekTo(p.sound.start || 0, true);
-        yt.current?.playVideo();
-        return;
-      }
-      set(p.id, { loading: true, ended: false, playing: false });
-      await ensureYt();
-      if (ytReady.current) loadYt(p);
-      else ytPending.current = p;
+      if (!el) return;
+      wire(el);
+      setMedia(el, { muted: false, volume: level() });
+      set(p.id, { loading: true, ended: false });
+      el.play().catch(() => set(p.id, { playing: false, loading: false }));
     },
-    // level lit des refs : pas de dépendance à ajouter.
-    [ensureYt, loadYt, silence, playFrom, set, state.ended],
+    // level lit des valeurs hors React.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [silence, audioEl, playFrom, set],
   );
 
   const pause = useCallback(() => silence(), [silence]);
@@ -264,23 +246,20 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   }, [silence]);
 
   const applyLevel = useCallback(() => {
-    const v = level();
-    try {
-      yt.current?.setVolume(v);
-    } catch {}
-    const p = current.current;
-    const el = p && videos.current.get(p.id);
-    setElementVolume(el, v / 100);
-  }, []);
+    setMedia(elementOf(current.current), { volume: mute.current ? 0 : readVolume() / 100 });
+  }, [elementOf]);
 
-  const setVolume = useCallback((v: number) => {
-    writeVolume(v);
-    if (v > 0 && mute.current) {
-      mute.current = false;
-      setMutedState(false);
-    }
-    applyLevel();
-  }, [applyLevel]);
+  const setVolume = useCallback(
+    (v: number) => {
+      writeVolume(v);
+      if (v > 0 && mute.current) {
+        mute.current = false;
+        setMutedState(false);
+      }
+      applyLevel();
+    },
+    [applyLevel],
+  );
 
   const toggleMute = useCallback(() => {
     mute.current = !mute.current;
@@ -288,35 +267,25 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
     applyLevel();
   }, [applyLevel]);
 
-  // Position dans la piste active, en secondes depuis son début.
+  // Position dans la piste active, en secondes.
   const getTime = useCallback((): { now: number; total: number } | null => {
     const p = current.current;
-    if (!p?.sound) return null;
-    if (p.sound.k === "video") {
-      const el = videos.current.get(p.id);
-      if (!el) return null;
-      const total = p.sound.end || el.duration || 0;
-      return { now: el.currentTime, total: Number.isFinite(total) ? total : 0 };
-    }
-    const y = yt.current;
-    if (!y?.getCurrentTime) return null;
-    const start = p.sound.start || 0;
-    const end = p.sound.end || y.getDuration() || 0;
-    return { now: Math.max(0, y.getCurrentTime() - start), total: Math.max(0, end - start) };
-  }, []);
+    const el = elementOf(p);
+    if (!p || !el) return null;
+    const end = p.sound?.k === "video" ? p.sound.end : undefined;
+    const total = end || el.duration || 0;
+    return { now: el.currentTime, total: Number.isFinite(total) ? total : 0 };
+  }, [elementOf]);
 
-  const seek = useCallback((seconds: number) => {
-    const p = current.current;
-    if (!p?.sound) return;
-    if (p.sound.k === "video") {
-      const el = videos.current.get(p.id);
+  const seek = useCallback(
+    (seconds: number) => {
+      const el = elementOf(current.current);
       if (el) el.currentTime = seconds;
-    } else {
-      yt.current?.seekTo((p.sound.start || 0) + seconds, true);
-    }
-  }, []);
+    },
+    [elementOf],
+  );
 
-  return { ...state, failed, volume, muted, setVolume, toggleMute, play, pause, toggle, stop, getTime, seek, register };
+  return { ...state, failed, volume, muted, setVolume, toggleMute, play, pause, toggle, stop, getTime, seek, register, release };
 }
 
 export type Player = ReturnType<typeof usePlayer>;

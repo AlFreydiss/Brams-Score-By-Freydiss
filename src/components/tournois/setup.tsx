@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
+import { fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useClientDraw } from "@/lib/tournois/client-draw";
 import { useTournament } from "./provider";
-import { Visual } from "./visual";
+import { PosterScene } from "./poster";
 
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
 // duel : deux participants tirés au hasard, coupés dans le style du tournoi.
@@ -34,17 +35,11 @@ export function Setup() {
 
   return (
     <div className="t-setup">
-      <div className="t-setup-bg" aria-hidden>
-        {preview.map((p, i) => (
-          <div key={p.id} className={`t-setup-half t-setup-half--${i ? "right" : "left"}`}>
-            <Visual p={p} posterAt={meta.posterAt} />
-          </div>
-        ))}
-      </div>
+      <PosterScene pair={preview} />
       <div className="t-setup-box">
         <p className="t-eyebrow">{meta.signature}</p>
         <h1 className="t-setup-title">{meta.title}</h1>
-        <p className="t-lead">{meta.lead}</p>
+        <p className="t-lead">{fill(meta.lead, participants)}</p>
 
         <fieldset className="t-field">
           <legend>Nombre de {meta.unit}</legend>

@@ -1,4 +1,4 @@
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { champion, currentMatch, roundName, winnerOf } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
@@ -45,22 +45,25 @@ export function DuelPage() {
     };
   }, [run, cur, held]);
 
-  if (!run) return <Setup />;
-
-  const showMatch = held?.match ?? cur?.match ?? null;
+  const showMatch = run ? (held?.match ?? cur?.match ?? null) : null;
   const showSize = held?.roundSize ?? cur?.round.size ?? 0;
 
   return (
     <div className="t-duel-page">
+      {/* Départ, duels et champion se succèdent dans une seule transition. */}
       <AnimatePresence mode="wait">
-        {showMatch && showMatch.left && showMatch.right && !recap ? (
+        {!run ? (
+          <motion.div key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.4 } }} exit={{ opacity: 0, scale: 0.985, transition: { duration: 0.32, ease: [0.7, 0, 0.2, 1] } }}>
+            <Setup />
+          </motion.div>
+        ) : showMatch && showMatch.left && showMatch.right && !recap ? (
           <DuelScreen
             key={showMatch.id}
             left={showMatch.left}
             right={showMatch.right}
             round={info}
             isFinal={showSize === 2}
-            blind={run.blind}
+            blind={!!run?.blind}
             canUndo={!!saved.undo && !held}
             onUndo={() => actions.undo(meta.slug)}
             onChoose={(side, ms) => {
@@ -85,12 +88,14 @@ export function DuelPage() {
               }
             }}
           />
+        ) : !showMatch && champ && !recap ? (
+          <motion.div key="champ" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.5 } }} exit={{ opacity: 0 }}>
+            <Champion />
+          </motion.div>
         ) : null}
       </AnimatePresence>
 
-      {!showMatch && champ && !recap ? <Champion /> : null}
-
-      {recap ? <Recap size={recap.size} qualified={recap.qualified} onClose={() => setRecap(null)} /> : null}
+      <AnimatePresence>{recap ? <Recap key="recap" size={recap.size} qualified={recap.qualified} onClose={() => setRecap(null)} /> : null}</AnimatePresence>
     </div>
   );
 }

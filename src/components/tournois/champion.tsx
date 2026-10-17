@@ -57,8 +57,8 @@ export function Champion() {
         <section className="t-panel">
           <h2>Ton classement de la partie</h2>
           <ol className="t-rank-list">
-            {top.map((r) => (
-              <li key={r.p.id}>
+            {top.map((r, i) => (
+              <li key={r.p.id} style={{ "--i": i } as React.CSSProperties}>
                 <span className="t-rank-n">{r.rank}</span>
                 <Thumb p={r.p} />
                 <span className="t-rank-t">

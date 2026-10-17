@@ -11,6 +11,7 @@ import type { Participant } from "@/lib/tournois/types";
 import { SeekBar } from "./progress";
 import { useTournament } from "./provider";
 import { Visual } from "./visual";
+import { Visualizer } from "./visualizer";
 
 export type Side = "left" | "right";
 
@@ -271,7 +272,17 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       data-seam={seam}
       data-phase={phase}
       data-picked={picked ?? undefined}
-      onPointerLeave={() => lean(null)}
+      onPointerLeave={(e) => {
+        lean(null);
+        e.currentTarget.style.setProperty("--mx", "0");
+        e.currentTarget.style.setProperty("--my", "0");
+      }}
+      onPointerMove={(e) => {
+        if (e.pointerType !== "mouse" || reduce) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--mx", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+        e.currentTarget.style.setProperty("--my", (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
+      }}
     >
       <motion.div
         ref={sceneRef}
@@ -310,6 +321,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
                   <Visual p={p} player={player} posterAt={meta.posterAt} />
                 )}
               </motion.div>
+              {audio ? <Visualizer seam={seam} active={playing} side={side} /> : null}
               <button
                 type="button"
                 className="t-hit"
@@ -368,6 +380,13 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
                       </button>
                     </div>
                     {audio ? <SeekBar player={player} active={loaded} label={`Position dans ${hidden ? sideName : p.title}`} /> : null}
+                    {p.sound?.k === "audio" && p.sound.preview && !hidden ? (
+                      <p className="t-src-line">
+                        <a className="t-src" href={p.sound.link} target="_blank" rel="noopener noreferrer">
+                          Extrait de 30 s, morceau complet sur Apple Music
+                        </a>
+                      </p>
+                    ) : null}
                     <button
                       type="button"
                       className="t-choose"
