@@ -485,16 +485,19 @@ function Setup({ onStart }) {
       initial={{ opacity: 1 }}
       exit={reduce ? { opacity: 0 } : { clipPath: 'inset(50% 0% 50% 0%)', transition: { duration: 0.4, ease: CUT } }}
     >
-      <div className="oa-strips" aria-hidden>
-        {strips.map((p, i) => (
-          <motion.div key={p.id} className="oa-strip-img"
-            style={{ '--i': i, '--n': strips.length }}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: i % 2 ? 40 : -40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: EASE, delay: 0.08 * i }}>
-            <img src={p.photo} alt="" style={{ objectPosition: p.pos || '50% 50%' }} />
-          </motion.div>
-        ))}
+      {/* Les lamelles débordent exprès du cadre (biais) : on les rogne ici,
+          sinon l'écran de départ défile en largeur sur grand écran. */}
+      <div className="oa-strips-clip" aria-hidden>
+        <div className="oa-strips">
+          {strips.map((p, i) => (
+            <motion.div key={p.id} className="oa-strip-img"
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: i % 2 ? 40 : -40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: EASE, delay: 0.08 * i }}>
+              <img src={p.photo} alt="" style={{ objectPosition: p.pos || '50% 50%' }} />
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       <div className="oa-setup-box">
