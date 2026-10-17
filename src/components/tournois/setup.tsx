@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { fill } from "@/lib/tournois/catalog";
+import { ChevronDown } from "lucide-react";
+import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useClientDraw } from "@/lib/tournois/client-draw";
 import { useTournament } from "./provider";
@@ -23,7 +24,8 @@ export function Setup() {
   const capacity = meta.balanced ? 2 * Math.min(pool.filter((p) => p.camp === "rap").length, pool.filter((p) => p.camp !== "rap").length) : pool.length;
   const fits = meta.formats.filter((f) => f <= capacity);
   const effective = fits.includes(size) ? size : fits[fits.length - 1];
-  const showGroups = groups.length > 1 && groups.length <= 60;
+  // Rap contre OST tire autant dans chaque camp : pas de filtre par camp.
+  const showGroups = !meta.balanced && groups.length > 1 && groups.length <= 60;
 
   const toggle = (g: string) =>
     setOff((prev) => {
@@ -42,7 +44,7 @@ export function Setup() {
         <p className="t-lead">{fill(meta.lead, participants)}</p>
 
         <fieldset className="t-field">
-          <legend>Nombre de {meta.unit}</legend>
+          <legend>Nombre {de(meta.unit)}</legend>
           <div className="t-formats">
             {meta.formats.map((f) => (
               <button key={f} type="button" disabled={f > capacity} className={effective === f ? "is-on" : ""} aria-pressed={effective === f} onClick={() => setSize(f)}>
@@ -54,15 +56,19 @@ export function Setup() {
         </fieldset>
 
         {showGroups ? (
-          <fieldset className="t-field">
-            <legend>
-              {meta.groupLabel} <small>{pool.length} {meta.unit} retenus</small>
-              {off.size ? (
-                <button type="button" className="t-link" onClick={() => setOff(new Set())}>
-                  Tout reprendre
-                </button>
-              ) : null}
-            </legend>
+          // Filtre replié par défaut : le bouton de départ reste visible sans défiler.
+          <details className="t-field t-filter">
+            <summary>
+              <span>
+                {meta.groupLabel} <small>{off.size ? `${groups.length - off.size} sur ${groups.length}, ${pool.length} ${meta.unit} dans le tirage` : `${groups.length} sur ${groups.length}`}</small>
+              </span>
+              <ChevronDown size={16} aria-hidden />
+            </summary>
+            {off.size ? (
+              <button type="button" className="t-link t-filter-reset" onClick={() => setOff(new Set())}>
+                Tout reprendre
+              </button>
+            ) : null}
             <div className="t-chips">
               {groups.map(([g, n]) => (
                 <button key={g} type="button" className={off.has(g) ? "" : "is-on"} aria-pressed={!off.has(g)} onClick={() => toggle(g)}>
@@ -70,7 +76,7 @@ export function Setup() {
                 </button>
               ))}
             </div>
-          </fieldset>
+          </details>
         ) : (
           <p className="t-note">{participants.length} {meta.unit} dans le pool, {groups.length} {meta.groupLabel.toLowerCase()}.</p>
         )}

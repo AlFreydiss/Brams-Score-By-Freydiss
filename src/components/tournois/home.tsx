@@ -1,5 +1,5 @@
 import { Pause, Play } from "lucide-react";
-import { fill } from "@/lib/tournois/catalog";
+import { de, fill } from "@/lib/tournois/catalog";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { champion, currentMatch, roundName } from "@/lib/tournois/bracket";
@@ -163,8 +163,7 @@ export function TournamentHome() {
             <div className="t-program-head">
               <h2>La programmation</h2>
               <p>
-                Par nombre {/^[aeiouh]/i.test(meta.unit) ? "d’" : "de "}
-                {meta.unit} dans le tournoi{groups > LINEUP ? ` (${LINEUP} ${meta.groupLabel.toLowerCase()} sur ${groups})` : ""}.
+                Par nombre {de(meta.unit)} dans le tournoi{groups > LINEUP ? ` (${LINEUP} ${meta.groupLabel.toLowerCase()} sur ${groups})` : ""}.
               </p>
             </div>
             <ul className="t-lineup">
@@ -178,9 +177,9 @@ export function TournamentHome() {
           </section>
         ) : null}
 
-        {run || lastP || popular.length ? (
+        {cur || lastP || popular.length ? (
           <div className="t-home-grid">
-            {run ? (
+            {cur ? (
               <section className="t-panel t-panel--run">
                 <h2>Ta partie</h2>
                 {cur ? (
@@ -203,20 +202,12 @@ export function TournamentHome() {
                       Reprendre au duel {done + 1}
                     </Link>
                   </>
-                ) : finished ? (
-                  <>
-                    <p className="t-panel-big">Terminée</p>
-                    <p className="t-panel-sub">Champion : {finished.title}</p>
-                    <Link to={`${base}/duel`} className="t-link">
-                      Voir le résultat
-                    </Link>
-                  </>
                 ) : null}
               </section>
             ) : null}
 
             {lastP ? (
-              <section className="t-panel t-panel--champ">
+              <section className={`t-panel t-panel--champ ${cur ? "" : "is-solo"}`}>
                 <h2>Dernier champion</h2>
                 <figure className="t-champ-card">
                   <Thumb p={lastP} />
@@ -225,6 +216,11 @@ export function TournamentHome() {
                     <small>
                       {lastP.sub}, le {dateFmt.format(last.at)} sur {last.size} {meta.unit}
                     </small>
+                    {finished?.id === lastP.id ? (
+                      <Link to={`${base}/duel`} className="t-link">
+                        Voir le résultat de la partie
+                      </Link>
+                    ) : null}
                   </figcaption>
                 </figure>
               </section>

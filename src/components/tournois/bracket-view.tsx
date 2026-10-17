@@ -1,7 +1,7 @@
 import { Pause, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { currentMatch, roundName } from "@/lib/tournois/bracket";
+import { champion, currentMatch, roundName } from "@/lib/tournois/bracket";
 import type { Match, Participant } from "@/lib/tournois/types";
 import { useTournament } from "./provider";
 import { Thumb } from "./visual";
@@ -9,12 +9,14 @@ import { Thumb } from "./visual";
 const SHORT: Record<number, string> = { 2: "Finale", 4: "Demies", 8: "Quarts", 16: "Huitièmes", 32: "Seizièmes" };
 const short = (size: number) => SHORT[size] ?? `${size / 2}es`;
 
-// Tableau complet : une colonne par tour sur ordinateur, un tour à la fois
+// Tableau complet : une colonne par tour sur ordinateur, reliées par des
+// traits comme un tableau imprimé, et le champion au bout. Un tour à la fois
 // (onglets) sur mobile. Cliquer un duel affiche son détail.
 export function BracketView() {
   const { meta, saved, player, listen } = useTournament();
   const run = saved.run;
   const cur = run ? currentMatch(run.rounds) : null;
+  const champ = run ? champion(run.rounds) : null;
   const [tab, setTab] = useState<number | null>(null);
   const [sel, setSel] = useState<Match | null>(null);
   const nowRef = useRef<HTMLButtonElement>(null);
@@ -92,7 +94,7 @@ export function BracketView() {
                     <b>{p.title}</b>
                     <small>
                       {p.sub}
-                      {sel.winnerId === p.id ? ", qualifié" : ""}
+                      {sel.winnerId === p.id ? ", passe au tour suivant" : ""}
                     </small>
                   </span>
                   {meta.mode === "audio" ? (
@@ -127,7 +129,7 @@ export function BracketView() {
                   .map((m) => {
                     const now = m.id === cur?.match.id;
                     return (
-                      <li key={m.id}>
+                      <li key={m.id} className={m.status === "closed" && m.left && m.right ? "is-closed" : ""}>
                         <button
                           type="button"
                           ref={now ? nowRef : undefined}
@@ -144,6 +146,20 @@ export function BracketView() {
               </ol>
             </section>
           ))}
+          <section className="t-b-col t-b-col--champ" aria-label="Champion">
+            <h2>Champion</h2>
+            <div className="t-b-matches">
+              {champ ? (
+                <div className="t-b-champ">
+                  <Thumb p={champ} />
+                  <b>{champ.title}</b>
+                  <small>{champ.sub}</small>
+                </div>
+              ) : (
+                <div className="t-b-champ is-tbd">À venir</div>
+              )}
+            </div>
+          </section>
         </div>
       </div>
     </div>

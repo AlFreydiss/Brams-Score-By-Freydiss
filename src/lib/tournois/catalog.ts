@@ -191,6 +191,9 @@ export const TOURNAMENTS: TournamentMeta[] = [
 ];
 
 /** Remplace {n} (participants) et {g} (groupes) dans un texte du registre. */
+/** « de » élidé devant voyelle ou h muet : « d’OST », « de cases ». */
+export const de = (word: string) => (/^[aeiouhéèê]/i.test(word) ? `d’${word}` : `de ${word}`);
+
 export function fill(text: string, participants: { group: string }[]) {
   return text.replace("{n}", String(participants.length)).replace("{g}", String(new Set(participants.map((p) => p.group)).size));
 }

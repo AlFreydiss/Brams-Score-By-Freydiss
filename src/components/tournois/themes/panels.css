@@ -241,3 +241,41 @@
     margin-top: 8px;
   }
 }
+
+/* Champion : la case reste une case, encadrée sur la planche, pas agrandie
+   en plein écran (les scans n'ont pas cette définition). */
+[data-t="panels"] .t-champ-hero {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(18, 18, 18, 0.06) 1px, transparent 1.5px) 0 0 / 7px 7px,
+    var(--t-bg);
+}
+[data-t="panels"] .t-champ-media {
+  inset: 28px var(--t-side) 28px 46%;
+  border: 3px solid var(--t-ink);
+  background: var(--t-panel);
+  box-shadow: 8px 8px 0 var(--t-ink);
+}
+[data-t="panels"] .t-champ-media .t-visual {
+  filter: none;
+}
+[data-t="panels"] .t-champ-media::after {
+  display: none;
+}
+[data-t="panels"] .t-champ-txt {
+  right: auto;
+  max-width: 40%;
+}
+[data-t="panels"] .t-champ .t-choose {
+  width: auto;
+  padding: 0 28px;
+}
+@media (max-width: 760px) {
+  [data-t="panels"] .t-champ-media {
+    inset: 16px 16px 48% 16px;
+    box-shadow: 5px 5px 0 var(--t-ink);
+  }
+  [data-t="panels"] .t-champ-txt {
+    right: var(--t-side);
+    max-width: none;
+  }
+}

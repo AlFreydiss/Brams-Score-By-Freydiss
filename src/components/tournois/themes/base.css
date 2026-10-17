@@ -695,6 +695,21 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.t-bar-now.is-hint {
+  flex: 1;
+  width: auto;
+}
+.t-hint-touch {
+  display: none;
+}
+@media (hover: none) {
+  .t-hint-pointer {
+    display: none;
+  }
+  .t-hint-touch {
+    display: block;
+  }
+}
 .t-bar .t-bar-seek {
   flex: 1;
   margin: 0;
@@ -840,7 +855,7 @@
 .t-setup-title {
   margin: 0 0 16px;
   font-family: var(--t-display);
-  font-size: clamp(52px, 7vw, 112px);
+  font-size: calc(var(--t-hero-size, clamp(60px, 8.4vw, 140px)) * 0.82);
   font-weight: var(--t-title-weight);
   font-style: var(--t-title-style);
   line-height: 0.92;
@@ -907,6 +922,40 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+/* Filtre replié : une ligne, la flèche tourne à l'ouverture. */
+.t-filter summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.t-filter summary::-webkit-details-marker {
+  display: none;
+}
+.t-filter summary small {
+  margin-left: 6px;
+  font-weight: 400;
+  color: var(--t-mute);
+}
+.t-filter summary svg {
+  color: var(--t-mute);
+  transition: rotate var(--t-fast, 0.2s) ease;
+}
+.t-filter[open] summary svg {
+  rotate: 180deg;
+}
+.t-filter[open] .t-chips {
+  margin-top: 10px;
+  animation: t-rise 0.35s var(--t-ease) both;
+}
+.t-filter-reset {
+  margin: 6px 0 0;
 }
 .t-chips button {
   padding: 6px 10px;
@@ -1001,40 +1050,116 @@
   font-style: var(--t-title-style);
   text-transform: var(--t-title-case);
 }
-.t-recap-grid {
+/* Affiches du tour suivant : deux qualifiés par ligne, face à face. */
+.t-recap-pairs {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 16px 12px;
-  margin: 0 0 32px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
+  gap: 0 48px;
+  margin: 0 0 36px;
   padding: 0;
   list-style: none;
 }
-.t-recap-grid.is-dense {
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: 10px 8px;
+.t-recap-pairs li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--t-line);
 }
-.t-recap-grid li {
+.t-recap-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.t-recap-side.is-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+.t-recap-side > span {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  min-width: 0;
 }
-.t-recap-grid .t-thumb {
-  width: 100%;
+.t-recap-side .t-thumb {
+  flex: none;
+  width: 76px;
   aspect-ratio: 16 / 10;
-  margin-bottom: 4px;
 }
-.t-recap-grid b {
-  font-size: 13px;
+.t-recap-side b {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
-.t-recap-grid.is-dense b {
-  font-size: 11.5px;
-  font-weight: 500;
-}
-.t-recap-grid small {
+.t-recap-side small {
+  overflow: hidden;
   font-size: 12px;
   color: var(--t-mute);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.t-recap-x {
+  font: var(--t-title-weight) 15px var(--t-display);
+  font-style: italic;
+  color: var(--t-accent-2);
+}
+.t-recap-pairs.is-dense li {
+  gap: 10px;
+  padding: 7px 0;
+}
+.t-recap-pairs.is-dense .t-thumb {
+  width: 48px;
+}
+.t-recap-pairs.is-dense b {
+  font-size: 12.5px;
+}
+
+/* Avant la finale : l'affiche du dernier duel, coupée comme les duels. */
+.t-recap--final {
+  display: flex;
+  align-items: flex-end;
+  isolation: isolate;
+  background: var(--t-bg);
+}
+.t-recap--final .t-hero-scene {
+  z-index: -2;
+}
+.t-recap--final::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(to top, var(--t-bg) 0%, color-mix(in srgb, var(--t-bg) 72%, transparent) 38%, color-mix(in srgb, var(--t-bg) 10%, transparent) 78%);
+}
+.t-recap--final .t-recap-box {
+  width: 100%;
+  max-width: 1320px;
+  padding-bottom: clamp(40px, 9vh, 96px);
+}
+.t-recap--final .t-recap-title {
+  margin-bottom: 14px;
+  font-size: clamp(56px, 8vw, 128px);
+}
+.t-recap-vs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 0 0 30px;
+  font: var(--t-title-weight) clamp(22px, 2.4vw, 34px) / 1.15 var(--t-display);
+  font-style: var(--t-title-style);
+  text-transform: var(--t-title-case);
+}
+.t-recap-vs i {
+  font-size: 0.6em;
+  font-style: italic;
+  text-transform: none;
+  color: var(--t-accent-2);
 }
 
 /* ── Champion ─────────────────────────────────────────────────────── */
@@ -1075,11 +1200,96 @@
 .t-champ .t-ctrl .t-choose {
   margin-top: 0;
 }
+/* Corps : parcours et classement côte à côte, posés sur un filet. */
 .t-champ-body {
   display: grid;
-  gap: 32px;
-  max-width: 1100px;
-  padding: 40px var(--t-side) 80px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 40px 64px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 48px var(--t-side) 96px;
+}
+.t-champ-sec {
+  padding-top: 22px;
+  border-top: 1px solid var(--t-line);
+}
+.t-champ-sec:only-of-type {
+  grid-column: 1 / -1;
+}
+.t-champ-sec h2 {
+  margin: 0 0 18px;
+  font: var(--t-title-weight) clamp(24px, 2.2vw, 32px) / 1.05 var(--t-display);
+  font-style: var(--t-title-style);
+  text-transform: var(--t-title-case);
+}
+.t-champ-actions {
+  grid-column: 1 / -1;
+}
+/* Parcours : un fil vertical relie les tours, la finale en dernier. */
+.t-path {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.t-path::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 5px;
+  border-left: 1px solid var(--t-line);
+}
+.t-path li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 150px 92px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 14px;
+  padding: 12px 0 12px 26px;
+  animation: t-rise 0.55s var(--t-ease) both;
+  animation-delay: calc(0.6s + var(--i, 0) * 90ms);
+}
+.t-path li::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--t-accent-2);
+  border-radius: 50%;
+  background: var(--t-bg);
+  translate: 0 -50%;
+}
+.t-path li.is-final::before {
+  background: var(--t-accent-2);
+}
+.t-path-round {
+  grid-row: 1 / 3;
+  font-size: 12.5px;
+  color: var(--t-mute);
+}
+.t-path li.is-final .t-path-round {
+  color: var(--t-accent-2);
+  font-weight: 600;
+}
+.t-path .t-thumb {
+  grid-row: 1 / 3;
+  width: 92px;
+  aspect-ratio: 16 / 10;
+  filter: grayscale(0.85) brightness(0.7);
+}
+.t-path .t-rank-t small:first-child {
+  font-size: 11.5px;
+  color: var(--t-mute);
+}
+.t-path-ms {
+  grid-column: 3;
+  font-size: 12px;
+  color: var(--t-mute);
+  font-variant-numeric: tabular-nums;
 }
 .t-champ-actions {
   display: flex;
@@ -1117,7 +1327,7 @@
   margin-bottom: 28px;
 }
 .t-page-title {
-  margin: 0 0 10px;
+  margin: 0 0 18px;
   font: var(--t-title-weight) clamp(40px, 5vw, 72px) / 0.95 var(--t-display);
   font-style: var(--t-title-style);
   letter-spacing: var(--t-title-track);
@@ -1365,6 +1575,86 @@
   border-color: var(--t-accent);
   box-shadow: 0 0 0 1px var(--t-accent);
 }
+/* Traits du tableau : chaque duel a la même hauteur de case, son centre
+   tombe au milieu des deux duels qui le précèdent ; un filet horizontal sort
+   de chaque duel et un filet vertical réunit chaque paire. */
+.t-b-grid {
+  --t-b-line: color-mix(in srgb, var(--t-ink) 24%, transparent);
+}
+.t-b-matches > li {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+.t-b-match {
+  position: relative;
+}
+.t-b-col:not(.t-b-col--champ) .t-b-matches > li::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 9px;
+  border-top: 1px solid var(--t-b-line);
+}
+.t-b-col:not(.t-b-col--champ) .t-b-matches > li:nth-child(odd):not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 9px);
+  height: calc(100% + 8px);
+  border-left: 1px solid var(--t-b-line);
+}
+.t-b-col + .t-b-col .t-b-match::before,
+.t-b-col--champ .t-b-champ::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 10px;
+  border-top: 1px solid var(--t-b-line);
+}
+.t-b-matches > li.is-closed::after {
+  border-color: color-mix(in srgb, var(--t-accent-2) 45%, transparent);
+}
+.t-b-col--champ {
+  flex-basis: 200px;
+}
+.t-b-col--champ .t-b-matches {
+  justify-content: center;
+}
+.t-b-champ {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--t-accent-2);
+  border-radius: var(--t-radius);
+  background: var(--t-panel);
+}
+.t-b-champ .t-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 4px;
+}
+.t-b-champ b {
+  font: var(--t-title-weight) 18px / 1.15 var(--t-display);
+  font-style: var(--t-title-style);
+  text-transform: var(--t-title-case);
+  color: var(--t-accent-2);
+}
+.t-b-champ small {
+  font-size: 12px;
+  color: var(--t-mute);
+}
+.t-b-champ.is-tbd {
+  border-color: var(--t-line);
+  border-style: dashed;
+  color: var(--t-mute);
+  font-size: 13px;
+  text-align: center;
+}
 .t-b-entry {
   display: flex;
   align-items: center;
@@ -1595,8 +1885,11 @@
 }
 
 /* Règles */
+.t-rules > .t-lead {
+  margin: 0 0 40px;
+}
 .t-rules section {
-  margin: 0 0 28px;
+  margin: 0 0 32px;
 }
 .t-rules h2 {
   margin: 0 0 10px;
@@ -1767,6 +2060,11 @@
     display: flex;
     flex-basis: calc(100vw - 32px);
   }
+  .t-b-matches > li::after,
+  .t-b-matches > li::before,
+  .t-b-match::before {
+    display: none;
+  }
   .t-b-detail-row {
     grid-template-columns: 1fr;
   }
@@ -1922,9 +2220,53 @@
   .t-root .t-recap-title {
     font-size: clamp(30px, 9vw, 44px) !important;
   }
+  .t-champ-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .t-path li {
+    grid-template-columns: 64px minmax(0, 1fr);
+    padding-left: 24px;
+  }
+  .t-path-round {
+    grid-row: auto;
+    grid-column: 1 / -1;
+  }
+  .t-path .t-thumb {
+    grid-row: 2 / 4;
+    width: 64px;
+  }
+  .t-path .t-rank-t,
+  .t-path-ms {
+    grid-column: 2;
+  }
+  .t-path::before {
+    top: 26px;
+  }
+  .t-root .t-recap--final .t-recap-title {
+    font-size: clamp(52px, 16vw, 76px) !important;
+  }
+  .t-recap-pairs li {
+    gap: 8px;
+  }
+  .t-recap-side {
+    gap: 8px;
+  }
+  .t-recap-side .t-thumb {
+    width: 44px;
+  }
+  .t-recap-side b {
+    font-size: 13px;
+  }
   .t-root .t-panel h2,
   .t-root .t-b-col h2 {
     font-size: 14px !important;
+  }
+  /* Intertitres de l'accueil et de la fin de partie : taille d'affiche. */
+  .t-root .t-home-body .t-panel h2,
+  .t-root .t-program-head h2,
+  .t-root .t-champ-sec h2 {
+    font-size: 26px !important;
   }
   .t-root .t-rules h2 {
     font-size: 22px !important;

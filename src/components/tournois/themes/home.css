@@ -694,3 +694,22 @@
     font-size: 30px;
   }
 }
+
+/* Dernier champion seul sur sa ligne : image et légende côte à côte. */
+.t-home-body .t-home-grid > .t-panel--champ.is-solo {
+  grid-column: 1 / -1;
+}
+.t-home-body .t-home-grid > .t-panel--champ.is-solo .t-champ-card {
+  grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+  align-items: end;
+  gap: 28px;
+}
+.t-champ-card .t-link {
+  display: inline-block;
+  margin-top: 14px;
+}
+@media (max-width: 760px) {
+  .t-home-body .t-home-grid > .t-panel--champ.is-solo .t-champ-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

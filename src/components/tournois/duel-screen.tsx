@@ -331,7 +331,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
                 onClick={() => (audio ? listen(side) : choose(side))}
               />
               <div className="t-info">
-                {win ? <p className="t-kept">{practice ? "Ton choix (essai)" : isFinal ? meta.championLabel : "Qualifiée pour le tour suivant"}</p> : null}
+                {win ? <p className="t-kept">{practice ? "Ton choix (essai)" : isFinal ? meta.championLabel : "Passe au tour suivant"}</p> : null}
                 <p className="t-side">{sideName}</p>
                 <p className="t-sub">{hidden ? "Titre caché jusqu'à ton choix" : p.sub}</p>
                 <h2 className={`t-title ${!hidden && p.title.length > 24 ? "is-long" : ""}`}>{hidden ? "À l'aveugle" : p.title}</h2>
@@ -634,8 +634,9 @@ function AudioBar({ left, right, audio, full, onFull }: { left: Participant; rig
           </div>
         </>
       ) : (
-        <p className="t-bar-now">
-          <small>Clique sur une moitié ou utilise ← → pour choisir.</small>
+        <p className="t-bar-now is-hint">
+          <small className="t-hint-pointer">Clique sur une moitié pour la choisir, ou utilise ← →.</small>
+          <small className="t-hint-touch">Touche une moitié pour la choisir.</small>
         </p>
       )}
       <button type="button" className="t-bar-full" onClick={onFull} aria-label={full ? "Quitter le plein écran" : "Plein écran"} title={full ? "Quitter le plein écran" : "Plein écran"}>
