@@ -46,6 +46,37 @@ function setMedia(el: HTMLMediaElement | null | undefined, patch: { volume?: num
   if (patch.muted != null) el.muted = patch.muted;
 }
 
+// Fondus de volume : chaque lecture démarre en douceur et chaque pause
+// s'éteint en ~0,16 s, sans clic. Un nouveau fondu annule le précédent.
+const fades = new WeakMap<HTMLMediaElement, number>();
+function fade(el: HTMLMediaElement, to: number, ms: number, done?: () => void) {
+  const prev = fades.get(el);
+  if (prev) cancelAnimationFrame(prev);
+  fades.delete(el);
+  const from = el.volume;
+  if (ms <= 0 || Math.abs(from - to) < 0.01) {
+    el.volume = to;
+    done?.();
+    return;
+  }
+  const t0 = performance.now();
+  const step = (now: number) => {
+    const k = Math.min(1, (now - t0) / ms);
+    el.volume = Math.max(0, Math.min(1, from + (to - from) * k));
+    if (k < 1) fades.set(el, requestAnimationFrame(step));
+    else {
+      fades.delete(el);
+      done?.();
+    }
+  };
+  fades.set(el, requestAnimationFrame(step));
+}
+const stopFade = (el: HTMLMediaElement | null | undefined) => {
+  const id = el && fades.get(el);
+  if (id) cancelAnimationFrame(id);
+  if (el) fades.delete(el);
+};
+
 // Graphe audio commun : chaque élément est branché une seule fois sur l'analyseur.
 let ctx: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
@@ -220,16 +251,30 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
       }
       if (!el) return;
       wire(el);
-      setMedia(el, { muted: false, volume: level() });
+      stopFade(el);
+      setMedia(el, { muted: false, volume: 0 });
       set(p.id, { loading: true, ended: false });
-      el.play().catch(() => set(p.id, { playing: false, loading: false }));
+      const target = level();
+      el.play().then(
+        () => fade(el, target, 240),
+        () => set(p.id, { playing: false, loading: false }),
+      );
     },
     // level lit des valeurs hors React.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [silence, audioEl, playFrom, set],
   );
 
-  const pause = useCallback(() => silence(), [silence]);
+  // Pause demandée : le son s'éteint en fondu, puis s'arrête (sauf si une
+  // lecture a repris entre-temps sur le même élément).
+  const pause = useCallback(() => {
+    const p = current.current;
+    const el = elementOf(p);
+    if (!el || el.paused) return silence();
+    fade(el, 0, 160, () => {
+      if (current.current?.id === p?.id) silence();
+    });
+  }, [elementOf, silence]);
 
   const toggle = useCallback(
     (p: Participant) => {
@@ -246,6 +291,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   }, [silence]);
 
   const applyLevel = useCallback(() => {
+    stopFade(elementOf(current.current));
     setMedia(elementOf(current.current), { volume: mute.current ? 0 : readVolume() / 100 });
   }, [elementOf]);
 

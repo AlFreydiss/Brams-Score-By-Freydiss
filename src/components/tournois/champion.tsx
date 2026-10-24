@@ -1,6 +1,6 @@
-import { Pause, Play } from "lucide-react";
+import { ListMusic, Pause, Play, Square } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { champion, ranking, roundName } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
@@ -35,6 +35,22 @@ export function Champion() {
     return steps;
   }, [run, champ, saved.votes]);
   const [copied, setCopied] = useState(false);
+  // Compte à rebours : ton top joué du dernier au champion, extrait après extrait.
+  const countdown = useMemo(() => [...top].reverse().map((r) => r.p), [top]);
+  const [step, setStep] = useState<number | null>(null);
+  const cur = step != null ? countdown[step] : null;
+  useEffect(() => {
+    if (step == null) return;
+    if (!cur) return setStep(null);
+    // Une autre piste lancée à la main arrête le compte à rebours.
+    if (player.id && player.id !== cur.id) return setStep(null);
+    if (player.id === cur.id && player.ended) {
+      if (step + 1 < countdown.length) {
+        setStep(step + 1);
+        player.play(countdown[step + 1]);
+      } else setStep(null);
+    }
+  }, [step, cur, countdown, player]);
   if (!run || !champ) return null;
   const audio = meta.mode === "audio";
   const playing = player.id === champ.id && player.playing;
@@ -104,10 +120,30 @@ export function Champion() {
         ) : null}
 
         <section className="t-champ-sec">
-          <h2>Ton classement de la partie</h2>
+          <div className="t-champ-head">
+            <h2>Ton classement de la partie</h2>
+            {audio && countdown.length > 1 ? (
+              <button
+                type="button"
+                className={`t-countdown ${step != null ? "is-on" : ""}`}
+                onClick={() => {
+                  if (step != null) {
+                    setStep(null);
+                    player.pause();
+                  } else {
+                    setStep(0);
+                    player.play(countdown[0]);
+                  }
+                }}
+              >
+                {step != null ? <Square size={14} fill="currentColor" /> : <ListMusic size={16} />}
+                <span>{step != null ? `Compte à rebours : n° ${top.find((r) => r.p.id === cur?.id)?.rank ?? ""}` : "Écouter mon top en compte à rebours"}</span>
+              </button>
+            ) : null}
+          </div>
           <ol className="t-rank-list">
             {top.map((r, i) => (
-              <li key={r.p.id} style={{ "--i": i } as React.CSSProperties}>
+              <li key={r.p.id} className={player.id === r.p.id && player.playing ? "is-playing" : ""} style={{ "--i": i } as React.CSSProperties}>
                 <span className="t-rank-n">{r.rank}</span>
                 <Thumb p={r.p} />
                 <span className="t-rank-t">

@@ -2681,3 +2681,51 @@
 .t-split-total {
   color: color-mix(in srgb, var(--t-ink) 70%, transparent);
 }
+
+/* Fin de partie : compte à rebours du top. */
+.t-champ-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+.t-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--t-line);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color var(--t-fast) ease,
+    background var(--t-fast) ease,
+    color var(--t-fast) ease;
+}
+.t-countdown:hover,
+.t-countdown.is-on {
+  border-color: var(--t-accent);
+}
+.t-countdown.is-on {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+}
+.t-rank-list li {
+  transition: background 0.3s var(--t-ease);
+}
+.t-rank-list li.is-playing {
+  background: color-mix(in srgb, var(--t-accent) 10%, transparent);
+}
+.t-rank-list li.is-playing .t-rank-n {
+  color: var(--t-accent-2);
+}
+.t-champ-head {
+  margin-bottom: 18px;
+}
+.t-champ-head h2 {
+  margin: 0 !important;
+}
