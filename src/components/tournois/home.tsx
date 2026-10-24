@@ -9,6 +9,7 @@ import { fetchStats } from "@/lib/versusStats.js";
 import { useTournament } from "./provider";
 import { PosterScene, useNarrow } from "./poster";
 import { Thumb } from "./visual";
+import { OstArena } from "../arena/ost-home";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 const LINEUP = 24;
@@ -24,6 +25,8 @@ export function TournamentHome() {
   const preview = useClientDraw(`${meta.slug}:home`, participants, 2) ?? [];
   const rail = useClientDraw(`${meta.slug}:rail`, participants, 18) ?? [];
   const audio = meta.mode === "audio";
+  // Le tournoi d'OST a son affiche « Rouge contre Bleu ».
+  const arena = meta.slug === "ost";
   const base = `/tournoi/${meta.path}`;
 
   const run = saved.run;
@@ -70,6 +73,9 @@ export function TournamentHome() {
 
   return (
     <div className="t-home" data-seam={meta.seam}>
+{arena ? (
+        <OstArena popular={fromSite ? sitePopular.map((r) => r.p) : []} siteDuels={siteDuels} />
+      ) : (
       <section className={`t-hero ${narrow ? "is-v" : "is-h"}`}>
         <PosterScene pair={preview} />
         <div className="t-hero-copy">
@@ -94,8 +100,10 @@ export function TournamentHome() {
           </p>
         ) : null}
       </section>
+      )}
 
       <div className="t-home-body">
+{arena ? null : (
         <dl className="t-facts">
           <div>
             <dt>Participants</dt>
@@ -116,6 +124,7 @@ export function TournamentHome() {
             <dd>{saved.votes.length.toLocaleString("fr-FR")}</dd>
           </div>
         </dl>
+        )}
 
         <section className="t-program">
           <div className="t-program-head">

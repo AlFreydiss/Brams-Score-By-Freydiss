@@ -95,7 +95,7 @@ const MediaAdminPage     = lazyWithReload(() => import('./components/MediaAdminP
 const BlindTestPage      = lazyWithReload(() => import('./components/BlindTestPage.jsx'))
 const BlindTestLeaderboard = lazyWithReload(() => import('./components/BlindTestLeaderboard.jsx'))
 const TierListPage       = lazyWithReload(() => import('./components/TierListPage.jsx'))
-const TournamentHubPage  = lazyWithReload(() => import('./components/TournamentHubPage.jsx'))
+const TournamentHubPage  = lazyWithReload(() => import('./components/arena/hub-page.tsx'))
 const TournamentPage     = lazyWithReload(() => import('./components/TournamentPage.jsx'))
 const TournamentRoomPage = lazyWithReload(() => import('./components/TournamentRoomPage.jsx'))
 const DoublagePage       = lazyWithReload(() => import('./components/DoublagePage.jsx'))

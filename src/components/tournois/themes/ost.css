@@ -125,3 +125,149 @@
   filter: drop-shadow(0 0 calc(var(--energy, 0) * 14px) rgba(232, 212, 165, 0.7));
   transition: stroke-width 0.08s linear;
 }
+
+/* ── Arène « Rouge contre Bleu » (2026-10-25) ─────────────────────────
+   Le tournoi d'OST rejoint l'affiche du hub : acier au lieu de l'or, camp
+   rouge à gauche, camp bleu à droite, titres en Anton façon métal brossé. */
+[data-t="ost"] {
+  --t-bg: #05060a;
+  --t-bg2: #0b0c12;
+  --t-panel: #0d0e15;
+  --t-accent: #dfe3ec;
+  --t-accent-2: #ffffff;
+  --t-on-accent: #05060a;
+  --t-left: #ff2d46;
+  --t-right: #3f7bff;
+  --t-seam: #eef3ff;
+  --t-display: "Anton", Impact, sans-serif;
+  --t-title-size: clamp(54px, 6.4vw, 120px);
+  --t-title-weight: 400;
+  --t-title-lh: 0.9;
+  --t-title-track: 0.005em;
+  --t-title-case: uppercase;
+  --t-veil: rgba(5, 6, 10, 0.9);
+}
+[data-t="ost"] .t-half--left {
+  --viz: #ff4a5e;
+}
+[data-t="ost"] .t-half--right {
+  --viz: #6f9cff;
+}
+[data-t="ost"] .t-title,
+[data-t="ost"] .t-hero-title,
+[data-t="ost"] .t-champ .t-title {
+  color: transparent;
+  background: linear-gradient(180deg, #ffffff 0%, #e4e7ee 36%, #8b91a1 52%, #f1f3f7 62%, #9aa0af 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform: skewX(-7deg);
+  transform-origin: left bottom;
+  filter: drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
+}
+[data-t="ost"] .t-half--right .t-title {
+  transform-origin: right bottom;
+}
+/* Le liseré de son camp sous le titre. */
+[data-t="ost"] .t-half--left .t-title {
+  filter: drop-shadow(-3px 0 0 rgba(255, 45, 70, 0.6)) drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
+}
+[data-t="ost"] .t-half--right .t-title {
+  filter: drop-shadow(3px 0 0 rgba(63, 123, 255, 0.65)) drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
+}
+[data-t="ost"] .t-artist {
+  font-family: var(--t-ui);
+  font-style: normal;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+[data-t="ost"] .t-sub {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ff8b98;
+}
+[data-t="ost"] .t-half--right .t-sub {
+  color: #9dbdff;
+}
+[data-t="ost"] .t-side {
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+/* Lumière du camp qui monte du bord extérieur de chaque moitié. */
+[data-t="ost"] .t-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 55% 80% at 0% 60%, rgba(255, 45, 70, 0.32), transparent 70%);
+  mix-blend-mode: screen;
+  opacity: calc(0.55 + var(--energy, 0) * 0.9);
+}
+[data-t="ost"] .t-half--right .t-media::before {
+  background: radial-gradient(ellipse 55% 80% at 100% 60%, rgba(63, 123, 255, 0.36), transparent 70%);
+}
+/* La lame : trait blanc bleuté qui respire avec les basses. */
+[data-t="ost"] .t-seam-line {
+  stroke: #f4f7ff;
+  stroke-width: calc(2px + var(--energy, 0) * 3.5px);
+  filter: drop-shadow(0 0 calc(6px + var(--energy, 0) * 18px) rgba(190, 210, 255, 0.9));
+}
+/* Boutons : écoute en rond acier, choix en cadre biseauté rouge ou bleu. */
+[data-t="ost"] .t-btn--play svg {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+[data-t="ost"] .t-half--left .t-btn--play:hover:not(:disabled) svg,
+[data-t="ost"] .t-half--left .t-btn--play[aria-pressed="true"] svg {
+  border-color: var(--t-left);
+  background: var(--t-left);
+  color: #fff;
+}
+[data-t="ost"] .t-half--right .t-btn--play:hover:not(:disabled) svg,
+[data-t="ost"] .t-half--right .t-btn--play[aria-pressed="true"] svg {
+  border-color: var(--t-right);
+  background: var(--t-right);
+  color: #fff;
+}
+[data-t="ost"] .t-choose {
+  border: 0 !important;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+  background: linear-gradient(90deg, rgba(143, 12, 31, 0.92), rgba(20, 21, 29, 0.92)) !important;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 13px;
+  transition:
+    scale 0.25s ease,
+    filter 0.25s ease;
+}
+[data-t="ost"] .t-half--right .t-choose {
+  background: linear-gradient(270deg, rgba(12, 42, 138, 0.92), rgba(20, 21, 29, 0.92)) !important;
+}
+[data-t="ost"] .t-choose:hover:not(:disabled) {
+  scale: 1.04;
+  filter: drop-shadow(0 0 18px rgba(255, 45, 70, 0.55));
+}
+[data-t="ost"] .t-half--right .t-choose:hover:not(:disabled) {
+  filter: drop-shadow(0 0 18px rgba(63, 123, 255, 0.55));
+}
+[data-t="ost"] .t-card b {
+  font-family: var(--t-display);
+  color: #fff;
+}
+[data-t="ost"] .t-brand-name {
+  color: #fff;
+}
+[data-t="ost"] .t-bar-ab.is-on {
+  border-color: transparent;
+  background: linear-gradient(90deg, #8f0c1f, #0c2a8a);
+  color: #fff;
+}
+[data-t="ost"] .t-brand-name {
+  font-family: var(--t-ui);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
