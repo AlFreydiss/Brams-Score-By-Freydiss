@@ -1,5 +1,5 @@
-import { BookOpenText, Expand, Heart, Maximize, Minimize, Network, Pause, Play, RotateCcw, Settings, Volume2, VolumeX, X } from "lucide-react";
-import { animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "framer-motion";
+import { ArrowLeftRight, BookOpenText, Expand, Heart, Maximize, Minimize, Network, Pause, Play, RotateCcw, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform, type Variants } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Seam } from "@/lib/tournois/catalog";
@@ -45,6 +45,9 @@ const ENTER_MS: Record<Seam, number> = { diag: 1050, screens: 1250, feather: 130
 const PART_PX: Record<Seam, number> = { diag: 6, screens: 0, feather: 0, tape: 0, zigzag: 4, slash: 0, gutter: 0 };
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
+// Écoute alternée : durée d'un passage, et boucle sur l'extrait de 30 s.
+const AB_SEG = 7;
+const AB_LOOP = 28;
 const CUT = [0.7, 0, 0.2, 1] as const;
 
 function useNarrow() {
@@ -71,6 +74,8 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   const reduce = useReducedMotion();
   const seam = meta.seam;
   const audio = meta.mode === "audio";
+  // Openings et endings gardent leur régie d'origine : pas d'écoute alternée.
+  const abOk = audio && seam !== "screens" && seam !== "feather";
   const stageRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<"enter" | "open" | "picked">(reduce ? "open" : "enter");
@@ -81,14 +86,18 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   const [zoom, setZoom] = useState<Participant | null>(null);
   const [full, setFull] = useState(false);
   // Répartition des votes du site sur ce duel, lue juste après le choix.
-  const [split, setSplit] = useState<{ share: number; total: number } | null>(null);
+  const [split, setSplit] = useState<{ left: number; total: number } | null>(null);
+  // Écoute alternée : A puis B, 7 s chacun, au même passage du morceau.
+  const [ab, setAb] = useState(false);
+  const [abTurn, setAbTurn] = useState<{ side: Side; n: number } | null>(null);
   const alive = useRef(true);
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    // Remis à vrai au montage : le double montage du mode strict ne le laisse pas à faux.
+    alive.current = true;
+    return () => {
       alive.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
   const shownAt = useRef(0);
 
   const s = useMotionValue(50);
@@ -186,6 +195,10 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       }
       setPicked(side);
       setPhase("picked");
+      setAb(false);
+      // Le perdant se tait : seul le gagnant peut encore jouer pendant le verdict.
+      const loser = side === "left" ? right : left;
+      if (player.id === loser.id) player.pause();
       setToast({ text: practice ? "Duel test : ce choix ne compte pas." : "Vote enregistré. L'aventure continue.", tone: "ok" });
       animate(s, edgeFor(seam, side, vertical), { duration: reduce ? 0 : 0.8, ease: CUT });
       if (meta.statsId) {
@@ -195,25 +208,55 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
           fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
             if (!r || !alive.current) return;
             const total = r.a + r.b;
-            const mine = side === "left" ? r.a : r.b;
-            setSplit({ share: total ? Math.round((mine / total) * 100) : 0, total });
+            // Le verdict prend la place du message de confirmation.
+            if (total) setToast(null);
+            setSplit({ left: total ? Math.round((r.a / total) * 100) : 50, total });
           });
         }, 400);
       }
-      setTimeout(onDone, reduce ? 900 : meta.statsId ? 1900 : 1500);
+      setTimeout(onDone, reduce ? 900 : meta.statsId ? 2400 : 1500);
     },
-    [picked, phase, onChoose, practice, s, seam, vertical, reduce, onDone, meta.statsId, left.id, right.id],
+    [picked, phase, onChoose, practice, s, seam, vertical, reduce, onDone, meta.statsId, left, right, player],
   );
 
   const listen = useCallback(
     (side: Side) => {
       const p = side === "left" ? left : right;
       setFocus(side);
+      setAb(false);
       if (!audio || player.failed.has(p.id)) return;
       player.toggle(p);
     },
     [audio, left, right, player],
   );
+
+  // Écoute alternée : chaque tour relance l'autre moitié au même passage
+  // (0 s, 0 s, puis 7 s, 7 s…), pour comparer à l'oreille sans rien toucher.
+  const playerRef = useRef(player);
+  playerRef.current = player;
+  useEffect(() => {
+    if (!ab || !abOk) {
+      setAbTurn(null);
+      return;
+    }
+    let n = 0;
+    const turn = () => {
+      const pl = playerRef.current;
+      const okL = !pl.failed.has(left.id);
+      const okR = !pl.failed.has(right.id);
+      if (!okL && !okR) return setAb(false);
+      const side: Side = (n % 2 === 0 && okL) || !okR ? "left" : "right";
+      const p = side === "left" ? left : right;
+      pl.play(p);
+      pl.seek((Math.floor(n / 2) * AB_SEG) % AB_LOOP);
+      setFocus(side);
+      setAbTurn({ side, n });
+      n++;
+    };
+    turn();
+    const t = setInterval(turn, AB_SEG * 1000);
+    return () => clearInterval(t);
+  }, [ab, abOk, left, right]);
 
   const toggleFull = useCallback(() => {
     const el = stageRef.current;
@@ -247,6 +290,8 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       } else if (k === " " && t === document.body && audio) {
         e.preventDefault();
         listen(focus);
+      } else if ((k === "c" || k === "C") && abOk && !picked) {
+        setAb((v) => !v);
       } else if (k === "f" || k === "F") {
         actions.toggleFavorite(meta.slug, (focus === "left" ? left : right).id);
       } else if ((k === "t" || k === "T") && !practice) {
@@ -332,19 +377,16 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
               />
               <div className="t-info">
                 {win ? <p className="t-kept">{practice ? "Ton choix (essai)" : isFinal ? meta.championLabel : "Passe au tour suivant"}</p> : null}
-                <p className="t-side">{sideName}</p>
+                <p className="t-side">
+                  {sideName}
+                  {abTurn?.side === side ? <i key={abTurn.n} className="t-ab-tick" aria-hidden /> : null}
+                </p>
                 <p className="t-sub">{hidden ? "Titre caché jusqu'à ton choix" : p.sub}</p>
                 <h2 className={`t-title ${!hidden && p.title.length > 24 ? "is-long" : ""}`}>{hidden ? "À l'aveugle" : p.title}</h2>
                 {!hidden && (p.artist || p.note) ? (
                   <p className="t-artist">{[p.artist, p.note].filter(Boolean).join(", ")}</p>
                 ) : null}
-                {win && split ? (
-                  <p className="t-rate">
-                    {split.total
-                      ? `Sur le site, ${split.share} % des votes de ce duel vont à ce choix (${split.total} vote${split.total > 1 ? "s" : ""}).`
-                      : "Aucun autre vote sur ce duel pour l’instant."}
-                  </p>
-                ) : null}
+                {win && split && !split.total ? <p className="t-rate">Aucun autre vote sur ce duel pour l’instant.</p> : null}
                 {failed ? <p className="t-fail">Lecture impossible : la source ne répond pas. Tu peux quand même voter.</p> : null}
                 {!picked ? (
                   <>
@@ -485,7 +527,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
               </span>
             </label>
             <p className="t-keys">
-              <kbd>←</kbd> <kbd>→</kbd> écouter, <kbd>Entrée</kbd> choisir, <kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
+              <kbd>←</kbd> <kbd>→</kbd> écouter, {abOk ? <><kbd>C</kbd> écoute alternée, </> : null}<kbd>Entrée</kbd> choisir, <kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
             </p>
             <button type="button" className="t-close" onClick={() => setSettings(false)} aria-label="Fermer les paramètres">
               <X size={16} />
@@ -494,7 +536,18 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
         ) : null}
       </div>
 
-      <AudioBar left={left} right={right} audio={audio} full={full} onFull={toggleFull} />
+      {split ? <VoteSplit split={split} picked={picked} reduce={!!reduce} /> : null}
+
+      <AudioBar
+        left={left}
+        right={right}
+        audio={audio}
+        full={full}
+        onFull={toggleFull}
+        ab={ab}
+        onAb={picked ? undefined : () => setAb((v) => !v)}
+        abOk={abOk}
+      />
 
       <div className="t-toast-slot" role="status" aria-live="polite">
         {toast ? <p className={`t-toast t-toast--${toast.tone}`}>{toast.text}</p> : null}
@@ -599,7 +652,25 @@ function Card({ seam, round, isFinal, practice }: { seam: Seam; round: RoundInfo
 }
 
 // Barre audio globale : une seule piste active, nommée, jamais d'ambiguïté.
-function AudioBar({ left, right, audio, full, onFull }: { left: Participant; right: Participant; audio: boolean; full: boolean; onFull: () => void }) {
+function AudioBar({
+  left,
+  right,
+  audio,
+  full,
+  onFull,
+  ab,
+  onAb,
+  abOk,
+}: {
+  left: Participant;
+  right: Participant;
+  audio: boolean;
+  full: boolean;
+  onFull: () => void;
+  ab: boolean;
+  onAb?: () => void;
+  abOk: boolean;
+}) {
   const { player } = useTournament();
   const active = player.id === left.id ? left : player.id === right.id ? right : null;
   return (
@@ -626,6 +697,19 @@ function AudioBar({ left, right, audio, full, onFull }: { left: Participant; rig
             )}
           </p>
           <SeekBar player={player} active={!!active} label={active ? `Position dans ${active.title}` : "Aucune piste en lecture"} className="t-bar-seek" />
+          {abOk ? (
+          <button
+            type="button"
+            className={`t-bar-ab ${ab ? "is-on" : ""}`}
+            onClick={onAb}
+            disabled={!onAb}
+            aria-pressed={ab}
+            title="Écoute alternée : A puis B, 7 secondes chacun (C)"
+          >
+            <ArrowLeftRight size={16} />
+            <span>{ab ? "Alternance en cours" : "Écoute alternée"}</span>
+          </button>
+          ) : null}
           <div className="t-vol">
             <button type="button" onClick={player.toggleMute} aria-pressed={player.muted} aria-label={player.muted ? "Rétablir le son" : "Couper le son"} title={player.muted ? "Rétablir le son" : "Couper le son"}>
               {player.muted || player.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -643,6 +727,40 @@ function AudioBar({ left, right, audio, full, onFull }: { left: Participant; rig
         {full ? <Minimize size={18} /> : <Maximize size={18} />}
       </button>
     </div>
+  );
+}
+
+// Après le choix : le verdict du site sur ce duel. Un filet coupé à la
+// proportion des votes, les deux pourcentages qui montent jusqu'à leur valeur.
+function VoteSplit({ split, picked, reduce }: { split: { left: number; total: number }; picked: Side | null; reduce: boolean }) {
+  const v = useMotionValue(reduce ? split.left : 50);
+  const [shown, setShown] = useState(reduce ? split.left : 50);
+  useMotionValueEvent(v, "change", (x) => setShown(Math.round(x)));
+  useEffect(() => {
+    if (reduce) return;
+    const a = animate(v, split.left, { duration: 1.1, ease: [0.16, 1, 0.3, 1] });
+    return () => a.stop();
+  }, [v, split.left, reduce]);
+  const width = useTransform(v, (x) => `${x}%`);
+  if (!split.total) return null;
+  return (
+    <motion.div
+      className="t-split"
+      data-picked={picked ?? undefined}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1, transition: { duration: 0.3 } }}
+      role="img"
+      aria-label={`Votes du site sur ce duel : ${split.left} % à gauche, ${100 - split.left} % à droite, ${split.total} votes`}
+    >
+      <b className="t-split-n t-split-n--l">{shown}<small>%</small></b>
+      <span className="t-split-track">
+        <motion.i style={{ width }} />
+      </span>
+      <b className="t-split-n t-split-n--r">{100 - shown}<small>%</small></b>
+      <small className="t-split-total">
+        {split.total} vote{split.total > 1 ? "s" : ""} sur le site
+      </small>
+    </motion.div>
   );
 }
 

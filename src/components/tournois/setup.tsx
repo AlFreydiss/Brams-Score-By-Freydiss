@@ -18,6 +18,7 @@ export function Setup() {
   const [off, setOff] = useState<Set<string>>(() => new Set());
   const [size, setSize] = useState(meta.defaultFormat);
   const [blind, setBlind] = useState(false);
+  const [q, setQ] = useState("");
   const preview = useClientDraw(`${meta.slug}:setup`, participants, 2) ?? [];
 
   const pool = participants.filter((p) => !off.has(p.group));
@@ -25,7 +26,10 @@ export function Setup() {
   const fits = meta.formats.filter((f) => f <= capacity);
   const effective = fits.includes(size) ? size : fits[fits.length - 1];
   // Rap contre OST tire autant dans chaque camp : pas de filtre par camp.
-  const showGroups = !meta.balanced && groups.length > 1 && groups.length <= 60;
+  const showGroups = !meta.balanced && groups.length > 1;
+  // Beaucoup d'animes : une recherche pour retrouver le sien dans la liste.
+  const needle = q.trim().toLocaleLowerCase("fr");
+  const shownGroups = needle ? groups.filter(([g]) => g.toLocaleLowerCase("fr").includes(needle)) : groups;
 
   const toggle = (g: string) =>
     setOff((prev) => {
@@ -64,13 +68,30 @@ export function Setup() {
               </span>
               <ChevronDown size={16} aria-hidden />
             </summary>
-            {off.size ? (
-              <button type="button" className="t-link t-filter-reset" onClick={() => setOff(new Set())}>
-                Tout reprendre
-              </button>
-            ) : null}
+            <div className="t-filter-tools">
+              {groups.length > 16 ? (
+                <input
+                  type="search"
+                  className="t-filter-q"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={`Chercher parmi ${groups.length} ${meta.groupLabel.toLowerCase()}`}
+                  aria-label={`Chercher ${meta.groupLabel.toLowerCase()}`}
+                />
+              ) : null}
+              {off.size ? (
+                <button type="button" className="t-link t-filter-reset" onClick={() => setOff(new Set())}>
+                  Tout reprendre
+                </button>
+              ) : (
+                <button type="button" className="t-link t-filter-reset" onClick={() => setOff(new Set(groups.map(([g]) => g)))}>
+                  Tout retirer
+                </button>
+              )}
+            </div>
             <div className="t-chips">
-              {groups.map(([g, n]) => (
+              {shownGroups.length === 0 ? <p className="t-note">Aucun résultat pour « {q} ».</p> : null}
+              {shownGroups.map(([g, n]) => (
                 <button key={g} type="button" className={off.has(g) ? "" : "is-on"} aria-pressed={!off.has(g)} onClick={() => toggle(g)}>
                   {g} <small>{n}</small>
                 </button>

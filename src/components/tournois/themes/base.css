@@ -2486,3 +2486,198 @@
     animation: none;
   }
 }
+
+/* ── Écoute alternée ──────────────────────────────────────────────── */
+.t-bar-ab {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--t-line);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--t-ink) 85%, transparent);
+  transition:
+    border-color var(--t-fast) ease,
+    background var(--t-fast) ease,
+    color var(--t-fast) ease;
+}
+.t-bar-ab:hover:not(:disabled) {
+  border-color: var(--t-accent);
+  color: var(--t-ink);
+}
+.t-bar-ab.is-on {
+  border-color: var(--t-accent);
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+}
+.t-bar-ab:disabled {
+  opacity: 0.35;
+}
+/* Le passage en cours : un filet qui se remplit en 7 s sous l'étiquette du côté. */
+.t-side {
+  position: relative;
+}
+.t-ab-tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: var(--t-accent-2);
+  transform-origin: left;
+  animation: t-ab 7s linear both;
+}
+.t-half--right .t-ab-tick {
+  transform-origin: right;
+}
+@keyframes t-ab {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ── Verdict du site après le choix ───────────────────────────────── */
+.t-split {
+  position: absolute;
+  left: var(--t-side);
+  right: var(--t-side);
+  bottom: 84px;
+  z-index: 7;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px 18px;
+  pointer-events: none;
+}
+.t-split-n {
+  font: 500 clamp(28px, 2.8vw, 46px) / 1 var(--t-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--t-ink);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+  transition: opacity 0.4s var(--t-ease);
+}
+.t-split-n small {
+  margin-left: 2px;
+  font-size: 0.45em;
+  color: var(--t-mute);
+}
+.t-split[data-picked="left"] .t-split-n--r,
+.t-split[data-picked="right"] .t-split-n--l {
+  opacity: 0.45;
+}
+/* La part du choix est en couleur, l'autre reste un filet discret. */
+.t-split-track {
+  position: relative;
+  height: 2px;
+  background: color-mix(in srgb, var(--t-ink) 22%, transparent);
+  overflow: hidden;
+}
+.t-split-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: color-mix(in srgb, var(--t-ink) 22%, transparent);
+  box-shadow: 2px 0 0 var(--t-bg);
+}
+.t-split[data-picked="left"] .t-split-track i {
+  background: var(--t-left);
+}
+.t-split[data-picked="right"] .t-split-track {
+  background: var(--t-right);
+}
+.t-split-total {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font-size: 12px;
+  color: var(--t-mute);
+}
+/* Le texte du gagnant laisse la place au verdict. */
+.t-stage[data-picked] .t-info {
+  bottom: 190px;
+  transition: bottom 0.5s var(--t-ease);
+}
+
+/* ── La photo bat avec les basses (OST, rap) ──────────────────────── */
+:is([data-seam="diag"], [data-seam="tape"], [data-seam="zigzag"]) .t-half.is-playing .t-media {
+  scale: calc(1 + var(--energy, 0) * 0.028);
+  transition: scale 0.09s linear;
+}
+:is([data-seam="diag"], [data-seam="tape"], [data-seam="zigzag"]) .t-half.is-playing .t-media::after {
+  opacity: calc(1 - var(--energy, 0) * 0.35);
+}
+
+@media (max-width: 760px) {
+  .t-bar-ab span {
+    display: none;
+  }
+  .t-bar-ab {
+    width: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+  .t-split {
+    bottom: 70px;
+  }
+  .t-stage[data-picked] .t-info {
+    bottom: 140px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-ab-tick {
+    animation: none;
+  }
+  :is([data-seam="diag"], [data-seam="tape"], [data-seam="zigzag"]) .t-half.is-playing .t-media {
+    scale: none;
+  }
+}
+
+/* Filtre des groupes : recherche + tout retirer / tout reprendre. */
+.t-filter-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 10px;
+}
+.t-filter-tools .t-filter-reset {
+  margin: 0;
+}
+.t-filter-q {
+  flex: 1 1 220px;
+  max-width: 340px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--t-line);
+  border-radius: var(--t-radius);
+  background: color-mix(in srgb, var(--t-bg) 70%, transparent);
+  color: var(--t-ink);
+  font: 400 14px var(--t-ui);
+}
+.t-filter-q:focus {
+  border-color: var(--t-accent);
+  outline: none;
+}
+.t-filter[open] .t-chips {
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+/* Le verdict reste lisible sur une photo claire. */
+.t-split::before {
+  content: "";
+  position: absolute;
+  inset: -36px calc(-1 * var(--t-side)) -24px;
+  z-index: -1;
+  background: linear-gradient(to top, color-mix(in srgb, var(--t-veil) 85%, transparent), transparent);
+}
+.t-split-total {
+  color: color-mix(in srgb, var(--t-ink) 70%, transparent);
+}

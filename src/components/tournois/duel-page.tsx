@@ -45,6 +45,23 @@ export function DuelPage() {
     };
   }, [run, cur, held]);
 
+  // Les photos des deux duels suivants se chargent pendant qu'on écoute
+  // celui-ci : la coupe suivante s'ouvre sur des images déjà prêtes.
+  useEffect(() => {
+    if (!run || !cur) return;
+    const next = run.rounds
+      .flatMap((r) => r.matches)
+      .filter((m) => m.id !== cur.match.id && m.status !== "closed" && m.left && m.right)
+      .slice(0, 2);
+    for (const m of next)
+      for (const p of [m.left, m.right]) {
+        if (p?.visual.k !== "img") continue;
+        const img = new Image();
+        img.decoding = "async";
+        img.src = p.visual.src;
+      }
+  }, [run, cur]);
+
   const showMatch = run ? (held?.match ?? cur?.match ?? null) : null;
   const showSize = held?.roundSize ?? cur?.round.size ?? 0;
 

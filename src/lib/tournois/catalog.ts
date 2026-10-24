@@ -51,7 +51,7 @@ export const TOURNAMENTS: TournamentMeta[] = [
     unit: "OST",
     unitOne: "OST",
     mode: "audio",
-    formats: [16, 32, 64],
+    formats: [16, 32, 64, 128, 256],
     defaultFormat: 32,
     seam: "diag",
     choose: "Choisir cette OST",
