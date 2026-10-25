@@ -27,36 +27,10 @@
   --t-lit: grayscale(0) contrast(1.04) brightness(0.86);
 }
 
-/* La lame : un trait rouge, un cœur blanc qui ne dure qu'un instant. */
+/* La lame : un trait rouge. */
 [data-t="bankai"] .t-seam-line {
   stroke-width: 2.5;
-  animation: t-draw 0.18s cubic-bezier(0.9, 0, 0.3, 1) 0.42s forwards;
 }
-[data-t="bankai"] .t-scene::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  background: #fff;
-  opacity: 0;
-  pointer-events: none;
-  animation: t-flash 0.32s ease-out 0.58s;
-}
-
-/* Après la coupe, les deux pièces glissent le long de la lame et restent décalées. */
-[data-t="bankai"] .t-half--left {
-  animation: t-slip-l 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.62s both;
-}
-[data-t="bankai"] .t-half--right {
-  animation: t-slip-r 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.62s both;
-}
-[data-t="bankai"] .t-half.is-lose {
-  animation: t-fall 1s cubic-bezier(0.55, 0, 0.9, 0.4) forwards;
-}
-[data-t="bankai"] .t-media {
-  animation: t-dusk 0.5s ease 0.6s both;
-}
-
 /* Kanji en filigrane, vertical, sur le bord extérieur de chaque moitié. */
 [data-t="bankai"] .t-half::before {
   content: "卍解";
@@ -79,10 +53,6 @@
   font: 800 clamp(90px, 16vw, 240px) / 1 var(--t-display);
   color: var(--t-accent);
 }
-[data-t="bankai"] .t-card {
-  animation: t-card-out 0.12s linear 0.55s forwards;
-}
-
 [data-t="bankai"] .t-side {
   font-family: var(--t-display);
   letter-spacing: 0.2em;
@@ -109,38 +79,6 @@
 [data-t="bankai"] .t-half--right .t-choose:hover:not(:disabled) {
   background: #e01d2c;
   border-color: #e01d2c;
-}
-
-@keyframes t-flash {
-  0% {
-    opacity: 0.85;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes t-slip-l {
-  from {
-    translate: 0 0;
-  }
-  to {
-    translate: -0.45% 1.3%;
-  }
-}
-@keyframes t-slip-r {
-  from {
-    translate: 0 0;
-  }
-  to {
-    translate: 0.45% -1.3%;
-  }
-}
-@keyframes t-fall {
-  to {
-    translate: 0 110%;
-    rotate: 4deg;
-    opacity: 0.4;
-  }
 }
 
 @media (max-width: 760px) {

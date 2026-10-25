@@ -94,13 +94,6 @@
   font-size: 22px;
   color: var(--t-accent-2);
 }
-[data-t="endings"] .t-info {
-  animation: t-credits 1.9s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
-}
-[data-t="endings"] .t-half--right .t-info {
-  animation-delay: 0.85s;
-}
-
 /* Boutons en texte : souligné fin, pas de cadre. */
 [data-t="endings"] .t-btn,
 [data-t="endings"] .t-btn[aria-pressed="true"] {
@@ -136,13 +129,6 @@
   border-color: var(--t-accent-2);
 }
 
-/* Entrée : tout sort du noir, lentement. */
-[data-t="endings"] .t-media {
-  animation: t-dusk 1.6s ease-out 0.2s both;
-}
-[data-t="endings"] .t-card {
-  animation: t-card-out 0.7s ease 0.5s forwards;
-}
 [data-t="endings"] .t-card b {
   font-weight: 400;
   color: var(--t-accent);
@@ -152,16 +138,6 @@
   transition: opacity 1s ease;
 }
 
-@keyframes t-credits {
-  from {
-    opacity: 0;
-    translate: 0 48px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
 @keyframes t-dusk {
   from {
     opacity: 0;

@@ -67,24 +67,12 @@
   color: #09090e;
 }
 
-/* L'éclair. */
+/* Le trait. */
 [data-t="rapvsost"] .t-seam-line {
   stroke-width: 3;
   stroke-linejoin: miter;
-  animation-duration: 0.22s;
-  animation-delay: 0.3s;
 }
 
-/* Entrée : les deux moitiés se percutent au centre. */
-[data-t="rapvsost"] .t-half--left .t-media {
-  animation: t-clash-l 0.5s cubic-bezier(0.3, 1.35, 0.5, 1) 0.45s both;
-}
-[data-t="rapvsost"] .t-half--right .t-media {
-  animation: t-clash-r 0.5s cubic-bezier(0.3, 1.35, 0.5, 1) 0.45s both;
-}
-[data-t="rapvsost"] .t-card {
-  animation: t-card-out 0.2s ease 0.4s forwards;
-}
 [data-t="rapvsost"] .t-card b {
   font-size: clamp(80px, 14vw, 220px);
 }
@@ -113,27 +101,6 @@
   height: 6px;
   background: linear-gradient(90deg, var(--rap) var(--r), var(--ost) var(--r));
   transition: background 0.6s;
-}
-
-@keyframes t-clash-l {
-  from {
-    opacity: 0;
-    translate: -14% 0;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-@keyframes t-clash-r {
-  from {
-    opacity: 0;
-    translate: 14% 0;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
 }
 
 @media (max-width: 760px) {

@@ -1,4 +1,4 @@
-import { AnimatePresence } from "framer-motion";
+import { SwipeTrack } from "./duel-page";
 import { useCallback, useState } from "react";
 import { shuffle } from "@/lib/tournois/bracket";
 import type { Participant } from "@/lib/tournois/types";
@@ -30,9 +30,9 @@ export function Practice() {
 
   return (
     <div className="t-duel-page">
-      <AnimatePresence mode="wait">
-        <DuelScreen key={n} left={pair[0]} right={pair[1]} round={null} practice onChoose={() => true} onDone={next} />
-      </AnimatePresence>
+      <SwipeTrack id={String(n)} dir={1}>
+        {(swiped) => <DuelScreen swiped={swiped} left={pair[0]} right={pair[1]} round={null} practice onChoose={() => true} onDone={next} />}
+      </SwipeTrack>
     </div>
   );
 }

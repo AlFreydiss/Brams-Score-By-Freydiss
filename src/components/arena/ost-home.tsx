@@ -1,11 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { currentMatch } from "@/lib/tournois/bracket";
 import { useClientDraw } from "@/lib/tournois/client-draw";
 import type { Participant } from "@/lib/tournois/types";
 import { useTournament } from "../tournois/provider";
-import { Broadcast, useReelPool } from "./broadcast";
+import { Broadcast } from "./broadcast";
 import { loadArenaFonts } from "./fonts";
 import "./arena.css";
 
@@ -18,7 +18,6 @@ const photo = (p?: Participant) => (p ? { src: p.visual.k === "img" ? p.visual.s
 export function OstArena() {
   const { meta, participants, saved } = useTournament();
   const pair = useClientDraw(`${meta.slug}:arena`, participants, 2) ?? [];
-  const pool = useReelPool(useMemo(() => participants.map((p) => p.thumb), [participants]));
   useEffect(() => loadArenaFonts(), []);
 
   const run = saved.run;
@@ -28,7 +27,7 @@ export function OstArena() {
 
   return (
     <div className="ar ar--in">
-      <Broadcast left={photo(pair[0])} right={photo(pair[1])} bug="Tournoi d'OST · 2026" chip={`${participants.length} pistes · ${groups} animes`} pool={pool} solo>
+      <Broadcast left={photo(pair[0])} right={photo(pair[1])} bug="Tournoi d'OST · 2026" chip={`${participants.length} pistes · ${groups} animes`} solo>
         <div className="ar-poster">
           <h1 className="ar-poster-title">
             Deux OST. <span>Une seule reste.</span>

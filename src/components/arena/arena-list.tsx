@@ -1,10 +1,9 @@
-import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Le choix de l'arène : une bande par tournoi, deux photos de son catalogue
-// côte à côte. À l'arrivée, une barre blanche balaie la bande ; au survol la
-// bande s'éclaire et une lumière suit la souris.
+// côte à côte. Rien ne bouge à l'arrivée ; au survol la bande s'éclaire et
+// une lumière suit la souris.
 
 export type Arena = {
   id: string;
@@ -19,65 +18,47 @@ export type Arena = {
   kind: string;
 };
 
-const EASE = [0.16, 1, 0.3, 1] as const;
-
 export function ArenaList({ arenas }: { arenas: Arena[] }) {
-  const reduce = useReducedMotion();
   return (
     <ol className="ar-arenas">
       {arenas.map((a, i) => (
-        // L'élément observé reste entier : sur mobile, Chrome ne voit jamais à
-        // l'écran un élément que son propre clip-path masque en entier.
-        <motion.li key={a.id} className="ar-arena-slot" initial={reduce ? false : "out"} whileInView="in" viewport={{ once: true, margin: "-60px" }}>
-          {/* Habillage télé : une barre blanche balaie la bande, la bande apparaît derrière. */}
-          {reduce ? null : (
-            <motion.i
-              className="ar-arena-bar"
-              aria-hidden
-              variants={{ out: { x: "-101%" }, in: { x: ["-101%", "0%", "101%"], transition: { duration: 0.8, times: [0, 0.45, 1], ease: [0.7, 0, 0.3, 1] } } }}
-            />
-          )}
-          <motion.div
-            className="ar-arena-wipe"
-            variants={{ out: { opacity: 0, x: -16 }, in: { opacity: 1, x: 0, transition: { delay: 0.32, duration: 0.6, ease: EASE } } }}
+        <li key={a.id}>
+          <Link
+            to={a.to}
+            className="ar-arena"
+            onPointerMove={(e) => {
+              if (e.pointerType !== "mouse") return;
+              const r = e.currentTarget.getBoundingClientRect();
+              e.currentTarget.style.setProperty("--sx", `${e.clientX - r.left}px`);
+              e.currentTarget.style.setProperty("--sy", `${e.clientY - r.top}px`);
+            }}
           >
-            <Link
-              to={a.to}
-              className="ar-arena"
-              onPointerMove={(e) => {
-                if (e.pointerType !== "mouse") return;
-                const r = e.currentTarget.getBoundingClientRect();
-                e.currentTarget.style.setProperty("--sx", `${e.clientX - r.left}px`);
-                e.currentTarget.style.setProperty("--sy", `${e.clientY - r.top}px`);
-              }}
-            >
-              <i className="ar-arena-spot" aria-hidden />
-              <span className="ar-arena-media" aria-hidden>
-                <span className="ar-arena-half is-red">
-                  <img src={a.images[0]} alt="" loading="lazy" decoding="async" />
-                </span>
-                <span className="ar-arena-half is-blue">
-                  <img src={a.images[1]} alt="" loading="lazy" decoding="async" />
-                </span>
+            <i className="ar-arena-spot" aria-hidden />
+            <span className="ar-arena-media" aria-hidden>
+              <span className="ar-arena-half is-red">
+                <img src={a.images[0]} alt="" loading="lazy" decoding="async" />
               </span>
-              <span className="ar-arena-n" aria-hidden>
-                {String(i + 1).padStart(2, "0")}
+              <span className="ar-arena-half is-blue">
+                <img src={a.images[1]} alt="" loading="lazy" decoding="async" />
               </span>
-              <span className="ar-arena-txt">
-                <small>{a.kind}</small>
-                <b>{a.title}</b>
-                <em>{a.tagline}</em>
+            </span>
+            <span className="ar-arena-n" aria-hidden>
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <span className="ar-arena-txt">
+              <small>{a.kind}</small>
+              <b>{a.title}</b>
+              <em>{a.tagline}</em>
+            </span>
+            <span className="ar-arena-meta">
+              {a.count ? <span>{a.count}</span> : null}
+              {a.status ? <span className="is-live">{a.status}</span> : null}
+              <span className="ar-arena-go">
+                Entrer <ArrowUpRight size={16} />
               </span>
-              <span className="ar-arena-meta">
-                {a.count ? <span>{a.count}</span> : null}
-                {a.status ? <span className="is-live">{a.status}</span> : null}
-                <span className="ar-arena-go">
-                  Entrer <ArrowUpRight size={16} />
-                </span>
-              </span>
-            </Link>
-          </motion.div>
-        </motion.li>
+            </span>
+          </Link>
+        </li>
       ))}
     </ol>
   );

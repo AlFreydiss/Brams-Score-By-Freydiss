@@ -99,40 +99,9 @@
   background: #fff;
 }
 
-/* Entrée : les deux faces arrivent de haut et de bas. */
-[data-t="rap"] .t-half--left .t-media {
-  animation: t-face-a 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.55s both;
-}
-[data-t="rap"] .t-half--right .t-media {
-  animation: t-face-b 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.6s both;
-}
-[data-t="rap"] .t-card {
-  animation: t-card-out 0.25s ease 0.5s forwards;
-}
 [data-t="rap"] .t-card b {
   font-size: clamp(80px, 13vw, 200px);
   color: var(--t-accent);
-}
-
-@keyframes t-face-a {
-  from {
-    opacity: 0;
-    translate: 0 -6%;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-@keyframes t-face-b {
-  from {
-    opacity: 0;
-    translate: 0 6%;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
 }
 
 @media (max-width: 760px) {

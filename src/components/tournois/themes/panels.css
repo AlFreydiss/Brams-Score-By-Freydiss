@@ -60,10 +60,6 @@
 [data-t="panels"] .t-half--right .t-frame path {
   animation-delay: 0.3s;
 }
-[data-t="panels"] .t-media {
-  animation: t-ink 0.6s ease 0.8s both;
-}
-
 /* Cartouches de narration. */
 [data-t="panels"] .t-info,
 [data-t="panels"] .t-half--right .t-info {
@@ -154,45 +150,10 @@
 [data-t="panels"] .t-card b {
   color: var(--t-ink);
 }
-[data-t="panels"] .t-card {
-  animation: t-card-out 0.3s ease 0.2s forwards;
-}
 [data-t="panels"] .t-toast {
   border: 2.5px solid var(--t-ink);
   box-shadow: 4px 4px 0 var(--t-ink);
   color: var(--t-ink);
-}
-
-/* Le perdant se tourne comme une page. */
-[data-t="panels"] .t-half--left.is-lose {
-  transform-origin: left center;
-  animation: t-turn-l 0.8s cubic-bezier(0.5, 0, 0.7, 0.4) forwards;
-}
-[data-t="panels"] .t-half--right.is-lose {
-  transform-origin: right center;
-  animation: t-turn-r 0.8s cubic-bezier(0.5, 0, 0.7, 0.4) forwards;
-}
-
-@keyframes t-ink {
-  from {
-    opacity: 0;
-    filter: contrast(2) brightness(1.6);
-  }
-  to {
-    opacity: 1;
-  }
-}
-@keyframes t-turn-l {
-  to {
-    rotate: y 100deg;
-    opacity: 0;
-  }
-}
-@keyframes t-turn-r {
-  to {
-    rotate: y -100deg;
-    opacity: 0;
-  }
 }
 
 @media (max-width: 760px) {

@@ -72,6 +72,11 @@
   filter: drop-shadow(0 0 5px rgba(220, 230, 255, 0.5));
 }
 
+/* Le VS sur la lame. */
+[data-t="ost"] .t-vs {
+  display: grid;
+}
+
 /* Écouter : un rond blanc cerclé, plein pendant la lecture. */
 [data-t="ost"] .t-btn--play {
   height: 48px;

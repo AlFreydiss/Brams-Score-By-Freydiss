@@ -30,16 +30,9 @@ function link(x1: number, y1: number, x2: number, y2: number) {
 /** Un nœud du tableau : creux, puis plein de la couleur de son camp quand le signal passe. */
 function Node({ side, at, delay }: { side: number; at: React.CSSProperties; delay: number }) {
   return (
-    <motion.i
-      className={`ar-b-node ${side ? "is-blue" : "is-red"}`}
-      style={at}
-      initial={{ scale: 1 }}
-      whileInView={{ scale: [1, 1.7, 1] }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ delay, duration: 0.5, ease: "easeOut" }}
-    >
-      <motion.b initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: "-60px" }} transition={{ delay, duration: 0.2 }} />
-    </motion.i>
+    <i className={`ar-b-node ${side ? "is-blue" : "is-red"}`} style={at}>
+      <motion.b initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true, margin: "-60px" }} transition={{ delay, duration: 0.3 }} />
+    </i>
   );
 }
 
@@ -101,10 +94,10 @@ export function MiniBracket({ left, right, current, size }: { left: Participant[
         <motion.span
           className="ar-b-crown"
           style={box(X.c, 130)}
-          initial={reduce ? false : { scale: 0.6, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 1 }}
+          initial={reduce ? false : { opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-60px" }}
-          transition={{ delay: 0.9, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ delay: 0.9, duration: 0.5 }}
         >
           <Crown size={18} strokeWidth={1.6} />
         </motion.span>

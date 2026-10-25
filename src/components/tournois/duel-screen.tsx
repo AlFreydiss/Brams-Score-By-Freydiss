@@ -37,10 +37,13 @@ type Props = {
   onChoose: (side: Side, ms: number) => boolean;
   /** Fin de l'animation du choix : la page peut afficher la suite. */
   onDone: () => void;
+  /** Le duel arrive en glissant depuis le précédent : pas de seconde entrée. */
+  swiped?: boolean;
 };
 
 // Durée de l'entrée propre à chaque univers avant que le duel soit jouable.
-const ENTER_MS: Record<Seam, number> = { diag: 1050, screens: 1250, feather: 1300, tape: 900, zigzag: 850, slash: 1000, gutter: 1150 };
+// Même rythme dans chaque univers : seule la forme de la coupe change.
+const ENTER_MS: Record<Seam, number> = { diag: 1100, screens: 1100, feather: 1100, tape: 1100, zigzag: 1100, slash: 1100, gutter: 1100 };
 // Écart (px) entre les deux moitiés une fois coupées.
 const PART_PX: Record<Seam, number> = { diag: 6, screens: 0, feather: 0, tape: 0, zigzag: 4, slash: 0, gutter: 0 };
 
@@ -68,7 +71,7 @@ export function DuelScreen(props: Props) {
   return <Stage key={narrow ? "v" : "h"} vertical={narrow} {...props} />;
 }
 
-function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, onChoose, onDone, vertical }: Props & { vertical: boolean }) {
+function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, onChoose, onDone, swiped, vertical }: Props & { vertical: boolean }) {
   const { meta, player, saved } = useTournament();
   const navigate = useNavigate();
   const reduce = useReducedMotion();
@@ -78,13 +81,16 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   const abOk = audio && seam !== "screens" && seam !== "feather";
   const stageRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<"enter" | "open" | "picked">(reduce ? "open" : "enter");
+  const [phase, setPhase] = useState<"enter" | "open" | "picked">(reduce || swiped ? "open" : "enter");
   const [picked, setPicked] = useState<Side | null>(null);
   const [focus, setFocus] = useState<Side>("left");
   const [toast, setToast] = useState<{ text: string; tone: "ok" | "err" } | null>(null);
   const [settings, setSettings] = useState(false);
   const [zoom, setZoom] = useState<Participant | null>(null);
-  const [full, setFull] = useState(false);
+  // Le plein écran vit sur la page du duel, pas sur la scène : chaque duel
+  // remonte une scène neuve, et le navigateur quitte le plein écran quand
+  // l'élément affiché disparaît.
+  const [full, setFull] = useState(() => typeof document !== "undefined" && !!document.fullscreenElement);
   // Répartition des votes du site sur ce duel, lue juste après le choix.
   const [split, setSplit] = useState<{ left: number; total: number } | null>(null);
   // Écoute alternée : A puis B, 7 s chacun, au même passage du morceau.
@@ -101,7 +107,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   const shownAt = useRef(0);
 
   const s = useMotionValue(50);
-  const open = useMotionValue(reduce ? 1 : 0);
+  const open = useMotionValue(reduce || swiped ? 1 : 0);
   const w = useMotionValue(1200);
   const h = useMotionValue(800);
 
@@ -138,13 +144,21 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   const outlineL = useTransform(() => polyPath(geo().left, w.get(), h.get()));
   const outlineR = useTransform(() => polyPath(geo().right, w.get(), h.get()));
   const featherVar = useTransform(() => `${s.get()}%`);
+  const vsX = useTransform(() => {
+    const pts = geo().seam;
+    return `${(pts[0][0] + pts[pts.length - 1][0]) / 2}%`;
+  });
+  const vsY = useTransform(() => {
+    const pts = geo().seam;
+    return `${(pts[0][1] + pts[pts.length - 1][1]) / 2}%`;
+  });
   const partL = useTransform(open, (o) => -o * PART_PX[seam]);
   const partR = useTransform(open, (o) => o * PART_PX[seam]);
 
   // Entrée : chaque univers a sa propre ouverture (CSS, selon data-phase), puis
   // les deux moitiés s'écartent et le duel devient jouable.
   useEffect(() => {
-    if (reduce) {
+    if (reduce || swiped) {
       shownAt.current = performance.now();
       return;
     }
@@ -158,6 +172,8 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       a.stop();
       clearTimeout(t);
     };
+    // Une seule entrée, au montage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce, seam, open]);
 
   // Lecture automatique de la piste A, seulement si l'utilisateur l'a demandée.
@@ -169,9 +185,19 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // Le duel suivant repart d'un lecteur propre.
-  const { stop } = player;
-  useEffect(() => () => stop(), [stop]);
+  // Le duel suivant repart d'un lecteur propre. Pendant le glissement, l'ancien
+  // duel ne coupe que sa propre piste : le nouveau a déjà pu en lancer une.
+  const live = useRef(player);
+  live.current = player;
+  useEffect(
+    () => () => {
+      const pl = live.current;
+      if (pl.id === left.id || pl.id === right.id) pl.stop();
+    },
+    // Au démontage seulement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   useEffect(() => {
     if (!toast) return;
@@ -214,7 +240,8 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
           });
         }, 400);
       }
-      setTimeout(onDone, reduce ? 900 : meta.statsId ? 2400 : 1500);
+      // Le verdict se lit, puis le duel suivant arrive sans faire attendre.
+      setTimeout(onDone, reduce ? 900 : meta.statsId ? 1800 : 1100);
     },
     [picked, phase, onChoose, practice, s, seam, vertical, reduce, onDone, meta.statsId, left, right, player],
   );
@@ -259,14 +286,14 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   }, [ab, abOk, left, right]);
 
   const toggleFull = useCallback(() => {
-    const el = stageRef.current;
+    const el = stageRef.current?.closest<HTMLElement>(".t-duel-page") ?? stageRef.current;
     if (!el) return;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     else el.requestFullscreen?.().catch(() => {});
   }, []);
 
   useEffect(() => {
-    const on = () => setFull(document.fullscreenElement === stageRef.current);
+    const on = () => setFull(!!document.fullscreenElement?.contains(stageRef.current));
     document.addEventListener("fullscreenchange", on);
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
@@ -315,6 +342,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       ref={stageRef}
       className={`t-stage ${vertical ? "is-v" : "is-h"} ${full ? "is-full" : ""}`}
       data-seam={seam}
+      data-swiped={swiped || undefined}
       data-phase={phase}
       data-picked={picked ?? undefined}
       onPointerLeave={(e) => {
@@ -332,7 +360,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       <motion.div
         ref={sceneRef}
         className="t-scene"
-        initial={reduce ? { opacity: 0 } : "hidden"}
+        initial={swiped ? false : reduce ? { opacity: 0 } : "hidden"}
         animate={reduce ? { opacity: 1 } : "shown"}
         exit={reduce ? { opacity: 0 } : "gone"}
         variants={SCENE_VARIANTS[seam]}
@@ -422,13 +450,6 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
                       </button>
                     </div>
                     {audio ? <SeekBar player={player} active={loaded} label={`Position dans ${hidden ? sideName : p.title}`} /> : null}
-                    {p.sound?.k === "audio" && p.sound.preview && !hidden ? (
-                      <p className="t-src-line">
-                        <a className="t-src" href={p.sound.link} target="_blank" rel="noopener noreferrer">
-                          Extrait de 30 s, morceau complet sur Apple Music
-                        </a>
-                      </p>
-                    ) : null}
                     <button
                       type="button"
                       className="t-choose"
@@ -466,6 +487,11 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
             </>
           ) : null}
         </svg>
+
+        {/* Le VS, posé au milieu de la coupe, la suit quand elle penche. */}
+        <motion.span className="t-vs" style={{ left: vsX, top: vsY }} aria-hidden>
+          VS
+        </motion.span>
 
         <div className="t-card" aria-hidden>
           <Card seam={seam} round={round} isFinal={isFinal} practice={practice} />
@@ -576,44 +602,13 @@ function polyPath(poly: string, W: number, H: number) {
   return pts.map(([x, y], i) => `${i ? "L" : "M"}${((x * W) / 100).toFixed(1)} ${((y * H) / 100).toFixed(1)}`).join(" ") + " Z";
 }
 
-// Ouverture et fermeture de la scène, propres à chaque univers.
-const SCENE_VARIANTS: Record<Seam, Variants> = {
-  diag: {
-    hidden: { clipPath: "inset(50% 0% 50% 0%)" },
-    shown: { clipPath: "inset(0% 0% 0% 0%)", transition: { duration: 0.46, ease: CUT } },
-    gone: { clipPath: "inset(50% 0% 50% 0%)", transition: { duration: 0.36, ease: CUT } },
-  },
-  screens: {
-    hidden: { opacity: 1 },
-    shown: { opacity: 1 },
-    gone: { scaleY: 0.004, opacity: 0.6, transition: { duration: 0.28, ease: "easeIn" } },
-  },
-  feather: {
-    hidden: { opacity: 0 },
-    shown: { opacity: 1, transition: { duration: 1.1, ease: "easeOut" } },
-    gone: { opacity: 0, transition: { duration: 0.6 } },
-  },
-  tape: {
-    hidden: { opacity: 0, y: 24 },
-    shown: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } },
-    gone: { opacity: 0, y: -18, transition: { duration: 0.3 } },
-  },
-  zigzag: {
-    hidden: { opacity: 0, scale: 1.04 },
-    shown: { opacity: 1, scale: 1, transition: { duration: 0.35, ease: EASE } },
-    gone: { opacity: 0, scale: 0.98, transition: { duration: 0.25 } },
-  },
-  slash: {
-    hidden: { opacity: 1 },
-    shown: { opacity: 1 },
-    gone: { opacity: 0, transition: { duration: 0.35 } },
-  },
-  gutter: {
-    hidden: { opacity: 0, rotateY: -8, x: 40 },
-    shown: { opacity: 1, rotateY: 0, x: 0, transition: { duration: 0.6, ease: EASE } },
-    gone: { opacity: 0, rotateY: 12, x: -60, transition: { duration: 0.4, ease: "easeIn" } },
-  },
+// Ouverture et fermeture de la scène : un fondu, le même pour tous les univers.
+const FADE: Variants = {
+  hidden: { opacity: 0 },
+  shown: { opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
+  gone: { opacity: 0, transition: { duration: 0.32, ease: [0.4, 0, 1, 1] } },
 };
+const SCENE_VARIANTS: Record<Seam, Variants> = { diag: FADE, screens: FADE, feather: FADE, tape: FADE, zigzag: FADE, slash: FADE, gutter: FADE };
 
 // Carton affiché avant la coupe, dans le ton de chaque univers.
 function Card({ seam, round, isFinal, practice }: { seam: Seam; round: RoundInfo | null; isFinal?: boolean; practice?: boolean }) {

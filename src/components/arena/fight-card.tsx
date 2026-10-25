@@ -1,14 +1,16 @@
 import { AnimatePresence, animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion } from "framer-motion";
 import { ArrowDown, Pause, Play } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchPair, recordDuel } from "@/lib/versusStats.js";
 import type { Participant } from "@/lib/tournois/types";
-import { Broadcast, REEL_MS, useReelPool } from "./broadcast";
+import { Broadcast } from "./broadcast";
 
-// Le haut du hub : l'affiche du duel d'OST en direct, jouable. On écoute les
-// deux extraits (vumètre branché sur le vrai son), on choisit d'un clic sur la
-// photo ou sur « Voter » (le vote compte comme un duel du tournoi), la
-// répartition du site s'affiche, puis les bobines tournent jusqu'au duel suivant.
+// Le haut du hub : un duel d'OST jouable, dans la mise en page de l'écran de
+// duel du tournoi (coupe en biais, titres Anton blancs, pilule « Choisir »).
+// On écoute les deux extraits (vumètre branché sur le vrai son), on choisit
+// d'un clic sur la photo ou sur la pilule (le vote compte comme un duel du
+// tournoi), la répartition du site s'affiche, puis la scène s'éteint et le
+// duel suivant se pose.
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -129,9 +131,10 @@ export function FightCard({ pool, statsId, onPickArena }: { pool: Participant[];
   const { playing, toggle, stop, analyser } = usePreview();
   const [split, setSplit] = useState<{ a: number; b: number } | null>(null);
   const [picked, setPicked] = useState<0 | 1 | null>(null);
+  // Le perdant reste en gris le temps que l'ancienne photo s'éteigne.
+  const [shade, setShade] = useState<0 | 1 | null>(null);
   const next = useRef<Participant[]>([]);
   const timer = useRef(0);
-  const reel = useReelPool(useMemo(() => pool.map((p) => p.thumb), [pool]));
 
   useEffect(() => {
     if (pool.length && !pair.length) setPair(pickPair(pool));
@@ -142,9 +145,10 @@ export function FightCard({ pool, statsId, onPickArena }: { pool: Participant[];
   useEffect(() => {
     setSplit(null);
     setPicked(null);
-    if (!a || !b) return;
+    const fade = window.setTimeout(() => setShade(null), 350);
+    if (!a || !b) return () => clearTimeout(fade);
     // Le duel suivant est tiré et ses photos chargées pendant celui-ci :
-    // la bobine se pose sur une image prête.
+    // elles se posent sans attendre le réseau.
     next.current = pickPair(pool, pair);
     for (const p of next.current) {
       const img = new Image();
@@ -155,6 +159,7 @@ export function FightCard({ pool, statsId, onPickArena }: { pool: Participant[];
     fetchPair(statsId, a.id, b.id).then((r: { a: number; b: number } | null) => on && r && setSplit(r));
     return () => {
       on = false;
+      clearTimeout(fade);
     };
     // Un tirage par duel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,6 +171,7 @@ export function FightCard({ pool, statsId, onPickArena }: { pool: Participant[];
   const vote = (i: 0 | 1) => {
     if (picked != null || !a || !b) return;
     setPicked(i);
+    setShade(i);
     stop();
     // Le vote du joueur compte tout de suite dans la répartition affichée.
     setSplit((s) => ({ a: (s?.a ?? 0) + (i ? 0 : 1), b: (s?.b ?? 0) + (i ? 1 : 0) }));
@@ -176,49 +182,33 @@ export function FightCard({ pool, statsId, onPickArena }: { pool: Participant[];
     }, 1700);
   };
 
-  // Les noms tombent au moment où les bobines se posent.
-  const hit = reduce ? 0 : REEL_MS / 1000 - 0.12;
-  const ticker = useMemo(() => {
-    const picks = [...pool].sort(() => Math.random() - 0.5).slice(0, 12);
-    return [`${pool.length} OST en compétition`, ...picks.map((p) => `${p.title} · ${p.sub ?? p.group}`)];
-  }, [pool]);
+  // Les noms arrivent quand les photos se posent.
+  const hit = reduce ? 0 : 0.55;
 
   return (
     <Broadcast
+      duel
       left={photo(a)}
       right={photo(b)}
-      bug="Tournoi 2026 · en direct"
-      chip={
+      bug={
         <>
-          Duel n° {round}
-          {total ? <small> · {total} vote{total > 1 ? "s" : ""}</small> : null}
+          Tournoi 2026 <b>Duel n° {round}</b>
+          {total ? (
+            <small>
+              {total} vote{total > 1 ? "s" : ""}
+            </small>
+          ) : null}
         </>
       }
-      picked={picked}
-      pool={reel}
+      chip={
+        <button type="button" className="ar-tool" onClick={onPickArena}>
+          <ArrowDown size={14} />
+          Choisir mon arène
+        </button>
+      }
+      picked={shade}
       onPick={vote}
       pickLabels={a && b ? [`Choisir ${a.title}`, `Choisir ${b.title}`] : undefined}
-      ticker={
-        <>
-          <span className="ar-live">En direct</span>
-          <div className="ar-marquee" aria-hidden>
-            <div className="ar-marquee-track">
-              {[0, 1].map((copy) => (
-                <span key={copy} className="ar-marquee-run">
-                  <b>Deux camps, un seul vainqueur.</b>
-                  {ticker.map((t, k) => (
-                    <span key={k}>{t}</span>
-                  ))}
-                </span>
-              ))}
-            </div>
-          </div>
-          <p className="sr-only">Deux camps, un seul vainqueur.</p>
-          <button type="button" className="ar-go" onClick={onPickArena}>
-            Choisir mon arène <ArrowDown size={16} />
-          </button>
-        </>
-      }
     >
       <AnimatePresence mode="wait">
         {a && b ? (
@@ -230,49 +220,39 @@ export function FightCard({ pool, statsId, onPickArena }: { pool: Participant[];
                 <motion.div
                   key={p.id}
                   className={`ar-fighter ar-fighter--${side ? "blue" : "red"} ${picked === side ? "is-win" : picked != null ? "is-lose" : ""}`}
-                  initial={reduce ? false : { opacity: 0, x: side ? 60 : -60 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: hit, duration: 0.5, ease: EASE }}
+                  initial={reduce ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: hit, duration: 0.7, ease: EASE }}
                 >
-                  <small>{[p.sub ?? p.group, p.artist].filter(Boolean).join(" · ")}</small>
-                  <b>
-                    <span className="ar-fighter-name">{p.title}</span>
-                    {on ? <Vu analyser={analyser} /> : null}
-                  </b>
-                  <span className="ar-meter" aria-hidden>
-                    <motion.i initial={{ scaleX: 0 }} animate={{ scaleX: share(side) / 100 }} transition={{ duration: 1.1, ease: EASE }} />
-                  </span>
-                  <div className="ar-fighter-row">
-                    <span className="ar-pct">
-                      {total || picked != null ? (
-                        <>
-                          <Pct value={share(side)} /> %
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </span>
-                    <button type="button" className="ar-listen" onClick={() => toggle(p)} aria-pressed={on} aria-label={`${on ? "Pause" : "Écouter"} ${p.title}`}>
-                      {on ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
-                      <span>{on ? "Pause" : "Écouter"}</span>
-                    </button>
-                    <button type="button" className="ar-vote" onClick={() => vote(side)} disabled={picked != null} aria-label={`Voter pour ${p.title}`}>
-                      {picked === side ? "Ton choix" : "Voter"}
-                    </button>
-                  </div>
+                  <p className="ar-side">OST {side ? "B" : "A"}</p>
+                  {p.sub ?? p.group ? <p className="ar-from">{p.sub ?? p.group}</p> : null}
+                  <h2 className={`ar-fighter-name ${p.title.length > 24 ? "is-long" : ""}`}>{p.title}</h2>
+                  {p.artist ? <p className="ar-artist">{p.artist}</p> : null}
+                  {picked == null ? (
+                    <>
+                      <div className="ar-fighter-row">
+                        <button type="button" className="ar-listen" onClick={() => toggle(p)} aria-pressed={on} aria-label={`${on ? "Pause" : "Écouter"} ${p.title}`}>
+                          <span className="ar-listen-dot">{on ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}</span>
+                          <span>{on ? "Pause" : "Écouter"}</span>
+                          {on ? <Vu analyser={analyser} /> : null}
+                        </button>
+                      </div>
+                      <button type="button" className="ar-vote" onClick={() => vote(side)} aria-label={`Voter pour ${p.title}`}>
+                        Choisir cette OST
+                      </button>
+                    </>
+                  ) : (
+                    // La répartition des votes du site, une fois le choix fait.
+                    <p className="ar-result">
+                      <b>
+                        <Pct value={share(side)} /> %
+                      </b>
+                      {picked === side ? <span>Ton choix</span> : null}
+                    </p>
+                  )}
                 </motion.div>
               );
             })}
-            {/* Le VS claque au moment de l'impact. */}
-            <motion.span
-              className="ar-fight-vs"
-              aria-hidden
-              initial={reduce ? false : { scale: 1.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: hit, type: "spring", stiffness: 520, damping: 18 }}
-            >
-              VS
-            </motion.span>
           </motion.div>
         ) : null}
       </AnimatePresence>

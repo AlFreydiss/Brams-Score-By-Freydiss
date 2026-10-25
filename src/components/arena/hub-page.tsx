@@ -13,7 +13,6 @@ import { MiniBracket } from "./mini-bracket";
 import { RankRow } from "./rows";
 import { ArenaList, type Arena } from "./arena-list";
 import { loadArenaFonts } from "./fonts";
-import { Reveal } from "./reveal";
 import "./arena.css";
 
 // Hub des tournois (« Tournoi 2026 »), façon affiche de combat : en haut le
@@ -145,7 +144,7 @@ export default function ArenaHubPage() {
         {bracket.left.length === 4 ? (
           <div className="ar-section">
             <h2 className="ar-h2">
-              <Reveal>Le tableau</Reveal> <small>Du 1/64 à la finale</small>
+              Le tableau <small>Du 1/64 à la finale</small>
             </h2>
             <MiniBracket left={bracket.left} right={bracket.right} current={bracket.current} size={saved.run?.size} />
           </div>
@@ -157,14 +156,14 @@ export default function ArenaHubPage() {
 
         <div ref={arenasRef} className="ar-section">
           <h2 className="ar-h2">
-            <Reveal>Choisis ton arène</Reveal> <small>Chaque duel oppose deux camps. Tu tranches, le tableau avance.</small>
+            Choisis ton arène <small>Chaque duel oppose deux camps. Tu tranches, le tableau avance.</small>
           </h2>
           <ArenaRows ostCount={ost.length} />
         </div>
 
         <div className="ar-section">
           <h2 className="ar-h2">
-            <Reveal>Autres modes</Reveal>
+            Autres modes
           </h2>
           <ul className="ar-mini">
             {MORE.map((m) => (
@@ -181,7 +180,7 @@ export default function ArenaHubPage() {
 
         <div className="ar-section ar-end">
           <h2 className="ar-h2">
-            <Reveal>Bientôt</Reveal>
+            Bientôt
           </h2>
           <p className="ar-soon">
             {SOON.map((s) => (
