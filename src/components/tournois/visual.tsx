@@ -6,7 +6,20 @@ import type { Player } from "./use-player";
 // image tant qu'on ne l'écoute pas). L'image n'apparaît qu'une fois chargée,
 // en fondu : jamais de photo à moitié peinte. Une source qui ne répond pas
 // laisse place à la vignette, puis à un aplat avec l'initiale.
-export function Visual({ p, player, posterAt = 20, alt = "" }: { p: Participant; player?: Player; posterAt?: number; alt?: string }) {
+export function Visual({
+  p,
+  player,
+  posterAt = 20,
+  alt = "",
+  sizes = "(max-width: 760px) 100vw, 56vw",
+}: {
+  p: Participant;
+  player?: Player;
+  posterAt?: number;
+  alt?: string;
+  /** Largeur affichée, pour choisir la bonne taille d'image (une moitié de duel par défaut). */
+  sizes?: string;
+}) {
   const [src, setSrc] = useState(p.visual.k === "img" ? p.visual.src : null);
   const [broken, setBroken] = useState(false);
   const [ready, setReady] = useState(false);
@@ -43,13 +56,15 @@ export function Visual({ p, player, posterAt = 20, alt = "" }: { p: Participant;
   const isImg = p.visual.k === "img";
   const imgSrc = isImg ? src : p.thumb;
   const pos = isImg ? (p.visual as { pos?: string }).pos : undefined;
-  const hi = isImg && src === p.visual.src ? (p.visual as { hi?: string }).hi : undefined;
+  // Les originaux TMDB vont jusqu'à la 4K (plusieurs Mo à décoder) : on s'en tient au w1280.
+  const hiSrc = isImg && src === p.visual.src ? (p.visual as { hi?: string }).hi : undefined;
+  const hi = hiSrc && !hiSrc.includes("/t/p/original/") ? hiSrc : undefined;
   return (
     <img
       className={`t-visual ${ready ? "is-ready" : ""}`}
       src={imgSrc ?? p.thumb}
       srcSet={hi ? `${imgSrc} 1600w, ${hi} 2400w` : undefined}
-      sizes={hi ? "(min-width: 1800px) 70vw, 100vw" : undefined}
+      sizes={hi ? sizes : undefined}
       alt={alt}
       draggable={false}
       decoding="async"

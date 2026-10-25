@@ -1,6 +1,8 @@
 /* Arène « Rouge contre Bleu » : hub des tournois et accueil du tournoi d'OST.
-   Préfixe ar-. Rien ne tourne en boucle à part le canvas des braises, arrêté
-   hors écran. Les mouvements passent par transform / opacity / clip-path. */
+   Préfixe ar-. Tout ce qui bouge est un calque composé (will-change) et ne
+   bouge qu'en transform / opacité : pas de repeinture pendant les
+   animations. Pas de flou d'arrière-plan (backdrop-filter) au-dessus des
+   braises : il serait recalculé à chaque image. */
 
 .ar {
   --ar-bg: #05060a;
@@ -8,14 +10,13 @@
   --ar-mute: #9aa0ae;
   --ar-line: rgba(255, 255, 255, 0.09);
   --ar-red: #ff2d46;
-  --ar-red-deep: #6d0714;
   --ar-blue: #3f7bff;
-  --ar-blue-deep: #071b5e;
   --ar-steel: #dfe3ec;
   --ar-display: "Anton", "Impact", sans-serif;
   --ar-jp: "Shippori Mincho", serif;
   --ar-ui: "Inter", system-ui, sans-serif;
   --ar-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ar-gap: clamp(26px, 3vw, 60px);
   position: relative;
   background: var(--ar-bg);
   color: var(--ar-ink);
@@ -32,39 +33,75 @@
   outline-offset: 3px;
 }
 
-/* ── Hero ─────────────────────────────────────────────────────────── */
+/* ── Affiche ──────────────────────────────────────────────────────── */
 .ar-hero {
   position: relative;
   isolation: isolate;
   min-height: min(100svh, 1040px);
   padding: 0 16px 56px;
+  overflow: clip;
+}
+/* Fondu fixe en bas : le fond qui descend au défilement ne laisse pas de trait. */
+.ar-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  height: 260px;
+  background: linear-gradient(to top, var(--ar-bg) 18%, transparent);
+  pointer-events: none;
+}
+.ar-hero--solo {
+  display: grid;
+  align-content: center;
+  min-height: min(84svh, 820px);
+  padding-bottom: 90px;
 }
 .ar-stage {
   position: absolute;
-  inset: 0;
+  inset: 0 0 -2px;
   z-index: -1;
   overflow: hidden;
+  will-change: transform, opacity;
 }
-.ar-camp {
+.ar-camp-wrap {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 58%;
+  will-change: transform;
+}
+.ar-camp-wrap--red {
+  left: 0;
+}
+.ar-camp-wrap--blue {
+  right: 0;
+}
+.ar-camp-par {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+/* Bichromie : la photo en gris multipliée par la couleur du camp, peinte une
+   fois dans son calque. */
+.ar-camp {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
+  will-change: transform, opacity;
 }
 .ar-camp--red {
-  left: 0;
   background: #e0203a;
   -webkit-mask-image: linear-gradient(to right, #000 52%, transparent 96%);
   mask-image: linear-gradient(to right, #000 52%, transparent 96%);
 }
 .ar-camp--blue {
-  right: 0;
   background: #2e66ea;
   -webkit-mask-image: linear-gradient(to left, #000 52%, transparent 96%);
   mask-image: linear-gradient(to left, #000 52%, transparent 96%);
 }
-/* Bichromie : la photo en gris multipliée par la couleur du camp. */
 .ar-camp img {
   position: absolute;
   inset: -3%;
@@ -74,12 +111,7 @@
   object-fit: cover;
   filter: grayscale(1) contrast(1.35) brightness(0.92);
   mix-blend-mode: multiply;
-  translate: calc(var(--px, 0) * -16px) calc(var(--py, 0) * -10px);
-  transition: translate 1.2s var(--ar-ease);
   user-select: none;
-}
-.ar-camp--blue img {
-  translate: calc(var(--px, 0) * -10px) calc(var(--py, 0) * -10px);
 }
 /* Ombres profondes et un éclat au bord extérieur de chaque camp. */
 .ar-camp::after {
@@ -90,7 +122,6 @@
   background:
     radial-gradient(ellipse 60% 70% at 18% 40%, rgba(255, 120, 120, 0.25), transparent 70%),
     linear-gradient(to bottom, rgba(5, 6, 10, 0.35), rgba(5, 6, 10, 0.1) 30%, rgba(5, 6, 10, 0.75) 92%);
-  mix-blend-mode: normal;
 }
 .ar-camp--blue::after {
   background:
@@ -125,12 +156,34 @@
   box-shadow:
     0 0 14px 3px rgba(210, 225, 255, 0.55),
     0 0 70px 18px rgba(140, 110, 255, 0.2);
+  will-change: transform, opacity;
 }
 .ar-flash {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.55), transparent 42%);
+  will-change: opacity;
+}
+/* L'onde de choc : peinte une fois, agrandie par la carte graphique. */
+.ar-shock {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 28vmin;
+  height: 28vmin;
+  margin: -14vmin 0 0 -14vmin;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  box-shadow:
+    -6px 0 26px rgba(255, 45, 70, 0.7),
+    6px 0 26px rgba(63, 123, 255, 0.7),
+    inset 0 0 30px rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.ar-shock--2 {
+  border-width: 1px;
 }
 
 .ar-jp {
@@ -157,43 +210,98 @@
 .ar-head {
   position: relative;
   z-index: 2;
-  padding-top: clamp(96px, 16vh, 180px);
+  padding-top: clamp(110px, 20vh, 220px);
   text-align: center;
 }
-.ar-over {
-  margin: 0 0 4px;
-  font: 600 13px var(--ar-ui);
-  letter-spacing: 0.5em;
-  text-transform: uppercase;
-  color: var(--ar-mute);
+.ar-hero--solo .ar-head {
+  padding-top: 40px;
 }
-/* Métal brossé : dégradé acier, bords légèrement rongés (filtre SVG), liseré
-   rouge à gauche et bleu à droite. */
-.ar-title {
-  position: relative;
-  display: inline-block;
-  margin: 0;
-  font: 400 clamp(88px, 15vw, 236px) / 0.84 var(--ar-display);
-  letter-spacing: -0.005em;
-  text-transform: uppercase;
-  transform: skewX(-9deg);
-  filter: url(#ar-rough) drop-shadow(-4px 0 0 rgba(255, 40, 70, 0.6)) drop-shadow(4px 0 0 rgba(70, 130, 255, 0.6)) drop-shadow(0 18px 40px rgba(0, 0, 0, 0.85));
-}
-.ar-title > span:not(.ar-title-sheen) {
-  display: inline-block;
+/* Acier rouge, acier bleu : dégradé découpé dans la lettre. */
+.ar-word-txt,
+.ar-line-txt,
+.ar-word-sheen,
+.ar-line-sheen {
   color: transparent;
-  background: linear-gradient(180deg, #ffffff 0%, #e4e7ee 34%, #8b91a1 50%, #f1f3f7 60%, #9aa0af 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
-.ar-title-sheen {
+.ar-word--red .ar-word-txt,
+.ar-line--red .ar-line-txt {
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffdfe3 34%, #b8414f 52%, #ffeef0 63%, #d06a77 100%);
+}
+.ar-word--blue .ar-word-txt,
+.ar-line--blue .ar-line-txt {
+  background-image: linear-gradient(180deg, #ffffff 0%, #e0eaff 34%, #4d72c4 52%, #eef3ff 63%, #7393d8 100%);
+}
+.ar-word-sheen,
+.ar-line-sheen {
   position: absolute;
   inset: 0;
-  color: transparent;
-  background: linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) 120% 0 / 260% 100% no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
+  padding: inherit;
+  background: linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) 130% 0 / 260% 100% no-repeat;
   pointer-events: none;
+}
+/* La lueur est portée par le calque qui bouge : rien n'est refiltré en route. */
+.ar-word,
+.ar-line {
+  position: relative;
+  display: inline-block;
+  padding: 0.04em 0.1em 0.08em;
+  will-change: transform, opacity;
+}
+.ar-word--red,
+.ar-line--red {
+  filter: drop-shadow(0 0 20px rgba(255, 45, 70, 0.45)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
+}
+.ar-word--blue,
+.ar-line--blue {
+  filter: drop-shadow(0 0 20px rgba(63, 123, 255, 0.5)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
+}
+/* Titre coupé par la lame : un mot par camp, la lame passe entre les deux. */
+.ar-split {
+  display: grid;
+  grid-template-columns: 1fr var(--ar-gap) 1fr;
+  align-items: baseline;
+  margin: 0;
+  font: 400 clamp(64px, 10.5vw, 180px) / 0.86 var(--ar-display);
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+.ar-word--red {
+  grid-column: 1;
+  justify-self: end;
+}
+.ar-word--blue {
+  grid-column: 3;
+  justify-self: start;
+}
+.ar-lines {
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  font: 400 clamp(48px, 6.6vw, 112px) / 0.98 var(--ar-display);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.ar-motto {
+  display: grid;
+  grid-template-columns: 1fr var(--ar-gap) 1fr;
+  margin: 22px 0 0;
+  font: 400 clamp(15px, 1.5vw, 22px) / 1.2 var(--ar-display);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.ar-motto .is-red {
+  grid-column: 1;
+  justify-self: end;
+  color: #ffb7bf;
+  text-shadow: 0 0 18px rgba(255, 45, 70, 0.45);
+}
+.ar-motto .is-blue {
+  grid-column: 3;
+  justify-self: start;
+  color: #b9cbff;
+  text-shadow: 0 0 18px rgba(63, 123, 255, 0.5);
 }
 .ar-tagline {
   margin: 22px 0 0;
@@ -203,42 +311,66 @@
   text-transform: uppercase;
   color: #cfd3dd;
 }
-/* Le bouton : cadre biseauté, rouge à gauche, bleu à droite. */
+.ar-magnet {
+  display: inline-block;
+  will-change: transform;
+}
+/* Le bouton : une pilule de verre sombre, la flèche dans un rond blanc. Au
+   survol, tout passe en blanc. */
 .ar-cta {
-  position: relative;
   display: inline-flex;
-  margin-top: 34px;
-  padding: 1px;
-  border: 0;
-  background: linear-gradient(90deg, var(--ar-red), rgba(255, 255, 255, 0.5) 50%, var(--ar-blue));
-  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  margin-top: 36px;
+  padding: 7px 7px 7px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(8, 9, 14, 0.55);
+  color: #fff;
   text-decoration: none;
+  box-shadow:
+    -16px 0 44px -20px rgba(255, 45, 70, 0.8),
+    16px 0 44px -20px rgba(63, 123, 255, 0.8);
   transition:
-    scale 0.25s var(--ar-ease),
-    filter 0.25s ease;
-  filter: drop-shadow(0 0 18px rgba(255, 45, 70, 0.35));
+    background 0.3s var(--ar-ease),
+    border-color 0.3s,
+    color 0.3s,
+    box-shadow 0.3s;
 }
 .ar-cta-in {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 17px 42px;
-  clip-path: inherit;
-  background: linear-gradient(90deg, rgba(70, 6, 14, 0.96), rgba(8, 9, 14, 0.96) 50%, rgba(6, 20, 64, 0.96));
-  font: 700 14px var(--ar-ui);
-  letter-spacing: 0.22em;
+  gap: 18px;
+  font: 600 13px var(--ar-ui);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #fff;
 }
-.ar-cta-in svg {
-  color: var(--ar-red);
+.ar-cta-ico {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ar-bg);
+  transition:
+    background 0.3s,
+    color 0.3s,
+    translate 0.35s var(--ar-ease);
 }
 .ar-cta:hover {
-  scale: 1.04;
-  filter: drop-shadow(0 0 26px rgba(255, 45, 70, 0.55)) drop-shadow(0 0 26px rgba(63, 123, 255, 0.45));
+  border-color: #fff;
+  background: #fff;
+  color: var(--ar-bg);
+  box-shadow:
+    -20px 0 54px -18px rgba(255, 45, 70, 0.95),
+    20px 0 54px -18px rgba(63, 123, 255, 0.95);
 }
-.ar-cta:active {
-  scale: 0.98;
+.ar-cta:hover .ar-cta-ico {
+  background: var(--ar-bg);
+  color: #fff;
+  translate: 0 2px;
+}
+a.ar-cta:hover .ar-cta-ico {
+  translate: 3px 0;
 }
 .ar-hero-body {
   position: relative;
@@ -248,25 +380,18 @@
 }
 
 /* ── Duel à l'affiche ─────────────────────────────────────────────── */
-.ar-panel,
 .ar-vs,
 .ar-bracket {
   position: relative;
   border: 1px solid var(--ar-line);
   border-radius: 6px;
-  background: rgba(9, 10, 16, 0.74);
-  backdrop-filter: blur(10px);
-}
-html.perf-lite .ar-vs,
-html.perf-lite .ar-bracket {
-  backdrop-filter: none;
-  background: rgba(9, 10, 16, 0.94);
+  background: rgba(9, 10, 16, 0.9);
 }
 .ar-vs {
   padding: 18px clamp(14px, 2.4vw, 28px) 16px;
   background:
     linear-gradient(105deg, rgba(150, 14, 30, 0.42), transparent 42%, transparent 58%, rgba(22, 60, 190, 0.42)),
-    rgba(9, 10, 16, 0.74);
+    rgba(9, 10, 16, 0.9);
   overflow: hidden;
 }
 .ar-vs-label {
@@ -314,6 +439,12 @@ html.perf-lite .ar-bracket {
 .ar-vs-side--blue .ar-vs-art {
   border-color: rgba(63, 123, 255, 0.6);
   box-shadow: 0 0 28px rgba(63, 123, 255, 0.25);
+}
+.ar-vs-side.is-win .ar-vs-art {
+  box-shadow: 0 0 46px rgba(255, 45, 70, 0.6);
+}
+.ar-vs-side--blue.is-win .ar-vs-art {
+  box-shadow: 0 0 46px rgba(63, 123, 255, 0.6);
 }
 .ar-vs-art img {
   width: 100%;
@@ -371,15 +502,15 @@ html.perf-lite .ar-bracket {
 }
 .ar-vs-txt {
   display: grid;
-  min-width: 0;
   flex: 1;
   gap: 4px;
+  min-width: 0;
 }
 .ar-vs-txt b {
   overflow: hidden;
   font: 600 clamp(16px, 1.5vw, 20px) / 1.2 var(--ar-ui);
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .ar-vs-txt small {
   font-size: 13px;
@@ -441,7 +572,7 @@ html.perf-lite .ar-bracket {
 .ar-vs-side.is-win .ar-vs-vote {
   border-color: #fff;
   background: #fff;
-  color: #05060a;
+  color: var(--ar-bg);
 }
 .ar-vs-vote:disabled {
   cursor: default;
@@ -458,8 +589,8 @@ html.perf-lite .ar-bracket {
   background: linear-gradient(110deg, #ff5a6c 0 49%, #7fa6ff 51% 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.25));
   pointer-events: none;
+  will-change: transform, opacity;
 }
 .ar-vs-mark::before {
   content: "";
@@ -472,6 +603,17 @@ html.perf-lite .ar-bracket {
   rotate: 20deg;
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
 }
+/* Le vote tranche la carte : une entaille de lumière la traverse. */
+.ar-vs-slash {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 46%, rgba(255, 255, 255, 0.95) 49.6%, rgba(255, 255, 255, 0.95) 50.4%, transparent 54%);
+  will-change: transform, opacity;
+}
 .ar-vs-foot {
   margin: 14px 0 0;
   font-size: 12px;
@@ -479,7 +621,7 @@ html.perf-lite .ar-bracket {
   color: var(--ar-mute);
 }
 
-/* ── Aperçu du tableau ─────────────────────────────────────────────── */
+/* ── Aperçu du tableau ────────────────────────────────────────────── */
 .ar-bracket {
   margin-top: 18px;
   padding: 18px clamp(12px, 2vw, 24px) 22px;
@@ -523,12 +665,10 @@ html.perf-lite .ar-bracket {
   vector-effect: non-scaling-stroke;
 }
 .ar-bracket-field path.is-red {
-  stroke: rgba(255, 60, 80, 0.85);
-  filter: drop-shadow(0 0 4px rgba(255, 45, 70, 0.8));
+  stroke: rgba(255, 60, 80, 0.9);
 }
 .ar-bracket-field path.is-blue {
-  stroke: rgba(90, 140, 255, 0.85);
-  filter: drop-shadow(0 0 4px rgba(63, 123, 255, 0.8));
+  stroke: rgba(90, 140, 255, 0.9);
 }
 .ar-b-thumb,
 .ar-b-q,
@@ -575,6 +715,7 @@ html.perf-lite .ar-bracket {
   box-shadow:
     -8px 0 22px rgba(255, 45, 70, 0.35),
     8px 0 22px rgba(63, 123, 255, 0.35);
+  will-change: transform, opacity;
 }
 
 /* ── Rangées classées ─────────────────────────────────────────────── */
@@ -583,7 +724,7 @@ html.perf-lite .ar-bracket {
   padding: 20px clamp(12px, 2vw, 24px) 22px;
   border: 1px solid var(--ar-line);
   border-radius: 6px;
-  background: rgba(9, 10, 16, 0.8);
+  background: rgba(9, 10, 16, 0.9);
 }
 .ar-rank-head {
   display: flex;
@@ -625,7 +766,9 @@ html.perf-lite .ar-bracket {
   margin: 0;
   padding: 0;
   list-style: none;
+  perspective: 900px;
 }
+/* Inclinaison 3D qui suit la souris (--rx / --ry posés à l'évènement). */
 .ar-rank-card {
   position: relative;
   display: block;
@@ -637,10 +780,16 @@ html.perf-lite .ar-bracket {
   overflow: hidden;
   background: #111;
   text-align: left;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
   transition:
     translate 0.45s var(--ar-ease),
+    transform 0.35s var(--ar-ease),
     border-color 0.3s,
     box-shadow 0.3s;
+}
+.ar-rank-card:hover {
+  translate: 0 -4px;
 }
 .ar-rank-list li:nth-child(odd) .ar-rank-card:hover,
 .ar-rank-list li:nth-child(odd) .ar-rank-card.is-on {
@@ -651,9 +800,6 @@ html.perf-lite .ar-bracket {
 .ar-rank-list li:nth-child(even) .ar-rank-card.is-on {
   border-color: rgba(63, 123, 255, 0.85);
   box-shadow: 0 10px 30px rgba(63, 123, 255, 0.25);
-}
-.ar-rank-card:hover {
-  translate: 0 -4px;
 }
 .ar-rank-card img {
   position: absolute;
@@ -685,6 +831,7 @@ html.perf-lite .ar-bracket {
   border-radius: 50%;
   background: rgba(5, 6, 10, 0.6);
   font: 600 12px var(--ar-ui);
+  transform: translateZ(24px);
 }
 .ar-rank-t {
   position: absolute;
@@ -694,6 +841,7 @@ html.perf-lite .ar-bracket {
   z-index: 1;
   display: grid;
   gap: 2px;
+  transform: translateZ(24px);
 }
 .ar-rank-t b {
   overflow: hidden;
@@ -743,6 +891,7 @@ html.perf-lite .ar-bracket {
   margin: 0;
   font: 400 26px / 1 var(--ar-display);
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .ar-stats dt {
   font-size: 12px;
@@ -785,11 +934,14 @@ html.perf-lite .ar-bracket {
   padding: 0;
   list-style: none;
 }
+.ar-arenas > li {
+  will-change: transform;
+}
 .ar-arena {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: clamp(64px, 8vw, 132px) 1fr auto;
   align-items: center;
   gap: clamp(14px, 3vw, 40px);
   min-height: clamp(150px, 19vw, 210px);
@@ -831,7 +983,8 @@ html.perf-lite .ar-bracket {
   filter: grayscale(1) brightness(0.5) contrast(1.2);
   transition:
     filter 0.7s var(--ar-ease),
-    scale 1.1s var(--ar-ease);
+    scale 1.1s var(--ar-ease),
+    translate 0.9s var(--ar-ease);
 }
 /* Teinte du camp, qui s'efface au survol pour rendre ses couleurs à la photo. */
 .ar-arena-half::after {
@@ -854,7 +1007,7 @@ html.perf-lite .ar-bracket {
 }
 .ar-arena-blade {
   position: absolute;
-  left: 50%;
+  left: calc(50% + var(--tilt, 0) * 6%);
   top: 0;
   bottom: 0;
   width: 2px;
@@ -864,16 +1017,42 @@ html.perf-lite .ar-bracket {
   transform: scaleY(0.4) skewX(-14deg);
   transition:
     opacity 0.5s,
-    transform 0.7s var(--ar-ease);
+    transform 0.7s var(--ar-ease),
+    left 0.6s var(--ar-ease);
+}
+/* Une lumière qui suit la souris (--sx / --sy posés à l'évènement). */
+.ar-arena-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(360px circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 255, 255, 0.12), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.ar-arena > .ar-arena-n,
+.ar-arena > .ar-arena-txt,
+.ar-arena > .ar-arena-meta {
+  position: relative;
+  z-index: 1;
 }
 .ar-arena:hover,
 .ar-arena:focus-visible {
   border-color: rgba(255, 255, 255, 0.22);
 }
+.ar-arena:hover .ar-arena-spot {
+  opacity: 1;
+}
 .ar-arena:hover .ar-arena-half img,
 .ar-arena:focus-visible .ar-arena-half img {
   filter: grayscale(0) brightness(0.78) contrast(1.05);
   scale: 1.06;
+}
+.ar-arena:hover .ar-arena-half.is-red img {
+  translate: calc(4% + var(--tilt, 0) * 2%) 0;
+}
+.ar-arena:hover .ar-arena-half.is-blue img {
+  translate: calc(-4% + var(--tilt, 0) * 2%) 0;
 }
 .ar-arena:hover .ar-arena-half::after,
 .ar-arena:focus-visible .ar-arena-half::after {
@@ -888,9 +1067,7 @@ html.perf-lite .ar-bracket {
   font: 400 clamp(54px, 7vw, 108px) / 0.8 var(--ar-display);
   color: transparent;
   -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
-  transition:
-    color 0.5s,
-    -webkit-text-stroke-color 0.5s;
+  transition: -webkit-text-stroke-color 0.5s;
 }
 .ar-arena:hover .ar-arena-n {
   -webkit-text-stroke-color: rgba(255, 255, 255, 0.85);
@@ -951,7 +1128,7 @@ html.perf-lite .ar-bracket {
   translate: 3px -3px;
 }
 
-/* Petites arènes (doublage, studio, salon…). */
+/* Autres modes (doublage, studio, salon…). */
 .ar-mini {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -962,6 +1139,7 @@ html.perf-lite .ar-bracket {
 }
 .ar-mini a {
   position: relative;
+  isolation: isolate;
   display: grid;
   align-content: end;
   min-height: 150px;
@@ -971,7 +1149,6 @@ html.perf-lite .ar-bracket {
   overflow: hidden;
   color: #fff;
   text-decoration: none;
-  isolation: isolate;
 }
 .ar-mini img {
   position: absolute;
@@ -1022,6 +1199,132 @@ html.perf-lite .ar-bracket {
   padding-bottom: 90px;
 }
 
+/* ── Écran de départ du tournoi d'OST ─────────────────────────────── */
+.ar-setup {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - 7.5rem);
+  padding: 48px 16px 64px !important;
+  overflow: hidden;
+}
+.ar-stage--fixed {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.ar-mist--setup {
+  background:
+    radial-gradient(ellipse 30% 55% at 50% 48%, rgba(5, 6, 10, 0.6), transparent 80%),
+    linear-gradient(to top, rgba(5, 6, 10, 0.8), transparent 40%);
+}
+.ar-setup .t-setup-box {
+  position: relative;
+  width: min(640px, 100%);
+  max-width: none;
+  margin: 0 !important;
+  padding: clamp(26px, 4vw, 44px) !important;
+  border: 1px solid var(--ar-line);
+  border-radius: 6px;
+  background:
+    linear-gradient(105deg, rgba(150, 14, 30, 0.3), transparent 40%, transparent 60%, rgba(22, 60, 190, 0.3)),
+    rgba(7, 8, 13, 0.92);
+  text-align: center;
+}
+.ar-setup .t-eyebrow {
+  font: 600 12px var(--ar-ui) !important;
+  font-style: normal !important;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--ar-mute) !important;
+}
+.ar-setup .t-setup-title {
+  margin: 6px 0 14px !important;
+  font: 400 clamp(54px, 7vw, 96px) / 0.9 var(--ar-display) !important;
+  text-transform: uppercase;
+  transform: skewX(-8deg);
+  color: transparent !important;
+  background: linear-gradient(180deg, #fff 0%, #e4e7ee 36%, #8b91a1 52%, #f1f3f7 62%, #9aa0af 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(-3px 0 0 rgba(255, 40, 70, 0.55)) drop-shadow(3px 0 0 rgba(70, 130, 255, 0.55));
+}
+.ar-setup .t-lead {
+  margin-inline: auto;
+  color: #c5c9d3;
+}
+.ar-setup .t-field legend {
+  width: 100%;
+  text-align: center;
+}
+.ar-setup .t-field legend,
+.ar-setup .t-filter summary {
+  margin-inline: auto;
+  font-family: var(--ar-ui);
+}
+.ar-setup .t-formats,
+.ar-setup .t-chips,
+.ar-setup .t-filter-tools,
+.ar-setup .t-switch {
+  justify-content: center;
+}
+.ar-setup .t-switch {
+  text-align: left;
+}
+.ar-setup .t-formats button {
+  position: relative;
+  min-width: 92px;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  transition:
+    border-color 0.25s,
+    background 0.25s,
+    translate 0.35s var(--ar-ease);
+}
+.ar-setup .t-formats button b {
+  font: 400 30px / 1 var(--ar-display) !important;
+}
+.ar-setup .t-formats button:hover:not(:disabled) {
+  translate: 0 -3px;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.ar-setup .t-formats button.is-on {
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(rgba(10, 11, 18, 0.92), rgba(10, 11, 18, 0.92)) padding-box,
+    linear-gradient(90deg, var(--ar-red), var(--ar-blue)) border-box !important;
+  box-shadow:
+    -6px 0 20px rgba(255, 45, 70, 0.3),
+    6px 0 20px rgba(63, 123, 255, 0.3);
+}
+/* Lancer : la même pilule que l'affiche, pleine, en blanc. */
+.ar-setup .t-go {
+  padding: 16px 34px !important;
+  border: 1px solid #fff !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: var(--ar-bg) !important;
+  font: 700 13px var(--ar-ui) !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow:
+    -16px 0 44px -18px rgba(255, 45, 70, 0.9),
+    16px 0 44px -18px rgba(63, 123, 255, 0.9);
+  transition:
+    background 0.3s var(--ar-ease),
+    color 0.3s,
+    translate 0.3s var(--ar-ease);
+}
+.ar-setup .t-go:hover:not(:disabled) {
+  translate: 0 -2px;
+  background: transparent !important;
+  color: #fff !important;
+}
+.ar-setup .t-note {
+  color: var(--ar-mute);
+}
+
 /* ── Petits écrans ────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .ar-rank-list {
@@ -1029,33 +1332,60 @@ html.perf-lite .ar-bracket {
   }
 }
 @media (max-width: 760px) {
+  .ar {
+    --ar-gap: 14px;
+  }
   .ar-hero {
     min-height: 0;
   }
-  .ar-camp {
+  .ar-hero--solo {
+    padding-top: 30px;
+  }
+  .ar-camp-wrap {
     width: 64%;
   }
   .ar-jp {
     display: none;
   }
   .ar-head {
-    padding-top: 72px;
+    padding-top: 112px;
   }
-  .ar-title {
-    font-size: clamp(64px, 22vw, 120px) !important;
+  .ar-split {
+    font-size: clamp(44px, 14vw, 84px) !important;
+  }
+  .ar-lines {
+    font-size: clamp(38px, 11.5vw, 60px) !important;
+  }
+  .ar-motto {
+    font-size: 13px;
+    letter-spacing: 0.14em;
   }
   .ar-tagline {
     letter-spacing: 0.24em !important;
   }
   .ar-cta-in {
-    padding: 15px 26px;
+    gap: 12px;
     letter-spacing: 0.14em;
   }
   .ar-vs-row {
     grid-template-columns: 1fr;
-    gap: 46px;
+    gap: 14px;
+  }
+  /* Le VS se range entre les deux OST au lieu de chevaucher les boutons. */
+  .ar-vs-side--red {
+    order: 0;
+  }
+  .ar-vs-mark {
+    position: relative;
+    left: auto;
+    top: auto;
+    translate: none;
+    order: 1;
+    justify-self: center;
+    font-size: 40px;
   }
   .ar-vs-side--blue {
+    order: 2;
     flex-direction: row;
     text-align: left;
   }
@@ -1102,379 +1432,7 @@ html.perf-lite .ar-bracket {
   .ar-vs-eq b {
     animation: none;
   }
-  .ar-camp img {
-    translate: none;
-  }
-}
-
-/* ── Écran de départ du tournoi d'OST ─────────────────────────────── */
-.ar-setup {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  place-items: center;
-  min-height: calc(100dvh - 7.5rem);
-  padding: 48px 16px 64px !important;
-  overflow: hidden;
-}
-.ar-setup .ar-stage {
-  z-index: -1;
-}
-.ar-setup .ar-mist--left {
-  background:
-    radial-gradient(ellipse 30% 55% at 50% 48%, rgba(5, 6, 10, 0.6), transparent 80%),
-    linear-gradient(to top, rgba(5, 6, 10, 0.8), transparent 40%);
-}
-.ar-setup .t-setup-box {
-  position: relative;
-  width: min(640px, 100%);
-  max-width: none;
-  margin: 0 !important;
-  padding: clamp(26px, 4vw, 44px) !important;
-  border: 1px solid var(--ar-line);
-  border-radius: 6px;
-  background:
-    linear-gradient(105deg, rgba(150, 14, 30, 0.3), transparent 40%, transparent 60%, rgba(22, 60, 190, 0.3)),
-    rgba(7, 8, 13, 0.82);
-  backdrop-filter: blur(12px);
-  text-align: center;
-}
-html.perf-lite .ar-setup .t-setup-box {
-  backdrop-filter: none;
-  background: rgba(7, 8, 13, 0.96);
-}
-.ar-setup .t-eyebrow {
-  font: 600 12px var(--ar-ui) !important;
-  font-style: normal !important;
-  letter-spacing: 0.38em;
-  text-transform: uppercase;
-  color: var(--ar-mute) !important;
-}
-.ar-setup .t-setup-title {
-  margin: 6px 0 14px !important;
-  font: 400 clamp(54px, 7vw, 96px) / 0.9 var(--ar-display) !important;
-  text-transform: uppercase;
-  transform: skewX(-8deg);
-  color: transparent !important;
-  background: linear-gradient(180deg, #fff 0%, #e4e7ee 36%, #8b91a1 52%, #f1f3f7 62%, #9aa0af 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  filter: drop-shadow(-3px 0 0 rgba(255, 40, 70, 0.55)) drop-shadow(3px 0 0 rgba(70, 130, 255, 0.55));
-}
-.ar-setup .t-lead {
-  margin-inline: auto;
-  color: #c5c9d3;
-}
-.ar-setup .t-field legend {
-  width: 100%;
-  text-align: center;
-}
-.ar-setup .t-field legend,
-.ar-setup .t-filter summary {
-  margin-inline: auto;
-  font-family: var(--ar-ui);
-}
-.ar-setup .t-formats {
-  justify-content: center;
-}
-.ar-setup .t-formats button {
-  position: relative;
-  min-width: 92px;
-  border-color: rgba(255, 255, 255, 0.14) !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-  transition:
-    border-color 0.25s,
-    background 0.25s,
-    translate 0.35s var(--ar-ease);
-}
-.ar-setup .t-formats button b {
-  font: 400 30px / 1 var(--ar-display) !important;
-}
-.ar-setup .t-formats button:hover:not(:disabled) {
-  translate: 0 -3px;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-}
-.ar-setup .t-formats button.is-on {
-  border-color: transparent !important;
-  background:
-    linear-gradient(rgba(10, 11, 18, 0.92), rgba(10, 11, 18, 0.92)) padding-box,
-    linear-gradient(90deg, var(--ar-red), var(--ar-blue)) border-box !important;
-  border: 1px solid transparent !important;
-  box-shadow:
-    -6px 0 20px rgba(255, 45, 70, 0.3),
-    6px 0 20px rgba(63, 123, 255, 0.3);
-}
-.ar-setup .t-chips,
-.ar-setup .t-filter-tools {
-  justify-content: center;
-}
-.ar-setup .t-switch {
-  justify-content: center;
-  text-align: left;
-}
-.ar-setup .t-go {
-  position: relative;
-  padding: 17px 40px !important;
-  border: 0 !important;
-  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
-  background: linear-gradient(90deg, #8f0c1f, #14151d 50%, #0c2a8a) !important;
-  color: #fff !important;
-  font: 700 13.5px var(--ar-ui) !important;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  transition:
-    scale 0.25s var(--ar-ease),
-    filter 0.25s;
-  filter: drop-shadow(0 0 16px rgba(255, 45, 70, 0.35));
-}
-.ar-setup .t-go:hover:not(:disabled) {
-  scale: 1.04;
-  filter: drop-shadow(0 0 24px rgba(255, 45, 70, 0.5)) drop-shadow(0 0 24px rgba(63, 123, 255, 0.45));
-}
-.ar-setup .t-note {
-  color: var(--ar-mute);
-}
-.ar-stage--fixed {
-  position: absolute;
-  inset: 0;
-}
-
-/* ── Affiche v2 : le choc, l'onde, l'accroche (2026-10-25) ────────── */
-.ar-camp-wrap {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 58%;
-}
-.ar-camp-wrap--red {
-  left: 0;
-}
-.ar-camp-wrap--blue {
-  right: 0;
-}
-.ar-camp-wrap .ar-camp {
-  inset: 0;
-  width: 100%;
-}
-.ar-shock {
-  position: absolute;
-  left: 50%;
-  top: 30%;
-  width: 28vmin;
-  height: 28vmin;
-  margin: -14vmin 0 0 -14vmin;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  border-radius: 50%;
-  box-shadow:
-    -6px 0 26px rgba(255, 45, 70, 0.7),
-    6px 0 26px rgba(63, 123, 255, 0.7),
-    inset 0 0 30px rgba(255, 255, 255, 0.35);
-  pointer-events: none;
-}
-.ar-shock--2 {
-  border-width: 1px;
-}
-.ar-lines {
-  display: grid;
-  justify-items: center;
-  gap: 0.02em;
-  margin: 0;
-  font: 400 clamp(48px, 6.6vw, 112px) / 0.98 var(--ar-display);
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-}
-.ar-line-mask {
-  display: block;
-  padding: 0 0.12em 0.06em;
-  overflow: hidden;
-  transform: skewX(-9deg);
-}
-.ar-line {
-  position: relative;
-  display: inline-block;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-.ar-line--red {
-  background-image: linear-gradient(180deg, #ffffff 0%, #ffdfe3 34%, #b8414f 52%, #ffeef0 63%, #d06a77 100%);
-}
-.ar-line--blue {
-  background-image: linear-gradient(180deg, #ffffff 0%, #e0eaff 34%, #4d72c4 52%, #eef3ff 63%, #7393d8 100%);
-}
-.ar-line-sheen {
-  position: absolute;
-  inset: 0;
-  color: transparent;
-  background: linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) 130% 0 / 260% 100% no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  pointer-events: none;
-}
-.ar-magnet {
-  display: inline-block;
-}
-.ar-hero .ar-head {
-  padding-top: clamp(110px, 20vh, 220px);
-}
-@media (max-width: 760px) {
-  .ar-lines {
-    font-size: clamp(38px, 11.5vw, 60px) !important;
-  }
-}
-
-/* ── Motions v2 ───────────────────────────────────────────────────── */
-.ar-vs-slash {
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  left: 0;
-  width: 100%;
-  pointer-events: none;
-  background: linear-gradient(100deg, transparent 46%, rgba(255, 255, 255, 0.95) 49.6%, rgba(255, 255, 255, 0.95) 50.4%, transparent 54%);
-  filter: drop-shadow(0 0 14px rgba(255, 45, 70, 0.9));
-}
-.ar-vs-slash.is-blue {
-  filter: drop-shadow(0 0 14px rgba(63, 123, 255, 0.9));
-}
-.ar-vs-side.is-win .ar-vs-art {
-  box-shadow: 0 0 46px rgba(255, 45, 70, 0.6);
-}
-.ar-vs-side--blue.is-win .ar-vs-art {
-  box-shadow: 0 0 46px rgba(63, 123, 255, 0.6);
-}
-/* Bandes d'arène : une lumière qui suit la souris, les camps glissent vers la lame. */
-.ar-arena-spot {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(360px circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 255, 255, 0.12), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-.ar-arena:hover .ar-arena-spot {
-  opacity: 1;
-}
-.ar-arena > .ar-arena-n,
-.ar-arena > .ar-arena-txt,
-.ar-arena > .ar-arena-meta {
-  position: relative;
-  z-index: 1;
-}
-.ar-arena-half img {
-  transition:
-    filter 0.7s var(--ar-ease),
-    scale 1.1s var(--ar-ease),
-    translate 0.9s var(--ar-ease);
-}
-.ar-arena:hover .ar-arena-half.is-red img {
-  translate: calc(4% + var(--tilt, 0) * 2%) 0;
-}
-.ar-arena:hover .ar-arena-half.is-blue img {
-  translate: calc(-4% + var(--tilt, 0) * 2%) 0;
-}
-.ar-arena-blade {
-  left: calc(50% + var(--tilt, 0) * 6%);
-  transition:
-    opacity 0.5s,
-    transform 0.7s var(--ar-ease),
-    left 0.6s var(--ar-ease);
-}
-/* Cartes classées : inclinaison 3D. */
-.ar-rank-list {
-  perspective: 900px;
-}
-.ar-rank-card {
-  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transform-style: preserve-3d;
-  transition:
-    translate 0.45s var(--ar-ease),
-    transform 0.35s var(--ar-ease),
-    border-color 0.3s,
-    box-shadow 0.3s;
-}
-.ar-rank-t,
-.ar-rank-n {
-  transform: translateZ(24px);
-}
-@media (prefers-reduced-motion: reduce) {
   .ar-arena:hover .ar-arena-half img {
     translate: none;
-  }
-}
-
-/* L'ombre et la lueur se posent sur le masque : posées sur la ligne, elles seraient rognées. */
-.ar-line-mask:nth-child(1) {
-  filter: drop-shadow(0 0 20px rgba(255, 45, 70, 0.45)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
-}
-.ar-line-mask:nth-child(2) {
-  filter: drop-shadow(0 0 20px rgba(63, 123, 255, 0.5)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
-}
-.ar-line-mask {
-  padding: 0.04em 0.16em 0.1em;
-}
-
-/* ── Correctifs (2026-10-25) ──────────────────────────────────────── */
-/* Le fond de l'affiche descend au défilement : on le coupe au bord de
-   l'affiche et un fondu fixe le fait disparaître, sans trait. */
-.ar-hero {
-  overflow: clip;
-}
-.ar-hero::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: -1;
-  height: 260px;
-  background: linear-gradient(to top, var(--ar-bg) 18%, transparent);
-  pointer-events: none;
-}
-.ar-stage {
-  bottom: -2px;
-}
-/* Numéros des bandes : colonne de largeur fixe, titres alignés. */
-.ar-arena {
-  grid-template-columns: clamp(64px, 8vw, 132px) 1fr auto;
-}
-.ar-arena-n {
-  text-align: left;
-}
-
-/* Affiche seule (page d'un tournoi) : pas de grand vide sous le bouton. */
-.ar-hero--solo {
-  min-height: min(84svh, 820px);
-  display: grid;
-  align-content: center;
-  padding-bottom: 90px;
-}
-.ar-hero--solo .ar-head {
-  padding-top: 40px;
-}
-@media (max-width: 760px) {
-  /* Le VS se range entre les deux OST au lieu de chevaucher les boutons. */
-  .ar-vs-row {
-    gap: 14px;
-  }
-  .ar-vs-side--red {
-    order: 0;
-  }
-  .ar-vs-mark {
-    position: relative;
-    left: auto;
-    top: auto;
-    translate: none;
-    order: 1;
-    justify-self: center;
-    font-size: 40px;
-  }
-  .ar-vs-side--blue {
-    order: 2;
-  }
-  .ar-hero--solo {
-    min-height: 0;
-    padding-top: 30px;
   }
 }

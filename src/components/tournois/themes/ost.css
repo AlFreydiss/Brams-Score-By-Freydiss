@@ -1,49 +1,78 @@
-/* OST — « Générique ». Noir profond et or, serif élégante, une diagonale
-   dorée qui fend la scène. Le rouge et le bleu ne marquent que les côtés. */
+/* OST — l'arène « Rouge contre Bleu », en version sobre. Noir profond,
+   titres Anton en blanc, une lame blanche qui fend la scène. Le rouge et le
+   bleu ne servent que de repères (le trait de chaque côté, le verdict).
+   Aucun filtre ni mode de fusion sur les moitiés : la coupe d'ouverture et
+   la lecture restent fluides. */
 
 [data-t="ost"] {
-  --t-bg: #08090c;
-  --t-bg2: #101217;
-  --t-panel: #14161c;
-  --t-ink: #f4f0e8;
-  --t-mute: #a5a7b0;
+  --t-bg: #05060a;
+  --t-bg2: #0b0c12;
+  --t-panel: #0d0e15;
+  --t-ink: #f4f5f8;
+  --t-mute: #a3a7b3;
   --t-line: rgba(255, 255, 255, 0.12);
-  --t-accent: #c6a56b;
-  --t-accent-2: #e8d4a5;
-  --t-on-accent: #08090c;
-  --t-left: #e85d68;
-  --t-right: #66a7ff;
-  --t-seam: #e8d4a5;
-  --t-display: var(--t-serif-ost), Georgia, "Times New Roman", serif;
+  --t-accent: #e9ebf1;
+  --t-accent-2: #ffffff;
+  --t-on-accent: #05060a;
+  --t-left: #ff2d46;
+  --t-right: #3f7bff;
+  --t-seam: #f4f6fb;
+  --t-display: "Anton", Impact, sans-serif;
   --t-ui: var(--t-ui-inter), system-ui, sans-serif;
-  --t-title-size: clamp(46px, 5.4vw, 104px);
-  --t-title-weight: 600;
+  --t-title-size: clamp(46px, 5.2vw, 96px);
+  --t-title-weight: 400;
   --t-title-lh: 0.92;
-  --t-title-track: -0.005em;
-  --t-veil: rgba(8, 9, 12, 0.92);
+  --t-title-track: 0.01em;
+  --t-title-case: uppercase;
+  --t-veil: rgba(5, 6, 10, 0.9);
   --t-dim: brightness(0.6) saturate(0.95);
   --t-lit: brightness(0.86) saturate(1.05);
+  /* Visualiseur : un fil d'onde blanc. */
+  --viz: rgba(255, 255, 255, 0.85);
 }
 
-/* Couronne et nom en or. */
+/* Nom du tournoi dans la barre. */
 [data-t="ost"] .t-brand-name {
-  font-size: 19px;
-  font-weight: 600;
-  color: var(--t-accent-2);
+  font: 700 16px var(--t-ui);
+  letter-spacing: 0.02em;
+  color: #fff;
 }
 
-/* Le carton : le tour en petit, le numéro du duel en grande serif. */
+/* Le carton avant la coupe : le tour en petit, le numéro du duel en grand. */
 [data-t="ost"] .t-card b {
-  font-weight: 500;
-  color: var(--t-accent-2);
+  color: #fff;
 }
 
-/* Le trait doré, légèrement plus marqué qu'un filet. */
+/* Titres pleins, blancs. */
+[data-t="ost"] .t-title {
+  color: var(--t-ink);
+}
+[data-t="ost"] .t-sub {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+[data-t="ost"] .t-artist {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.6);
+}
+[data-t="ost"] .t-side {
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* La lame : un filet blanc net, une lueur à peine. */
 [data-t="ost"] .t-seam-line {
-  stroke-width: 1.6;
+  stroke: var(--t-seam);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 5px rgba(220, 230, 255, 0.5));
 }
 
-/* Bouton d'écoute : un rond doré, le libellé à côté. */
+/* Écouter : un rond blanc cerclé, plein pendant la lecture. */
 [data-t="ost"] .t-btn--play {
   height: 48px;
   padding: 0 18px 0 6px;
@@ -53,17 +82,19 @@
 [data-t="ost"] .t-btn--play svg {
   box-sizing: content-box;
   padding: 11px;
-  border: 1px solid var(--t-accent);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 50%;
-  color: var(--t-accent-2);
+  color: #fff;
   transition:
     background 0.2s,
+    border-color 0.2s,
     color 0.2s;
 }
 [data-t="ost"] .t-btn--play:hover:not(:disabled) svg,
 [data-t="ost"] .t-btn--play[aria-pressed="true"] svg {
-  background: var(--t-accent);
-  color: var(--t-on-accent);
+  border-color: #fff;
+  background: #fff;
+  color: var(--t-bg);
 }
 [data-t="ost"] .t-btn--play:hover:not(:disabled),
 [data-t="ost"] .t-btn--play[aria-pressed="true"] {
@@ -75,35 +106,48 @@
   padding: 0 6px 0 18px;
 }
 
-/* Choisir : contour fin, couleur du côté. */
+/* Choisir : une pilule claire, pleine au survol. */
 [data-t="ost"] .t-choose {
-  min-width: 220px;
-  font-family: var(--t-ui);
+  height: 46px;
+  padding: 0 26px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(5, 6, 10, 0.35);
+  font: 600 12.5px var(--t-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #fff;
+  transition:
+    background 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+[data-t="ost"] .t-choose:hover:not(:disabled),
+[data-t="ost"] .t-half--right .t-choose:hover:not(:disabled) {
+  border-color: #fff;
+  background: #fff;
+  color: var(--t-bg);
 }
 
-[data-t="ost"] .t-sub {
-  font-size: 15px;
-  letter-spacing: 0.01em;
-  color: var(--t-accent-2);
-}
-[data-t="ost"] .t-artist {
-  font-style: italic;
-  font-family: var(--t-display);
-  font-size: 19px;
+/* Écoute alternée en cours : la pilule passe en blanc. */
+[data-t="ost"] .t-bar-ab.is-on {
+  border-color: #fff;
+  background: #fff;
+  color: var(--t-bg);
 }
 
-/* Accueil : le titre en or clair. */
-[data-t="ost"] .t-setup-title {
-  font-weight: 600;
+/* Le fil d'onde court en haut de la moitié qui joue, sous la barre du tour. */
+[data-t="ost"] .t-half .t-viz--wave {
+  top: 64px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 56px;
 }
-[data-t="ost"] .t-setup-title,
-[data-t="ost"] .t-page-title {
+
+/* Fin de partie : le titre du champion en blanc, lui aussi. */
+[data-t="ost"] .t-champ .t-title {
   color: var(--t-ink);
-}
-[data-t="ost"] .t-eyebrow {
-  font-family: var(--t-display);
-  font-style: italic;
-  font-size: 20px;
 }
 
 @media (max-width: 760px) {
@@ -111,163 +155,4 @@
     flex-direction: row;
     padding: 0 18px 0 6px;
   }
-  [data-t="ost"] .t-choose {
-    min-width: 0;
-  }
-}
-
-/* La diagonale respire avec les basses de la piste en cours. */
-[data-t="ost"] {
-  --viz: #c6a56b;
-}
-[data-t="ost"] .t-seam-line {
-  stroke-width: calc(1.6px + var(--energy, 0) * 3.2px);
-  filter: drop-shadow(0 0 calc(var(--energy, 0) * 14px) rgba(232, 212, 165, 0.7));
-  transition: stroke-width 0.08s linear;
-}
-
-/* ── Arène « Rouge contre Bleu » (2026-10-25) ─────────────────────────
-   Le tournoi d'OST rejoint l'affiche du hub : acier au lieu de l'or, camp
-   rouge à gauche, camp bleu à droite, titres en Anton façon métal brossé. */
-[data-t="ost"] {
-  --t-bg: #05060a;
-  --t-bg2: #0b0c12;
-  --t-panel: #0d0e15;
-  --t-accent: #dfe3ec;
-  --t-accent-2: #ffffff;
-  --t-on-accent: #05060a;
-  --t-left: #ff2d46;
-  --t-right: #3f7bff;
-  --t-seam: #eef3ff;
-  --t-display: "Anton", Impact, sans-serif;
-  --t-title-size: clamp(54px, 6.4vw, 120px);
-  --t-title-weight: 400;
-  --t-title-lh: 0.9;
-  --t-title-track: 0.005em;
-  --t-title-case: uppercase;
-  --t-veil: rgba(5, 6, 10, 0.9);
-}
-[data-t="ost"] .t-half--left {
-  --viz: #ff4a5e;
-}
-[data-t="ost"] .t-half--right {
-  --viz: #6f9cff;
-}
-[data-t="ost"] .t-title,
-[data-t="ost"] .t-hero-title,
-[data-t="ost"] .t-champ .t-title {
-  color: transparent;
-  background: linear-gradient(180deg, #ffffff 0%, #e4e7ee 36%, #8b91a1 52%, #f1f3f7 62%, #9aa0af 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  transform: skewX(-7deg);
-  transform-origin: left bottom;
-  filter: drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
-}
-[data-t="ost"] .t-half--right .t-title {
-  transform-origin: right bottom;
-}
-/* Le liseré de son camp sous le titre. */
-[data-t="ost"] .t-half--left .t-title {
-  filter: drop-shadow(-3px 0 0 rgba(255, 45, 70, 0.6)) drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
-}
-[data-t="ost"] .t-half--right .t-title {
-  filter: drop-shadow(3px 0 0 rgba(63, 123, 255, 0.65)) drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
-}
-[data-t="ost"] .t-artist {
-  font-family: var(--t-ui);
-  font-style: normal;
-  font-size: 15px;
-  letter-spacing: 0.04em;
-}
-[data-t="ost"] .t-sub {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #ff8b98;
-}
-[data-t="ost"] .t-half--right .t-sub {
-  color: #9dbdff;
-}
-[data-t="ost"] .t-side {
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-}
-/* Lumière du camp qui monte du bord extérieur de chaque moitié. */
-[data-t="ost"] .t-media::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(ellipse 55% 80% at 0% 60%, rgba(255, 45, 70, 0.32), transparent 70%);
-  mix-blend-mode: screen;
-  opacity: calc(0.55 + var(--energy, 0) * 0.9);
-}
-[data-t="ost"] .t-half--right .t-media::before {
-  background: radial-gradient(ellipse 55% 80% at 100% 60%, rgba(63, 123, 255, 0.36), transparent 70%);
-}
-/* La lame : trait blanc bleuté qui respire avec les basses. */
-[data-t="ost"] .t-seam-line {
-  stroke: #f4f7ff;
-  stroke-width: calc(2px + var(--energy, 0) * 3.5px);
-  filter: drop-shadow(0 0 calc(6px + var(--energy, 0) * 18px) rgba(190, 210, 255, 0.9));
-}
-/* Boutons : écoute en rond acier, choix en cadre biseauté rouge ou bleu. */
-[data-t="ost"] .t-btn--play svg {
-  border-color: rgba(255, 255, 255, 0.55);
-  color: #fff;
-}
-[data-t="ost"] .t-half--left .t-btn--play:hover:not(:disabled) svg,
-[data-t="ost"] .t-half--left .t-btn--play[aria-pressed="true"] svg {
-  border-color: var(--t-left);
-  background: var(--t-left);
-  color: #fff;
-}
-[data-t="ost"] .t-half--right .t-btn--play:hover:not(:disabled) svg,
-[data-t="ost"] .t-half--right .t-btn--play[aria-pressed="true"] svg {
-  border-color: var(--t-right);
-  background: var(--t-right);
-  color: #fff;
-}
-[data-t="ost"] .t-choose {
-  border: 0 !important;
-  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
-  background: linear-gradient(90deg, rgba(143, 12, 31, 0.92), rgba(20, 21, 29, 0.92)) !important;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-size: 13px;
-  transition:
-    scale 0.25s ease,
-    filter 0.25s ease;
-}
-[data-t="ost"] .t-half--right .t-choose {
-  background: linear-gradient(270deg, rgba(12, 42, 138, 0.92), rgba(20, 21, 29, 0.92)) !important;
-}
-[data-t="ost"] .t-choose:hover:not(:disabled) {
-  scale: 1.04;
-  filter: drop-shadow(0 0 18px rgba(255, 45, 70, 0.55));
-}
-[data-t="ost"] .t-half--right .t-choose:hover:not(:disabled) {
-  filter: drop-shadow(0 0 18px rgba(63, 123, 255, 0.55));
-}
-[data-t="ost"] .t-card b {
-  font-family: var(--t-display);
-  color: #fff;
-}
-[data-t="ost"] .t-brand-name {
-  color: #fff;
-}
-[data-t="ost"] .t-bar-ab.is-on {
-  border-color: transparent;
-  background: linear-gradient(90deg, #8f0c1f, #0c2a8a);
-  color: #fff;
-}
-[data-t="ost"] .t-brand-name {
-  font-family: var(--t-ui);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
 }

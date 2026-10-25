@@ -2604,15 +2604,6 @@
   transition: bottom 0.5s var(--t-ease);
 }
 
-/* ── La photo bat avec les basses (OST, rap) ──────────────────────── */
-:is([data-seam="diag"], [data-seam="tape"], [data-seam="zigzag"]) .t-half.is-playing .t-media {
-  scale: calc(1 + var(--energy, 0) * 0.028);
-  transition: scale 0.09s linear;
-}
-:is([data-seam="diag"], [data-seam="tape"], [data-seam="zigzag"]) .t-half.is-playing .t-media::after {
-  opacity: calc(1 - var(--energy, 0) * 0.35);
-}
-
 @media (max-width: 760px) {
   .t-bar-ab span {
     display: none;
@@ -2632,9 +2623,6 @@
 @media (prefers-reduced-motion: reduce) {
   .t-ab-tick {
     animation: none;
-  }
-  :is([data-seam="diag"], [data-seam="tape"], [data-seam="zigzag"]) .t-half.is-playing .t-media {
-    scale: none;
   }
 }
 

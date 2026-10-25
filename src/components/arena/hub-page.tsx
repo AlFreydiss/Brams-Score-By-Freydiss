@@ -25,7 +25,7 @@ const TMDB = (p: string) => `https://image.tmdb.org/t/p/w1280/${p}`;
 // Visuels et effectifs des arènes (les deux camps de chaque bande). Les
 // effectifs suivent les catalogues de src/lib/tournois/data ; l'OST est lue en direct.
 const ARENA_ART: Record<TournamentSlug, { kind: string; images: [string, string]; count: number }> = {
-  ost: { kind: "Musique", images: ["/tournoi/ost/aot-vogel.webp", "/tournoi/ost/dn-light.webp"], count: 269 },
+  ost: { kind: "Musique", images: ["/tournoi/ost/aot-vogel.webp", "/tournoi/ost/dn-light.webp"], count: 270 },
   openings: { kind: "Génériques", images: [TMDB("rqbCbjB19amtOtFQbb3K2lgm2zv.jpg"), TMDB("s85RKl2eqRvXdcS4AQ2CK0CLS0J.jpg")], count: 489 },
   endings: { kind: "Génériques", images: [TMDB("g9vvplRihZv1RipxRDgJ1WLaTQB.jpg"), TMDB("qtfMr08KQsWXnCHY0a96N8NpQ2l.jpg")], count: 344 },
   rap: { kind: "Rap français", images: ["/tournoi/thumbs/rap/rap-booba-dkr.webp", "/tournoi/thumbs/rap/rap-pnl-naha.webp"], count: 102 },
@@ -62,7 +62,7 @@ function useStatus(slug: TournamentSlug) {
   return cur ? `Partie en cours · ${roundName(cur.round.size)}` : "Partie terminée";
 }
 
-function ArenaRows() {
+function ArenaRows({ ostCount }: { ostCount: number }) {
   // Un hook par tournoi, dans un ordre fixe.
   const status = {
     ost: useStatus("ost"),
@@ -80,7 +80,7 @@ function ArenaRows() {
     to: `/tournoi/${t.path}`,
     images: ARENA_ART[t.slug].images,
     kind: ARENA_ART[t.slug].kind,
-    count: `${ARENA_ART[t.slug].count} ${UNIT[t.slug]}`,
+    count: `${t.slug === "ost" && ostCount ? ostCount : ARENA_ART[t.slug].count} ${UNIT[t.slug]}`,
     status: status[t.slug],
   }));
   return <ArenaList arenas={arenas} />;
@@ -162,8 +162,8 @@ export default function ArenaHubPage() {
         <ArenaHero
           left={hero[0] ? { src: hero[0].visual.k === "img" ? hero[0].visual.src : hero[0].thumb } : null}
           right={hero[1] ? { src: hero[1].visual.k === "img" ? hero[1].visual.src : hero[1].thumb } : null}
-          lines={["Deux camps.", "Un seul vainqueur."]}
-          tagline="Écoute · choisis · couronne"
+          split={["Tournoi", "2026"]}
+          motto={["Deux camps", "Un seul vainqueur"]}
           jp={["音楽は、魂の戦いだ。", "最高の一曲を、決めよう。"]}
           cta={{ label: "Choisir mon arène", onClick: () => arenasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
         >
@@ -184,7 +184,7 @@ export default function ArenaHubPage() {
           <h2 className="ar-h2">
             Choisis ton arène <small>Chaque duel oppose deux camps. Tu tranches, le tableau avance.</small>
           </h2>
-          <ArenaRows />
+          <ArenaRows ostCount={ost.length} />
         </div>
 
         <div className="ar-section">

@@ -75,7 +75,7 @@ export function Champion() {
     <div className="t-champ">
       <div className="t-champ-hero">
         <div className="t-champ-media">
-          <Visual p={champ} posterAt={meta.posterAt} alt="" />
+          <Visual p={champ} posterAt={meta.posterAt} alt="" sizes="100vw" />
         </div>
         <div className="t-champ-txt">
           <p className="t-kept">

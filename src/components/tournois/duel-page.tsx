@@ -70,7 +70,7 @@ export function DuelPage() {
       {/* Départ, duels et champion se succèdent dans une seule transition. */}
       <AnimatePresence mode="wait">
         {!run ? (
-          <motion.div key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.4 } }} exit={{ opacity: 0, scale: 0.985, transition: { duration: 0.32, ease: [0.7, 0, 0.2, 1] } }}>
+          <motion.div key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.4 } }} exit={{ opacity: 0, transition: { duration: 0.3 } }}>
             <Setup />
           </motion.div>
         ) : showMatch && showMatch.left && showMatch.right && !recap ? (

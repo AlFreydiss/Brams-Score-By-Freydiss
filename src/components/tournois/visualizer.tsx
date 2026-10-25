@@ -9,7 +9,7 @@ import { getAnalyser } from "./use-player";
 
 type Variant = "spectrum" | "vu" | "wave" | "eq";
 
-const VARIANT: Partial<Record<Seam, Variant>> = { diag: "spectrum", screens: "vu", feather: "wave", tape: "eq", zigzag: "eq" };
+const VARIANT: Partial<Record<Seam, Variant>> = { diag: "wave", screens: "vu", feather: "wave", tape: "eq", zigzag: "eq" };
 
 export function Visualizer({ seam, active, side }: { seam: Seam; active: boolean; side: "left" | "right" }) {
   const canvas = useRef<HTMLCanvasElement>(null);
