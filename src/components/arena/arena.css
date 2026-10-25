@@ -1238,3 +1238,243 @@ html.perf-lite .ar-setup .t-setup-box {
   position: absolute;
   inset: 0;
 }
+
+/* ── Affiche v2 : le choc, l'onde, l'accroche (2026-10-25) ────────── */
+.ar-camp-wrap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 58%;
+}
+.ar-camp-wrap--red {
+  left: 0;
+}
+.ar-camp-wrap--blue {
+  right: 0;
+}
+.ar-camp-wrap .ar-camp {
+  inset: 0;
+  width: 100%;
+}
+.ar-shock {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 28vmin;
+  height: 28vmin;
+  margin: -14vmin 0 0 -14vmin;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  box-shadow:
+    -6px 0 26px rgba(255, 45, 70, 0.7),
+    6px 0 26px rgba(63, 123, 255, 0.7),
+    inset 0 0 30px rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+.ar-shock--2 {
+  border-width: 1px;
+}
+.ar-lines {
+  display: grid;
+  justify-items: center;
+  gap: 0.02em;
+  margin: 0;
+  font: 400 clamp(48px, 6.6vw, 112px) / 0.98 var(--ar-display);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.ar-line-mask {
+  display: block;
+  padding: 0 0.12em 0.06em;
+  overflow: hidden;
+  transform: skewX(-9deg);
+}
+.ar-line {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.ar-line--red {
+  background-image: linear-gradient(180deg, #ffffff 0%, #ffdfe3 34%, #b8414f 52%, #ffeef0 63%, #d06a77 100%);
+}
+.ar-line--blue {
+  background-image: linear-gradient(180deg, #ffffff 0%, #e0eaff 34%, #4d72c4 52%, #eef3ff 63%, #7393d8 100%);
+}
+.ar-line-sheen {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background: linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, 0.95) 50%, transparent 58%) 130% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+}
+.ar-magnet {
+  display: inline-block;
+}
+.ar-hero .ar-head {
+  padding-top: clamp(110px, 20vh, 220px);
+}
+@media (max-width: 760px) {
+  .ar-lines {
+    font-size: clamp(38px, 11.5vw, 60px) !important;
+  }
+}
+
+/* ── Motions v2 ───────────────────────────────────────────────────── */
+.ar-vs-slash {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 46%, rgba(255, 255, 255, 0.95) 49.6%, rgba(255, 255, 255, 0.95) 50.4%, transparent 54%);
+  filter: drop-shadow(0 0 14px rgba(255, 45, 70, 0.9));
+}
+.ar-vs-slash.is-blue {
+  filter: drop-shadow(0 0 14px rgba(63, 123, 255, 0.9));
+}
+.ar-vs-side.is-win .ar-vs-art {
+  box-shadow: 0 0 46px rgba(255, 45, 70, 0.6);
+}
+.ar-vs-side--blue.is-win .ar-vs-art {
+  box-shadow: 0 0 46px rgba(63, 123, 255, 0.6);
+}
+/* Bandes d'arène : une lumière qui suit la souris, les camps glissent vers la lame. */
+.ar-arena-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(360px circle at var(--sx, 50%) var(--sy, 50%), rgba(255, 255, 255, 0.12), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.ar-arena:hover .ar-arena-spot {
+  opacity: 1;
+}
+.ar-arena > .ar-arena-n,
+.ar-arena > .ar-arena-txt,
+.ar-arena > .ar-arena-meta {
+  position: relative;
+  z-index: 1;
+}
+.ar-arena-half img {
+  transition:
+    filter 0.7s var(--ar-ease),
+    scale 1.1s var(--ar-ease),
+    translate 0.9s var(--ar-ease);
+}
+.ar-arena:hover .ar-arena-half.is-red img {
+  translate: calc(4% + var(--tilt, 0) * 2%) 0;
+}
+.ar-arena:hover .ar-arena-half.is-blue img {
+  translate: calc(-4% + var(--tilt, 0) * 2%) 0;
+}
+.ar-arena-blade {
+  left: calc(50% + var(--tilt, 0) * 6%);
+  transition:
+    opacity 0.5s,
+    transform 0.7s var(--ar-ease),
+    left 0.6s var(--ar-ease);
+}
+/* Cartes classées : inclinaison 3D. */
+.ar-rank-list {
+  perspective: 900px;
+}
+.ar-rank-card {
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition:
+    translate 0.45s var(--ar-ease),
+    transform 0.35s var(--ar-ease),
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+.ar-rank-t,
+.ar-rank-n {
+  transform: translateZ(24px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ar-arena:hover .ar-arena-half img {
+    translate: none;
+  }
+}
+
+/* L'ombre et la lueur se posent sur le masque : posées sur la ligne, elles seraient rognées. */
+.ar-line-mask:nth-child(1) {
+  filter: drop-shadow(0 0 20px rgba(255, 45, 70, 0.45)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
+}
+.ar-line-mask:nth-child(2) {
+  filter: drop-shadow(0 0 20px rgba(63, 123, 255, 0.5)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
+}
+.ar-line-mask {
+  padding: 0.04em 0.16em 0.1em;
+}
+
+/* ── Correctifs (2026-10-25) ──────────────────────────────────────── */
+/* Le fond de l'affiche descend au défilement : on le coupe au bord de
+   l'affiche et un fondu fixe le fait disparaître, sans trait. */
+.ar-hero {
+  overflow: clip;
+}
+.ar-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  height: 260px;
+  background: linear-gradient(to top, var(--ar-bg) 18%, transparent);
+  pointer-events: none;
+}
+.ar-stage {
+  bottom: -2px;
+}
+/* Numéros des bandes : colonne de largeur fixe, titres alignés. */
+.ar-arena {
+  grid-template-columns: clamp(64px, 8vw, 132px) 1fr auto;
+}
+.ar-arena-n {
+  text-align: left;
+}
+
+/* Affiche seule (page d'un tournoi) : pas de grand vide sous le bouton. */
+.ar-hero--solo {
+  min-height: min(84svh, 820px);
+  display: grid;
+  align-content: center;
+  padding-bottom: 90px;
+}
+.ar-hero--solo .ar-head {
+  padding-top: 40px;
+}
+@media (max-width: 760px) {
+  /* Le VS se range entre les deux OST au lieu de chevaucher les boutons. */
+  .ar-vs-row {
+    gap: 14px;
+  }
+  .ar-vs-side--red {
+    order: 0;
+  }
+  .ar-vs-mark {
+    position: relative;
+    left: auto;
+    top: auto;
+    translate: none;
+    order: 1;
+    justify-self: center;
+    font-size: 40px;
+  }
+  .ar-vs-side--blue {
+    order: 2;
+  }
+  .ar-hero--solo {
+    min-height: 0;
+    padding-top: 30px;
+  }
+}

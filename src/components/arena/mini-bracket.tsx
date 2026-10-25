@@ -70,9 +70,16 @@ export function MiniBracket({ left, right, label, value }: { left: Participant[]
             ?
           </span>,
         ])}
-        <span className="ar-b-crown" style={box(X.c, 130)}>
+        <motion.span
+          className="ar-b-crown"
+          style={box(X.c, 130)}
+          initial={reduce ? false : { scale: 0.4, opacity: 0, rotate: -20 }}
+          whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ delay: 0.9, type: "spring", stiffness: 260, damping: 13 }}
+        >
           <Crown size={20} />
-        </span>
+        </motion.span>
       </div>
     </div>
   );

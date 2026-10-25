@@ -98,7 +98,13 @@ export function VersusCard({ pair, statsId, label = "Duel à l'affiche", onNext 
             const side = i as 0 | 1;
             const on = playing === p.id;
             return (
-              <div key={p.id} className={`ar-vs-side ar-vs-side--${side ? "blue" : "red"} ${picked === side ? "is-win" : picked != null ? "is-lose" : ""}`}>
+              <motion.div
+                key={p.id}
+                className={`ar-vs-side ar-vs-side--${side ? "blue" : "red"} ${picked === side ? "is-win" : picked != null ? "is-lose" : ""}`}
+                initial={reduce ? false : { x: side ? 60 : -60, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 170, damping: 18, delay: 0.05 }}
+              >
                 <button type="button" className={`ar-vs-art ${on ? "is-on" : ""}`} onClick={() => toggle(p)} aria-label={`${on ? "Pause" : "Écouter"} ${p.title}`}>
                   <img src={p.thumb} alt="" loading="lazy" decoding="async" />
                   <span className="ar-vs-play">{on ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}</span>
@@ -115,13 +121,33 @@ export function VersusCard({ pair, statsId, label = "Duel à l'affiche", onNext 
                     {picked === side ? "Ton choix" : "Voter"}
                   </button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-          <span className="ar-vs-mark" aria-hidden>
+          <motion.span
+            className="ar-vs-mark"
+            aria-hidden
+            initial={reduce ? false : { scale: 2.4, opacity: 0, rotate: -12 }}
+            animate={picked != null ? { scale: [1, 1.5, 0.9], opacity: [1, 1, 0.25], rotate: 0 } : { scale: 1, opacity: 1, rotate: 0 }}
+            transition={picked != null ? { duration: 0.6, ease: EASE } : { type: "spring", stiffness: 300, damping: 14, delay: 0.25 }}
+          >
             VS
-          </span>
+          </motion.span>
         </motion.div>
+      </AnimatePresence>
+      {/* Le vote tranche la carte : une entaille de lumière la traverse. */}
+      <AnimatePresence>
+        {picked != null && !reduce ? (
+          <motion.i
+            key="slash"
+            className={`ar-vs-slash ${picked ? "is-blue" : "is-red"}`}
+            initial={{ x: picked ? "130%" : "-130%", opacity: 1 }}
+            animate={{ x: picked ? "-130%" : "130%", opacity: [1, 1, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.55, ease: [0.7, 0, 0.2, 1] }}
+            aria-hidden
+          />
+        ) : null}
       </AnimatePresence>
       <p className="ar-vs-foot">
         {picked != null

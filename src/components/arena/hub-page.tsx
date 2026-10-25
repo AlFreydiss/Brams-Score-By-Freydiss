@@ -162,9 +162,8 @@ export default function ArenaHubPage() {
         <ArenaHero
           left={hero[0] ? { src: hero[0].visual.k === "img" ? hero[0].visual.src : hero[0].thumb } : null}
           right={hero[1] ? { src: hero[1].visual.k === "img" ? hero[1].visual.src : hero[1].thumb } : null}
-          over="Brams Community"
-          title="Tournois"
-          tagline="Deux camps · un seul vainqueur"
+          lines={["Deux camps.", "Un seul vainqueur."]}
+          tagline="Écoute · choisis · couronne"
           jp={["音楽は、魂の戦いだ。", "最高の一曲を、決めよう。"]}
           cta={{ label: "Choisir mon arène", onClick: () => arenasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
         >

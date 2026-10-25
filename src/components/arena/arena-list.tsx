@@ -28,12 +28,24 @@ export function ArenaList({ arenas }: { arenas: Arena[] }) {
       {arenas.map((a, i) => (
         <motion.li
           key={a.id}
-          initial={reduce ? false : { opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.8, ease: EASE, delay: (i % 3) * 0.06 }}
+          // Chaque bande entre en volet, une fois depuis la gauche, une fois depuis la droite.
+          initial={reduce ? false : { clipPath: i % 2 ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)", x: i % 2 ? 40 : -40 }}
+          whileInView={{ clipPath: "inset(0 0% 0 0%)", x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 1, ease: EASE }}
         >
-          <Link to={a.to} className="ar-arena">
+          <Link
+            to={a.to}
+            className="ar-arena"
+            onPointerMove={(e) => {
+              if (e.pointerType !== "mouse") return;
+              const r = e.currentTarget.getBoundingClientRect();
+              e.currentTarget.style.setProperty("--sx", `${e.clientX - r.left}px`);
+              e.currentTarget.style.setProperty("--sy", `${e.clientY - r.top}px`);
+              e.currentTarget.style.setProperty("--tilt", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+            }}
+          >
+            <i className="ar-arena-spot" aria-hidden />
             <span className="ar-arena-media" aria-hidden>
               <span className="ar-arena-half is-red">
                 <img src={a.images[0]} alt="" loading="lazy" decoding="async" />

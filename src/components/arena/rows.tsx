@@ -1,4 +1,5 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { animate, motion, useInView, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Music2, Swords, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Participant } from "@/lib/tournois/types";
@@ -43,7 +44,23 @@ export function RankRow({
             viewport={{ once: true, margin: "-40px" }}
             transition={{ delay: i * 0.07, duration: 0.7, ease: EASE }}
           >
-            <button type="button" className={`ar-rank-card ${playing === p.id ? "is-on" : ""}`} onClick={() => onPlay?.(p)} aria-label={`Écouter ${p.title}`}>
+            <button
+              type="button"
+              className={`ar-rank-card ${playing === p.id ? "is-on" : ""}`}
+              onClick={() => onPlay?.(p)}
+              aria-label={`Écouter ${p.title}`}
+              // Inclinaison 3D qui suit la souris, remise à plat en sortant.
+              onPointerMove={(e) => {
+                if (e.pointerType !== "mouse" || reduce) return;
+                const r = e.currentTarget.getBoundingClientRect();
+                e.currentTarget.style.setProperty("--rx", `${((e.clientY - r.top) / r.height - 0.5) * -14}deg`);
+                e.currentTarget.style.setProperty("--ry", `${((e.clientX - r.left) / r.width - 0.5) * 16}deg`);
+              }}
+              onPointerLeave={(e) => {
+                e.currentTarget.style.setProperty("--rx", "0deg");
+                e.currentTarget.style.setProperty("--ry", "0deg");
+              }}
+            >
               <img src={p.thumb} alt="" loading="lazy" decoding="async" />
               <span className="ar-rank-n">{i + 1}</span>
               <span className="ar-rank-t">
@@ -69,7 +86,9 @@ export function StatStrip({ stats, quote }: { stats: { n: string; label: string;
           return (
             <div key={s.label}>
               <I size={20} aria-hidden />
-              <dd>{s.n}</dd>
+              <dd>
+                <Count value={s.n} />
+              </dd>
               <dt>{s.label}</dt>
             </div>
           );
@@ -78,4 +97,21 @@ export function StatStrip({ stats, quote }: { stats: { n: string; label: string;
       {quote ? <p className="ar-quote">{quote}</p> : null}
     </div>
   );
+}
+
+/** Chiffre qui défile jusqu'à sa valeur à l'arrivée à l'écran (« +269 », « 1 546 »). */
+function Count({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const seen = useInView(ref, { once: true, margin: "-40px" });
+  const reduce = useReducedMotion();
+  const target = Number(value.replace(/[^\d]/g, ""));
+  const prefix = value.match(/^\D*/)?.[0] ?? "";
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!seen || !target) return;
+    if (reduce) return setN(target);
+    const a = animate(0, target, { duration: 1.4, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setN(Math.round(v)) });
+    return () => a.stop();
+  }, [seen, target, reduce]);
+  return <span ref={ref}>{target ? `${prefix}${n.toLocaleString("fr-FR")}` : value}</span>;
 }

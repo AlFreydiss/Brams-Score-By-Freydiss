@@ -74,7 +74,7 @@ export function TournamentHome() {
   return (
     <div className="t-home" data-seam={meta.seam}>
 {arena ? (
-        <OstArena popular={fromSite ? sitePopular.map((r) => r.p) : []} siteDuels={siteDuels} />
+        <OstArena />
       ) : (
       <section className={`t-hero ${narrow ? "is-v" : "is-h"}`}>
         <PosterScene pair={preview} />
