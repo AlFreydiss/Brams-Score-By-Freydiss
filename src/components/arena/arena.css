@@ -188,23 +188,21 @@
 
 .ar-jp {
   position: absolute;
-  top: clamp(110px, 18vh, 190px);
+  top: clamp(120px, 20vh, 210px);
   z-index: 1;
   margin: 0;
   writing-mode: vertical-rl;
-  font: 500 clamp(17px, 1.5vw, 24px) / 1.5 var(--ar-jp);
-  letter-spacing: 0.34em;
+  font: 500 clamp(14px, 1.1vw, 17px) / 1.5 var(--ar-jp);
+  letter-spacing: 0.4em;
   pointer-events: none;
 }
 .ar-jp--l {
   left: clamp(18px, 6vw, 110px);
-  color: rgba(255, 140, 150, 0.82);
-  text-shadow: 0 0 18px rgba(255, 40, 70, 0.55);
+  color: rgba(255, 190, 196, 0.42);
 }
 .ar-jp--r {
   right: clamp(18px, 6vw, 110px);
-  color: rgba(170, 200, 255, 0.85);
-  text-shadow: 0 0 18px rgba(60, 120, 255, 0.55);
+  color: rgba(196, 212, 255, 0.42);
 }
 
 .ar-head {
@@ -249,13 +247,9 @@
   padding: 0.04em 0.1em 0.08em;
   will-change: transform, opacity;
 }
-.ar-word--red,
-.ar-line--red {
-  filter: drop-shadow(0 0 20px rgba(255, 45, 70, 0.45)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
-}
-.ar-word--blue,
-.ar-line--blue {
-  filter: drop-shadow(0 0 20px rgba(63, 123, 255, 0.5)) drop-shadow(0 10px 24px rgba(0, 0, 0, 0.75));
+.ar-word,
+.ar-line {
+  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.6));
 }
 /* Titre coupé par la lame : un mot par camp, la lame passe entre les deux. */
 .ar-split {
@@ -286,22 +280,19 @@
 .ar-motto {
   display: grid;
   grid-template-columns: 1fr var(--ar-gap) 1fr;
-  margin: 22px 0 0;
-  font: 400 clamp(15px, 1.5vw, 22px) / 1.2 var(--ar-display);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  margin: 24px 0 0;
+  font: 500 clamp(15px, 1.25vw, 18px) / 1.3 var(--ar-ui);
+  letter-spacing: 0.01em;
 }
 .ar-motto .is-red {
   grid-column: 1;
   justify-self: end;
-  color: #ffb7bf;
-  text-shadow: 0 0 18px rgba(255, 45, 70, 0.45);
+  color: rgba(255, 214, 218, 0.82);
 }
 .ar-motto .is-blue {
   grid-column: 3;
   justify-self: start;
-  color: #b9cbff;
-  text-shadow: 0 0 18px rgba(63, 123, 255, 0.5);
+  color: rgba(214, 224, 255, 0.82);
 }
 .ar-tagline {
   margin: 22px 0 0;
@@ -338,10 +329,9 @@
 .ar-cta-in {
   display: inline-flex;
   align-items: center;
-  gap: 18px;
-  font: 600 13px var(--ar-ui);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  gap: 16px;
+  font: 600 15px var(--ar-ui);
+  letter-spacing: 0.005em;
 }
 .ar-cta-ico {
   display: grid;
@@ -395,10 +385,8 @@ a.ar-cta:hover .ar-cta-ico {
   overflow: hidden;
 }
 .ar-vs-label {
-  margin: 0 0 12px;
-  font: 600 11px var(--ar-ui);
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
+  margin: 0 0 14px;
+  font: 500 13px var(--ar-ui);
   color: var(--ar-mute);
 }
 .ar-vs-row {
@@ -514,10 +502,7 @@ a.ar-cta:hover .ar-cta-ico {
 }
 .ar-vs-txt small {
   font-size: 13px;
-  color: #ff8b98;
-}
-.ar-vs-side--blue .ar-vs-txt small {
-  color: #9dbdff;
+  color: rgba(255, 255, 255, 0.58);
 }
 .ar-vs-bar {
   position: relative;
@@ -583,7 +568,7 @@ a.ar-cta:hover .ar-cta-ico {
   left: 50%;
   top: 50%;
   translate: -50% -50%;
-  font: 400 clamp(46px, 5vw, 72px) / 1 var(--ar-display);
+  font: 400 clamp(34px, 3.4vw, 50px) / 1 var(--ar-display);
   font-style: italic;
   color: transparent;
   background: linear-gradient(110deg, #ff5a6c 0 49%, #7fa6ff 51% 100%);
@@ -638,15 +623,13 @@ a.ar-cta:hover .ar-cta-ico {
   pointer-events: none;
 }
 .ar-bracket-phase span {
-  font: 600 10.5px var(--ar-ui);
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
+  font: 500 12.5px var(--ar-ui);
   color: var(--ar-mute);
 }
 .ar-bracket-phase b {
   margin-top: 4px;
-  font: 400 26px/1 var(--ar-display);
-  letter-spacing: 0.04em;
+  font: 600 19px/1 var(--ar-ui);
+  font-variant-numeric: tabular-nums;
 }
 .ar-bracket-field {
   position: relative;
@@ -736,17 +719,15 @@ a.ar-cta:hover .ar-cta-ico {
 .ar-rank-head h2 {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin: 0;
-  font: 400 clamp(20px, 1.8vw, 26px) / 1 var(--ar-display) !important;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font: 600 18px / 1.2 var(--ar-ui) !important;
+  letter-spacing: -0.005em;
 }
 .ar-rank-head h2 i {
-  width: 26px;
+  width: 14px;
   height: 2px;
   background: var(--ar-red);
-  box-shadow: 0 0 10px var(--ar-red);
 }
 .ar-rank-head a {
   display: inline-flex;
@@ -889,8 +870,7 @@ a.ar-cta:hover .ar-cta-ico {
 }
 .ar-stats dd {
   margin: 0;
-  font: 400 26px / 1 var(--ar-display);
-  letter-spacing: 0.02em;
+  font: 600 22px / 1.1 var(--ar-ui);
   font-variant-numeric: tabular-nums;
 }
 .ar-stats dt {
@@ -915,16 +895,14 @@ a.ar-cta:hover .ar-cta-ico {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px 18px;
-  margin: 0 0 22px;
-  font: 400 clamp(38px, 5vw, 72px) / 0.95 var(--ar-display) !important;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  gap: 6px 16px;
+  margin: 0 0 20px;
+  font: 600 clamp(26px, 2.4vw, 34px) / 1.15 var(--ar-ui) !important;
+  letter-spacing: -0.015em;
 }
 .ar-h2 small {
-  font: 500 14px var(--ar-ui);
+  font: 400 15px var(--ar-ui);
   letter-spacing: 0;
-  text-transform: none;
   color: var(--ar-mute);
 }
 .ar-arenas {
@@ -934,17 +912,17 @@ a.ar-cta:hover .ar-cta-ico {
   padding: 0;
   list-style: none;
 }
-.ar-arenas > li {
+.ar-arena-wipe {
   will-change: transform;
 }
 .ar-arena {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: clamp(64px, 8vw, 132px) 1fr auto;
+  grid-template-columns: 40px 1fr auto;
   align-items: center;
-  gap: clamp(14px, 3vw, 40px);
-  min-height: clamp(150px, 19vw, 210px);
+  gap: clamp(14px, 2.4vw, 32px);
+  min-height: clamp(130px, 15vw, 176px);
   padding: 20px clamp(18px, 3vw, 40px);
   border: 1px solid var(--ar-line);
   border-radius: 6px;
@@ -1064,13 +1042,13 @@ a.ar-cta:hover .ar-cta-ico {
   transform: scaleY(1) skewX(-14deg);
 }
 .ar-arena-n {
-  font: 400 clamp(54px, 7vw, 108px) / 0.8 var(--ar-display);
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.35);
-  transition: -webkit-text-stroke-color 0.5s;
+  font: 500 13px / 1 var(--ar-ui);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.42);
+  transition: color 0.4s;
 }
 .ar-arena:hover .ar-arena-n {
-  -webkit-text-stroke-color: rgba(255, 255, 255, 0.85);
+  color: #fff;
 }
 .ar-arena-txt {
   display: grid;
@@ -1082,15 +1060,12 @@ a.ar-cta:hover .ar-cta-ico {
   translate: 10px 0;
 }
 .ar-arena-txt small {
-  font: 600 11px var(--ar-ui);
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: #ff8b98;
+  font: 500 13px var(--ar-ui);
+  color: rgba(255, 255, 255, 0.55);
 }
 .ar-arena-txt b {
-  font: 400 clamp(32px, 4.2vw, 62px) / 0.95 var(--ar-display);
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  font: 600 clamp(24px, 2.4vw, 32px) / 1.15 var(--ar-ui);
+  letter-spacing: -0.015em;
 }
 .ar-arena-txt em {
   font-style: normal;
@@ -1116,9 +1091,7 @@ a.ar-cta:hover .ar-cta-ico {
   align-items: center;
   gap: 6px;
   margin-top: 4px;
-  font: 700 12px var(--ar-ui);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  font: 500 14px var(--ar-ui);
   color: #fff;
 }
 .ar-arena-go svg {
@@ -1174,8 +1147,7 @@ a.ar-cta:hover .ar-cta-ico {
   scale: 1.06;
 }
 .ar-mini b {
-  font: 400 26px/1 var(--ar-display);
-  text-transform: uppercase;
+  font: 600 18px / 1.2 var(--ar-ui);
 }
 .ar-mini small {
   margin-top: 4px;
@@ -1357,15 +1329,14 @@ a.ar-cta:hover .ar-cta-ico {
     font-size: clamp(38px, 11.5vw, 60px) !important;
   }
   .ar-motto {
-    font-size: 13px;
-    letter-spacing: 0.14em;
+    font-size: 13.5px;
   }
   .ar-tagline {
     letter-spacing: 0.24em !important;
   }
   .ar-cta-in {
     gap: 12px;
-    letter-spacing: 0.14em;
+    font-size: 14px;
   }
   .ar-vs-row {
     grid-template-columns: 1fr;
@@ -1399,7 +1370,7 @@ a.ar-cta:hover .ar-cta-ico {
     width: 86px;
   }
   .ar-bracket-phase b {
-    font-size: 18px;
+    font-size: 15px;
   }
   .ar-b-q {
     font-size: 9px;
@@ -1411,11 +1382,10 @@ a.ar-cta:hover .ar-cta-ico {
     grid-template-columns: 1fr;
     gap: 10px;
   }
-  .ar-arena-n {
+  .ar-arena > .ar-arena-n {
     position: absolute;
-    top: 14px;
+    top: 16px;
     right: 16px;
-    font-size: 54px;
   }
   .ar-arena-meta {
     justify-items: start;
@@ -1425,7 +1395,7 @@ a.ar-cta:hover .ar-cta-ico {
     text-align: center;
   }
   .ar-h2 {
-    font-size: 40px !important;
+    font-size: 24px !important;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -163,7 +163,7 @@ export default function ArenaHubPage() {
           left={hero[0] ? { src: hero[0].visual.k === "img" ? hero[0].visual.src : hero[0].thumb } : null}
           right={hero[1] ? { src: hero[1].visual.k === "img" ? hero[1].visual.src : hero[1].thumb } : null}
           split={["Tournoi", "2026"]}
-          motto={["Deux camps", "Un seul vainqueur"]}
+          motto={["Deux camps,", "un seul vainqueur."]}
           jp={["音楽は、魂の戦いだ。", "最高の一曲を、決めよう。"]}
           cta={{ label: "Choisir mon arène", onClick: () => arenasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
         >
@@ -176,7 +176,6 @@ export default function ArenaHubPage() {
               { n: totalEntries.toLocaleString("fr-FR"), label: "Participants", icon: "swords" },
               { n: `+${ost.length || ARENA_ART.ost.count}`, label: "OST en compétition", icon: "music" },
             ]}
-            quote="« Une OST ne s'écoute pas, elle se revit. »"
           />
         </ArenaHero>
 
