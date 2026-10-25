@@ -1,0 +1,1969 @@
+/* Tournoi d'OST, l'espace en trois plans. Préfixe ox-. Les valeurs viennent
+   de tokens.ts (variables --ox-*).
+
+   Salle de projection : noir charbon, graphite, champagne doré. Titres en
+   capitales gravées (Cinzel), texte et micro-capitales en Outfit, filets
+   d'un pixel. Ce qui
+   bouge ne bouge qu'en transform et opacité ; le grain et les filets du fond
+   sont fixes. Les tailles des titres portent !important : la feuille globale
+   du site force h1/h2 sur mobile. */
+
+.ox {
+  position: relative;
+  height: calc(100dvh - var(--ox-top, 64px));
+  min-height: 560px;
+  overflow: hidden;
+  background: var(--ox-bg);
+  color: var(--ox-ink);
+  font-family: var(--ox-text);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+.ox *,
+.ox *::before,
+.ox *::after {
+  box-sizing: border-box;
+}
+/* Spécificité nulle : les classes des boutons gardent la main sur la police. */
+:where(.ox) button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.ox :focus-visible {
+  outline: 1px solid var(--ox-accent);
+  outline-offset: 4px;
+}
+.ox img {
+  max-width: none;
+}
+/* La feuille globale ajoute une marge aux <section> sur mobile. */
+.ox section {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+/* Le lecteur vidéo caché du tournoi (écoute hors duel) ne prend pas de place. */
+[data-t="ost"] > video.hidden {
+  display: none;
+}
+
+/* ── Micro-typographie ────────────────────────────────────────────── */
+.ox-micro {
+  margin: 0;
+  font: 500 10.5px / 1.5 var(--ox-text);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+}
+.ox-lead {
+  max-width: 44ch;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ox-mute);
+}
+.ox-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+/* ── L'espace ─────────────────────────────────────────────────────── */
+.ox-space {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+  overscroll-behavior: none;
+}
+.ox-space[data-drag] {
+  cursor: grabbing;
+  user-select: none;
+}
+.ox-space[data-drag] * {
+  pointer-events: none;
+}
+/* Le bas de chaque plan s'efface sous la navigation. */
+.ox-space::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  height: calc(var(--ox-foot) + 48px);
+  background: linear-gradient(to top, var(--ox-bg) 52%, rgba(8, 9, 9, 0.85) 72%, rgba(8, 9, 9, 0));
+  pointer-events: none;
+}
+/* Colonnes via une variable : la feuille globale du site écrase sur mobile
+   toute grille déclarée en style inline avec « repeat(3 ». */
+.ox-track {
+  display: grid;
+  grid-template-columns: repeat(var(--ox-count, 3), 100%);
+  height: 100%;
+  will-change: transform;
+}
+.ox .ox-plane {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 0 var(--ox-gutter) var(--ox-foot);
+  scrollbar-width: none;
+  contain: layout paint;
+}
+.ox-plane::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Navigation basse ─────────────────────────────────────────────── */
+.ox-nav {
+  position: absolute;
+  left: var(--ox-gutter);
+  right: var(--ox-gutter);
+  bottom: clamp(16px, 3vh, 32px);
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  pointer-events: none;
+}
+.ox-nav-planes {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2vw, 30px);
+  pointer-events: auto;
+}
+.ox-nav-rail {
+  position: relative;
+  display: block;
+  width: clamp(60px, 7vw, 96px);
+  height: 1px;
+  margin-right: 6px;
+  background: var(--ox-line);
+}
+.ox-nav-rail i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--ox-accent);
+}
+.ox-nav-label {
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  font: 500 10.5px / 1 var(--ox-text) !important;
+  letter-spacing: 0.46em;
+  text-transform: uppercase;
+}
+.ox-nav-rounds {
+  display: flex;
+  gap: clamp(14px, 2vw, 30px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: auto;
+}
+.ox-nav-rounds li {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+}
+.ox-nav-rounds i {
+  width: 1px;
+  height: 12px;
+  background: var(--ox-faint);
+  transform-origin: bottom;
+  transition:
+    background 0.5s var(--ox-ease),
+    transform 0.5s var(--ox-ease);
+}
+.ox-nav-rounds span {
+  font: 500 9.5px / 1 var(--ox-text);
+  letter-spacing: 0.24em;
+  color: var(--ox-faint);
+}
+.ox-nav-rounds li.is-done i {
+  background: var(--ox-mute);
+}
+.ox-nav-rounds li.is-on i {
+  background: var(--ox-accent);
+  transform: scaleY(1.5);
+}
+.ox-nav-rounds li.is-on span {
+  color: var(--ox-ink);
+}
+
+/* ── Commandes ────────────────────────────────────────────────────── */
+.ox-press {
+  touch-action: manipulation;
+}
+.ox .ox-pill,
+.ox .ox-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 30px;
+  border: 1px solid rgba(233, 228, 218, 0.24);
+  border-radius: 999px;
+  background: transparent;
+  font: 500 10.5px / 1 var(--ox-text);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    border-color 0.4s var(--ox-ease),
+    color 0.4s var(--ox-ease),
+    background 0.4s var(--ox-ease);
+}
+.ox .ox-pill:hover:not(:disabled),
+.ox .ox-btn--line:hover:not(:disabled) {
+  border-color: var(--ox-ink);
+}
+.ox .ox-pill--gold,
+.ox .ox-btn--accent {
+  border-color: var(--ox-accent);
+  background: rgba(185, 161, 123, 0.07);
+  color: var(--ox-accent);
+}
+.ox .ox-pill--gold:hover,
+.ox .ox-btn--accent:hover:not(:disabled) {
+  background: var(--ox-accent);
+  color: var(--ox-on-accent);
+}
+.ox .ox-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ox .ox-link,
+.ox .ox-cap-link {
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  font: 500 10.5px / 1 var(--ox-text);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ox-ink);
+  transition: color 0.3s var(--ox-ease);
+}
+.ox .ox-link {
+  color: var(--ox-mute);
+}
+.ox .ox-link:hover,
+.ox .ox-cap-link:hover {
+  color: var(--ox-accent);
+}
+/* Interrupteurs : une piste fine, un point qui glisse. */
+.ox-toggle,
+.ox-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font: 500 10.5px / 1.4 var(--ox-text);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+  cursor: pointer;
+}
+.ox-toggle input,
+.ox-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.ox-toggle i,
+.ox-switch i {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 16px;
+  border: 1px solid var(--ox-faint);
+  border-radius: 999px;
+  transition: border-color 0.35s var(--ox-ease);
+}
+.ox-toggle i::after,
+.ox-switch i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ox-mute);
+  transition:
+    transform 0.4s var(--ox-ease),
+    background 0.35s;
+}
+.ox-toggle input:checked + i,
+.ox-switch input:checked + i {
+  border-color: var(--ox-accent);
+}
+.ox-toggle input:checked + i::after,
+.ox-switch input:checked + i::after {
+  transform: translateX(12px);
+  background: var(--ox-accent);
+}
+.ox-toggle input:checked ~ span {
+  color: var(--ox-ink);
+}
+.ox-toggle input:focus-visible + i,
+.ox-switch input:focus-visible + i {
+  outline: 1px solid var(--ox-accent);
+  outline-offset: 3px;
+}
+.ox .ox-chip {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--ox-line);
+  border-radius: 999px;
+  background: none;
+  font-size: 13px;
+  transition:
+    opacity 0.3s var(--ox-ease),
+    border-color 0.3s var(--ox-ease);
+}
+.ox .ox-chip:hover {
+  border-color: var(--ox-faint);
+}
+.ox .ox-chip small {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--ox-mute);
+}
+.ox .ox-chip[aria-pressed="false"] {
+  opacity: 0.36;
+  text-decoration: line-through;
+}
+
+/* ── La salle (plan Tournoi) ──────────────────────────────────────── */
+.ox-room {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+/* Le fond déborde sur les marges du plan pour couvrir tout l'écran. */
+.ox-back {
+  position: absolute;
+  inset: 0 calc(-1 * var(--ox-gutter)) calc(-1 * var(--ox-foot));
+  overflow: hidden;
+  pointer-events: none;
+}
+.ox-back-base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 46%, #141515 0%, rgba(8, 9, 9, 0) 72%),
+    linear-gradient(to bottom, #0a0b0b, var(--ox-bg));
+}
+.ox-back-pair {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+/* Les silhouettes : l'œuvre de chaque OST, géante, très sombre, fondue vers le centre. */
+.ox-ghost {
+  position: absolute;
+  top: -4%;
+  width: 50%;
+  height: 108%;
+  opacity: 0.22;
+  filter: grayscale(0.8) brightness(0.5) contrast(1.12);
+  animation: ox-ghost 46s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.ox-back.is-dim .ox-ghost {
+  opacity: 0.12;
+}
+/* Les silhouettes dérivent, à peine. */
+@keyframes ox-ghost {
+  from {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.09) translate3d(1.5%, -1%, 0);
+  }
+}
+.ox-ghost--a {
+  left: -4%;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 12% 45%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 75% at 12% 45%, #000 30%, transparent 78%);
+}
+.ox-ghost--b {
+  right: -4%;
+  animation-direction: alternate-reverse;
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 88% 45%, #000 30%, transparent 78%);
+  mask-image: radial-gradient(ellipse 85% 75% at 88% 45%, #000 30%, transparent 78%);
+}
+/* Filets en biais, presque invisibles. */
+.ox-back-line {
+  position: absolute;
+  width: 80vw;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(185, 161, 123, 0.16), transparent);
+  transform-origin: center;
+}
+.ox-back-line--1 {
+  left: -18vw;
+  top: 72%;
+  transform: rotate(-34deg);
+}
+.ox-back-line--2 {
+  right: -24vw;
+  top: 38%;
+  transform: rotate(-34deg);
+  opacity: 0.7;
+}
+.ox-back-line--3 {
+  left: 30vw;
+  top: 4%;
+  transform: rotate(-34deg);
+  opacity: 0.45;
+}
+/* Quelques pétales, lents, indépendants. */
+.ox-petals i {
+  position: absolute;
+  width: calc(16px * var(--s, 1));
+  height: calc(8px * var(--s, 1));
+  border-radius: 80% 0 80% 0;
+  background: linear-gradient(135deg, rgba(240, 232, 220, 0.34), rgba(185, 161, 123, 0.12));
+  opacity: 0.5;
+  animation: ox-drift 34s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.ox-petals i[data-z="0"] {
+  opacity: 0.22;
+}
+.ox-petals i[data-z="2"] {
+  opacity: 0.62;
+  filter: blur(1px);
+}
+/* Poussières dorées : un point qui monte et s'éteint. */
+.ox-dust i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(220, 200, 160, 0.9);
+  box-shadow: 0 0 6px rgba(220, 200, 160, 0.6);
+  opacity: 0;
+  animation: ox-mote 11s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes ox-mote {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  40%,
+  60% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(14px, -60px, 0);
+  }
+}
+/* Une lueur dorée, très basse, derrière le duel. */
+.ox-back-glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 70vw;
+  height: 60vh;
+  translate: -50% -50%;
+  background: radial-gradient(ellipse at center, rgba(185, 161, 123, 0.07), rgba(185, 161, 123, 0) 62%);
+}
+.ox-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 85% 80% at 50% 48%, rgba(8, 9, 9, 0) 55%, rgba(8, 9, 9, 0.78) 100%);
+}
+.ox-petals i:nth-child(even) {
+  animation-name: ox-drift-b;
+}
+@keyframes ox-drift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(-20deg);
+  }
+  to {
+    transform: translate3d(-70px, 120px, 0) rotate(150deg);
+  }
+}
+@keyframes ox-drift-b {
+  from {
+    transform: translate3d(0, 0, 0) rotate(30deg);
+  }
+  to {
+    transform: translate3d(60px, 100px, 0) rotate(-120deg);
+  }
+}
+/* Grain de pellicule, fixe. */
+.ox-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* En-tête de la salle. */
+.ox-room-head {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 28px;
+  padding-top: clamp(18px, 3.2vh, 34px);
+}
+.ox-head-left {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 22px;
+}
+.ox-star {
+  color: var(--ox-accent);
+}
+.ox-head-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 26px;
+  margin: 0;
+}
+.ox-head-title b {
+  font: 500 13px / 1.3 var(--ox-text);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+}
+.ox-head-title span {
+  font: 500 10px / 1.3 var(--ox-text);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+}
+/* Avancement de la partie : un filet, doré sur la part jouée. */
+.ox-head-rule {
+  grid-column: 1 / -1;
+  display: block;
+  width: min(400px, 70vw);
+  height: 1px;
+  margin-top: 16px;
+  overflow: hidden;
+  background: var(--ox-line);
+}
+.ox-head-rule i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(185, 161, 123, 0.35), var(--ox-accent));
+  transform-origin: left;
+  transition: transform 1s var(--ox-ease);
+}
+.ox-head-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 32px;
+  padding-top: 2px;
+}
+
+/* La scène : les cartes, centrées dans la hauteur disponible. */
+.ox-room-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: 1;
+  align-items: center;
+  padding: clamp(10px, 2vh, 24px) 0 4px;
+}
+.ox-room-slide {
+  width: 100%;
+  will-change: transform, opacity;
+}
+.ox-duel {
+  --card-h: clamp(380px, calc(100dvh - var(--ox-top, 64px) - 236px), 600px);
+  --card-w: calc(var(--card-h) * 0.6);
+  display: grid;
+  grid-template-columns: var(--card-w) auto var(--card-w);
+  align-items: center;
+  justify-content: center;
+  column-gap: clamp(56px, 11vw, 230px);
+}
+.ox-card--a {
+  grid-column: 1;
+  grid-row: 1;
+}
+.ox-card--b {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+/* Une carte : l'œuvre en pleine hauteur, encadrée d'un filet, le texte posé dessus. */
+.ox-card {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  border: 1px solid rgba(233, 228, 218, 0.1);
+  background: #0b0c0c;
+  transition:
+    scale 0.8s var(--ox-ease),
+    border-color 0.6s var(--ox-ease),
+    box-shadow 0.8s var(--ox-ease),
+    opacity 0.6s var(--ox-ease);
+}
+.ox-card:hover {
+  scale: 1.015;
+  border-color: rgba(185, 161, 123, 0.4);
+}
+.ox-card.is-on {
+  border-color: var(--ox-accent-soft);
+}
+.ox-card.is-win {
+  border-color: var(--ox-accent);
+  box-shadow: 0 40px 90px -46px rgba(185, 161, 123, 0.5);
+}
+.ox-card.is-lose {
+  opacity: 0.34;
+  scale: 0.985;
+}
+.ox-card-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: none;
+}
+.ox-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+.ox-card-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  will-change: transform;
+}
+.ox-card-art .ox-photo {
+  filter: brightness(0.84) saturate(0.95);
+  translate: calc(var(--px, 0) * -9px) calc(var(--py, 0) * -7px);
+  transition:
+    filter 0.7s var(--ox-ease),
+    scale 1.2s var(--ox-ease),
+    translate 1s var(--ox-ease);
+}
+.ox-card:hover .ox-card-art .ox-photo {
+  filter: brightness(0.98) saturate(1);
+  scale: 1.03;
+}
+.ox-card.is-lose .ox-card-art .ox-photo {
+  filter: grayscale(1) brightness(0.6);
+}
+/* Le bas de l'œuvre s'assombrit sous le texte. */
+.ox-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 9, 9, 0.97) 0%, rgba(8, 9, 9, 0.8) 26%, rgba(8, 9, 9, 0) 56%);
+  pointer-events: none;
+}
+.ox-card-play {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(233, 228, 218, 0.4);
+  border-radius: 50%;
+  background: rgba(8, 9, 9, 0.42);
+  color: var(--ox-ink);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+  transition:
+    opacity 0.45s var(--ox-ease),
+    transform 0.6s var(--ox-ease),
+    border-color 0.45s var(--ox-ease);
+}
+.ox-card-art:hover .ox-card-play,
+.ox-card-art:focus-visible .ox-card-play,
+.ox-card.is-on .ox-card-play {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.ox-card.is-on .ox-card-play {
+  border-color: var(--ox-accent);
+  color: var(--ox-accent);
+}
+.ox-card.is-win .ox-card-play,
+.ox-card.is-lose .ox-card-play {
+  opacity: 0;
+}
+.ox-card-bar {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 1;
+  height: 2px;
+}
+.ox-card-bar i {
+  display: block;
+  height: 100%;
+  background: var(--ox-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.ox-card-blind {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font: 400 clamp(90px, 10vw, 160px) / 1 var(--ox-display);
+  color: rgba(233, 228, 218, 0.12);
+}
+/* Détail doré : un trait qui dépasse du cadre, vers le VS. */
+.ox-card-tick {
+  position: absolute;
+  top: 26px;
+  z-index: 2;
+  width: 72px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ox-accent) 45%, transparent);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.ox-card-tick::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--ox-accent);
+  transform: translateX(-50%) rotate(45deg);
+}
+.ox-card--a .ox-card-tick {
+  right: -38px;
+}
+.ox-card--b .ox-card-tick {
+  left: -38px;
+}
+.ox-card-info {
+  position: absolute;
+  left: clamp(18px, 2vw, 30px);
+  right: clamp(18px, 2vw, 30px);
+  bottom: clamp(18px, 2.6vh, 30px);
+  z-index: 2;
+  pointer-events: none;
+}
+.ox-card-info .ox-micro {
+  font-size: 9.5px;
+  letter-spacing: 0.5em;
+}
+.ox-card-title {
+  margin: 12px 0 0;
+  overflow: hidden;
+  font-family: var(--ox-display);
+  font-size: clamp(20px, 1.7vw, 28px) !important;
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: 0.03em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.ox-card-title.is-long {
+  font-size: clamp(16px, 1.3vw, 21px) !important;
+}
+.ox-card-title-in {
+  display: inline-block;
+  will-change: transform;
+}
+/* Au vote : un trait doré court le long du cadre de la carte gardée. */
+.ox-card-sweep {
+  position: absolute;
+  inset: -1px;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ox-card-sweep::before,
+.ox-card-sweep::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #f1e3c4, transparent);
+  transform: translateX(-110%);
+  animation: ox-sweep 1.1s var(--ox-ease) forwards;
+}
+.ox-card-sweep::before {
+  top: 0;
+}
+.ox-card-sweep::after {
+  bottom: 0;
+  animation-delay: 0.12s;
+}
+@keyframes ox-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(190%);
+  }
+}
+.ox-card-artist {
+  margin: 10px 0 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ox-mute);
+}
+.ox-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  pointer-events: auto;
+}
+.ox .ox-heart {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(233, 228, 218, 0.28);
+  border-radius: 50%;
+  background: rgba(8, 9, 9, 0.3);
+  transition:
+    border-color 0.4s var(--ox-ease),
+    color 0.4s var(--ox-ease);
+}
+.ox .ox-heart span {
+  display: grid;
+}
+.ox .ox-heart:hover {
+  border-color: var(--ox-ink);
+}
+.ox .ox-heart.is-on {
+  border-color: var(--ox-accent);
+  color: var(--ox-accent);
+}
+.ox .ox-keep {
+  height: 36px;
+  padding: 0 34px;
+  border: 1px solid rgba(233, 228, 218, 0.26);
+  border-radius: 999px;
+  background: rgba(8, 9, 9, 0.3);
+  font: 500 10px / 1 var(--ox-text);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.4s var(--ox-ease),
+    color 0.4s var(--ox-ease),
+    background 0.4s var(--ox-ease);
+}
+.ox .ox-keep:hover {
+  border-color: var(--ox-accent);
+  background: rgba(185, 161, 123, 0.08);
+  color: var(--ox-accent);
+}
+.ox-result {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  height: 36px;
+  margin: 0;
+}
+.ox-result b {
+  font: 500 26px / 1 var(--ox-display);
+  font-variant-numeric: tabular-nums;
+}
+.ox-kept {
+  font: 500 10px / 1 var(--ox-text);
+  letter-spacing: 0.46em;
+  text-transform: uppercase;
+  color: var(--ox-accent);
+}
+
+/* Le VS : un filet doré vertical, la lettre au milieu. */
+.ox-vs {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  height: calc(var(--card-h) * 0.78);
+  transition: opacity 0.6s var(--ox-ease);
+}
+.ox-duel[data-picked] .ox-vs {
+  opacity: 0.25;
+}
+.ox-vs span {
+  font: 400 34px / 1 var(--ox-display);
+  letter-spacing: 0.06em;
+  color: var(--ox-accent);
+}
+.ox-vs-line {
+  position: relative;
+  flex: 1;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(185, 161, 123, 0), rgba(185, 161, 123, 0.75));
+  animation: ox-breathe 6s ease-in-out infinite;
+}
+.ox-vs-line:last-child {
+  background: linear-gradient(to top, rgba(185, 161, 123, 0), rgba(185, 161, 123, 0.75));
+}
+.ox-vs-line::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 5px;
+  height: 5px;
+  background: var(--ox-accent);
+  transform: translateX(-50%) rotate(45deg);
+}
+.ox-vs-line:last-child::after {
+  top: -3px;
+  bottom: auto;
+}
+@keyframes ox-breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.ox-empty {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+}
+.ox-empty .ox-lead {
+  margin: 0 auto;
+}
+.ox-empty .ox-cta {
+  justify-content: center;
+}
+.ox-empty-title {
+  margin: 18px 0 22px;
+  font-family: var(--ox-display);
+  font-size: clamp(30px, 3.4vw, 54px) !important;
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.ox-champ {
+  --card-h: clamp(380px, calc(100dvh - var(--ox-top, 64px) - 236px), 600px);
+  --card-w: calc(var(--card-h) * 0.6);
+  display: grid;
+  grid-template-columns: var(--card-w) minmax(0, 560px);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(40px, 7vw, 120px);
+}
+.ox-champ-card:hover {
+  scale: none;
+}
+.ox-champ-title {
+  margin: 18px 0 0;
+  font-family: var(--ox-display);
+  font-size: clamp(34px, 4.2vw, 68px) !important;
+  font-weight: 500;
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+.ox-podium {
+  display: grid;
+  gap: 12px;
+  margin: 44px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.ox-podium li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: baseline;
+  font-size: 15px;
+}
+.ox-podium b {
+  font: 500 10px / 1 var(--ox-text);
+  letter-spacing: 0.3em;
+  color: var(--ox-accent);
+}
+.ox-podium span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── Accueil ──────────────────────────────────────────────────────── */
+.ox-home {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 96px);
+  min-height: 100%;
+  padding-top: clamp(24px, 5vh, 64px);
+}
+.ox-setup {
+  display: grid;
+  gap: 20px;
+  margin-top: 46px;
+}
+.ox-setup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.ox-setup-label {
+  font: 500 10.5px / 1 var(--ox-text);
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+}
+.ox-sizes {
+  display: flex;
+  gap: 6px;
+}
+.ox .ox-size {
+  min-width: 52px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--ox-line);
+  border-radius: 999px;
+  background: none;
+  font: 500 14px / 1 var(--ox-display);
+  transition:
+    border-color 0.35s var(--ox-ease),
+    color 0.35s var(--ox-ease);
+}
+.ox .ox-size:hover:not(:disabled) {
+  border-color: var(--ox-faint);
+}
+.ox .ox-size[aria-checked="true"] {
+  border-color: var(--ox-accent);
+  color: var(--ox-accent);
+}
+.ox .ox-size:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.ox-groups {
+  overflow: hidden;
+}
+.ox-groups-in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 620px;
+  padding-top: 4px;
+}
+.ox-rules {
+  max-width: 760px;
+  padding: clamp(64px, 12vh, 140px) 0 24px;
+}
+.ox-steps {
+  display: grid;
+  gap: 26px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ox-steps li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: baseline;
+}
+.ox-steps b {
+  font: 400 26px / 1.4 var(--ox-display);
+  color: var(--ox-accent);
+}
+.ox-steps p {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ox-mute);
+}
+.ox-hint {
+  margin: 40px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ox-mute);
+}
+
+/* ── Titres des plans Accueil et Tableau ──────────────────────────── */
+.ox-h1 {
+  margin: 0 0 18px;
+  font-family: var(--ox-display);
+  font-size: clamp(34px, 3.8vw, 62px) !important;
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: 0.03em;
+}
+.ox-h2 {
+  margin: 0 0 30px;
+  font-family: var(--ox-display);
+  font-size: clamp(24px, 2.4vw, 36px) !important;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+}
+.ox-h3 {
+  margin: 44px 0 16px;
+  font: 500 10.5px / 1 var(--ox-text) !important;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+}
+
+/* ── Tableau ──────────────────────────────────────────────────────── */
+.ox-board {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-top: clamp(28px, 6vh, 72px);
+}
+.ox-sec + .ox-sec {
+  margin-top: clamp(80px, 13vh, 150px);
+}
+.ox-sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ox-matches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 10px;
+}
+.ox-seg {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--ox-line);
+  border-radius: 999px;
+}
+.ox .ox-seg button {
+  height: 34px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: 500 10px / 1 var(--ox-text);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+  transition:
+    background 0.35s var(--ox-ease),
+    color 0.35s var(--ox-ease);
+}
+.ox .ox-seg button[aria-selected="true"] {
+  background: rgba(185, 161, 123, 0.12);
+  color: var(--ox-accent);
+}
+.ox-rank {
+  display: grid;
+  gap: 2px;
+  margin: 28px 0 22px;
+  padding: 0;
+  list-style: none;
+}
+.ox-rank li {
+  display: grid;
+  grid-template-columns: 72px 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 12px 8px 0;
+  transition: background 0.3s var(--ox-ease);
+}
+.ox-rank li:hover {
+  background: rgba(233, 228, 218, 0.03);
+}
+.ox-rank-n {
+  justify-self: end;
+  font: 400 28px / 1 var(--ox-display);
+  color: var(--ox-faint);
+}
+.ox-rank li:nth-child(-n + 3) .ox-rank-n {
+  color: var(--ox-accent);
+}
+.ox-rank-photo {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--ox-line);
+  background: var(--ox-raise);
+}
+.ox-rank-photo svg {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  color: var(--ox-ink);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s var(--ox-ease);
+}
+.ox-rank-photo:hover svg,
+.ox-rank li.is-on .ox-rank-photo svg {
+  opacity: 1;
+}
+.ox-rank-t {
+  display: grid;
+  min-width: 0;
+}
+.ox-rank-t span {
+  overflow: hidden;
+  font: 500 16px / 1.3 var(--ox-display);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ox-rank li.is-on .ox-rank-t span {
+  color: var(--ox-accent);
+}
+.ox-rank-t small,
+.ox-rank-v small {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ox-mute);
+}
+.ox-rank-v {
+  display: grid;
+  justify-items: end;
+  font: 500 20px / 1.2 var(--ox-display);
+  font-variant-numeric: tabular-nums;
+}
+.ox-rank-v small {
+  font-family: var(--ox-text);
+}
+.ox-champs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 18px;
+  margin: 28px 0 40px;
+}
+.ox-champs figure {
+  margin: 0;
+}
+.ox-champs figcaption {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+.ox-champs small {
+  font-size: 12px;
+  color: var(--ox-mute);
+}
+.ox-log {
+  columns: 2 320px;
+  column-gap: 48px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ox-log li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 7px 0;
+  font-size: 15px;
+  break-inside: avoid;
+}
+.ox-log span,
+.ox-log em {
+  color: var(--ox-mute);
+  font-style: normal;
+}
+.ox-favs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+/* ── Écrans moyens ────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .ox-duel {
+    column-gap: clamp(36px, 6vw, 80px);
+  }
+}
+@media (max-width: 900px) {
+  .ox-home {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .ox-champ {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .ox-champ .ox-cta {
+    justify-content: center;
+  }
+}
+
+/* ── Petits écrans : deux cartes côte à côte, sans le VS ──────────── */
+@media (max-width: 640px) {
+  .ox-duel,
+  .ox-champ {
+    --card-w: calc((100vw - 2 * var(--ox-gutter) - 12px) / 2);
+    --card-h: min(calc(var(--card-w) * 1.7), calc(100dvh - var(--ox-top, 64px) - 250px));
+  }
+  .ox-duel {
+    column-gap: 12px;
+    grid-template-columns: var(--card-w) var(--card-w);
+  }
+  .ox-card--b {
+    grid-column: 2;
+  }
+  .ox-vs,
+  .ox-card-tick {
+    display: none;
+  }
+  .ox-card-info {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+  .ox-card-info .ox-micro {
+    font-size: 8px;
+    letter-spacing: 0.3em;
+  }
+  .ox-card-title,
+  .ox-card-title.is-long {
+    margin-top: 8px;
+    font-size: clamp(18px, 5.2vw, 23px) !important;
+  }
+  .ox-card-artist {
+    font-size: 11px;
+  }
+  .ox-card-actions {
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .ox .ox-keep {
+    flex: 1;
+    padding: 0 10px;
+    letter-spacing: 0.32em;
+  }
+  .ox .ox-heart {
+    width: 34px;
+    height: 34px;
+  }
+  .ox-result b {
+    font-size: 24px;
+  }
+  .ox-ghost {
+    width: 80%;
+    opacity: 0.14;
+  }
+  .ox-head-title b {
+    letter-spacing: 0.34em;
+  }
+  .ox-head-right {
+    gap: 12px 22px;
+  }
+  .ox-nav-planes {
+    gap: 14px;
+  }
+  .ox-nav-label {
+    letter-spacing: 0.3em;
+  }
+  .ox-nav-rounds {
+    display: none;
+  }
+  .ox-rank li {
+    grid-template-columns: 40px 48px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .ox-rank-n {
+    font-size: 28px;
+  }
+  .ox-rank-photo {
+    width: 48px;
+    height: 48px;
+  }
+  .ox-rank-v {
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ox *,
+  .ox *::before,
+  .ox *::after {
+    transition-duration: 0.01s !important;
+    animation: none !important;
+  }
+  .ox-card:hover,
+  .ox-card:hover .ox-card-art .ox-photo {
+    scale: none;
+  }
+}
+
+/* Le résultat tient sur une ligne, même dans une carte étroite. */
+.ox-result {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .ox .ox-kept {
+    letter-spacing: 0.2em;
+  }
+  .ox-result {
+    gap: 10px;
+  }
+}
+
+/* ── Accueil : l'affiche ──────────────────────────────────────────── */
+.ox-home-text {
+  position: relative;
+  z-index: 2;
+}
+.ox-home-mark {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 30px;
+  color: var(--ox-accent);
+}
+.ox-home-title {
+  margin: 0 0 30px;
+  font-family: var(--ox-display);
+  font-size: clamp(50px, 6.2vw, 112px) !important;
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: 0.02em;
+}
+/* Une ligne de titre qui monte derrière son masque. */
+.ox-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.04em;
+}
+.ox-mask > span {
+  display: block;
+  will-change: transform;
+}
+/* L'éventail : trois cartes encadrées, qui s'écartent au survol. */
+.ox-fan {
+  position: relative;
+  z-index: 1;
+  height: min(66vh, 620px);
+}
+.ox-fan-card {
+  position: absolute;
+  top: 10%;
+  width: min(17vw, 290px);
+  aspect-ratio: 0.62;
+  overflow: hidden;
+  border: 1px solid rgba(233, 228, 218, 0.12);
+  background: #0b0c0c;
+  box-shadow: 0 50px 90px -40px rgba(0, 0, 0, 0.9);
+  transition:
+    translate 0.9s var(--ox-ease),
+    rotate 0.9s var(--ox-ease),
+    border-color 0.6s var(--ox-ease);
+}
+.ox-fan-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 9, 9, 0.95), rgba(8, 9, 9, 0.6) 26%, rgba(8, 9, 9, 0) 52%);
+}
+.ox-fan-card .ox-photo {
+  filter: brightness(0.82);
+}
+.ox-fan-card--0 {
+  left: 6%;
+  rotate: -8deg;
+  translate: 0 4%;
+}
+.ox-fan-card--1 {
+  left: 50%;
+  top: 2%;
+  z-index: 2;
+  translate: -50% 0;
+  border-color: rgba(185, 161, 123, 0.45);
+}
+.ox-fan-card--2 {
+  right: 6%;
+  rotate: 8deg;
+  translate: 0 4%;
+}
+.ox-fan:hover .ox-fan-card--0 {
+  rotate: -12deg;
+  translate: -18% 6%;
+}
+.ox-fan:hover .ox-fan-card--2 {
+  rotate: 12deg;
+  translate: 18% 6%;
+}
+.ox-fan:hover .ox-fan-card--1 {
+  translate: -50% -2%;
+}
+.ox-fan-info {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+}
+.ox-fan-info .ox-micro {
+  font-size: 8.5px;
+}
+.ox-fan-info b {
+  font: 500 16px / 1.25 var(--ox-display);
+  letter-spacing: 0.03em;
+}
+
+/* ── Tableau : chaque duel, deux portraits ────────────────────────── */
+.ox-matches {
+  grid-template-columns: repeat(auto-fill, minmax(208px, 1fr));
+  gap: 14px;
+}
+.ox .ox-mt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--ox-line);
+  background: rgba(14, 15, 15, 0.7);
+  text-align: left;
+  transition:
+    border-color 0.4s var(--ox-ease),
+    background 0.4s var(--ox-ease);
+}
+.ox .ox-mt.is-current {
+  border-color: var(--ox-accent);
+}
+.ox .ox-mt.is-current:hover {
+  background: rgba(185, 161, 123, 0.06);
+}
+.ox-mt-side {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ox-mt-img {
+  display: block;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border: 1px solid var(--ox-line);
+  background: var(--ox-bg);
+}
+.ox-mt-t {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.35;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ox-mt-side.is-win .ox-mt-t {
+  color: var(--ox-accent);
+}
+.ox-mt-side.is-win .ox-mt-img {
+  border-color: var(--ox-accent-soft);
+}
+.ox-mt-side.is-out,
+.ox-mt-side.is-empty {
+  opacity: 0.36;
+}
+.ox-mt-side.is-out .ox-photo {
+  filter: grayscale(1);
+}
+.ox-mt-vs {
+  align-self: center;
+  margin-top: -18px;
+  font: 400 10px / 1 var(--ox-display);
+  font-style: normal;
+  letter-spacing: 0.1em;
+  color: var(--ox-accent);
+}
+
+/* Championnes : portraits cadrés. */
+.ox-frame {
+  display: block;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border: 1px solid var(--ox-line);
+}
+.ox-champs b {
+  font: 500 15px / 1.3 var(--ox-display);
+  letter-spacing: 0.02em;
+}
+
+/* Favoris : des cartes encadrées, le texte posé sur l'œuvre. */
+.ox .ox-fav {
+  position: relative;
+  display: block;
+  aspect-ratio: 0.7;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(233, 228, 218, 0.1);
+  background: #0b0c0c;
+  text-align: left;
+  transition:
+    scale 0.8s var(--ox-ease),
+    border-color 0.6s var(--ox-ease);
+}
+.ox .ox-fav::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(8, 9, 9, 0.95), rgba(8, 9, 9, 0.55) 30%, rgba(8, 9, 9, 0) 55%);
+}
+.ox .ox-fav .ox-photo {
+  filter: brightness(0.82);
+  transition:
+    filter 0.7s var(--ox-ease),
+    scale 1.2s var(--ox-ease);
+}
+.ox .ox-fav:hover {
+  scale: 1.015;
+  border-color: rgba(185, 161, 123, 0.4);
+}
+.ox .ox-fav:hover .ox-photo {
+  filter: brightness(0.98);
+  scale: 1.03;
+}
+.ox .ox-fav.is-on {
+  border-color: var(--ox-accent);
+}
+.ox-fav-info {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+}
+.ox-fav-info small {
+  font: 500 8.5px / 1.4 var(--ox-text);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ox-mute);
+}
+.ox-fav-info b {
+  font: 500 15px / 1.3 var(--ox-display);
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 900px) {
+  .ox-fan {
+    order: -1;
+    height: 64vw;
+    max-height: 420px;
+  }
+  .ox-fan-card {
+    width: min(34vw, 220px);
+  }
+}
+@media (max-width: 640px) {
+  .ox-home-title {
+    font-size: clamp(40px, 12vw, 60px) !important;
+  }
+  .ox-matches {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+/* ── Typographie fine ─────────────────────────────────────────────── */
+/* Crénage et ligatures partout ; Cinzel garde ses grandes capitales pour les
+   initiales et grave le reste en petites capitales (voir engrave()). */
+.ox {
+  font-kerning: normal;
+  font-feature-settings: "kern" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+}
+.ox-micro,
+.ox-head-title span,
+.ox-nav-label,
+.ox-fav-info small {
+  font-weight: 400 !important;
+}
+.ox-head-title b {
+  font-weight: 400;
+  letter-spacing: 0.54em;
+}
+.ox-card-title {
+  font-size: clamp(19px, 1.6vw, 26px) !important;
+  letter-spacing: 0.045em;
+  line-height: 1.24;
+}
+.ox-card-title.is-long {
+  font-size: clamp(15px, 1.25vw, 20px) !important;
+}
+.ox-card-artist {
+  font-weight: 300;
+  letter-spacing: 0.14em;
+}
+.ox-home-title {
+  font-weight: 400;
+  letter-spacing: 0.045em;
+}
+.ox-result b {
+  letter-spacing: 0.02em;
+}
+/* Ornements : Cinzel Decorative, doré gravé (clair en haut, bronze en bas). */
+.ox-vs span,
+.ox-initial {
+  font-family: "Cinzel Decorative", var(--ox-display);
+  background: linear-gradient(180deg, #f1e3c2 0%, #cdb48b 48%, #8c7552 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ox-vs span {
+  font-size: 38px;
+  letter-spacing: 0.02em;
+}
+.ox-initial {
+  display: inline-block;
+  padding-right: 0.01em;
+  font-size: 1.12em;
+  line-height: 1;
+}
+
+/* ── Images : la vignette floue tient la place, l'image nette arrive en fondu ── */
+.ox-photo {
+  position: relative;
+  transition: opacity 0.8s var(--ox-ease);
+}
+.ox-photo.is-loading {
+  opacity: 0;
+}
+.ox .ox-photo.ox-photo-blur {
+  position: absolute;
+  inset: 0;
+  filter: blur(18px) brightness(0.72);
+  transform: scale(1.12);
+  translate: none;
+  transition: none;
+}
+.ox-card-art .ox-photo {
+  transition:
+    filter 0.7s var(--ox-ease),
+    scale 1.2s var(--ox-ease),
+    translate 1s var(--ox-ease),
+    opacity 0.8s var(--ox-ease);
+}
+.ox .ox-fav .ox-photo {
+  transition:
+    filter 0.7s var(--ox-ease),
+    scale 1.2s var(--ox-ease),
+    opacity 0.8s var(--ox-ease);
+}
+.ox-frame,
+.ox-ghost {
+  overflow: hidden;
+}
+.ox-frame {
+  position: relative;
+}
+
+/* ── Graisses : des polices plus pleines ──────────────────────────── */
+/* Cinzel en 700 (800 pour les grands titres), Outfit en 500, micro-capitales
+   en 600 et un peu plus grandes. Placé en dernier : passe devant les réglages
+   précédents. */
+.ox {
+  font-weight: 500;
+}
+.ox-lead,
+.ox-steps p,
+.ox-hint {
+  font-weight: 500;
+  color: rgba(233, 228, 218, 0.7);
+}
+.ox-micro,
+.ox-head-title span,
+.ox-nav-label,
+.ox-fav-info small,
+.ox-setup-label,
+.ox-card-info .ox-micro,
+.ox-fan-info .ox-micro {
+  font-weight: 600 !important;
+}
+.ox-card-info .ox-micro {
+  font-size: 10.5px;
+}
+.ox-head-title b {
+  font-weight: 600;
+}
+.ox-card-artist {
+  font-weight: 500;
+  font-size: 12.5px;
+  color: rgba(233, 228, 218, 0.66);
+}
+.ox .ox-keep,
+.ox .ox-pill,
+.ox .ox-btn,
+.ox .ox-cap-link,
+.ox .ox-link,
+.ox-toggle,
+.ox-kept,
+.ox .ox-seg button {
+  font-weight: 600;
+}
+.ox-card-title {
+  font-weight: 700;
+  font-size: clamp(20px, 1.7vw, 27px) !important;
+}
+.ox-card-title.is-long {
+  font-size: clamp(16px, 1.32vw, 21px) !important;
+}
+.ox-home-title {
+  font-weight: 700;
+}
+.ox-h1,
+.ox-h2,
+.ox-empty-title,
+.ox-champ-title {
+  font-weight: 700;
+}
+.ox-fan-info b,
+.ox-fav-info b,
+.ox-champs b,
+.ox-rank-t span,
+.ox-rank-v,
+.ox-result b,
+.ox .ox-size,
+.ox-steps b,
+.ox-podium b {
+  font-weight: 700;
+}
+.ox-vs span,
+.ox-initial {
+  font-weight: 700;
+}
+.ox-mt-t {
+  font-weight: 500;
+}
+.ox-card-info .ox-micro,
+.ox-fan-info .ox-micro,
+.ox-fav-info small {
+  color: rgba(233, 228, 218, 0.78);
+}
+
+/* ── Finitions ────────────────────────────────────────────────────── */
+/* Au survol d'une carte, quatre coins dorés se posent autour d'elle. */
+.ox-card-corners {
+  position: absolute;
+  inset: -9px;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--ox-accent), var(--ox-accent)) top left / 16px 1px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) top left / 1px 16px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) top right / 16px 1px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) top right / 1px 16px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) bottom left / 16px 1px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) bottom left / 1px 16px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) bottom right / 16px 1px no-repeat,
+    linear-gradient(var(--ox-accent), var(--ox-accent)) bottom right / 1px 16px no-repeat;
+  opacity: 0;
+  transform: scale(1.03);
+  transition:
+    opacity 0.5s var(--ox-ease),
+    transform 0.7s var(--ox-ease);
+}
+.ox-card:hover .ox-card-corners,
+.ox-card.is-on .ox-card-corners {
+  opacity: 0.9;
+  transform: scale(1);
+}
+.ox-card.is-lose .ox-card-corners {
+  opacity: 0;
+}
+
+/* Égaliseur doré pendant l'écoute. */
+.ox-eq {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 16px;
+  padding: 6px 7px;
+  box-sizing: content-box;
+  border: 1px solid rgba(185, 161, 123, 0.4);
+  border-radius: 999px;
+  background: rgba(8, 9, 9, 0.5);
+  pointer-events: none;
+}
+.ox-eq i {
+  width: 2px;
+  height: 100%;
+  background: var(--ox-accent);
+  transform-origin: bottom;
+  animation: ox-eq 0.9s ease-in-out infinite alternate;
+}
+.ox-eq i:nth-child(2) {
+  animation-duration: 0.7s;
+  animation-delay: -0.3s;
+}
+.ox-eq i:nth-child(3) {
+  animation-duration: 1.1s;
+  animation-delay: -0.6s;
+}
+.ox-eq i:nth-child(4) {
+  animation-duration: 0.8s;
+  animation-delay: -0.15s;
+}
+@keyframes ox-eq {
+  from {
+    transform: scaleY(0.2);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Tableau : sous chaque titre de section, un filet doré, comme l'en-tête du duel. */
+.ox-board .ox-h1::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 1px;
+  margin-top: 20px;
+  background: linear-gradient(90deg, var(--ox-accent), rgba(185, 161, 123, 0));
+}
+
+@media (max-width: 640px) {
+  .ox-card-corners {
+    display: none;
+  }
+  .ox-eq {
+    top: 10px;
+    right: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ox-eq i {
+    animation: none;
+    transform: scaleY(0.6);
+  }
+}

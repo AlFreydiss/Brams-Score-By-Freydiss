@@ -4,7 +4,7 @@ import type { TournamentSlug } from "./catalog";
 // l'ouverture du tournoi concerné. Les noms de familles sont exposés en
 // variables CSS dans themes/base.css (--t-serif-ost, --t-display-op…).
 const FAMILIES: Record<TournamentSlug, string> = {
-  ost: "family=Anton&family=Shippori+Mincho:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700",
+  ost: "family=Cinzel:wght@400..900&family=Cinzel+Decorative:wght@400;700;900&family=Outfit:wght@300..700",
   openings: "family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700",
   endings: "family=Instrument+Serif:ital@0;1&family=Karla:wght@400;500;600;700",
   rap: "family=Anton&family=Permanent+Marker&family=Inter:wght@400;500;600;700;800",
@@ -16,7 +16,7 @@ const FAMILIES: Record<TournamentSlug, string> = {
 // Familles d'affichage à attendre avant de montrer la page (évite le saut de
 // police sur les grands titres).
 const DISPLAY: Record<TournamentSlug, string[]> = {
-  ost: ['1em "Anton"', '500 1em "Inter"'],
+  ost: ['700 1em "Cinzel"', '500 1em "Outfit"'],
   openings: ['1em "Dela Gothic One"', '700 1em "Zen Kaku Gothic New"'],
   endings: ['italic 1em "Instrument Serif"', '1em "Karla"'],
   rap: ['1em "Anton"', '1em "Permanent Marker"'],
