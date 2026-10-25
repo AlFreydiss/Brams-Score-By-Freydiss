@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import { TOURNAMENTS, type TournamentSlug } from "@/lib/tournois/catalog";
@@ -8,17 +8,16 @@ import { useSaved } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
 import { fetchStats } from "@/lib/versusStats.js";
 import { keyartSrc } from "../animehub/keyart.js";
-import { ArenaHero } from "./hero";
-import { VersusCard } from "./versus-card";
+import { FightCard } from "./fight-card";
 import { MiniBracket } from "./mini-bracket";
 import { RankRow } from "./rows";
 import { ArenaList, type Arena } from "./arena-list";
 import { loadArenaFonts } from "./fonts";
 import "./arena.css";
 
-// Hub des tournois (« Tournoi 2026 ») : l'affiche des deux camps, le duel
-// d'OST en cours (jouable), le tableau du 1/64 à la finale, les OST
-// populaires, puis le choix de l'arène, une bande par tournoi.
+// Hub des tournois (« Tournoi 2026 »), façon affiche de combat : en haut le
+// duel d'OST en direct (jouable), puis le tableau du 1/64 à la finale, les OST
+// populaires, le choix de l'arène (une bande par tournoi) et les autres modes.
 
 const TMDB = (p: string) => `https://image.tmdb.org/t/p/w1280/${p}`;
 
@@ -45,14 +44,6 @@ const SOON = ["Personnages", "Arcs", "Pouvoirs", "Théories", "Wiki Battles", "B
 
 // Têtes d'affiche tant que le site n'a pas assez de votes pour classer.
 const HEADLINERS = ["aot-vogel", "naruto-sadness-and-sorrow", "ds-kamado-tanjiro", "op-binks", "jujutsu-kaisen-hollow-purple", "howl-merry-go-round"];
-
-function pickPair(list: Participant[], not?: Participant[]) {
-  const pool = list.filter((p) => p.visual.k === "img" && !not?.some((x) => x.id === p.id));
-  const a = pool[Math.floor(Math.random() * pool.length)];
-  const rest = pool.filter((p) => p.group !== a?.group);
-  const b = rest[Math.floor(Math.random() * rest.length)];
-  return a && b ? [a, b] : [];
-}
 
 function useStatus(slug: TournamentSlug) {
   const saved = useSaved(slug);
@@ -88,8 +79,6 @@ function ArenaRows({ ostCount }: { ostCount: number }) {
 
 export default function ArenaHubPage() {
   const [ost, setOst] = useState<Participant[]>([]);
-  const [hero, setHero] = useState<Participant[]>([]);
-  const [duel, setDuel] = useState<Participant[]>([]);
   const [site, setSite] = useState<Map<string, { wins: number; duels: number }> | null>(null);
   const saved = useSaved("ost");
   const arenasRef = useRef<HTMLDivElement>(null);
@@ -98,13 +87,7 @@ export default function ArenaHubPage() {
     document.title = "Tournois · Brams Community";
     loadArenaFonts();
     let on = true;
-    loadParticipants("ost").then((list) => {
-      if (!on) return;
-      setOst(list);
-      const h = pickPair(list);
-      setHero(h);
-      setDuel(pickPair(list, h));
-    });
+    loadParticipants("ost").then((list) => on && setOst(list));
     fetchStats("anime-ost").then((m: Map<string, { wins: number; duels: number }> | null) => on && setSite(m));
     return () => {
       on = false;
@@ -112,7 +95,6 @@ export default function ArenaHubPage() {
   }, []);
 
   const byId = useMemo(() => new Map(ost.map((p) => [p.id, p])), [ost]);
-  const next = useCallback(() => setDuel((d) => pickPair(ost, d)), [ost]);
 
   // Le tableau de ta partie d'OST si elle existe, sinon huit OST au hasard.
   const bracket = useMemo(() => {
@@ -157,17 +139,20 @@ export default function ArenaHubPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="ar">
-        <ArenaHero
-          left={hero[0] ? { src: hero[0].visual.k === "img" ? hero[0].visual.src : hero[0].thumb } : null}
-          right={hero[1] ? { src: hero[1].visual.k === "img" ? hero[1].visual.src : hero[1].thumb } : null}
-          split={["Tournoi", "2026"]}
-          motto={["Deux camps,", "un seul vainqueur."]}
-          cta={{ label: "Choisir mon arène", onClick: () => arenasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
-        >
-          {duel.length === 2 ? <VersusCard pair={duel} statsId="anime-ost" label="Duel en cours" onNext={next} /> : null}
-          {bracket.left.length === 4 ? <MiniBracket left={bracket.left} right={bracket.right} current={bracket.current} size={saved.run?.size} /> : null}
+        <FightCard pool={ost} statsId="anime-ost" onPickArena={() => arenasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+
+        {bracket.left.length === 4 ? (
+          <div className="ar-section">
+            <h2 className="ar-h2">
+              Le tableau <small>Du 1/64 à la finale</small>
+            </h2>
+            <MiniBracket left={bracket.left} right={bracket.right} current={bracket.current} size={saved.run?.size} />
+          </div>
+        ) : null}
+
+        <div className="ar-section">
           <RankRow title="OST populaires" items={popular} more={{ label: "Voir tout", to: "/tournoi/ost/classement" }} playing={playing} onPlay={play} />
-        </ArenaHero>
+        </div>
 
         <div ref={arenasRef} className="ar-section">
           <h2 className="ar-h2">

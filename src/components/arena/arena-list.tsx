@@ -2,9 +2,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// Le choix de l'arène : une bande par tournoi, ses deux camps en bichromie de
-// part et d'autre de la lame. Au survol la bande s'ouvre, les photos
-// reprennent leurs couleurs et la lame s'allume.
+// Le choix de l'arène : une bande par tournoi, deux photos de son catalogue
+// côte à côte. Au survol la bande s'éclaire et une lumière suit la souris.
 
 export type Arena = {
   id: string;
@@ -45,7 +44,6 @@ export function ArenaList({ arenas }: { arenas: Arena[] }) {
                 const r = e.currentTarget.getBoundingClientRect();
                 e.currentTarget.style.setProperty("--sx", `${e.clientX - r.left}px`);
                 e.currentTarget.style.setProperty("--sy", `${e.clientY - r.top}px`);
-                e.currentTarget.style.setProperty("--tilt", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
               }}
             >
               <i className="ar-arena-spot" aria-hidden />
@@ -56,7 +54,6 @@ export function ArenaList({ arenas }: { arenas: Arena[] }) {
                 <span className="ar-arena-half is-blue">
                   <img src={a.images[1]} alt="" loading="lazy" decoding="async" />
                 </span>
-                <i className="ar-arena-blade" />
               </span>
               <span className="ar-arena-n" aria-hidden>
                 {String(i + 1).padStart(2, "0")}

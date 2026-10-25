@@ -1,11 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useClientDraw } from "@/lib/tournois/client-draw";
 import { useTournament } from "./provider";
 import { PosterScene } from "./poster";
-import { ArenaBackdrop } from "../arena/hero";
+import { BroadcastBackdrop } from "../arena/broadcast";
+import { loadArenaFonts } from "../arena/fonts";
 import "../arena/arena.css";
 
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
@@ -22,8 +23,11 @@ export function Setup() {
   const [blind, setBlind] = useState(false);
   const [q, setQ] = useState("");
   const preview = useClientDraw(`${meta.slug}:setup`, participants, 2) ?? [];
-  // Le tournoi d'OST se lance dans l'arène « Rouge contre Bleu ».
+  // Le tournoi d'OST se lance sur son affiche de combat.
   const arena = meta.slug === "ost";
+  useEffect(() => {
+    if (arena) loadArenaFonts();
+  }, [arena]);
 
   const pool = participants.filter((p) => !off.has(p.group));
   const capacity = meta.balanced ? 2 * Math.min(pool.filter((p) => p.camp === "rap").length, pool.filter((p) => p.camp !== "rap").length) : pool.length;
@@ -46,7 +50,7 @@ export function Setup() {
   return (
     <div className={arena ? "t-setup ar ar-setup" : "t-setup"}>
       {arena ? (
-        <ArenaBackdrop
+        <BroadcastBackdrop
           left={preview[0] ? { src: preview[0].visual.k === "img" ? preview[0].visual.src : preview[0].thumb } : null}
           right={preview[1] ? { src: preview[1].visual.k === "img" ? preview[1].visual.src : preview[1].thumb } : null}
         />

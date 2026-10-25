@@ -1,7 +1,7 @@
-// Polices de l'arène (Anton pour les titres, Shippori Mincho pour le japonais,
+// Polices de l'arène (Barlow Condensed pour les titres façon plateau sportif,
 // Inter pour le texte), chargées une fois depuis Google Fonts.
 export function loadArenaFonts() {
-  if (document.getElementById("ar-fonts")) return;
+  if (document.getElementById("ar-fonts-cast")) return;
   for (const href of ["https://fonts.googleapis.com", "https://fonts.gstatic.com"]) {
     if (document.querySelector(`link[rel="preconnect"][href="${href}"]`)) continue;
     const l = document.createElement("link");
@@ -11,8 +11,8 @@ export function loadArenaFonts() {
     document.head.appendChild(l);
   }
   const link = document.createElement("link");
-  link.id = "ar-fonts";
+  link.id = "ar-fonts-cast";
   link.rel = "stylesheet";
-  link.href = "https://fonts.googleapis.com/css2?family=Anton&family=Shippori+Mincho:wght@500;700&family=Inter:wght@400;500;600;700&display=swap";
+  link.href = "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap";
   document.head.appendChild(link);
 }
