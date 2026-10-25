@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Participant } from "@/lib/tournois/types";
+import { Reveal } from "./reveal";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -26,7 +27,7 @@ export function RankRow({
       <div className="ar-rank-head">
         <h2>
           <i aria-hidden />
-          {title}
+          <Reveal>{title}</Reveal>
         </h2>
         {more ? (
           <Link to={more.to}>

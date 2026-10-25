@@ -66,14 +66,81 @@
 }
 .ar-half img {
   position: absolute;
-  inset: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
   object-fit: cover;
   filter: brightness(0.62) saturate(1.05);
-  transition: filter 0.8s var(--ar-ease);
-  will-change: transform, opacity;
+  transition: filter 0.6s var(--ar-ease);
   user-select: none;
+}
+/* La photo posée : elle avance très lentement, au repos. */
+.ar-zoom {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.ar-zoom img {
+  top: 0;
+  height: 100%;
+  animation: ar-kb 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes ar-kb {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.07;
+  }
+}
+/* La bobine : la bande des OST qui défilent, floutée par la vitesse. */
+.ar-reel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  will-change: transform, filter;
+}
+/* L'impact : un flash blanc qui retombe. */
+.ar-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #fff;
+  pointer-events: none;
+  will-change: opacity;
+}
+/* Cliquer sur une photo la choisit ; au survol elle s'éclaire et « Choisir » apparaît. */
+.ar-half-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.ar-half-hint {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  translate: -50% -50%;
+  padding: 10px 18px;
+  background: rgba(8, 9, 12, 0.8);
+  font: 700 16px / 1 var(--ar-cond);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition:
+    opacity 0.25s,
+    translate 0.3s var(--ar-ease);
+}
+.ar-half-hit:hover .ar-half-hint,
+.ar-half-hit:focus-visible .ar-half-hint {
+  opacity: 1;
+  translate: -50% calc(-50% - 4px);
+}
+.ar-half:has(.ar-half-hit:hover) .ar-zoom img {
+  filter: brightness(0.8) saturate(1.1);
 }
 /* Au vote, la photo du perdant passe en gris. */
 .ar-cast[data-picked="0"] .ar-half--blue img,
@@ -162,10 +229,69 @@
   border-top: 1px solid var(--ar-line);
   background: rgba(8, 9, 12, 0.92);
 }
-.ar-ticker p {
-  margin: 0;
-  font: 500 15px var(--ar-ui);
+.ar-live {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  background: var(--ar-red);
+  font: 700 15px / 1 var(--ar-cond);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+/* Le défilant : deux copies du même texte, qui glissent sans fin (pause au survol). */
+.ar-marquee {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+.ar-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: ar-marquee 70s linear infinite;
+  will-change: transform;
+}
+.ar-marquee:hover .ar-marquee-track {
+  animation-play-state: paused;
+}
+.ar-marquee-run {
+  display: flex;
+  align-items: center;
+}
+.ar-marquee-run > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  padding-right: 22px;
+  font: 600 16px / 1 var(--ar-cond);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
   color: var(--ar-ink-2);
+}
+.ar-marquee-run > b {
+  color: var(--ar-ink);
+}
+.ar-marquee-run > *::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--ar-red);
+}
+.ar-marquee-run > :nth-child(even)::after {
+  background: var(--ar-blue);
+}
+@keyframes ar-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ar-chip small {
+  font: inherit;
+  color: var(--ar-mute);
 }
 /* Le bouton principal : un bloc blanc, texte condensé (.ar devant : la règle
    générale des boutons ne doit pas reprendre la police). */
@@ -244,34 +370,28 @@ a.ar-go:hover svg {
 .ar-fighter--blue b {
   flex-direction: row-reverse;
 }
-/* Égaliseur pendant l'écoute. */
-.ar-eq {
+/* Vumètre pendant l'écoute : cinq barres qui suivent le vrai signal. */
+.ar-vu {
   display: inline-flex;
   flex: none;
   align-items: flex-end;
   gap: 3px;
-  height: 0.5em;
+  height: 0.55em;
 }
-.ar-eq i {
-  width: 3px;
+.ar-vu i {
+  width: 4px;
   height: 100%;
-  background: currentColor;
+  background: var(--ar-red);
+  transform: scaleY(0.12);
   transform-origin: bottom;
-  animation: ar-eq 0.9s ease-in-out infinite alternate;
+  will-change: transform;
 }
-.ar-eq i:nth-child(2) {
-  animation-delay: -0.3s;
+.ar-fighter--blue .ar-vu i {
+  background: var(--ar-blue);
 }
-.ar-eq i:nth-child(3) {
-  animation-delay: -0.6s;
-}
-@keyframes ar-eq {
-  from {
-    transform: scaleY(0.2);
-  }
-  to {
-    transform: scaleY(1);
-  }
+.ar-fighter-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* La jauge du camp : rouge à gauche, bleue à droite. */
 .ar-meter {
@@ -401,6 +521,21 @@ a.ar-go:hover svg {
 .ar-end {
   padding-bottom: 100px;
 }
+.ar-reveal {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.ar-reveal-txt {
+  display: inline-block;
+}
+.ar-reveal-bar {
+  position: absolute;
+  inset: 0;
+  background: var(--ar-ink);
+  will-change: transform;
+}
 
 /* ── Tableau ──────────────────────────────────────────────────────── */
 .ar-bracket {
@@ -489,6 +624,14 @@ a.ar-go:hover svg {
 .ar-b-node.is-blue {
   border-color: var(--ar-blue);
 }
+.ar-b-node b {
+  position: absolute;
+  inset: 1px;
+  background: var(--ar-red);
+}
+.ar-b-node.is-blue b {
+  background: var(--ar-blue);
+}
 .ar-b-crown {
   display: grid;
   place-items: center;
@@ -517,7 +660,7 @@ a.ar-go:hover svg {
   text-transform: uppercase;
 }
 /* Repère des deux camps : un carré rouge, un carré bleu. */
-.ar-rank-head h2 i {
+.ar-rank-head h2 > i {
   width: 8px;
   height: 8px;
   margin-right: 12px;
@@ -648,8 +791,20 @@ a.ar-go:hover svg {
   padding: 0;
   list-style: none;
 }
-.ar-arena-wipe {
+.ar-arena-slot {
+  position: relative;
+  overflow: hidden;
+}
+.ar-arena-bar {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--ar-ink);
+  pointer-events: none;
   will-change: transform;
+}
+.ar-arena-wipe {
+  will-change: transform, opacity;
 }
 .ar-arena {
   position: relative;
@@ -1018,6 +1173,13 @@ a.ar-go:hover svg {
     align-items: stretch;
     text-align: center;
   }
+  .ar-live {
+    display: none;
+  }
+  .ar-marquee {
+    flex: none;
+    padding: 6px 0;
+  }
   .ar-ticker .ar-go {
     justify-content: center;
   }
@@ -1056,7 +1218,8 @@ a.ar-go:hover svg {
 }
 @media (prefers-reduced-motion: reduce) {
   .ar-bug i,
-  .ar-eq i {
+  .ar-zoom img,
+  .ar-marquee-track {
     animation: none;
   }
 }

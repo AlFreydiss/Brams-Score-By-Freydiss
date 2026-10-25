@@ -3,7 +3,8 @@ import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Le choix de l'arène : une bande par tournoi, deux photos de son catalogue
-// côte à côte. Au survol la bande s'éclaire et une lumière suit la souris.
+// côte à côte. À l'arrivée, une barre blanche balaie la bande ; au survol la
+// bande s'éclaire et une lumière suit la souris.
 
 export type Arena = {
   id: string;
@@ -27,14 +28,18 @@ export function ArenaList({ arenas }: { arenas: Arena[] }) {
       {arenas.map((a, i) => (
         // L'élément observé reste entier : sur mobile, Chrome ne voit jamais à
         // l'écran un élément que son propre clip-path masque en entier.
-        <motion.li key={a.id} initial={reduce ? false : "out"} whileInView="in" viewport={{ once: true, margin: "-60px" }}>
+        <motion.li key={a.id} className="ar-arena-slot" initial={reduce ? false : "out"} whileInView="in" viewport={{ once: true, margin: "-60px" }}>
+          {/* Habillage télé : une barre blanche balaie la bande, la bande apparaît derrière. */}
+          {reduce ? null : (
+            <motion.i
+              className="ar-arena-bar"
+              aria-hidden
+              variants={{ out: { x: "-101%" }, in: { x: ["-101%", "0%", "101%"], transition: { duration: 0.8, times: [0, 0.45, 1], ease: [0.7, 0, 0.3, 1] } } }}
+            />
+          )}
           <motion.div
             className="ar-arena-wipe"
-            // Chaque bande entre en volet, une fois depuis la gauche, une fois depuis la droite.
-            variants={{
-              out: { clipPath: i % 2 ? "inset(0 0 0 100%)" : "inset(0 100% 0 0)", x: i % 2 ? 40 : -40 },
-              in: { clipPath: "inset(0 0% 0 0%)", x: 0, transition: { duration: 1, ease: EASE } },
-            }}
+            variants={{ out: { opacity: 0, x: -16 }, in: { opacity: 1, x: 0, transition: { delay: 0.32, duration: 0.6, ease: EASE } } }}
           >
             <Link
               to={a.to}
