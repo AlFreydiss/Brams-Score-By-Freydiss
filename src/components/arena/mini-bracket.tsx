@@ -2,8 +2,19 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Crown } from "lucide-react";
 import type { Participant } from "@/lib/tournois/types";
 
-// Aperçu du tableau : quatre OST par camp, les tours suivants en « ? », la
-// couronne au centre. Les traits se tracent une fois, à l'arrivée à l'écran.
+// Le tableau en raccourci : la frise des tours (1/64 → finale), puis quatre
+// OST par camp qui convergent vers la couronne. Les traits se tracent une
+// fois, à l'arrivée à l'écran.
+
+const PHASES = [
+  [128, "1/64"],
+  [64, "1/32"],
+  [32, "1/16"],
+  [16, "1/8"],
+  [8, "Quarts"],
+  [4, "Demies"],
+  [2, "Finale"],
+] as const;
 
 const W = 1000;
 const H = 260;
@@ -16,25 +27,33 @@ function link(x1: number, y1: number, x2: number, y2: number) {
   return `M${x1} ${y1} H${k} V${y2} H${x2}`;
 }
 
-export function MiniBracket({ left, right, label, value }: { left: Participant[]; right: Participant[]; label: string; value: string }) {
+/**
+ * @param current taille du tour en cours de ta partie (32 = 1/16…), ou rien.
+ * @param size taille de ta partie : les tours plus larges n'en font pas partie.
+ */
+export function MiniBracket({ left, right, current, size }: { left: Participant[]; right: Participant[]; current?: number | null; size?: number | null }) {
   const reduce = useReducedMotion();
   const mirror = (x: number) => W - x;
   const paths: { d: string; side: 0 | 1 }[] = [];
   for (const side of [0, 1] as const) {
     const fx = (x: number) => (side ? mirror(x) : x);
     const dir = side ? -1 : 1;
-    THUMB.forEach((y, i) => paths.push({ d: link(fx(X.t) + dir * 44, y, fx(X.m) - dir * 22, MID[i >> 1]), side }));
-    MID.forEach((y) => paths.push({ d: link(fx(X.m) + dir * 22, y, fx(X.s) - dir * 22, 130), side }));
-    paths.push({ d: `M${fx(X.s) + dir * 22} 130 H${fx(X.c) - dir * 30}`, side });
+    THUMB.forEach((y, i) => paths.push({ d: link(fx(X.t) + dir * 44, y, fx(X.m) - dir * 8, MID[i >> 1]), side }));
+    MID.forEach((y) => paths.push({ d: link(fx(X.m) + dir * 8, y, fx(X.s) - dir * 8, 130), side }));
+    paths.push({ d: `M${fx(X.s) + dir * 8} 130 H${fx(X.c) - dir * 26}`, side });
   }
   const box = (x: number, y: number) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` });
+  const phase = (s: number) => (!current ? "" : size && s > size ? "is-out" : s > current ? "is-done" : s === current ? "is-now" : "");
 
   return (
     <div className="ar-bracket">
-      <p className="ar-bracket-phase">
-        <span>{label}</span>
-        <b>{value}</b>
-      </p>
+      <ol className="ar-phases" aria-label="Tours du tournoi, du 1/64 à la finale">
+        {PHASES.map(([s, label]) => (
+          <li key={s} className={phase(s)} aria-current={s === current ? "step" : undefined}>
+            {label}
+          </li>
+        ))}
+      </ol>
       <div className="ar-bracket-field">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden>
           {paths.map((p, i) => (
@@ -45,40 +64,33 @@ export function MiniBracket({ left, right, label, value }: { left: Participant[]
               initial={reduce ? false : { pathLength: 0 }}
               whileInView={{ pathLength: 1 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ delay: 0.15 + (i % 7) * 0.08, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.15 + (i % 7) * 0.08, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             />
           ))}
         </svg>
         {[left, right].map((list, side) =>
           THUMB.map((y, i) => {
             const p = list[i];
-            const x = side ? mirror(X.t) : X.t;
             return (
-              <span key={`${side}-${i}`} className={`ar-b-thumb ${side ? "is-blue" : "is-red"}`} style={box(x, y)}>
+              <span key={`${side}-${i}`} className={`ar-b-thumb ${side ? "is-blue" : "is-red"}`} style={box(side ? mirror(X.t) : X.t, y)}>
                 {p ? <img src={p.thumb} alt={p.title} title={`${p.title} · ${p.sub ?? p.group}`} loading="lazy" decoding="async" /> : null}
               </span>
             );
           }),
         )}
         {[0, 1].flatMap((side) => [
-          ...MID.map((y, i) => (
-            <span key={`m${side}${i}`} className={`ar-b-q ${side ? "is-blue" : "is-red"}`} style={box(side ? mirror(X.m) : X.m, y)}>
-              ?
-            </span>
-          )),
-          <span key={`s${side}`} className={`ar-b-q ${side ? "is-blue" : "is-red"}`} style={box(side ? mirror(X.s) : X.s, 130)}>
-            ?
-          </span>,
+          ...MID.map((y, i) => <i key={`m${side}${i}`} className={`ar-b-node ${side ? "is-blue" : "is-red"}`} style={box(side ? mirror(X.m) : X.m, y)} />),
+          <i key={`s${side}`} className={`ar-b-node ${side ? "is-blue" : "is-red"}`} style={box(side ? mirror(X.s) : X.s, 130)} />,
         ])}
         <motion.span
           className="ar-b-crown"
           style={box(X.c, 130)}
-          initial={reduce ? false : { scale: 0.4, opacity: 0, rotate: -20 }}
-          whileInView={{ scale: 1, opacity: 1, rotate: 0 }}
+          initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
           viewport={{ once: true, margin: "-60px" }}
-          transition={{ delay: 0.9, type: "spring", stiffness: 260, damping: 13 }}
+          transition={{ delay: 0.9, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <Crown size={20} />
+          <Crown size={18} strokeWidth={1.6} />
         </motion.span>
       </div>
     </div>

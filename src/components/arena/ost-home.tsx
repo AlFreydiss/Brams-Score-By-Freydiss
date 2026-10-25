@@ -30,7 +30,6 @@ export function OstArena() {
         right={src(hero[1])}
         lines={["Deux OST.", "Une seule reste."]}
         tagline={`Le tournoi d'OST · ${participants.length} pistes · ${groups} animes`}
-        jp={["音楽は、魂の戦いだ。", "最高の一曲を、決めよう。"]}
         cta={{ label: run && cur ? `Reprendre · duel ${done + 1}` : "Commencer le tournoi", to: `/tournoi/${meta.path}/duel` }}
       />
     </div>

@@ -1,12 +1,11 @@
-import { animate, motion, useInView, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Music2, Swords, Trophy } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Participant } from "@/lib/tournois/types";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/** Rangée classée (OST populaires, têtes d'affiche) : cartes photo numérotées. */
+/** Rangée classée (OST populaires, têtes d'affiche) : pochettes numérotées, sous une barre « titre · Voir tout ». */
 export function RankRow({
   title,
   items,
@@ -73,45 +72,4 @@ export function RankRow({
       </ol>
     </div>
   );
-}
-
-/** Bandeau de chiffres en bas d'affiche. */
-export function StatStrip({ stats, quote }: { stats: { n: string; label: string; icon: "trophy" | "swords" | "music" }[]; quote?: string }) {
-  const Icon = { trophy: Trophy, swords: Swords, music: Music2 };
-  return (
-    <div className="ar-stats">
-      <dl>
-        {stats.map((s) => {
-          const I = Icon[s.icon];
-          return (
-            <div key={s.label}>
-              <I size={20} aria-hidden />
-              <dd>
-                <Count value={s.n} />
-              </dd>
-              <dt>{s.label}</dt>
-            </div>
-          );
-        })}
-      </dl>
-      {quote ? <p className="ar-quote">{quote}</p> : null}
-    </div>
-  );
-}
-
-/** Chiffre qui défile jusqu'à sa valeur à l'arrivée à l'écran (« +269 », « 1 546 »). */
-function Count({ value }: { value: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const seen = useInView(ref, { once: true, margin: "-40px" });
-  const reduce = useReducedMotion();
-  const target = Number(value.replace(/[^\d]/g, ""));
-  const prefix = value.match(/^\D*/)?.[0] ?? "";
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!seen || !target) return;
-    if (reduce) return setN(target);
-    const a = animate(0, target, { duration: 1.4, ease: [0.16, 1, 0.3, 1], onUpdate: (v) => setN(Math.round(v)) });
-    return () => a.stop();
-  }, [seen, target, reduce]);
-  return <span ref={ref}>{target ? `${prefix}${n.toLocaleString("fr-FR")}` : value}</span>;
 }

@@ -11,14 +11,14 @@ import { keyartSrc } from "../animehub/keyart.js";
 import { ArenaHero } from "./hero";
 import { VersusCard } from "./versus-card";
 import { MiniBracket } from "./mini-bracket";
-import { RankRow, StatStrip } from "./rows";
+import { RankRow } from "./rows";
 import { ArenaList, type Arena } from "./arena-list";
 import { loadArenaFonts } from "./fonts";
 import "./arena.css";
 
-// Hub des tournois, refait en « Rouge contre Bleu » (2026-10-25) : l'affiche
-// d'un duel d'OST jouable, l'aperçu du tableau, les OST populaires, puis le
-// choix de l'arène, une bande par tournoi.
+// Hub des tournois (« Tournoi 2026 ») : l'affiche des deux camps, le duel
+// d'OST en cours (jouable), le tableau du 1/64 à la finale, les OST
+// populaires, puis le choix de l'arène, une bande par tournoi.
 
 const TMDB = (p: string) => `https://image.tmdb.org/t/p/w1280/${p}`;
 
@@ -119,7 +119,7 @@ export default function ArenaHubPage() {
     const first = saved.run?.rounds[0]?.matches.flatMap((m) => [m.left, m.right]).filter((p): p is Participant => !!p) ?? [];
     const list = first.length >= 8 ? first.slice(0, 8) : ost.filter((p) => p.visual.k === "img").sort(() => Math.random() - 0.5).slice(0, 8);
     const cur = saved.run ? currentMatch(saved.run.rounds) : null;
-    return { left: list.slice(0, 4), right: list.slice(4, 8), value: cur ? `1/${cur.round.size / 2}` : saved.run ? "Fini" : "1/16" };
+    return { left: list.slice(0, 4), right: list.slice(4, 8), current: cur?.round.size ?? null };
     // Tirage fait une fois le catalogue chargé.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ost.length, saved.run?.startedAt]);
@@ -154,8 +154,6 @@ export default function ArenaHubPage() {
   };
   useEffect(() => () => audio.current?.pause(), []);
 
-  const totalEntries = Object.values(ARENA_ART).reduce((n, a) => n + a.count, 0) - ARENA_ART.ost.count + (ost.length || ARENA_ART.ost.count);
-
   return (
     <MotionConfig reducedMotion="user">
       <div className="ar">
@@ -164,19 +162,11 @@ export default function ArenaHubPage() {
           right={hero[1] ? { src: hero[1].visual.k === "img" ? hero[1].visual.src : hero[1].thumb } : null}
           split={["Tournoi", "2026"]}
           motto={["Deux camps,", "un seul vainqueur."]}
-          jp={["音楽は、魂の戦いだ。", "最高の一曲を、決めよう。"]}
           cta={{ label: "Choisir mon arène", onClick: () => arenasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
         >
-          {duel.length === 2 ? <VersusCard pair={duel} statsId="anime-ost" label="Duel d'OST à l'affiche" onNext={next} /> : null}
-          {bracket.left.length === 4 ? <MiniBracket left={bracket.left} right={bracket.right} label={saved.run ? "Ta partie d'OST" : "Phase actuelle"} value={bracket.value} /> : null}
+          {duel.length === 2 ? <VersusCard pair={duel} statsId="anime-ost" label="Duel en cours" onNext={next} /> : null}
+          {bracket.left.length === 4 ? <MiniBracket left={bracket.left} right={bracket.right} current={bracket.current} size={saved.run?.size} /> : null}
           <RankRow title="OST populaires" items={popular} more={{ label: "Voir tout", to: "/tournoi/ost/classement" }} playing={playing} onPlay={play} />
-          <StatStrip
-            stats={[
-              { n: String(TOURNAMENTS.length + MORE.length - 1), label: "Tournois", icon: "trophy" },
-              { n: totalEntries.toLocaleString("fr-FR"), label: "Participants", icon: "swords" },
-              { n: `+${ost.length || ARENA_ART.ost.count}`, label: "OST en compétition", icon: "music" },
-            ]}
-          />
         </ArenaHero>
 
         <div ref={arenasRef} className="ar-section">
