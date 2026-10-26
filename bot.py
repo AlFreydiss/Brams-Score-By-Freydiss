@@ -18,6 +18,7 @@ import psycopg2
 from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
 from utils.security import add_security_headers, sanitize, sanitize_name, validate_amount, is_safe_url
+from utils import ai
 from utils.wrapped_math import (
     best_binome as _wr_best_binome,
     membership_ok as _wr_membership_ok,
@@ -50,7 +51,6 @@ keep_alive()
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-import litellm
 import json
 import io
 import math
@@ -3042,16 +3042,13 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
     if hit and time.time() - hit[1] < _INSULT_CACHE_TTL:
         return hit[0]
 
-    api_key = os.environ.get("GROQ_API_KEY", "")
-    if not api_key:
+    if not ai.has_keys():
         return True
     try:
-        resp = await litellm.acompletion(
-            model=_GROQ_MODEL,
-            api_key=api_key,
+        answer = await ai.complete(
             max_tokens=300,
             temperature=0.0,
-            reasoning_effort="low",
+            deadline=10,
             messages=[
                 {"role": "system", "content": (
                     "Tu analyses si un mot est utilisé comme insulte dans un message. "
@@ -3064,7 +3061,7 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
                 )},
             ],
         )
-        result = "oui" in (resp.choices[0].message.content or "").strip().lower()
+        result = "oui" in answer.lower()
         _INSULT_CACHE[cache_key] = (result, time.time())
         return result
     except Exception:
@@ -4852,9 +4849,6 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 # ─────────────────────────────────────────
 QUIZ_SESSIONS: dict = {}
 LIVE_DUELS: dict[int, "_LiveDuelSession"] = {}  # uid → duel live partagé
-# llama-3.3-70b-versatile coupé par Groq le 16/08/2026 → gpt-oss (raisonnement réglé bas)
-_GROQ_MODEL       = os.environ.get("AI_MODEL_GROQ", "groq/openai/gpt-oss-120b")
-litellm.drop_params = True
 
 # Historique par utilisateur : dernières questions vues (évite les répétitions)
 QUIZ_USER_HISTORY: dict[int, list[str]] = {}
@@ -4943,9 +4937,8 @@ _QUIZ_USER = (
 
 async def _generate_quiz_questions(n: int, category: str = "general", seen_questions: list[str] | None = None) -> tuple:
     """Génère n questions via Groq. Retourne (questions: list, erreur: str)."""
-    api_key = os.environ.get("GROQ_API_KEY", "")
-    if not api_key:
-        msg = "GROQ_API_KEY manquante - configure-la dans Railway > Variables"
+    if not ai.has_keys():
+        msg = "Aucune clé IA (GEMINI_API_KEY / GROQ_API_KEY) - configure-la dans Railway > Variables"
         print(f"[QUIZ] ERREUR : {msg}")
         return [], msg
 
@@ -4956,14 +4949,13 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
     for attempt in range(3):
         raw = ""
         try:
-            print(f"[QUIZ] Appel Groq attempt {attempt + 1}/3 - {n} questions - catégorie={category} seed={seed}")
-            response = await litellm.acompletion(
-                model=_GROQ_MODEL,
-                api_key=api_key,
+            print(f"[QUIZ] Appel IA attempt {attempt + 1}/3 - {n} questions - catégorie={category} seed={seed}")
+            raw = await ai.complete(
                 max_tokens=6000,
                 temperature=0.9,
-                reasoning_effort="low",
-                response_format={"type": "json_object"},
+                json=True,
+                deadline=90,
+                attempt_timeout=45,
                 messages=[
                     {"role": "system", "content": _QUIZ_SYSTEM},
                     {"role": "user",   "content": _QUIZ_USER.format(
@@ -4975,7 +4967,6 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
                     )},
                 ],
             )
-            raw = (response.choices[0].message.content or "").strip()
             print(f"[QUIZ] Raw ({len(raw)} chars) : {raw[:300]}")
 
             data = json.loads(raw)
@@ -8186,15 +8177,12 @@ class _AkiSession:
 
 
 async def _aki_call(session: "_AkiSession") -> dict:
-    api_key = os.environ.get("GROQ_API_KEY", "")
     for attempt in range(3):
         try:
-            resp = await litellm.acompletion(
-                model=_GROQ_MODEL, api_key=api_key, max_tokens=800, temperature=0.7,
-                reasoning_effort="low",
-                response_format={"type": "json_object"}, messages=session.build_messages(),
+            raw = await ai.complete(
+                session.build_messages(), max_tokens=800, temperature=0.7, json=True, deadline=30,
             )
-            data = json.loads((resp.choices[0].message.content or "").strip())
+            data = json.loads(raw)
             if data.get("action") in ("question", "guess", "give_up"):
                 return data
         except Exception as e:

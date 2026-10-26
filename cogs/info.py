@@ -7,20 +7,16 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import discord
-import litellm
 from discord import app_commands
 from discord.ext import commands, tasks
+
+from utils import ai
 
 GUILD_IDS = [
     int(x)
     for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")
 ]
 
-# gemini-2.0-flash (coupé juin 2026) et llama-3.3-70b-versatile (coupé août 2026) sont morts.
-# Surchargeable depuis Railway > Variables sans redéployer le code.
-_MODEL_GEMINI    = os.environ.get("AI_MODEL_GEMINI", "gemini/gemini-3.6-flash")
-_MODEL_GROQ      = os.environ.get("AI_MODEL_GROQ", "groq/openai/gpt-oss-120b")
-litellm.drop_params = True  # ignore les params non supportés au lieu de planter
 _SESSION_TIMEOUT = 600
 _MAX_HISTORY     = 14
 _MEMORY_EVERY    = 1
@@ -145,51 +141,6 @@ async def _reply_violet_best_anime(message: discord.Message) -> bool:
     except Exception as exc:
         print(f"[VIOLET BEST] envoi impossible: {exc}")
         return False
-
-_gemini_key_index = 0  # rotation round-robin
-
-
-def _reasoning_kwargs(model: str) -> dict:
-    """Les modèles actuels raisonnent avant de répondre : on garde ça au minimum
-    pour ne pas manger tout max_tokens (réponse vide sinon)."""
-    if model.startswith("gemini/"):
-        return {"reasoning_effort": "minimal"}
-    if "gpt-oss" in model or "qwen3" in model:
-        return {"reasoning_effort": "low"}
-    return {}
-
-
-def _content(resp) -> str:
-    text = (resp.choices[0].message.content or "").strip()
-    if not text:
-        raise RuntimeError("réponse vide du modèle")
-    return text
-
-
-def _get_gemini_keys() -> list[str]:
-    """Lit toutes les clés GEMINI_API_KEY, GEMINI_API_KEY_1, GEMINI_API_KEY_2… depuis l'env."""
-    keys = []
-    base = os.environ.get("GEMINI_API_KEY", "")
-    if base:
-        keys.append(base)
-    i = 1
-    while True:
-        k = os.environ.get(f"GEMINI_API_KEY_{i}", "")
-        if not k:
-            break
-        keys.append(k)
-        i += 1
-    return keys
-
-
-def _next_gemini_key() -> str | None:
-    global _gemini_key_index
-    keys = _get_gemini_keys()
-    if not keys:
-        return None
-    key = keys[_gemini_key_index % len(keys)]
-    _gemini_key_index = (_gemini_key_index + 1) % len(keys)
-    return key
 
 _SYSTEM_BASE = (
     "Tu es Brams Score, l'âme du serveur Discord 'Brams Community' — un équipage One Piece francophone. "
@@ -682,56 +633,11 @@ def _trim_history(session: dict):
 
 async def _call_ai(system: str, history: list[dict]) -> str:
     msgs = [{"role": "system", "content": system}] + history
-
-    # Essai toutes les clés Gemini en rotation (skip sur rate-limit aussi)
-    gemini_keys = _get_gemini_keys()
-    for _ in range(len(gemini_keys)):
-        key = _next_gemini_key()
-        try:
-            resp = await asyncio.wait_for(
-                litellm.acompletion(
-                    model=_MODEL_GEMINI,
-                    api_key=key,
-                    max_tokens=1024,
-                    temperature=0.8,
-                    request_timeout=25,
-                    messages=msgs,
-                    **_reasoning_kwargs(_MODEL_GEMINI),
-                ),
-                timeout=30,
-            )
-            return _content(resp)
-        except asyncio.TimeoutError:
-            raise
-        except Exception as e:
-            print(f"[IA] Gemini {_MODEL_GEMINI} échec : {type(e).__name__}: {str(e)[:300]}")
-            continue  # rate-limit ou autre → clé suivante
-
-    # Fallback Groq
-    groq_key = os.environ.get("GROQ_API_KEY", "")
-    if not groq_key:
-        raise RuntimeError("no_keys")
-    resp = await asyncio.wait_for(
-        litellm.acompletion(
-            model=_MODEL_GROQ,
-            api_key=groq_key,
-            max_tokens=1024,
-            temperature=0.8,
-            request_timeout=25,
-            messages=msgs,
-            **_reasoning_kwargs(_MODEL_GROQ),
-        ),
-        timeout=30,
-    )
-    return _content(resp)
+    return await ai.complete(msgs, max_tokens=1024, temperature=0.8)
 
 
 async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict], user_context: str = ""):
     try:
-        gemini_keys = _get_gemini_keys()
-        model   = _MODEL_GEMINI if gemini_keys else _MODEL_GROQ
-        api_key = (gemini_keys[_gemini_key_index % len(gemini_keys)] if gemini_keys
-                   else os.environ.get("GROQ_API_KEY", ""))
         last = history[-4:] if len(history) >= 4 else history
         exchange_text = "\n".join(
             f"{'User' if m['role'] == 'user' else 'Bot'}: {m['content'][:300]}"
@@ -742,22 +648,15 @@ async def _update_memory_task(bot, uid: int, current_memory: str, history: list[
             f"Fiche actuelle :\n{current_memory or '(vide)'}\n\n"
             f"Échange récent :\n{exchange_text}"
         )
-        resp = await asyncio.wait_for(
-            litellm.acompletion(
-                model=model,
-                api_key=api_key,
-                max_tokens=600,
-                temperature=0.1,
-                request_timeout=15,
-                messages=[
-                    {"role": "system", "content": _MEMORY_SYSTEM},
-                    {"role": "user",   "content": prompt},
-                ],
-                **_reasoning_kwargs(model),
-            ),
-            timeout=20,
+        new_memory = await ai.complete(
+            [
+                {"role": "system", "content": _MEMORY_SYSTEM},
+                {"role": "user",   "content": prompt},
+            ],
+            max_tokens=600,
+            temperature=0.1,
+            deadline=30,
         )
-        new_memory = _content(resp)
         bot.set_ai_memory(str(uid), new_memory)
         if uid in _sessions:
             _sessions[uid]["memory"] = new_memory
@@ -767,6 +666,8 @@ async def _update_memory_task(bot, uid: int, current_memory: str, history: list[
 
 def _handle_error(e: Exception) -> str:
     s = str(e)
+    if s == "no_keys":
+        return "❌ Aucune clé API configurée — contacte un admin."
     if "rate_limit" in s.lower() or "ratelimit" in s.lower():
         wait = _parse_retry_after(s)
         return f"⏳ Limite quotidienne atteinte — réessaie dans **{wait}**."
@@ -832,7 +733,18 @@ class InfoCog(commands.Cog):
     @app_commands.describe(question="Ta question")
     async def question(self, interaction: discord.Interaction, question: str):
         await interaction.response.defer()
+        try:
+            await self._question(interaction, question)
+        except Exception as e:
+            print(f"[IA] /question a planté : {type(e).__name__}: {e}")
+            try:
+                await interaction.followup.send(
+                    "❌ J'ai buggé sur ta question, réessaie dans un instant.", ephemeral=True
+                )
+            except Exception:
+                pass
 
+    async def _question(self, interaction: discord.Interaction, question: str):
         uid     = interaction.user.id
         memory  = self.bot.get_ai_memory(uid)
         memory  = _ensure_known_member_memory(self.bot, uid, memory)
@@ -851,7 +763,7 @@ class InfoCog(commands.Cog):
         if answer is None:
             answer = _direct_identity_answer(question, interaction.user, memory)
         if answer is None:
-            if not _get_gemini_keys() and not os.environ.get("GROQ_API_KEY"):
+            if not ai.has_keys():
                 await interaction.followup.send("❌ Aucune clé API configurée — contacte un admin.", ephemeral=True)
                 return
             answer = await _respond(
