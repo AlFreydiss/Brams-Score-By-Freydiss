@@ -17,9 +17,13 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute son extrait ;
 // « Garder » la fait passer au tour suivant.
 //
-// Un seul mouvement pour changer de duel : toute la composition glisse vers la
-// droite et s'efface pendant que le duel suivant entre par la gauche ; le fond
-// suit le même geste, plus lentement (parallaxe). « Annuler » fait l'inverse.
+// Changer de duel, en trois temps enchaînés :
+// 1. au vote, la carte gardée se lève sous son filet doré, l'autre s'affaisse
+//    et s'éteint ;
+// 2. la gardée s'envole vers la droite en pivotant, la perdue tombe en se
+//    dissolvant, le VS se replie ; un voile noir passe sur la salle ;
+// 3. le duel suivant arrive de la gauche, de la profondeur vers le net.
+// Le fond suit le même geste, plus lentement (parallaxe). « Annuler » fait l'inverse.
 
 type Side = 0 | 1;
 
@@ -35,38 +39,67 @@ type Side = 0 | 1;
 // instant plus tard et apparaît pendant qu'il avance. Les deux restent à des
 // places différentes : aucun fantôme superposé.
 const STAGE: Variants = {
-  enter: (dir: number) => (dir ? { x: dir > 0 ? "-32vw" : "32vw", opacity: 0 } : { x: 0, opacity: 1 }),
+  enter: (dir: number) => (dir ? { x: dir > 0 ? "-12vw" : "12vw", opacity: 0 } : { x: 0, opacity: 1 }),
   center: {
     x: 0,
     opacity: 1,
     transition: {
-      x: { duration: 0.85, delay: 0.2, ease: T.ease.out },
-      opacity: { duration: 0.45, delay: 0.22, ease: T.ease.out },
-      staggerChildren: 0.07,
-      delayChildren: 0.2,
+      x: { duration: 1.1, delay: 0.32, ease: T.ease.out },
+      opacity: { duration: 0.5, delay: 0.34, ease: T.ease.out },
+      staggerChildren: 0.09,
+      delayChildren: 0.32,
     },
   },
   exit: (dir: number) => ({
-    x: dir >= 0 ? "32vw" : "-32vw",
+    x: dir >= 0 ? "12vw" : "-12vw",
     opacity: [1, 1, 0],
     transition: {
-      x: { duration: 0.55, ease: [0.45, 0, 0.2, 1] },
-      opacity: { duration: 0.55, times: [0, 0.45, 1], ease: "easeIn" },
-      staggerChildren: 0.05,
+      x: { duration: 0.62, ease: T.ease.inOut },
+      opacity: { duration: 0.62, times: [0, 0.55, 1], ease: "easeIn" },
+      staggerChildren: 0.06,
       staggerDirection: -1,
     },
   }),
 };
-// Une carte (ou le VS) dans ce mouvement.
+// Une carte dans ce mouvement : elle entre de la profondeur, pivotée, floue,
+// jusqu'au net, et sort selon son sort (gardée, perdue). AnimatePresence
+// impose son custom (le sens) à toute la scène : le sort passe donc par le
+// jeu de variantes choisi, pas par custom.
+const SHARP = { filter: "none" };
 const PIECE: Variants = {
-  enter: (dir: number) => (dir ? { x: dir > 0 ? -56 : 56, opacity: 0, scale: 0.965 } : { y: 34, opacity: 0, scale: 1 }),
-  center: { x: 0, y: 0, opacity: 1, scale: 1, transition: { duration: 0.85, ease: T.ease.out } },
-  exit: (dir: number) => ({ x: dir >= 0 ? 56 : -56, opacity: 0, scale: 0.965, transition: { duration: 0.45, ease: T.ease.in } }),
+  enter: (dir: number) =>
+    dir
+      ? { x: dir > 0 ? -90 : 90, y: 0, rotateY: dir > 0 ? 16 : -16, opacity: 0, scale: 0.93, filter: "blur(10px)" }
+      : { x: 0, y: 34, rotateY: 0, opacity: 0, scale: 1, filter: "blur(6px)" },
+  center: {
+    x: 0,
+    y: 0,
+    rotateY: 0,
+    opacity: 1,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { duration: 1.05, ease: T.ease.out, filter: { duration: 0.75, ease: T.ease.out }, opacity: { duration: 0.6, ease: T.ease.out } },
+    transitionEnd: SHARP,
+  },
+  exit: (dir: number) => ({ x: dir >= 0 ? 70 : -70, opacity: 0, scale: 0.96, filter: "blur(6px)", transition: { duration: 0.45, ease: T.ease.in } }),
 };
+// La gardée s'envole en pivotant, la perdue tombe en se dissolvant.
+const PIECE_WIN: Variants = {
+  ...PIECE,
+  exit: (dir: number) => {
+    const s = dir >= 0 ? 1 : -1;
+    return { x: 110 * s, y: -22, rotateY: -14 * s, opacity: 0, scale: 1.03, filter: "blur(8px)", transition: { duration: 0.6, ease: T.ease.in } };
+  },
+};
+const PIECE_LOSE: Variants = {
+  ...PIECE,
+  exit: (dir: number) => ({ x: dir >= 0 ? 30 : -30, y: 80, opacity: 0, scale: 0.92, filter: "blur(12px)", transition: { duration: 0.5, ease: T.ease.in } }),
+};
+const PIECES = { idle: PIECE, win: PIECE_WIN, lose: PIECE_LOSE };
 const PIECE_VS: Variants = {
-  enter: { opacity: 0, scaleY: 0.4 },
-  center: { opacity: 1, scaleY: 1, transition: { duration: 0.9, ease: T.ease.out } },
-  exit: { opacity: 0, scaleY: 0.6, transition: { duration: 0.35, ease: T.ease.in } },
+  enter: { opacity: 0, scaleY: 0.2 },
+  center: { opacity: 1, scaleY: 1, transition: { duration: 1, delay: 0.12, ease: T.ease.out } },
+  exit: { opacity: 0, scaleY: 0.15, transition: { duration: 0.32, ease: T.ease.in } },
 };
 const FADE: Variants = {
   enter: { opacity: 0 },
@@ -210,6 +243,16 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
       <div className="ox-room">
         {/* À l'aveugle, les silhouettes trahiraient les animes : elles n'arrivent qu'une fois le choix fait. */}
         <Backdrop k={key} pair={run?.blind && !practice && !held ? null : pair} dir={dir.current} />
+        {/* Le rideau : un voile noir passe sur la salle pendant le changement de duel. */}
+        {!reduce && key !== "empty" ? (
+          <motion.i
+            key={`veil-${key}`}
+            className="ox-veil"
+            aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: dir.current ? [0, 0.62, 0] : 0, transition: { duration: 1.5, times: [0, 0.3, 1], ease: T.ease.inOut } }}
+          />
+        ) : null}
         <motion.div className="ox-room-head" initial={reduce ? false : { opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.8, delay: 0.55, ease: T.ease.out } }}>
           {head}
         </motion.div>
@@ -410,7 +453,7 @@ function Card({
   return (
     <motion.article
       className={`ox-card ox-card--${side ? "b" : "a"} is-${state} ${on ? "is-on" : ""}`}
-      variants={reduce ? undefined : PIECE}
+      variants={reduce ? undefined : PIECES[state]}
       custom={dir}
       // L'œuvre suit à peine la souris, comme vue à travers une fenêtre.
       onPointerMove={(e) => {

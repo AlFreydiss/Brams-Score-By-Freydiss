@@ -2001,3 +2001,44 @@
     display: none;
   }
 }
+
+/* ── Changement de duel : vote, sortie, entrée ───────────────────── */
+/* La profondeur des cartes qui pivotent. */
+.ox-duel {
+  perspective: 1800px;
+}
+/* Au vote : la gardée se lève, l'autre s'affaisse et s'éteint. La translation
+   passe par la propriété translate, les transform restant à l'animation. */
+.ox-card {
+  transition:
+    scale 0.8s var(--ox-ease),
+    translate 0.9s var(--ox-ease),
+    border-color 0.6s var(--ox-ease),
+    box-shadow 0.8s var(--ox-ease);
+}
+.ox-card.is-win {
+  translate: 0 -10px;
+  box-shadow:
+    0 50px 110px -50px rgba(185, 161, 123, 0.6),
+    0 0 0 1px rgba(185, 161, 123, 0.25);
+}
+.ox-card.is-lose {
+  translate: 0 14px;
+  /* L'extinction passe par le contenu : l'opacité de la carte appartient à l'animation. */
+  opacity: 1;
+  border-color: rgba(233, 228, 218, 0.05);
+}
+.ox-card.is-lose .ox-card-art,
+.ox-card.is-lose .ox-card-info {
+  opacity: 0.38;
+  transition: opacity 0.7s var(--ox-ease);
+}
+/* Le rideau, entre le fond et la scène. */
+.ox-veil {
+  position: absolute;
+  inset: 0 calc(-1 * var(--ox-gutter)) calc(-1 * var(--ox-foot));
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 50%, rgba(4, 5, 5, 0.85), #040505 70%);
+  opacity: 0;
+  pointer-events: none;
+}
