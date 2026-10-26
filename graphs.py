@@ -1,9 +1,22 @@
+import asyncio
 import io
+import threading
 from datetime import datetime, timedelta, timezone
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+_GRAPH_LOCK = threading.Lock()  # pyplot n'est pas thread-safe
+
+
+async def render_graph(fn, *args):
+    """Dessine le graphique hors de la boucle Discord : sinon tout le bot gèle
+    (toutes les commandes attendent) pendant le rendu matplotlib."""
+    def run():
+        with _GRAPH_LOCK:
+            return fn(*args)
+    return await asyncio.to_thread(run)
 
 
 def make_activity_graph(

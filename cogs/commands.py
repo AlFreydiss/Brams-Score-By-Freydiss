@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from config import BERRIES_PER_VOCAL_MINUTE
-from graphs import make_activity_graph, make_peak_hours_graph
+from graphs import make_activity_graph, make_peak_hours_graph, render_graph
 from ranks import update_rank
 from storage import get_user, load_data, refresh_berry_leaderboard, save_data
 from utils import (
@@ -49,7 +49,7 @@ class CommandsCog(commands.Cog):
             day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
             msg_by_day[day] += 1
 
-        graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activité de {interaction.user.display_name}")
+        graph_buf = await render_graph(make_activity_graph, vocal_by_day, msg_by_day, f"Activité de {interaction.user.display_name}")
 
         embed = discord.Embed(title="📊 Tes statistiques", color=discord.Color.gold())
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
@@ -118,7 +118,7 @@ class CommandsCog(commands.Cog):
                 f"{medals[i]} **{n}** — {formatter(v)}" for i, (n, v) in enumerate(lst[:5])
             ) or "Aucune donnée"
 
-        graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activité serveur — {periode.name}")
+        graph_buf = await render_graph(make_activity_graph, vocal_by_day, msg_by_day, f"Activité serveur — {periode.name}")
 
         embed = discord.Embed(title=f"🏆 Top 5 — {periode.name}", color=discord.Color.blurple())
         embed.add_field(name="🎙️ Vocal",   value=build_top(vocal_list, format_duration),          inline=True)
@@ -205,7 +205,7 @@ class CommandsCog(commands.Cog):
             salon_lines.append(f"{medals[i]} **{name}** — {format_duration(secs)}")
 
         peak_hour = max(hour_usage, key=hour_usage.get) if hour_usage else 0
-        graph_buf = make_peak_hours_graph(hour_usage)
+        graph_buf = await render_graph(make_peak_hours_graph, hour_usage)
 
         embed = discord.Embed(title=f"🌍 Stats du serveur — {guild.name}", color=discord.Color.og_blurple())
         embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
@@ -277,7 +277,7 @@ class CommandsCog(commands.Cog):
             day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%d/%m")
             msg_by_day[day] += 1
 
-        graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Ton activité — {interaction.user.display_name}")
+        graph_buf = await render_graph(make_activity_graph, vocal_by_day, msg_by_day, f"Ton activité — {interaction.user.display_name}")
 
         embed = discord.Embed(title="📋 Vue complète", color=discord.Color.gold())
         embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)

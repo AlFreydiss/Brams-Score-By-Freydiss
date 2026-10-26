@@ -58,6 +58,7 @@ import random
 import re
 import time
 import aiohttp
+from graphs import render_graph
 import logging
 import traceback
 import matplotlib
@@ -3799,7 +3800,7 @@ async def stats(interaction: discord.Interaction):
     embed.set_thumbnail(url=me.display_avatar.url)
 
     vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
-    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {me.display_name}")
+    graph_buf = await render_graph(make_activity_graph, vocal_by_day, msg_by_day, f"Activite de {me.display_name}")
 
     embed.set_image(url="attachment://graph.png")
     embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
@@ -4065,7 +4066,7 @@ async def serveur(interaction: discord.Interaction):
         for r, c in sorted(rank_counts.items(), key=lambda x: x[1], reverse=True)
     ) or "*Aucun*"
 
-    graph_buf = make_peak_hours_graph(hour_usage)
+    graph_buf = await render_graph(make_peak_hours_graph, hour_usage)
 
     # Même habillage que /stats : un seul embed, sections ━━━, valeurs en backticks.
     embed = discord.Embed(
@@ -4231,7 +4232,7 @@ async def tout(interaction: discord.Interaction):
     embed2.add_field(name="\u200b", value="\u200b", inline=True)
 
     vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
-    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite - {me.display_name}")
+    graph_buf = await render_graph(make_activity_graph, vocal_by_day, msg_by_day, f"Activite - {me.display_name}")
 
     embed3 = discord.Embed(color=discord.Color.from_rgb(85, 50, 18))
     embed3.set_image(url="attachment://graph.png")
@@ -4326,7 +4327,7 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     embed.set_thumbnail(url=membre.display_avatar.url)
 
     vocal_by_day, msg_by_day = build_vocal_by_day(user, jt)
-    graph_buf = make_activity_graph(vocal_by_day, msg_by_day, f"Activite de {membre.display_name}")
+    graph_buf = await render_graph(make_activity_graph, vocal_by_day, msg_by_day, f"Activite de {membre.display_name}")
 
     embed.set_image(url="attachment://graph.png")
     embed.set_footer(text=f"⚓ BRAMS SCORE BY FREYDISS • {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC")
