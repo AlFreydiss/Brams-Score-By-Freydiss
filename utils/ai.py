@@ -57,6 +57,13 @@ _key_index = {"gemini": 0, "groq": 0}
 _model_until: dict[str, float] = {}  # modèle -> pas avant ce moment (saturé/lent)
 _key_until:   dict[str, float] = {}  # clé -> pas avant ce moment (sans crédit, quota)
 _last_good:   dict[str, str]   = {}  # fournisseur -> dernier modèle qui a répondu
+_latency:     dict[str, float] = {}  # modèle -> temps de réponse moyen (s), le plus rapide passe devant
+_LATENCY_UNKNOWN = 6.0
+
+
+def _note_latency(model: str, seconds: float) -> None:
+    old = _latency.get(model)
+    _latency[model] = seconds if old is None else old * 0.7 + seconds * 0.3
 
 
 class AIUnavailable(RuntimeError):
@@ -213,12 +220,15 @@ async def complete(
     last: Exception | None = None
     plan = [("gemini", m, gemini_keys()) for m in _candidates("gemini")]
     plan += [("groq", m, groq_keys()) for m in _candidates("groq")]
+    # tri stable : à vitesse inconnue l'ordre Gemini puis Groq est gardé
+    plan.sort(key=lambda step: _latency.get(step[1], _LATENCY_UNKNOWN))
 
     for provider, model, keys in plan:
         for key in _rotated(provider, keys):
             remaining = end - time.monotonic()
             if remaining < 2:
                 raise asyncio.TimeoutError()
+            started = time.monotonic()
             extra = {"response_format": {"type": "json_object"}} if json else {}
             # Gemini 3+ : la température est dépréciée (warning à chaque appel)
             if not re.search(r"gemini/gemini-[3-9]", model):
@@ -241,10 +251,12 @@ async def complete(
                 if not text:
                     raise RuntimeError("réponse vide du modèle")
                 _last_good[provider] = model
+                _note_latency(model, time.monotonic() - started)
                 return text
             except asyncio.TimeoutError as e:
                 last = e
                 _model_until[model] = time.time() + _MODEL_COOLDOWN
+                _note_latency(model, attempt_timeout)
                 print(f"[IA] {model} trop lent, de côté 10 min")
                 break  # modèle lent : inutile d'essayer les autres clés
             except Exception as e:
@@ -257,6 +269,7 @@ async def complete(
                     continue
                 if _MODEL_BUSY.search(msg):
                     _model_until[model] = time.time() + _MODEL_COOLDOWN
+                    _note_latency(model, attempt_timeout)
                     print(f"[IA] {model} saturé/lent, de côté 10 min : {short}")
                     break
                 if _MODEL_GONE.search(msg):
