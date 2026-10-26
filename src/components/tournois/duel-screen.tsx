@@ -386,13 +386,14 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
               onPointerEnter={(e) => e.pointerType !== "touch" && lean(side)}
             >
               <motion.div className="t-media" style={{ [vertical ? "height" : "width"]: box }}>
+                {/* À l'aveugle, une piste dont le son est la vidéo garde sa vidéo
+                    (sans elle, Écouter ne lit rien) : la lettre la couvre. */}
+                {!hidden || p.sound?.k === "video" ? <Visual p={p} player={player} posterAt={meta.posterAt} /> : null}
                 {hidden ? (
                   <span className="t-blind" aria-hidden>
                     {side === "left" ? "A" : "B"}
                   </span>
-                ) : (
-                  <Visual p={p} player={player} posterAt={meta.posterAt} />
-                )}
+                ) : null}
               </motion.div>
               {audio ? <Visualizer seam={seam} active={playing} side={side} /> : null}
               <button
@@ -567,6 +568,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       <AudioBar
         left={left}
         right={right}
+        masked={!!blind && !picked}
         audio={audio}
         full={full}
         onFull={toggleFull}
@@ -650,6 +652,7 @@ function Card({ seam, round, isFinal, practice }: { seam: Seam; round: RoundInfo
 function AudioBar({
   left,
   right,
+  masked,
   audio,
   full,
   onFull,
@@ -659,6 +662,8 @@ function AudioBar({
 }: {
   left: Participant;
   right: Participant;
+  /** À l'aveugle : la barre nomme la piste A ou B, jamais son titre. */
+  masked: boolean;
   audio: boolean;
   full: boolean;
   onFull: () => void;
@@ -667,7 +672,8 @@ function AudioBar({
   abOk: boolean;
 }) {
   const { player } = useTournament();
-  const active = player.id === left.id ? left : player.id === right.id ? right : null;
+  const playing = player.id === left.id ? left : player.id === right.id ? right : null;
+  const active = playing && masked ? { ...playing, title: `Piste ${playing === left ? "A" : "B"}`, sub: "À l'aveugle" } : playing;
   return (
     <div className="t-bar">
       {audio ? (
@@ -675,7 +681,7 @@ function AudioBar({
           <button
             type="button"
             className="t-bar-play"
-            onClick={() => active && player.toggle(active)}
+            onClick={() => playing && player.toggle(playing)}
             disabled={!active}
             aria-label={active ? (player.playing ? `Mettre en pause ${active.title}` : `Reprendre ${active.title}`) : "Aucune piste en lecture"}
           >

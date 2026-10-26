@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { Participant } from "@/lib/tournois/types";
 import type { Player } from "./use-player";
 
@@ -24,6 +24,21 @@ export function Visual({
   const [broken, setBroken] = useState(false);
   const [ready, setReady] = useState(false);
   const videoFailed = p.visual.k === "video" && player?.failed.has(p.id);
+  // Ref stable : une ref inline serait nettoyée puis rappelée à chaque rendu
+  // (React 19), ce qui débranchait le son de la vidéo en pleine écoute et
+  // empilait ses écouteurs.
+  const register = player?.register;
+  const release = player?.release;
+  const videoRef = useCallback(
+    (el: HTMLVideoElement | null) => {
+      if (!el || !register || !release) return;
+      register(p, el);
+      return () => release(p, el);
+    },
+    // Le participant compte par son id : un nouvel objet pour la même piste ne rebranche rien.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [p.id, register, release],
+  );
 
   if (broken) {
     return (
@@ -37,11 +52,7 @@ export function Visual({
     return (
       <video
         className={`t-visual ${ready ? "is-ready" : ""}`}
-        ref={(el) => {
-          if (!el || !player) return;
-          player.register(p, el);
-          return () => player.release(p, el);
-        }}
+        ref={videoRef}
         crossOrigin="anonymous"
         src={`${p.visual.src}#t=${posterAt}`}
         muted

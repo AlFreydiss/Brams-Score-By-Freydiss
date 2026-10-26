@@ -92,11 +92,14 @@ function wire(el: HTMLMediaElement) {
       analyser.connect(ctx.destination);
     }
     if (ctx.state === "suspended") ctx.resume().catch(() => {});
-    if (!sources.has(el) && analyser) {
-      const src = ctx.createMediaElementSource(el);
-      src.connect(analyser);
+    if (!analyser) return;
+    // Un élément ne peut avoir qu'une seule source de toute sa vie : on la rebranche.
+    let src = sources.get(el);
+    if (!src) {
+      src = ctx.createMediaElementSource(el);
       sources.set(el, src);
     }
+    src.connect(analyser);
   } catch {
     // Sans Web Audio, la lecture continue : seul le visualiseur reste immobile.
   }
@@ -104,7 +107,6 @@ function wire(el: HTMLMediaElement) {
 export const getAnalyser = () => analyser;
 function unwire(el: HTMLMediaElement) {
   sources.get(el)?.disconnect();
-  sources.delete(el);
 }
 
 export type PlayerState = {
@@ -250,6 +252,12 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
         } else if (el.ended) el.currentTime = 0;
       }
       if (!el) return;
+      // Écouter avec le curseur oublié à zéro : on rend le son plutôt qu'un silence.
+      if (readVolume() === 0) writeVolume(70);
+      if (mute.current) {
+        mute.current = false;
+        setMutedState(false);
+      }
       wire(el);
       stopFade(el);
       setMedia(el, { muted: false, volume: 0 });

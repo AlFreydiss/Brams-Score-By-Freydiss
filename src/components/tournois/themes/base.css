@@ -281,6 +281,9 @@
     linear-gradient(to top, var(--t-veil) 0%, color-mix(in srgb, var(--t-veil) 55%, transparent) 34%, transparent 62%);
 }
 .t-blind {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 100%;
