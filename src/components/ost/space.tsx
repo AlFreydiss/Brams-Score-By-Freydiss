@@ -239,7 +239,8 @@ export function SwipeSpace({
     const key = (e: KeyboardEvent) => {
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       const t = e.target as HTMLElement | null;
-      if (t?.closest("input, textarea, select, [contenteditable]")) return;
+      // Un groupe de choix (taille du tableau) garde ses flèches.
+      if (t?.closest("input, textarea, select, [contenteditable], [role=radiogroup]")) return;
       if (e.key === "ArrowRight") goTo(at.current + 1);
       else if (e.key === "ArrowLeft") goTo(at.current - 1);
       else return;

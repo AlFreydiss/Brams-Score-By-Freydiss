@@ -2,7 +2,6 @@ import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer
 import { useEffect, useMemo, useRef, useState } from "react";
 import { champion, currentMatch, roundName, winnerOf } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
-import { recordDuel } from "@/lib/versusStats.js";
 import type { Match, Participant } from "@/lib/tournois/types";
 import { Champion } from "./champion";
 import { DuelScreen, type RoundInfo } from "./duel-screen";
@@ -128,13 +127,9 @@ export function DuelPage() {
                   onChoose={(side, ms) => {
                     const winner = side === "left" ? showMatch.left : showMatch.right;
                     if (!winner) return false;
-                    const ok = actions.vote(meta.slug, showMatch.id, winner.id, ms);
-                    if (ok) {
-                      setHeld({ match: showMatch, roundSize: showSize });
-                      // Statistiques du site (versus_duels), comme les anciennes pages Bankai et Panels.
-                      const loser = side === "left" ? showMatch.right : showMatch.left;
-                      if (meta.statsId && loser) recordDuel(meta.statsId, winner.id, loser.id);
-                    }
+                    // Le store transmet aussi le duel aux statistiques du site (versus_duels).
+                    const ok = actions.vote(meta.slug, showMatch.id, winner.id, ms, meta.statsId);
+                    if (ok) setHeld({ match: showMatch, roundSize: showSize });
                     return ok;
                   }}
                   onDone={() => {

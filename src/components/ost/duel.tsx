@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { champion, currentMatch, ranking, roundName, shuffle } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
 import type { Match, Participant } from "@/lib/tournois/types";
-import { fetchPair, recordDuel } from "@/lib/versusStats.js";
+import { fetchPair } from "@/lib/versusStats.js";
 import { useTournament } from "../tournois/provider";
 import { Plane, useSpace } from "./space";
 import { T } from "./tokens";
@@ -174,13 +174,10 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
         onChoose={(side, ms) => {
           dir.current = 1;
           const winner = side ? m.right : m.left;
-          const loser = side ? m.left : m.right;
           if (!winner) return false;
-          const ok = actions.vote(meta.slug, m.id, winner.id, ms);
-          if (ok) {
-            setHeld({ match: m, size });
-            if (meta.statsId && loser) recordDuel(meta.statsId, winner.id, loser.id);
-          }
+          // Le store transmet aussi le duel aux statistiques du site.
+          const ok = actions.vote(meta.slug, m.id, winner.id, ms, meta.statsId);
+          if (ok) setHeld({ match: m, size });
           return ok;
         }}
         onDone={() => {
@@ -211,7 +208,8 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
   return (
     <Plane i={1} label="Tournoi">
       <div className="ox-room">
-        <Backdrop k={key} pair={pair} dir={dir.current} />
+        {/* À l'aveugle, les silhouettes trahiraient les animes : elles n'arrivent qu'une fois le choix fait. */}
+        <Backdrop k={key} pair={run?.blind && !practice && !held ? null : pair} dir={dir.current} />
         <motion.div className="ox-room-head" initial={reduce ? false : { opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.8, delay: 0.55, ease: T.ease.out } }}>
           {head}
         </motion.div>
@@ -270,6 +268,17 @@ function Duel({
   const shownAt = useRef(performance.now());
   const live = useRef(player);
   live.current = player;
+  // Minuteurs lancés par le choix, et la suite du duel (onDone) pas encore jouée.
+  const timers = useRef<number[]>([]);
+  const owed = useRef<(() => void) | null>(null);
+  useEffect(
+    () => () => {
+      timers.current.forEach(clearTimeout);
+      // Démonté avant la fin : la suite part quand même, sinon le duel resterait figé.
+      owed.current?.();
+    },
+    [],
+  );
 
   // Lecture automatique de la première OST, si elle est demandée.
   useEffect(() => {
@@ -297,15 +306,21 @@ function Duel({
     if (player.id === loser.id) player.pause();
     if (meta.statsId && !practice) {
       const statsId = meta.statsId;
-      setTimeout(() => {
-        fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
-          if (!r) return;
-          const total = r.a + r.b;
-          setSplit(total ? Math.round((r.a / total) * 100) : null);
-        });
-      }, 300);
+      timers.current.push(
+        window.setTimeout(() => {
+          fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
+            if (!r) return;
+            const total = r.a + r.b;
+            setSplit(total ? Math.round((r.a / total) * 100) : null);
+          });
+        }, 300),
+      );
     }
-    setTimeout(onDone, reduce ? 700 : meta.statsId && !practice ? 1450 : 900);
+    owed.current = () => {
+      owed.current = null;
+      onDone();
+    };
+    timers.current.push(window.setTimeout(() => owed.current?.(), reduce ? 700 : meta.statsId && !practice ? 1450 : 900));
   };
 
   const hidden = !!blind && picked == null;

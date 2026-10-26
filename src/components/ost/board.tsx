@@ -17,8 +17,8 @@ import { engrave, Photo, Press } from "./ui";
 
 export const Board = forwardRef<HTMLDivElement>(function Board(_, ref) {
   const { saved, byId } = useTournament();
-  // Le fond reprend le duel en cours, sinon deux favoris ; assourdi pour la lecture.
-  const cur = saved.run ? currentMatch(saved.run.rounds) : null;
+  // Le fond reprend le duel en cours (sauf à l'aveugle), sinon deux favoris ; assourdi pour la lecture.
+  const cur = saved.run && !saved.run.blind ? currentMatch(saved.run.rounds) : null;
   const favs = saved.favorites.map((id) => byId.get(id)).filter((p): p is Participant => !!p);
   const pair: [Participant, Participant] | null = cur?.match.left && cur.match.right ? [cur.match.left, cur.match.right] : favs.length >= 2 ? [favs[0], favs[1]] : null;
   return (
@@ -73,7 +73,7 @@ function Bracket() {
           <h3 className="ox-h3">{roundName(r.size)}</h3>
           <div className="ox-matches">
             {r.matches.map((m) => (
-              <MatchTile key={m.id} m={m} current={cur?.match.id === m.id} onOpen={() => goTo(1)} />
+              <MatchTile key={m.id} m={m} current={cur?.match.id === m.id} masked={run.blind && m.status !== "closed"} onOpen={() => goTo(1)} />
             ))}
           </div>
         </div>
@@ -84,10 +84,16 @@ function Bracket() {
 
 // Une tuile ne se redessine que si son duel a changé.
 const MatchTile = memo(
-  function MatchTile({ m, current, onOpen }: { m: Match; current: boolean; onOpen: () => void }) {
+  function MatchTile({ m, current, masked, onOpen }: { m: Match; current: boolean; masked: boolean; onOpen: () => void }) {
     const w = winnerOf(m);
-    const side = (p: Participant | null) =>
-      p ? (
+    // À l'aveugle, un duel pas encore joué ne dit pas qui s'affronte.
+    const side = (p: Participant | null, label: string) =>
+      p && masked ? (
+        <span className="ox-mt-side is-empty">
+          <span className="ox-mt-img" />
+          <span className="ox-mt-t">{label}</span>
+        </span>
+      ) : p ? (
         <span className={`ox-mt-side ${w ? (w.id === p.id ? "is-win" : "is-out") : ""}`}>
           <span className="ox-mt-img">
             <Photo p={p} small />
@@ -102,11 +108,11 @@ const MatchTile = memo(
       );
     const body = (
       <>
-        {side(m.left)}
+        {side(m.left, "OST A")}
         <i className="ox-mt-vs" aria-hidden>
           VS
         </i>
-        {side(m.right)}
+        {side(m.right, "OST B")}
       </>
     );
     return current ? (
@@ -117,7 +123,7 @@ const MatchTile = memo(
       <div className="ox-mt">{body}</div>
     );
   },
-  (a, b) => a.current === b.current && a.m.id === b.m.id && a.m.winnerId === b.m.winnerId && a.m.left?.id === b.m.left?.id && a.m.right?.id === b.m.right?.id,
+  (a, b) => a.current === b.current && a.masked === b.masked && a.m.id === b.m.id && a.m.winnerId === b.m.winnerId && a.m.left?.id === b.m.left?.id && a.m.right?.id === b.m.right?.id,
 );
 
 function Ranking() {

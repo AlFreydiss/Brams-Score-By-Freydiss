@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { Sparkle } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { currentMatch } from "@/lib/tournois/bracket";
 import { fill } from "@/lib/tournois/catalog";
 import { useClientDraw } from "@/lib/tournois/client-draw";
@@ -46,6 +46,13 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
   const [blind, setBlind] = useState(false);
   const [off, setOff] = useState<Set<string>>(() => new Set());
   const [showGroups, setShowGroups] = useState(false);
+  // « Nouvelle partie » efface celle en cours : un second appui confirme.
+  const [confirm, setConfirm] = useState(false);
+  useEffect(() => {
+    if (!confirm) return;
+    const t = setTimeout(() => setConfirm(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirm]);
 
   const groups = useMemo(() => {
     const m = new Map<string, number>();
@@ -62,8 +69,20 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
 
   const start = () => {
     if (!format) return;
+    setConfirm(false);
     actions.start(meta.slug, draw(pool, format), blind);
     goTo(1);
+  };
+  // Flèches dans la taille du tableau : d'une taille disponible à l'autre.
+  const stepSize = (e: React.KeyboardEvent) => {
+    const d = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+    if (!d || !format) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const next = fits[fits.indexOf(format) + d];
+    if (!next) return;
+    setSize(next);
+    (e.currentTarget.querySelector(`[data-size="${next}"]`) as HTMLElement | null)?.focus();
   };
   const toggle = (g: string) =>
     setOff((prev) => {
@@ -104,8 +123,8 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
                   <Press className="ox-pill ox-pill--gold" onClick={() => goTo(1)}>
                     Reprendre au duel {played + 1}
                   </Press>
-                  <Press className="ox-pill" onClick={start}>
-                    Nouvelle partie
+                  <Press className={`ox-pill ${confirm ? "ox-pill--gold" : ""}`} onClick={confirm ? start : () => setConfirm(true)} aria-live="polite">
+                    {confirm ? "Confirmer : effacer la partie" : "Nouvelle partie"}
                   </Press>
                 </>
               ) : (
@@ -123,9 +142,19 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
             <motion.div className="ox-setup" variants={RISE} custom={3}>
               <div className="ox-setup-row">
                 <span className="ox-setup-label">Taille du tableau</span>
-                <div className="ox-sizes" role="radiogroup" aria-label="Taille du tableau">
+                <div className="ox-sizes" role="radiogroup" aria-label="Taille du tableau" onKeyDown={stepSize}>
                   {meta.formats.map((f) => (
-                    <button key={f} type="button" role="radio" aria-checked={format === f} disabled={f > pool.length} className="ox-size" onClick={() => setSize(f)}>
+                    <button
+                      key={f}
+                      type="button"
+                      role="radio"
+                      data-size={f}
+                      aria-checked={format === f}
+                      tabIndex={format === f ? 0 : -1}
+                      disabled={f > pool.length}
+                      className="ox-size"
+                      onClick={() => setSize(f)}
+                    >
                       {f}
                     </button>
                   ))}

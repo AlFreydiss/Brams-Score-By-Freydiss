@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { advance, champion, currentMatch, generateBracket, shuffle } from "./bracket";
 import type { Participant, Round, Run } from "./types";
+import { recordDuel } from "@/lib/versusStats.js";
 
 // Chaque tournoi est joué dans le navigateur et tout est rangé dans
 // localStorage (une clé par tournoi). Les pages Tableau, Classement,
@@ -115,14 +116,38 @@ export function draw(pool: Participant[], size: number, balanced = false): Parti
   return shuffle(pairs).flat();
 }
 
+// Stats du site (versus_duels) : le dernier choix reste en attente tant qu'il
+// peut être annulé. Il part au choix suivant, à une nouvelle partie, quand on
+// quitte le tournoi ou que l'onglet passe en arrière-plan ; « Annuler » le
+// retire avant envoi. Sinon voter, annuler et revoter compterait deux duels.
+let pending: { statsId: string; winner: string; loser: string } | null = null;
+
+export function flushDuel() {
+  if (!pending) return;
+  const { statsId, winner, loser } = pending;
+  pending = null;
+  recordDuel(statsId, winner, loser);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", flushDuel);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushDuel();
+  });
+}
+
 export const actions = {
   start(slug: string, chosen: Participant[], blind: boolean) {
+    flushDuel();
     const s = load(slug);
     save(slug, { ...s, run: { size: chosen.length, rounds: generateBracket(chosen), blind, startedAt: Date.now() }, undo: null });
   },
 
-  /** Enregistre le choix du duel en cours. Renvoie false si le duel n'accepte plus de vote. */
-  vote(slug: string, matchId: string, winnerId: string, ms: number): boolean {
+  /**
+   * Enregistre le choix du duel en cours. Renvoie false si le duel n'accepte plus de vote.
+   * @param statsId tournoi côté site : le duel compte aussi dans les stats communes.
+   */
+  vote(slug: string, matchId: string, winnerId: string, ms: number, statsId?: string): boolean {
     const s = load(slug);
     const run = s.run;
     const cur = run && currentMatch(run.rounds);
@@ -134,6 +159,8 @@ export const actions = {
     const vote: Vote = { at: Date.now(), run: run.startedAt, round: cur.round.size, matchId, winner: winnerId, loser, ms };
     const rounds = advance(run.rounds, matchId, winnerId);
     const champ = champion(rounds);
+    flushDuel();
+    if (statsId) pending = { statsId, winner: winnerId, loser };
     save(slug, {
       ...s,
       run: { ...run, rounds },
@@ -148,6 +175,8 @@ export const actions = {
     const s = load(slug);
     if (!s.run || !s.undo) return;
     const { rounds, vote } = s.undo;
+    // Le choix annulé n'est pas encore parti vers le site : il ne partira plus.
+    if (pending?.winner === vote.winner && pending.loser === vote.loser) pending = null;
     const wasFinal = !!champion(s.run.rounds);
     save(slug, {
       ...s,
@@ -159,6 +188,7 @@ export const actions = {
   },
 
   quit(slug: string) {
+    flushDuel();
     const s = load(slug);
     save(slug, { ...s, run: null, undo: null });
   },

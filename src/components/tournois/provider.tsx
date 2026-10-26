@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { tournament, type TournamentMeta } from "@/lib/tournois/catalog";
-import { reconcile, useSaved, type Saved } from "@/lib/tournois/store";
+import { flushDuel, reconcile, useSaved, type Saved } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
 import { usePlayer, type Player } from "./use-player";
 
@@ -42,8 +42,9 @@ export function TournamentProvider({ slug, participants, children }: { slug: str
   // Partie sauvegardée avant un changement du catalogue : remise à jour avant l'affichage.
   useLayoutEffect(() => reconcile(slug, byId), [slug, byId]);
 
-  // Quitter les pages du tournoi coupe le son.
+  // Quitter les pages du tournoi coupe le son et envoie le dernier choix au site.
   useEffect(() => () => stop(), [stop]);
+  useEffect(() => () => flushDuel(), []);
 
   const value = useMemo(() => ({ meta, participants, byId, player, saved, listen }), [meta, participants, byId, player, saved, listen]);
   return (
