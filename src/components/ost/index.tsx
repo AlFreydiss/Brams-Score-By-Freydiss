@@ -66,6 +66,35 @@ export function OstSpace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Plein écran : l'espace seul, sans l'en-tête du site ni le navigateur.
+  // Sans l'API (iPhone), l'espace passe en position fixe par-dessus la page.
+  const [full, setFull] = useState(false);
+  const [pseudo, setPseudo] = useState(false);
+  const toggleFull = () => {
+    const el = root.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else if (pseudo) setPseudo(false);
+    else if (el.requestFullscreen) el.requestFullscreen().catch(() => setPseudo(true));
+    else setPseudo(true);
+  };
+  useEffect(() => {
+    const on = () => setFull(!!document.fullscreenElement && document.fullscreenElement === root.current);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && pseudo) setPseudo(false);
+      if ((e.key !== "f" && e.key !== "F") || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      toggleFull();
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  });
+
   const onSettle = (i: number) => {
     setSettled(i);
     if (planeOf(sub) === i) return;
@@ -73,8 +102,8 @@ export function OstSpace() {
   };
 
   return (
-    <div ref={root} className="ox" style={cssVars()}>
-      <SwipeSpace count={3} index={index} onSettle={onSettle} apiRef={api} overlay={<Wordline labels={LABELS} current={settled} />}>
+    <div ref={root} className={`ox${pseudo ? " is-full" : ""}`} style={cssVars()}>
+      <SwipeSpace count={3} index={index} onSettle={onSettle} apiRef={api} overlay={<Wordline labels={LABELS} current={settled} full={full || pseudo} onFull={toggleFull} />}>
         <HomePlane
           onPractice={() => {
             setPractice(true);

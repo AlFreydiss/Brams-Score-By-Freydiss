@@ -1,4 +1,5 @@
 import { motion, useTransform } from "framer-motion";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { currentMatch, roundName } from "@/lib/tournois/bracket";
 import { useTournament } from "../tournois/provider";
 import { useSpace } from "./space";
@@ -9,7 +10,7 @@ import { T } from "./tokens";
 // où l'on est s'allume, les autres restent dans l'ombre. À droite, les tours de
 // la partie, numérotés ; le tour en cours porte le trait doré.
 
-export function Wordline({ labels, current }: { labels: string[]; current: number }) {
+export function Wordline({ labels, current, full, onFull }: { labels: string[]; current: number; full: boolean; onFull: () => void }) {
   const { progress, goTo } = useSpace();
   // Le segment fait un tiers du filet ; il avance d'une fois sa largeur par plan.
   const seg = useTransform(progress, (p) => `${Math.max(0, Math.min(labels.length - 1, p)) * 100}%`);
@@ -22,6 +23,10 @@ export function Wordline({ labels, current }: { labels: string[]; current: numbe
         {labels.map((l, i) => (
           <Label key={l} i={i} label={l} current={current === i} onGo={() => goTo(i)} />
         ))}
+        <button type="button" className="ox-nav-label ox-nav-full" onClick={onFull} title={full ? "Quitter le plein écran (F)" : "Plein écran (F)"}>
+          {full ? <Minimize2 size={13} strokeWidth={1.5} aria-hidden /> : <Maximize2 size={13} strokeWidth={1.5} aria-hidden />}
+          <span>{full ? "Quitter" : "Plein écran"}</span>
+        </button>
       </nav>
       <Rounds />
     </div>

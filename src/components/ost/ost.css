@@ -1967,3 +1967,37 @@
     transform: scaleY(0.6);
   }
 }
+
+/* ── Plein écran : l'espace seul, sans l'en-tête du site ──────────── */
+.ox:fullscreen {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+.ox.is-full {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+  height: 100dvh;
+  min-height: 0;
+}
+.ox .ox-nav-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: clamp(4px, 1vw, 14px);
+  padding-left: clamp(16px, 2vw, 30px);
+  border-left: 1px solid var(--ox-faint);
+  color: var(--ox-mute);
+  cursor: pointer;
+  transition: color 0.35s var(--ox-ease);
+}
+.ox .ox-nav-full:hover,
+.ox .ox-nav-full:focus-visible {
+  color: var(--ox-accent);
+}
+@media (max-width: 640px) {
+  .ox .ox-nav-full span {
+    display: none;
+  }
+}
