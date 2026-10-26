@@ -27,6 +27,8 @@ from .info import (
     _call_ai,
     _get_gemini_keys,
     _next_gemini_key,
+    _content,
+    _reasoning_kwargs,
     _strip_markdown,
 )
 
@@ -68,12 +70,13 @@ async def _call_ai_json(system: str, user_msg: str, max_tokens: int = 800, tempe
     async def _try(model: str, key: str) -> str:
         resp = await asyncio.wait_for(
             litellm.acompletion(
-                model=model, api_key=key, max_tokens=max_tokens, temperature=temperature,
+                model=model, api_key=key, max_tokens=max_tokens + 512, temperature=temperature,
                 request_timeout=25, response_format={"type": "json_object"}, messages=msgs,
+                **_reasoning_kwargs(model),
             ),
             timeout=30,
         )
-        return resp.choices[0].message.content.strip()
+        return _content(resp)
 
     raw = None
     for _ in range(len(_get_gemini_keys())):
@@ -81,14 +84,16 @@ async def _call_ai_json(system: str, user_msg: str, max_tokens: int = 800, tempe
         try:
             raw = await _try(_MODEL_GEMINI, key)
             break
-        except Exception:
+        except Exception as e:
+            print(f"[IA] Gemini JSON échec : {type(e).__name__}: {str(e)[:300]}")
             continue
     if raw is None:
         groq_key = os.environ.get("GROQ_API_KEY", "")
         if groq_key:
             try:
                 raw = await _try(_MODEL_GROQ, groq_key)
-            except Exception:
+            except Exception as e:
+                print(f"[IA] Groq JSON échec : {type(e).__name__}: {str(e)[:300]}")
                 return None
     if not raw:
         return None

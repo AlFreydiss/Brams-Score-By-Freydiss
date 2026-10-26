@@ -16,8 +16,11 @@ GUILD_IDS = [
     for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")
 ]
 
-_MODEL_GEMINI    = "gemini/gemini-2.0-flash"
-_MODEL_GROQ      = "groq/llama-3.3-70b-versatile"
+# gemini-2.0-flash (coupé juin 2026) et llama-3.3-70b-versatile (coupé août 2026) sont morts.
+# Surchargeable depuis Railway > Variables sans redéployer le code.
+_MODEL_GEMINI    = os.environ.get("AI_MODEL_GEMINI", "gemini/gemini-3.6-flash")
+_MODEL_GROQ      = os.environ.get("AI_MODEL_GROQ", "groq/openai/gpt-oss-120b")
+litellm.drop_params = True  # ignore les params non supportés au lieu de planter
 _SESSION_TIMEOUT = 600
 _MAX_HISTORY     = 14
 _MEMORY_EVERY    = 1
@@ -144,6 +147,23 @@ async def _reply_violet_best_anime(message: discord.Message) -> bool:
         return False
 
 _gemini_key_index = 0  # rotation round-robin
+
+
+def _reasoning_kwargs(model: str) -> dict:
+    """Les modèles actuels raisonnent avant de répondre : on garde ça au minimum
+    pour ne pas manger tout max_tokens (réponse vide sinon)."""
+    if model.startswith("gemini/"):
+        return {"reasoning_effort": "minimal"}
+    if "gpt-oss" in model or "qwen3" in model:
+        return {"reasoning_effort": "low"}
+    return {}
+
+
+def _content(resp) -> str:
+    text = (resp.choices[0].message.content or "").strip()
+    if not text:
+        raise RuntimeError("réponse vide du modèle")
+    return text
 
 
 def _get_gemini_keys() -> list[str]:
@@ -672,17 +692,19 @@ async def _call_ai(system: str, history: list[dict]) -> str:
                 litellm.acompletion(
                     model=_MODEL_GEMINI,
                     api_key=key,
-                    max_tokens=450,
+                    max_tokens=1024,
                     temperature=0.8,
                     request_timeout=25,
                     messages=msgs,
+                    **_reasoning_kwargs(_MODEL_GEMINI),
                 ),
                 timeout=30,
             )
-            return resp.choices[0].message.content.strip()
+            return _content(resp)
         except asyncio.TimeoutError:
             raise
-        except Exception:
+        except Exception as e:
+            print(f"[IA] Gemini {_MODEL_GEMINI} échec : {type(e).__name__}: {str(e)[:300]}")
             continue  # rate-limit ou autre → clé suivante
 
     # Fallback Groq
@@ -693,14 +715,15 @@ async def _call_ai(system: str, history: list[dict]) -> str:
         litellm.acompletion(
             model=_MODEL_GROQ,
             api_key=groq_key,
-            max_tokens=450,
+            max_tokens=1024,
             temperature=0.8,
             request_timeout=25,
             messages=msgs,
+            **_reasoning_kwargs(_MODEL_GROQ),
         ),
         timeout=30,
     )
-    return resp.choices[0].message.content.strip()
+    return _content(resp)
 
 
 async def _update_memory_task(bot, uid: int, current_memory: str, history: list[dict], user_context: str = ""):
@@ -723,22 +746,23 @@ async def _update_memory_task(bot, uid: int, current_memory: str, history: list[
             litellm.acompletion(
                 model=model,
                 api_key=api_key,
-                max_tokens=180,
+                max_tokens=600,
                 temperature=0.1,
                 request_timeout=15,
                 messages=[
                     {"role": "system", "content": _MEMORY_SYSTEM},
                     {"role": "user",   "content": prompt},
                 ],
+                **_reasoning_kwargs(model),
             ),
             timeout=20,
         )
-        new_memory = resp.choices[0].message.content.strip()
+        new_memory = _content(resp)
         bot.set_ai_memory(str(uid), new_memory)
         if uid in _sessions:
             _sessions[uid]["memory"] = new_memory
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[IA] mémoire non mise à jour : {type(e).__name__}: {str(e)[:200]}")
 
 
 def _handle_error(e: Exception) -> str:

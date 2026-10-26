@@ -3049,8 +3049,9 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
         resp = await litellm.acompletion(
             model=_GROQ_MODEL,
             api_key=api_key,
-            max_tokens=5,
+            max_tokens=300,
             temperature=0.0,
+            reasoning_effort="low",
             messages=[
                 {"role": "system", "content": (
                     "Tu analyses si un mot est utilisé comme insulte dans un message. "
@@ -3063,7 +3064,7 @@ async def _is_insult_context(content: str, bad_word: str) -> bool:
                 )},
             ],
         )
-        result = "oui" in resp.choices[0].message.content.strip().lower()
+        result = "oui" in (resp.choices[0].message.content or "").strip().lower()
         _INSULT_CACHE[cache_key] = (result, time.time())
         return result
     except Exception:
@@ -4851,7 +4852,9 @@ async def test_event(interaction: discord.Interaction, evenement: app_commands.C
 # ─────────────────────────────────────────
 QUIZ_SESSIONS: dict = {}
 LIVE_DUELS: dict[int, "_LiveDuelSession"] = {}  # uid → duel live partagé
-_GROQ_MODEL       = "groq/llama-3.3-70b-versatile"
+# llama-3.3-70b-versatile coupé par Groq le 16/08/2026 → gpt-oss (raisonnement réglé bas)
+_GROQ_MODEL       = os.environ.get("AI_MODEL_GROQ", "groq/openai/gpt-oss-120b")
+litellm.drop_params = True
 
 # Historique par utilisateur : dernières questions vues (évite les répétitions)
 QUIZ_USER_HISTORY: dict[int, list[str]] = {}
@@ -4957,8 +4960,9 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
             response = await litellm.acompletion(
                 model=_GROQ_MODEL,
                 api_key=api_key,
-                max_tokens=4096,
+                max_tokens=6000,
                 temperature=0.9,
+                reasoning_effort="low",
                 response_format={"type": "json_object"},
                 messages=[
                     {"role": "system", "content": _QUIZ_SYSTEM},
@@ -4971,7 +4975,7 @@ async def _generate_quiz_questions(n: int, category: str = "general", seen_quest
                     )},
                 ],
             )
-            raw = response.choices[0].message.content.strip()
+            raw = (response.choices[0].message.content or "").strip()
             print(f"[QUIZ] Raw ({len(raw)} chars) : {raw[:300]}")
 
             data = json.loads(raw)
@@ -8186,10 +8190,11 @@ async def _aki_call(session: "_AkiSession") -> dict:
     for attempt in range(3):
         try:
             resp = await litellm.acompletion(
-                model=_GROQ_MODEL, api_key=api_key, max_tokens=200, temperature=0.7,
+                model=_GROQ_MODEL, api_key=api_key, max_tokens=800, temperature=0.7,
+                reasoning_effort="low",
                 response_format={"type": "json_object"}, messages=session.build_messages(),
             )
-            data = json.loads(resp.choices[0].message.content.strip())
+            data = json.loads((resp.choices[0].message.content or "").strip())
             if data.get("action") in ("question", "guess", "give_up"):
                 return data
         except Exception as e:
