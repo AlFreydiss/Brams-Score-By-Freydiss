@@ -19,7 +19,8 @@ import time
 import aiohttp
 import litellm
 
-litellm.drop_params = True  # ignore les params non supportés au lieu de planter
+litellm.drop_params = True          # ignore les params non supportés au lieu de planter
+litellm.suppress_debug_info = True  # pas de « Give Feedback » à chaque erreur dans les logs
 
 _REFRESH_EVERY = 12 * 3600
 _LIST_TIMEOUT  = aiohttp.ClientTimeout(total=8)
@@ -38,6 +39,12 @@ _GROQ_PREFERRED = [
 ]
 _GROQ_NOT_CHAT = re.compile(r"whisper|guard|tts|orpheus|playai|compound|distil|safeguard|embed", re.I)
 _GEMINI_STABLE = re.compile(r"^models/(gemini-(\d+(?:\.\d+)?)-flash(-lite)?)$")
+# Modèle saturé / lent : on le met de côté un moment, inutile d'essayer les autres clés
+_MODEL_BUSY    = re.compile(r"\b503\b|UNAVAILABLE|overloaded|high demand|timed? ?out|Timeout", re.I)
+# Clé sans crédit / invalide / bloquée : de côté 1 h. Quota par minute : 1 min.
+_KEY_DEAD      = re.compile(r"\b40[123]\b|credits are depleted|billing|api key not valid|invalid api key|permission", re.I)
+_KEY_LIMITED   = re.compile(r"\b429\b|rate.?limit|quota|RESOURCE_EXHAUSTED", re.I)
+_MODEL_COOLDOWN = 600
 _MODEL_GONE    = re.compile(
     r"not[ _]found|decommissioned|deprecated|does not exist|no longer|model_not_found|is not supported|retired|404",
     re.I,
@@ -47,6 +54,9 @@ _state = {"gemini": list(_FALLBACK_GEMINI), "groq": list(_FALLBACK_GROQ), "refre
 _dead: set[str] = set()
 _refresh_lock = asyncio.Lock()
 _key_index = {"gemini": 0, "groq": 0}
+_model_until: dict[str, float] = {}  # modèle -> pas avant ce moment (saturé/lent)
+_key_until:   dict[str, float] = {}  # clé -> pas avant ce moment (sans crédit, quota)
+_last_good:   dict[str, str]   = {}  # fournisseur -> dernier modèle qui a répondu
 
 
 class AIUnavailable(RuntimeError):
@@ -85,6 +95,8 @@ def has_keys() -> bool:
 
 
 def _rotated(provider: str, keys: list[str]) -> list[str]:
+    now  = time.time()
+    keys = [k for k in keys if _key_until.get(k, 0) <= now]
     if not keys:
         return []
     i = _key_index[provider] % len(keys)
@@ -152,8 +164,15 @@ async def refresh_models(force: bool = False) -> None:
 
 def _candidates(provider: str) -> list[str]:
     forced = os.environ.get("AI_MODEL_GEMINI" if provider == "gemini" else "AI_MODEL_GROQ", "")
-    models = ([forced] if forced else []) + [m for m in _state[provider] if m != forced]
-    return [m for m in models if m not in _dead]
+    good   = _last_good.get(provider)
+    models = [forced] if forced else []
+    if good and good not in models:
+        models.append(good)  # le dernier qui a marché passe devant
+    models += [m for m in _state[provider] if m not in models]
+    models = [m for m in models if m not in _dead]
+    now  = time.time()
+    free = [m for m in models if _model_until.get(m, 0) <= now]
+    return free or models[:1]  # tout saturé : on tente quand même le premier
 
 
 def current_models() -> dict:
@@ -179,7 +198,7 @@ async def complete(
     temperature: float = 0.8,
     json: bool = False,
     deadline: float = 45,
-    attempt_timeout: float = 20,
+    attempt_timeout: float = 12,
 ) -> str:
     """Renvoie le texte du premier modèle qui répond, dans la limite de `deadline` secondes
     au total et `attempt_timeout` secondes par modèle."""
@@ -201,13 +220,15 @@ async def complete(
             if remaining < 2:
                 raise asyncio.TimeoutError()
             extra = {"response_format": {"type": "json_object"}} if json else {}
+            # Gemini 3+ : la température est dépréciée (warning à chaque appel)
+            if not re.search(r"gemini/gemini-[3-9]", model):
+                extra["temperature"] = temperature
             try:
                 resp = await asyncio.wait_for(
                     litellm.acompletion(
                         model=model,
                         api_key=key,
                         max_tokens=max_tokens,
-                        temperature=temperature,
                         request_timeout=min(attempt_timeout, remaining),
                         num_retries=0,
                         messages=messages,
@@ -219,19 +240,33 @@ async def complete(
                 text = (resp.choices[0].message.content or "").strip()
                 if not text:
                     raise RuntimeError("réponse vide du modèle")
+                _last_good[provider] = model
                 return text
             except asyncio.TimeoutError as e:
                 last = e
-                print(f"[IA] {model} trop lent, suivant")
+                _model_until[model] = time.time() + _MODEL_COOLDOWN
+                print(f"[IA] {model} trop lent, de côté 10 min")
                 break  # modèle lent : inutile d'essayer les autres clés
             except Exception as e:
                 last = e
-                msg = str(e)
-                print(f"[IA] {model} échec : {type(e).__name__}: {msg[:300]}")
-                if _MODEL_GONE.search(msg) and "api key" not in msg.lower():
+                msg = f"{type(e).__name__}: {e}"
+                short = re.sub(r"\s+", " ", msg)[:220]
+                if _KEY_DEAD.search(msg) and not _MODEL_GONE.search(msg):
+                    _key_until[key] = time.time() + 3600
+                    print(f"[IA] clé {provider} …{key[-4:]} inutilisable, de côté 1 h : {short}")
+                    continue
+                if _MODEL_BUSY.search(msg):
+                    _model_until[model] = time.time() + _MODEL_COOLDOWN
+                    print(f"[IA] {model} saturé/lent, de côté 10 min : {short}")
+                    break
+                if _MODEL_GONE.search(msg):
                     _dead.add(model)
                     _state["refreshed"] = 0.0  # rechargera la liste au prochain appel
+                    print(f"[IA] {model} n'existe plus, liste rechargée : {short}")
                     break
-                continue  # rate-limit / clé invalide → clé suivante
+                if _KEY_LIMITED.search(msg):
+                    _key_until[key] = time.time() + 60
+                print(f"[IA] {model} échec : {short}")
+                continue  # rate-limit / autre → clé suivante
 
     raise AIUnavailable("aucun modèle IA n'a répondu", last)
