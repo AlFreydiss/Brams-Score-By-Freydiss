@@ -206,6 +206,7 @@ async def complete(
     json: bool = False,
     deadline: float = 45,
     attempt_timeout: float = 12,
+    safety_settings: list[dict] | None = None,
 ) -> str:
     """Renvoie le texte du premier modèle qui répond, dans la limite de `deadline` secondes
     au total et `attempt_timeout` secondes par modèle."""
@@ -233,6 +234,8 @@ async def complete(
             # Gemini 3+ : la température est dépréciée (warning à chaque appel)
             if not re.search(r"gemini/gemini-[3-9]", model):
                 extra["temperature"] = temperature
+            if safety_settings and provider == "gemini":
+                extra["safety_settings"] = safety_settings
             try:
                 resp = await asyncio.wait_for(
                     litellm.acompletion(

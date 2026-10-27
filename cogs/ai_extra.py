@@ -59,12 +59,14 @@ def _stats_block(bot, member) -> str:
     return line
 
 
-async def _call_ai_json(system: str, user_msg: str, max_tokens: int = 800, temperature: float = 0.9) -> dict | None:
+async def _call_ai_json(system: str, user_msg: str, max_tokens: int = 800, temperature: float = 0.9,
+                        safety_settings: list[dict] | None = None) -> dict | None:
     """Comme _call_ai mais force du JSON."""
     msgs = [{"role": "system", "content": system}, {"role": "user", "content": user_msg}]
 
     try:
-        raw = await ai.complete(msgs, max_tokens=max_tokens + 512, temperature=temperature, json=True)
+        raw = await ai.complete(msgs, max_tokens=max_tokens + 512, temperature=temperature, json=True,
+                                safety_settings=safety_settings)
     except Exception as e:
         print(f"[IA] JSON échec : {type(e).__name__}: {str(e)[:300]}")
         return None
@@ -304,6 +306,13 @@ async def _recent_messages(channel, member, limit: int = 10) -> list[str]:
     except Exception:
         pass
     return out
+
+# /clash : filtre Gemini relâché sur le harcèlement et le contenu cru (roast entre potes
+# consentants). Discours haineux et contenu dangereux gardent le filtre par défaut.
+_ROAST_SAFETY = [
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+]
 
 # /clash : vraies anecdotes sur des membres, à exploiter en priorité (clé = ID Discord).
 _ROAST_LORE = {
@@ -592,7 +601,7 @@ class AIExtraCog(commands.Cog):
         derniers = await _recent_messages(interaction.channel, membre)
         if derniers:
             prompt += " Ses vrais messages récents : " + " | ".join(f"« {m} »" for m in derniers)
-        data = await _call_ai_json(system, prompt, max_tokens=900)
+        data = await _call_ai_json(system, prompt, max_tokens=900, safety_settings=_ROAST_SAFETY)
         texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
             await interaction.followup.send(embed=_err_embed())
