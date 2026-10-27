@@ -225,7 +225,12 @@ async def complete(
     # tri stable : à vitesse inconnue l'ordre Gemini puis Groq est gardé
     plan.sort(key=lambda step: _latency.get(step[1], _LATENCY_UNKNOWN))
     if prefer:
-        plan.sort(key=lambda step: step[0] != prefer)
+        # seul le modèle le plus rapide du fournisseur préféré passe devant : si lui
+        # est lent ou saturé, on retombe tout de suite sur l'ordre par vitesse
+        first = next((step for step in plan if step[0] == prefer), None)
+        if first:
+            plan.remove(first)
+            plan.insert(0, first)
 
     for provider, model, keys in plan:
         for key in _rotated(provider, keys):

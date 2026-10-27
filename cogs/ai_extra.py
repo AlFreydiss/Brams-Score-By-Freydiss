@@ -299,8 +299,8 @@ async def _recent_messages(channel, member, limit: int = 10) -> list[str]:
     """Derniers messages texte du membre dans ce salon : matière première pour /clash."""
     out: list[str] = []
     try:
-        async with asyncio.timeout(4):
-            async for msg in channel.history(limit=300):
+        async with asyncio.timeout(2):
+            async for msg in channel.history(limit=150):
                 text = (msg.content or "").strip()
                 if msg.author.id == member.id and 3 <= len(text) <= 160 and not text.startswith(("/", "!", "http")):
                     out.append(text.replace("\n", " "))
@@ -597,7 +597,7 @@ class AIExtraCog(commands.Cog):
             "et absurdes), sa dignité, sa façon de parler et d'écrire. "
             "SEULES LIMITES : rien sur l'origine, la couleur de peau, un accent lié à l'origine, la religion, "
             "l'orientation sexuelle, le handicap, pas de menaces ni de suicide. "
-            "Méthode : d'abord écris 8 vannes courtes et toutes différentes dans « idees », puis note-les "
+            "Méthode : d'abord écris 5 vannes de 12 mots maximum, toutes différentes, dans « idees », puis note-les "
             "froidement (drôle ET méchante à la fois, sinon zéro) et construis « roast » avec SEULEMENT les 3 ou "
             "4 plus violentes et plus drôles, enchaînées du plus faible "
             "au plus fort, avec un rappel à la fin. "
@@ -608,7 +608,7 @@ class AIExtraCog(commands.Cog):
         derniers = await _recent_messages(interaction.channel, membre)
         if derniers:
             prompt += " Ses vrais messages récents : " + " | ".join(f"« {m} »" for m in derniers)
-        data = await _call_ai_json(system, prompt, max_tokens=900, safety_settings=_ROAST_SAFETY, prefer="gemini")
+        data = await _call_ai_json(system, prompt, max_tokens=600, safety_settings=_ROAST_SAFETY, prefer="gemini")
         texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
             await interaction.followup.send(embed=_err_embed())
