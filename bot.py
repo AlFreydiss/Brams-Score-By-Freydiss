@@ -9064,6 +9064,85 @@ async def resync_vocal_cmd(interaction: discord.Interaction):
 
 
 # ─────────────────────────────────────────
+#  /sync_panne  (ADMIN)  — rend les rangs perdus pendant une panne du bot
+# ─────────────────────────────────────────
+@bot.tree.command(name="sync_panne", description="[ADMIN] Rend les rangs perdus pendant une panne du bot (heures 7j figées au début de la panne)")
+@app_commands.guilds(*GUILD_IDS)
+@app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
+@app_commands.describe(debut="Heure de début de la panne, heure de Paris (ex: 16:00 ou 16h)")
+async def sync_panne_cmd(interaction: discord.Interaction, debut: str):
+    """Pendant une panne, rien n'est compté mais la fenêtre 7j glisse quand même :
+    les vieilles sessions sortent → derank injuste. Pour chaque membre qui avait un
+    rang au début de la panne et dont les heures 7j ont baissé, on ajoute une session
+    de compensation = exactement le manque, placée dans la panne. Idempotent."""
+    await interaction.response.defer(ephemeral=True)
+    m = re.fullmatch(r"\s*(\d{1,2})\s*(?:[:hH]\s*(\d{2})?)?\s*", debut)
+    if not m or int(m.group(1)) > 23:
+        await interaction.followup.send("❌ Format attendu : `16:00` ou `16h`.", ephemeral=True); return
+    _now = now_ts()
+    now_dt = datetime.fromtimestamp(_now, tz=PARIS_TZ)
+    start_dt = now_dt.replace(hour=int(m.group(1)), minute=int(m.group(2) or 0), second=0, microsecond=0)
+    if start_dt.timestamp() > _now:
+        start_dt -= timedelta(days=1)   # "16h" tapé à 1h du matin = la veille
+    t0 = start_dt.timestamp()
+    tag = int(t0)
+    print(f"[PANNE] start debut={start_dt.isoformat()} by={interaction.user.id}")
+
+    fixed, already, lines = 0, 0, []
+    for gid in GUILD_IDS:
+        guild = bot.get_guild(gid)
+        if not guild:
+            continue
+        for member in guild.members:
+            if member.bot or member.id in RANK_EXCLUDED_IDS:
+                continue
+            uid = str(member.id)
+            user = get_user(_CACHE, uid)
+            if user.get("panne_comp") == tag:
+                already += 1
+                continue
+            sessions = user.get("vocal_sessions", [])
+            h_before = seconds_in_period(sessions, 7, _now=t0) / 3600
+            if h_before < RANKS[-1][0]:
+                continue
+            jt = _counted_join_time(uid, user, member, recover=_is_counted_voice_member(member), _now=_now)
+            h_now = seconds_in_period(sessions, 7, join_time=jt, _now=_now) / 3600
+            missing = int((h_before - h_now) * 3600)
+            if missing <= 0:
+                continue
+            missing = min(missing, MAX_SESSION_SECONDS)
+            sessions.append({"start": t0, "end": t0 + missing, "channel": None, "comp": "panne"})
+            user["vocal_sessions"] = sessions
+            user["panne_comp"] = tag
+            _DIRTY.add(uid)
+            h_fixed = seconds_in_period(sessions, 7, join_time=jt, _now=_now) / 3600
+            try:
+                await update_rank(member, h_fixed, announce=False, data=_CACHE)
+            except Exception as e:
+                print(f"[PANNE] update_rank {member.display_name}: {e}")
+            fixed += 1
+            print(f"[PANNE] {member.display_name}: {h_now:.1f}h -> {h_fixed:.1f}h/7j (+{missing/3600:.1f}h)")
+            if len(lines) < 20:
+                lines.append(f"• {member.mention} `{h_now:.1f}h` → `{h_fixed:.1f}h` (+{missing/3600:.1f}h)")
+
+    flushed = await asyncio.get_running_loop().run_in_executor(db_executor, _sync_flush_dirty)
+    print(f"[PANNE] done fixed={fixed} already={already} flushed={flushed}")
+    desc = (
+        f"🕓 Panne depuis **{start_dt:%d/%m %H:%M}** (Paris)\n"
+        f"🎖️ **{fixed}** membres compensés"
+        + (f" · {already} déjà compensés avant" if already else "")
+        + "\n\n" + ("\n".join(lines) if lines else "Personne n'a perdu d'heures sur 7j.")
+        + (f"\n… et {fixed - len(lines)} autres" if fixed > len(lines) else "")
+    )
+    await interaction.followup.send(
+        embed=discord.Embed(title="✅ Sync panne terminé", description=desc, color=0x2ECC71)
+        .set_footer(text=f"Admin : {interaction.user.display_name}"),
+        ephemeral=True,
+    )
+
+
+# ─────────────────────────────────────────
 #  /reset_berry  (ADMIN)
 # ─────────────────────────────────────────
 @bot.tree.command(name="reset_berry", description="[ADMIN] Remet le solde Berry d'un membre a zero")
