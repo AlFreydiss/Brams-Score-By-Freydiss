@@ -3,17 +3,15 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-# /manege : fait défiler un membre dans tous les salons vocaux, de haut en bas,
-# en boucle, jusqu'à /manege_stop. Réservé à qui a « Déplacer des membres » et à OWNER_IDS.
+# /manege : fait défiler un membre dans tous les salons vocaux (AFK et
+# conférences compris), de haut en bas, en boucle, jusqu'à /manege_stop. Réservé à qui a « Déplacer des membres » et à OWNER_IDS.
 # Aucune pause entre deux déplacements : discord.py attend tout seul quand
 # Discord renvoie un 429, c'est donc Discord qui fixe la cadence maximale.
-# 10 minutes max, arrêt si le membre quitte le vocal, retour dans son salon
-# d'origine à la fin.
+# Pas de durée max : arrêt seulement via /manege_stop ou si le membre quitte
+# le vocal, retour dans son salon d'origine à la fin.
 
 # Freydiss : autorisé partout, même sans la permission sur le serveur.
 OWNER_IDS = {1094070545248694342}
-
-MAX_SECONDS = 600
 
 
 def _allowed(interaction: discord.Interaction) -> bool:
@@ -31,25 +29,22 @@ class ManegeCog(commands.Cog):
         self.bot = bot
         self._runs: dict[tuple[int, int], asyncio.Task] = {}
 
-    def _route(self, member: discord.Member) -> list[discord.VoiceChannel]:
+    def _route(self, member: discord.Member) -> list[discord.abc.GuildChannel]:
         guild = member.guild
         me = guild.me
         out = []
-        for ch in sorted(guild.voice_channels, key=lambda c: (c.category.position if c.category else -1, c.position)):
-            if ch == guild.afk_channel:
-                continue
+        channels = [*guild.voice_channels, *guild.stage_channels]
+        for ch in sorted(channels, key=lambda c: (c.category.position if c.category else -1, c.position)):
             perms = ch.permissions_for(me)
             if perms.connect and perms.move_members:
                 out.append(ch)
         return out
 
-    async def _ride(self, member: discord.Member, origin: discord.VoiceChannel, route: list[discord.VoiceChannel]):
-        loop = asyncio.get_running_loop()
-        end = loop.time() + MAX_SECONDS
+    async def _ride(self, member: discord.Member, origin: discord.abc.GuildChannel, route: list[discord.abc.GuildChannel]):
         try:
-            while loop.time() < end:
+            while True:
                 for ch in route:
-                    if not member.voice or loop.time() >= end:
+                    if not member.voice:
                         return
                     if member.voice.channel != ch:
                         try:
@@ -81,7 +76,7 @@ class ManegeCog(commands.Cog):
         self._runs[key] = asyncio.create_task(self._ride(membre, membre.voice.channel, route))
         await interaction.response.send_message(
             f"🎠 {membre.mention} part sur le manège : {len(route)} salons, en boucle. "
-            f"`/manege_stop` pour l'arrêter (arrêt auto au bout de {MAX_SECONDS // 60} min)."
+            f"`/manege_stop` pour l'arrêter."
         )
 
     @app_commands.command(name="manege_stop", description="🛑 Arrête le manège d'un membre (ou de tout le monde)")
