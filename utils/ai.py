@@ -12,6 +12,7 @@ AI_MODEL_GEMINI (ex. gemini/gemini-3.6-flash) / AI_MODEL_GROQ (ex. groq/openai/g
 """
 
 import asyncio
+import contextvars
 import os
 import re
 import time
@@ -57,6 +58,8 @@ _key_index = {"gemini": 0, "groq": 0}
 _model_until: dict[str, float] = {}  # modèle -> pas avant ce moment (saturé/lent)
 _key_until:   dict[str, float] = {}  # clé -> pas avant ce moment (sans crédit, quota)
 _last_good:   dict[str, str]   = {}  # fournisseur -> dernier modèle qui a répondu
+# modèle qui a répondu au dernier complete() de la tâche en cours (affiché par /clash)
+last_model: contextvars.ContextVar[str] = contextvars.ContextVar("last_model", default="")
 _latency:     dict[str, float] = {}  # modèle -> temps de réponse moyen (s), le plus rapide passe devant
 _LATENCY_UNKNOWN = 6.0
 
@@ -262,6 +265,7 @@ async def complete(
                 if not text:
                     raise RuntimeError("réponse vide du modèle")
                 _last_good[provider] = model
+                last_model.set(model)
                 _note_latency(model, time.monotonic() - started)
                 return text
             except asyncio.TimeoutError as e:

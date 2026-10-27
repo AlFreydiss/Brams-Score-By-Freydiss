@@ -586,7 +586,11 @@ class AIExtraCog(commands.Cog):
             "L'humour d'abord, l'insulte ensuite : une vanne marche par la SURPRISE, pas par le gros mot. "
             "Techniques obligatoires : un détail précis et inventé qui rend la scène réelle, une fausse piste "
             "puis une chute inattendue, de l'exagération qui monte d'un cran à chaque phrase, un rappel d'une "
-            "vanne précédente à la fin. NIVEAU MAXIMUM : le roast doit être tellement violent que toute la "
+            "vanne précédente à la fin. Barre minimale, chaque vanne doit être AU MOINS aussi violente que "
+            "celles-ci (ne les copie pas) : « Ta mère elle t'a pas mis au monde, elle a porté plainte. » "
+            "« T'es tellement puceau que même ta main droite t'a mis un vent. » « Ton père il est parti "
+            "chercher du lait, il a vu ta tête à la maternité, il a pris le lait, la vache et la ferme. » "
+            "NIVEAU MAXIMUM : le roast doit être tellement violent que toute la "
             "salle crie « ooooh » et que lui ne sait plus où se mettre. Sois intelligent, précis, jamais "
             "générique, et surtout MÉCHANT : chaque "
             "vanne doit faire mal, toucher là où ça pique, humilier pour de vrai. Une vanne gentille, mignonne ou "
@@ -637,7 +641,8 @@ class AIExtraCog(commands.Cog):
             color=discord.Color.from_rgb(231, 76, 60),
         )
         embed.set_thumbnail(url=membre.display_avatar.url)
-        embed.set_footer(text=f"{_FOOTER} • Demandé par {interaction.user.display_name} • /eloge pour te rattraper")
+        modele = ai.last_model.get().split("/")[-1]
+        embed.set_footer(text=f"{_FOOTER} • Demandé par {interaction.user.display_name} • {modele}")
         await interaction.followup.send(content=membre.mention, embed=embed)
 
     @app_commands.command(name="eloge", description="👑 Le bot rédige l'éloge légendaire d'un membre, digne des récits de Grand Line")
