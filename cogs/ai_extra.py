@@ -233,6 +233,9 @@ class _AdvView(discord.ui.View):
 _HOROSCOPE_CACHE: dict[str, discord.Embed] = {}
 # /clash : 3 angles tirés au hasard à chaque roast pour qu'ils ne se ressemblent pas.
 _ROAST_ANGLES = [
+    "sa mère, vanne « ta mère » inventée et absurde",
+    "sa famille entière qui a honte de lui au repas de Noël",
+    "ce qu'il reste de sa dignité après sa pire humiliation",
     "son hygiène catastrophique (douche, odeur, chambre, draps)",
     "sa vie amoureuse inexistante et ses râteaux les plus humiliants",
     "son pseudo, à démolir mot par mot",
@@ -590,8 +593,10 @@ class AIExtraCog(commands.Cog):
             "punchline la plus forte. "
             "Si on te donne ses vrais messages récents, c'est de l'or : cite-en un mot pour mot et retourne-le "
             "contre lui, ou moque sa façon d'écrire. "
-            "SEULES LIMITES : rien sur l'origine, la couleur de peau, la religion, l'orientation sexuelle, le "
-            "handicap, la mère ou la famille, pas de menaces ni de suicide. "
+            "AUTORISÉ : sa famille et ses proches (vannes « ta mère », « ton père », « ton frère », inventées "
+            "et absurdes), sa dignité, sa façon de parler et d'écrire. "
+            "SEULES LIMITES : rien sur l'origine, la couleur de peau, un accent lié à l'origine, la religion, "
+            "l'orientation sexuelle, le handicap, pas de menaces ni de suicide. "
             "Méthode : d'abord écris 8 vannes courtes et toutes différentes dans « idees », puis note-les "
             "froidement (drôle ET méchante à la fois, sinon zéro) et construis « roast » avec SEULEMENT les 3 ou "
             "4 plus violentes et plus drôles, enchaînées du plus faible "
