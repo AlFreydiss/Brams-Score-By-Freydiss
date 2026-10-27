@@ -207,6 +207,7 @@ async def complete(
     deadline: float = 45,
     attempt_timeout: float = 12,
     safety_settings: list[dict] | None = None,
+    prefer: str | None = None,
 ) -> str:
     """Renvoie le texte du premier modèle qui répond, dans la limite de `deadline` secondes
     au total et `attempt_timeout` secondes par modèle."""
@@ -223,6 +224,8 @@ async def complete(
     plan += [("groq", m, groq_keys()) for m in _candidates("groq")]
     # tri stable : à vitesse inconnue l'ordre Gemini puis Groq est gardé
     plan.sort(key=lambda step: _latency.get(step[1], _LATENCY_UNKNOWN))
+    if prefer:
+        plan.sort(key=lambda step: step[0] != prefer)
 
     for provider, model, keys in plan:
         for key in _rotated(provider, keys):

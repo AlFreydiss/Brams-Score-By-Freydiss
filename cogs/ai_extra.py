@@ -60,13 +60,13 @@ def _stats_block(bot, member) -> str:
 
 
 async def _call_ai_json(system: str, user_msg: str, max_tokens: int = 800, temperature: float = 0.9,
-                        safety_settings: list[dict] | None = None) -> dict | None:
+                        safety_settings: list[dict] | None = None, prefer: str | None = None) -> dict | None:
     """Comme _call_ai mais force du JSON."""
     msgs = [{"role": "system", "content": system}, {"role": "user", "content": user_msg}]
 
     try:
         raw = await ai.complete(msgs, max_tokens=max_tokens + 512, temperature=temperature, json=True,
-                                safety_settings=safety_settings)
+                                safety_settings=safety_settings, prefer=prefer)
     except Exception as e:
         print(f"[IA] JSON échec : {type(e).__name__}: {str(e)[:300]}")
         return None
@@ -573,7 +573,9 @@ class AIExtraCog(commands.Cog):
             "L'humour d'abord, l'insulte ensuite : une vanne marche par la SURPRISE, pas par le gros mot. "
             "Techniques obligatoires : un détail précis et inventé qui rend la scène réelle, une fausse piste "
             "puis une chute inattendue, de l'exagération qui monte d'un cran à chaque phrase, un rappel d'une "
-            "vanne précédente à la fin. Sois intelligent, précis, jamais générique, et surtout MÉCHANT : chaque "
+            "vanne précédente à la fin. NIVEAU MAXIMUM : le roast doit être tellement violent que toute la "
+            "salle crie « ooooh » et que lui ne sait plus où se mettre. Sois intelligent, précis, jamais "
+            "générique, et surtout MÉCHANT : chaque "
             "vanne doit faire mal, toucher là où ça pique, humilier pour de vrai. Une vanne gentille, mignonne ou "
             "qui le ménage = vanne ratée, jette-la. Trash, vulgaire et sale assumé : gros mots, humour cru, "
             "situations dégradantes, tout est permis hors des limites ci-dessous. "
@@ -601,7 +603,7 @@ class AIExtraCog(commands.Cog):
         derniers = await _recent_messages(interaction.channel, membre)
         if derniers:
             prompt += " Ses vrais messages récents : " + " | ".join(f"« {m} »" for m in derniers)
-        data = await _call_ai_json(system, prompt, max_tokens=900, safety_settings=_ROAST_SAFETY)
+        data = await _call_ai_json(system, prompt, max_tokens=900, safety_settings=_ROAST_SAFETY, prefer="gemini")
         texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
             await interaction.followup.send(embed=_err_embed())
