@@ -305,3 +305,39 @@ async def complete(
                 continue  # rate-limit / autre → clé suivante
 
     raise AIUnavailable("aucun modèle IA n'a répondu", last)
+
+
+# ── Grok (xAI) : utilisé par /clash, moins filtré que Gemini ─────────
+# XAI_API_KEY direct, sinon AI_GATEWAY_API_KEY (Vercel AI Gateway). Les deux
+# demandent des crédits payants. Modèle forçable via AI_MODEL_GROK.
+
+def has_grok() -> bool:
+    return bool(os.environ.get("XAI_API_KEY") or os.environ.get("AI_GATEWAY_API_KEY"))
+
+
+async def complete_grok(messages: list[dict], *, max_tokens: int = 1024, json: bool = False,
+                        timeout: float = 25) -> str:
+    name = os.environ.get("AI_MODEL_GROK", "grok-4.20-non-reasoning")
+    if os.environ.get("XAI_API_KEY"):
+        route = {"model": f"xai/{name}", "api_key": os.environ["XAI_API_KEY"]}
+    elif os.environ.get("AI_GATEWAY_API_KEY"):
+        route = {"model": f"openai/xai/{name}", "api_key": os.environ["AI_GATEWAY_API_KEY"],
+                 "api_base": "https://ai-gateway.vercel.sh/v1"}
+    else:
+        raise AIUnavailable("no_grok_key")
+    extra = {"response_format": {"type": "json_object"}} if json else {}
+    try:
+        resp = await asyncio.wait_for(
+            litellm.acompletion(messages=messages, max_tokens=max_tokens, temperature=1.0,
+                                num_retries=0, request_timeout=timeout, **route, **extra),
+            timeout=timeout + 2,
+        )
+    except Exception as e:
+        last_error.set(f"{name} : {re.sub(r'\s+', ' ', f'{type(e).__name__}: {e}')[:220]}")
+        print(f"[IA] Grok échec : {last_error.get()}")
+        raise
+    text = (resp.choices[0].message.content or "").strip()
+    if not text:
+        raise RuntimeError("réponse vide de Grok")
+    last_model.set(name)
+    return text

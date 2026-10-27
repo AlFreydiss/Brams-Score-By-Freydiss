@@ -632,7 +632,19 @@ class AIExtraCog(commands.Cog):
         derniers = await _recent_messages(interaction.channel, membre)
         if derniers:
             prompt += " Ses vrais messages récents : " + " | ".join(f"« {m} »" for m in derniers)
-        data = await _call_ai_json(system, prompt, max_tokens=600, safety_settings=_ROAST_SAFETY, only="gemini")
+        data = None
+        if ai.has_grok():
+            try:
+                raw = await ai.complete_grok(
+                    [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+                    max_tokens=900, json=True,
+                )
+                m = re.search(r"\{[\s\S]*\}", raw)
+                data = json.loads(m.group(0)) if m else None
+            except Exception:
+                data = None
+        if not data:
+            data = await _call_ai_json(system, prompt, max_tokens=600, safety_settings=_ROAST_SAFETY, only="gemini")
         texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
             msg = "Gemini est saturé ou a bloqué le roast, réessaie dans une minute ⏳"
