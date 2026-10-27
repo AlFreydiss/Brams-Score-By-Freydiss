@@ -4,21 +4,21 @@ from discord import app_commands
 from discord.ext import commands
 
 # /manege : fait défiler un membre dans tous les salons vocaux (AFK et
-# conférences compris), de haut en bas, en boucle, jusqu'à /manege_stop. Réservé à qui a « Déplacer des membres » et à OWNER_IDS.
+# conférences compris), de haut en bas, en boucle, jusqu'à /manege_stop. Réservé à OWNER_IDS.
 # Aucune pause entre deux déplacements : discord.py attend tout seul quand
 # Discord renvoie un 429, c'est donc Discord qui fixe la cadence maximale.
 # Pas de durée max : arrêt seulement via /manege_stop ou si le membre quitte
 # le vocal, retour dans son salon d'origine à la fin.
 
-# Freydiss : autorisé partout, même sans la permission sur le serveur.
+# Seul Freydiss peut lancer ou arrêter le manège.
 OWNER_IDS = {1094070545248694342}
+
+# /antimove : qui peut se protéger des déplacements.
+ANTIMOVE_IDS = OWNER_IDS | {847832035909435413}
 
 
 def _allowed(interaction: discord.Interaction) -> bool:
     if interaction.user.id in OWNER_IDS:
-        return True
-    perms = getattr(interaction.user, "guild_permissions", None)
-    if perms and perms.move_members:
         return True
     raise app_commands.MissingPermissions(["move_members"])
 
@@ -133,8 +133,8 @@ class ManegeCog(commands.Cog):
     @app_commands.command(name="antimove", description="🛡️ Active/désactive : si quelqu'un te déplace en vocal, le bot te remet dans ton salon")
     @app_commands.guild_only()
     async def antimove(self, interaction: discord.Interaction):
-        if interaction.user.id not in OWNER_IDS:
-            return await interaction.response.send_message("Commande réservée à Freydiss.", ephemeral=True)
+        if interaction.user.id not in ANTIMOVE_IDS:
+            return await interaction.response.send_message("Commande réservée.", ephemeral=True)
         key = (interaction.guild_id, interaction.user.id)
         if key in self._shield:
             self._shield.discard(key)
@@ -152,7 +152,7 @@ class ManegeCog(commands.Cog):
     @manege_stop.error
     async def _perm_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.MissingPermissions):
-            await interaction.response.send_message("Il faut la permission « Déplacer des membres ».", ephemeral=True)
+            await interaction.response.send_message("Commande réservée à Freydiss.", ephemeral=True)
         else:
             raise error
 
