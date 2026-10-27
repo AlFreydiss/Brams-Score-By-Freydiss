@@ -7,6 +7,7 @@ exposé par bot.py (ai_member_stats / ai_server_snapshot / ai_overlap_partner).
 """
 
 import asyncio
+import collections
 import json
 import os
 import random
@@ -261,6 +262,34 @@ _ROAST_FORMATS = [
     "un stand-up classique : trois vannes qui montent en puissance",
 ]
 
+_ROAST_FORMATS += [
+    "le message vocal WhatsApp d'un pote du quartier qui raconte sa dernière honte",
+    "la plaidoirie de l'avocat qui défend l'indéfendable devant le juge",
+    "le récap d'un commentateur de foot qui décrit sa vie comme un match perdu 7-0",
+    "une fausse pub de télé-achat pour un produit dérivé à son effigie que personne n'achète",
+    "la lettre de rupture que sa console lui a écrite",
+    "le casting d'une téléréalité où il se fait éliminer au premier épisode",
+]
+
+# Argot de cité : 5 mots tirés à chaque roast pour que ce soient pas toujours les mêmes.
+_CITE_WORDS = [
+    "wesh", "frérot", "gros", "sah", "wallah", "zarma", "téma", "ouf", "relou", "chelou", "vénère",
+    "le seum", "j'te jure", "nan mais attends", "c'est mort", "il est cramé", "la miskine", "bouffon",
+    "t'es grillé", "ça m'a tué", "askip", "le boloss", "jsuis choqué", "trop guez", "t'as zéro flow",
+    "la hagra", "c'est chaud", "starfoullah", "crari", "le sang", "khey", "la gênance",
+]
+
+# Formes et angles récemment utilisés, évités au tirage suivant.
+_RECENT_FORMATS: collections.deque = collections.deque(maxlen=6)
+_RECENT_ANGLES: collections.deque = collections.deque(maxlen=8)
+
+
+def _pick_fresh(pool: list[str], recent: collections.deque, k: int) -> list[str]:
+    fresh = [x for x in pool if x not in recent] or pool
+    picked = random.sample(fresh, min(k, len(fresh)))
+    recent.extend(picked)
+    return picked
+
 # /clash : vraies anecdotes sur des membres, à exploiter en priorité (clé = ID Discord).
 _ROAST_LORE = {
     847832035909435413: [
@@ -507,23 +536,24 @@ class AIExtraCog(commands.Cog):
             return
         await interaction.response.defer()
         lore = _ROAST_LORE.get(membre.id, [])
-        angles = random.sample(_ROAST_ANGLES, 1 if lore else 2)
-        forme = random.choice(_ROAST_FORMATS)
+        angles = _pick_fresh(_ROAST_ANGLES, _RECENT_ANGLES, 1 if lore else 2)
+        forme = _pick_fresh(_ROAST_FORMATS, _RECENT_FORMATS, 1)[0]
+        mots = random.sample(_CITE_WORDS, 5)
         system = (
             "Tu es le meilleur roasteur de France, entre potes très proches qui ont TOUS demandé à se faire "
             "détruire. Le but : que tout le monde pleure de rire en se foutant de sa gueule. Écris 70-110 mots. "
-            "Tu parles comme un mec de cité qui clash son pote devant tout le bloc : argot, verlan et tics de "
-            "langage naturels (wesh, frérot, gros, sah, wallah, zarma, téma, ouf, relou, chelou, vénère, le seum, "
-            "t'es en PLS, la hchouma, j'te jure, nan mais attends, c'est mort, il est cramé), phrases orales, "
-            "apostrophes directes, rires écrits (mdrr, ptdr) une fois max. Garde la forme imposée mais racontée "
-            "avec cette voix. Pas de mots savants, pas de phrases littéraires. "
+            "Tu parles comme un mec de cité qui clash son pote devant tout le bloc : phrases orales, apostrophes "
+            f"directes. Pour l'argot, pioche UNIQUEMENT dans ces mots-là : {', '.join(mots)} (3 ou 4, chacun une "
+            "seule fois). Pas de « hchouma », pas de « PLS », pas de « mdr » ni « ptdr ». Garde la forme imposée "
+            "mais racontée avec cette voix. Pas de mots savants, pas de phrases littéraires. "
             "L'humour d'abord, l'insulte ensuite : une vanne marche par la SURPRISE, pas par le gros mot. "
             "Techniques obligatoires : un détail précis et inventé qui rend la scène réelle, une fausse piste "
             "puis une chute inattendue, de l'exagération qui monte d'un cran à chaque phrase, un rappel d'une "
             "vanne précédente à la fin. Sois intelligent, cruel et précis, jamais générique. Gros mots et trash "
             "autorisés quand ils servent la chute (2 ou 3 maximum). "
             "INTERDIT : les insultes en liste, répéter la même idée, les clichés (canapé, pizza, odeur, "
-            "chômeur, clochard, déchet, no-life, « pue la défaite »), parler du serveur Discord, du vocal, "
+            "chômeur, clochard, déchet, no-life, « pue la défaite », survêtement, Décathlon, Quechua, "
+            "claquettes-chaussettes, « aura de victime », pigeon, chèvres), parler du serveur Discord, du vocal, "
             "des messages, des berrys ou du rang. "
             f"Forme imposée : {forme}. "
             + (f"VRAIES anecdotes sur lui, à exploiter à fond, c'est la cible principale : {' ; '.join(lore)}. " if lore else "")
