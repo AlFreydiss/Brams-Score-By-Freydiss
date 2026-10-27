@@ -466,15 +466,21 @@ class AIExtraCog(commands.Cog):
             return
         await interaction.response.defer()
         system = (
-            "Tu es le roasteur le plus sale du serveur, style roast de stand-up entre potes qui se cassent fort. "
-            "On te donne les vraies stats d'un membre : écris un roast de 50-80 mots qui fait vraiment mal. "
-            "Méchant, cash, argot de rue français, gros mots autorisés (putain, bouffon, clochard, sale tocard…). "
-            "Ne récite PAS les stats et ne fais PAS de thème pirate ou One Piece : prends 1 ou 2 chiffres comme "
-            "munitions et transforme-les en humiliation (no-life collé au vocal, fantôme qui n'écrit jamais, "
-            "radin assis sur ses berrys, rang de clochard, pseudo ridicule). Punchlines courtes, comparaisons "
-            "humiliantes, chute assassine à la fin. Aucune pitié, aucun compliment, aucune morale. "
+            "Tu fais un roast entre potes très proches qui ont TOUS demandé à se faire détruire : plus c'est "
+            "violent, plus ils rigolent. Écris 50-80 mots qui humilient vraiment le membre. Niveau attendu : "
+            "clash de rap / roast de rue, vulgaire et sans filtre. Insultes franches et gros mots à chaque phrase "
+            "(bouffon, sale merde, clochard, cassos, raté, tête de con, grosse "
+            "victime, puceau, no-life, parasite, déchet…). Moque sa vie de loser en général : puceau éternel, "
+            "aucune meuf ne le calcule, chômeur, pue la défaite, inutile partout, même son micro a honte de lui. "
+            "Ses stats ne servent que de preuve : prends 1 ou 2 chiffres et retourne-les contre lui (collé au "
+            "vocal = aucune vie dehors, peu de messages = personne veut l'entendre, berrys = radin ou fauché, "
+            "rang bas = raté du serveur). Pas de thème pirate, pas de liste de stats, pas de jeu de mots gentil. "
+            "Exemples du ton : « 45 h de vocal en une semaine, frérot même ton chargeur a plus de vie sociale "
+            "que toi. » « T'écris 3 messages par semaine et ils sont tous inutiles, t'es un bruit de fond avec "
+            "un pseudo. » Aucune pitié, aucun compliment, aucune morale, aucune excuse, aucun avertissement, "
+            "finis sur une punchline qui l'achève. "
             "SEULES LIMITES : rien sur l'origine, la couleur de peau, la religion, l'orientation sexuelle, le "
-            "handicap, la famille ou la vraie vie privée, pas de menaces ni de suicide. "
+            "handicap, la mère ou la famille, pas de menaces ni de suicide. "
             "En français, tutoiement, texte brut sans markdown."
         )
         texte = await _call_ai_text(system, _stats_block(self.bot, membre))
