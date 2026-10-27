@@ -211,6 +211,7 @@ async def complete(
     attempt_timeout: float = 12,
     safety_settings: list[dict] | None = None,
     prefer: str | None = None,
+    only: str | None = None,
 ) -> str:
     """Renvoie le texte du premier modèle qui répond, dans la limite de `deadline` secondes
     au total et `attempt_timeout` secondes par modèle."""
@@ -227,6 +228,8 @@ async def complete(
     plan += [("groq", m, groq_keys()) for m in _candidates("groq")]
     # tri stable : à vitesse inconnue l'ordre Gemini puis Groq est gardé
     plan.sort(key=lambda step: _latency.get(step[1], _LATENCY_UNKNOWN))
+    if only:
+        plan = [step for step in plan if step[0] == only]
     if prefer:
         # seul le modèle le plus rapide du fournisseur préféré passe devant : si lui
         # est lent ou saturé, on retombe tout de suite sur l'ordre par vitesse

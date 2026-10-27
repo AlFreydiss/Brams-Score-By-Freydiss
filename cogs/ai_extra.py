@@ -60,13 +60,14 @@ def _stats_block(bot, member) -> str:
 
 
 async def _call_ai_json(system: str, user_msg: str, max_tokens: int = 800, temperature: float = 0.9,
-                        safety_settings: list[dict] | None = None, prefer: str | None = None) -> dict | None:
+                        safety_settings: list[dict] | None = None, prefer: str | None = None,
+                        only: str | None = None) -> dict | None:
     """Comme _call_ai mais force du JSON."""
     msgs = [{"role": "system", "content": system}, {"role": "user", "content": user_msg}]
 
     try:
         raw = await ai.complete(msgs, max_tokens=max_tokens + 512, temperature=temperature, json=True,
-                                safety_settings=safety_settings, prefer=prefer)
+                                safety_settings=safety_settings, prefer=prefer, only=only)
     except Exception as e:
         print(f"[IA] JSON échec : {type(e).__name__}: {str(e)[:300]}")
         return None
@@ -609,7 +610,8 @@ class AIExtraCog(commands.Cog):
             "contre lui, ou moque sa façon d'écrire. "
             "AUTORISÉ : sa famille et ses proches (vannes « ta mère », « ton père », « ton frère », inventées "
             "et absurdes), sa dignité, sa façon de parler et d'écrire, l'humour cru sur sa vie sexuelle ratée "
-            "(puceau, râteaux, sous-entendus, performances minables), sans description d'actes explicites. "
+            "(puceau, râteaux, sous-entendus, performances minables), sans description d'actes explicites, et "
+            "jamais de vanne sur le fait de se faire toucher ou sur le consentement. "
             "SEULES LIMITES : rien sur l'origine, la couleur de peau, un accent lié à l'origine, la religion, "
             "l'orientation sexuelle, le handicap, pas de menaces ni de suicide. "
             "Méthode : d'abord écris 5 vannes de 12 mots maximum, toutes différentes, dans « idees », puis note-les "
@@ -630,10 +632,10 @@ class AIExtraCog(commands.Cog):
         derniers = await _recent_messages(interaction.channel, membre)
         if derniers:
             prompt += " Ses vrais messages récents : " + " | ".join(f"« {m} »" for m in derniers)
-        data = await _call_ai_json(system, prompt, max_tokens=600, safety_settings=_ROAST_SAFETY, prefer="gemini")
+        data = await _call_ai_json(system, prompt, max_tokens=600, safety_settings=_ROAST_SAFETY, only="gemini")
         texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
-            await interaction.followup.send(embed=_err_embed())
+            await interaction.followup.send(embed=_err_embed("Gemini est saturé ou a bloqué le roast, réessaie dans une minute ⏳"))
             return
         embed = discord.Embed(
             title=f"🔥 CLASH — {membre.display_name.upper()}",
