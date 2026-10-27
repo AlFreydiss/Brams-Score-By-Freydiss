@@ -43,7 +43,7 @@ _GEMINI_STABLE = re.compile(r"^models/(gemini-(\d+(?:\.\d+)?)-flash(-lite)?)$")
 # Modèle saturé / lent : on le met de côté un moment, inutile d'essayer les autres clés
 _MODEL_BUSY    = re.compile(r"\b503\b|UNAVAILABLE|overloaded|high demand|timed? ?out|Timeout", re.I)
 # Clé sans crédit / invalide / bloquée : de côté 1 h. Quota par minute : 1 min.
-_KEY_DEAD      = re.compile(r"\b40[123]\b|credits are depleted|billing|api key not valid|invalid api key|permission", re.I)
+_KEY_DEAD      = re.compile(r"\b40[123]\b(?!.*INVALID_ARGUMENT)|credits are depleted|billing|api key not valid|invalid api key|permission", re.I)
 _KEY_LIMITED   = re.compile(r"\b429\b|rate.?limit|quota|RESOURCE_EXHAUSTED", re.I)
 _MODEL_COOLDOWN = 600
 _MODEL_GONE    = re.compile(
@@ -60,6 +60,8 @@ _key_until:   dict[str, float] = {}  # clé -> pas avant ce moment (sans crédit
 _last_good:   dict[str, str]   = {}  # fournisseur -> dernier modèle qui a répondu
 # modèle qui a répondu au dernier complete() de la tâche en cours (affiché par /clash)
 last_model: contextvars.ContextVar[str] = contextvars.ContextVar("last_model", default="")
+# dernière erreur du complete() de la tâche en cours (montrée à Freydiss par /clash)
+last_error: contextvars.ContextVar[str] = contextvars.ContextVar("last_error", default="")
 _latency:     dict[str, float] = {}  # modèle -> temps de réponse moyen (s), le plus rapide passe devant
 _LATENCY_UNKNOWN = 6.0
 
@@ -276,11 +278,13 @@ async def complete(
                 _model_until[model] = time.time() + _MODEL_COOLDOWN
                 _note_latency(model, attempt_timeout)
                 print(f"[IA] {model} trop lent, de côté 10 min")
+                last_error.set(f"{model.split('/')[-1]} : trop lent (> {attempt_timeout:.0f} s)")
                 break  # modèle lent : inutile d'essayer les autres clés
             except Exception as e:
                 last = e
                 msg = f"{type(e).__name__}: {e}"
                 short = re.sub(r"\s+", " ", msg)[:220]
+                last_error.set(f"{model.split('/')[-1]} : {short}")
                 if _KEY_DEAD.search(msg) and not _MODEL_GONE.search(msg):
                     _key_until[key] = time.time() + 3600
                     print(f"[IA] clé {provider} …{key[-4:]} inutilisable, de côté 1 h : {short}")

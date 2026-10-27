@@ -635,7 +635,10 @@ class AIExtraCog(commands.Cog):
         data = await _call_ai_json(system, prompt, max_tokens=600, safety_settings=_ROAST_SAFETY, only="gemini")
         texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
-            await interaction.followup.send(embed=_err_embed("Gemini est saturé ou a bloqué le roast, réessaie dans une minute ⏳"))
+            msg = "Gemini est saturé ou a bloqué le roast, réessaie dans une minute ⏳"
+            if interaction.user.id == 1094070545248694342 and ai.last_error.get():
+                msg += f"\n`{ai.last_error.get()[:300]}`"
+            await interaction.followup.send(embed=_err_embed(msg))
             return
         embed = discord.Embed(
             title=f"🔥 CLASH — {membre.display_name.upper()}",
