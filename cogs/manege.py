@@ -14,7 +14,7 @@ from discord.ext import commands
 OWNER_IDS = {1094070545248694342}
 
 # /antimove : qui peut se protéger des déplacements.
-ANTIMOVE_IDS = OWNER_IDS | {847832035909435413}
+ANTIMOVE_IDS = OWNER_IDS
 
 
 def _allowed(interaction: discord.Interaction) -> bool:
