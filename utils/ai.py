@@ -333,7 +333,8 @@ async def complete_grok(messages: list[dict], *, max_tokens: int = 1024, json: b
             timeout=timeout + 2,
         )
     except Exception as e:
-        last_error.set(f"{name} : {re.sub(r'\s+', ' ', f'{type(e).__name__}: {e}')[:220]}")
+        detail = re.sub(r"\s+", " ", f"{type(e).__name__}: {e}")[:220]
+        last_error.set(f"{name} : {detail}")
         print(f"[IA] Grok échec : {last_error.get()}")
         raise
     text = (resp.choices[0].message.content or "").strip()

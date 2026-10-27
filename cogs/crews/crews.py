@@ -1115,11 +1115,12 @@ class CrewCog(CrewTasks, commands.Cog):
             )
             war_upd = await db.get_war(war['id'])
             enemy_crew = await db.get_crew(enemy_crew_id)
+            enemy_name = enemy_crew['name'] if enemy_crew else "l'ennemi"
             embed = discord.Embed(
                 title="💣 Sabotage réussi !",
                 description=(
                     f"<@{interaction.user.id}> a dépensé **{fmt_berries(SABOTAGE_COST)} 🍊** pour saboter "
-                    f"**{enemy_crew['name'] if enemy_crew else 'l\'ennemi'}** !\n\n"
+                    f"**{enemy_name}** !\n\n"
                     f"💥 **-{SABOTAGE_POINTS_STOLEN} points** retirés de leur score.\n"
                     f"⏰ Prochain sabotage disponible dans **24h**."
                 ),
