@@ -28,6 +28,45 @@ class ManegeCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._runs: dict[tuple[int, int], asyncio.Task] = {}
+        # /antimove : (guild_id, member_id) protégés + compteurs déjà vus des
+        # entrées « membre déplacé » du journal d'audit (Discord les regroupe).
+        self._shield: set[tuple[int, int]] = set()
+        self._seen_moves: dict[int, int] = {}
+
+    async def _move_entries(self, guild: discord.Guild) -> list[discord.AuditLogEntry]:
+        if not guild.me.guild_permissions.view_audit_log:
+            return []
+        try:
+            return [e async for e in guild.audit_logs(limit=10, action=discord.AuditLogAction.member_move)]
+        except discord.HTTPException:
+            return []
+
+    async def _forced_move(self, member: discord.Member, channel: discord.abc.GuildChannel) -> bool:
+        # Un changement de salon fait par le membre lui-même ne laisse rien dans
+        # le journal d'audit ; un déplacement par quelqu'un d'autre, si.
+        await asyncio.sleep(0.4)  # l'entrée d'audit arrive juste après l'événement vocal
+        now = discord.utils.utcnow()
+        forced = False
+        for e in await self._move_entries(member.guild):
+            count = getattr(e.extra, "count", 1) or 1
+            new = count > self._seen_moves[e.id] if e.id in self._seen_moves else (now - e.created_at).total_seconds() < 15
+            self._seen_moves[e.id] = count
+            target = getattr(e.extra, "channel", None)
+            if new and target and target.id == channel.id and e.user and e.user.id not in (member.id, self.bot.user.id):
+                forced = True
+        return forced
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        if (member.guild.id, member.id) not in self._shield:
+            return
+        if not before.channel or not after.channel or before.channel == after.channel:
+            return
+        if await self._forced_move(member, after.channel):
+            try:
+                await member.move_to(before.channel, reason="/antimove")
+            except discord.HTTPException:
+                pass
 
     def _route(self, member: discord.Member) -> list[discord.abc.GuildChannel]:
         guild = member.guild
@@ -90,6 +129,24 @@ class ManegeCog(commands.Cog):
         if not keys:
             return await interaction.response.send_message("Personne sur le manège.", ephemeral=True)
         await interaction.response.send_message(f"🛑 Manège arrêté ({len(keys)}). Retour au salon de départ.")
+
+    @app_commands.command(name="antimove", description="🛡️ Active/désactive : si quelqu'un te déplace en vocal, le bot te remet dans ton salon")
+    @app_commands.guild_only()
+    async def antimove(self, interaction: discord.Interaction):
+        if interaction.user.id not in OWNER_IDS:
+            return await interaction.response.send_message("Commande réservée à Freydiss.", ephemeral=True)
+        key = (interaction.guild_id, interaction.user.id)
+        if key in self._shield:
+            self._shield.discard(key)
+            return await interaction.response.send_message("🛡️ Anti-move désactivé.", ephemeral=True)
+        self._shield.add(key)
+        # Marque l'historique actuel comme déjà vu pour ne pas réagir à d'anciens déplacements.
+        for e in await self._move_entries(interaction.guild):
+            self._seen_moves[e.id] = getattr(e.extra, "count", 1) or 1
+        msg = "🛡️ Anti-move activé : si quelqu'un te déplace, je te remets dans ton salon."
+        if not interaction.guild.me.guild_permissions.view_audit_log:
+            msg += "\n⚠️ Il me manque la permission « Voir les logs du serveur » : sans elle je ne peux pas voir qui te déplace."
+        await interaction.response.send_message(msg, ephemeral=True)
 
     @manege.error
     @manege_stop.error
