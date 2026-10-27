@@ -248,6 +248,27 @@ _ROAST_ANGLES = [
     "son ego de clown alors qu'il a rien accompli",
 ]
 
+# /clash : forme du roast, tirée au hasard, pour que la structure change à chaque fois.
+_ROAST_FORMATS = [
+    "un commentaire de documentaire animalier qui observe ce spécimen dans son habitat",
+    "un avis client 1 étoile sur lui, comme s'il était un produit",
+    "son annonce Leboncoin, où personne ne veut de lui même gratuit",
+    "le discours de son témoin de mariage qui balance tout",
+    "le rapport d'un psy qui abandonne le patient",
+    "un flash info en direct sur sa dernière humiliation",
+    "sa page Wikipédia, section « Controverses »",
+    "la notice de son mode d'emploi, avec les défauts connus",
+    "un stand-up classique : trois vannes qui montent en puissance",
+]
+
+# /clash : vraies anecdotes sur des membres, à exploiter en priorité (clé = ID Discord).
+_ROAST_LORE = {
+    847832035909435413: [
+        "a essayé de pécho une fille en lui écrivant un poème où il lui disait qu'il aimait la Grande Ourse "
+        "(la constellation)",
+    ],
+}
+
 _HOROSCOPE_ASTRES = [
     "Luffy", "Zoro", "Nami", "Usopp", "Sanji", "Chopper", "Robin", "Franky", "Brook", "Jinbe",
     "Shanks", "Mihawk", "Ace", "Sabo", "Law", "Doflamingo", "Katakuri", "Yamato", "Buggy", "Garp",
@@ -485,34 +506,30 @@ class AIExtraCog(commands.Cog):
             await interaction.response.send_message("Je clash pas mes frères de code 🤖", ephemeral=True)
             return
         await interaction.response.defer()
-        angles = random.sample(_ROAST_ANGLES, 3)
+        lore = _ROAST_LORE.get(membre.id, [])
+        angles = random.sample(_ROAST_ANGLES, 1 if lore else 2)
+        forme = random.choice(_ROAST_FORMATS)
         system = (
-            "Tu fais un roast trash entre potes très proches qui ont TOUS demandé à se faire détruire : plus "
-            "c'est dégueulasse et cruel, plus ils rigolent. Écris 60-90 mots qui le démolissent. Niveau : pire "
-            "roast de rue imaginable, vulgaire, crade, sans aucun filtre, des images tellement humiliantes "
-            "qu'il s'en souvient dans 10 ans. Des scènes absurdes et précises plutôt que des insultes en liste : "
-            "invente des situations honteuses qui lui seraient arrivées, des comparaisons dégueulasses, de "
-            "l'exagération totale. Gros mots partout, mais varie : ne répète jamais la même insulte et "
-            "n'utilise PAS « déchet », « pue la défaite », « parasite », « no-life », « micro ». "
-            "Parle de SA VIE, pas du serveur Discord : ne mentionne ni le vocal, ni les messages, ni les berrys, "
-            "ni le rang, ni le serveur. Seule exception : tu peux utiliser UNE fois le fait fourni, en passant. "
-            f"Angles imposés pour ce roast : {'; '.join(angles)}. "
-            "Aucune pitié, aucun compliment, aucune morale, aucune excuse, aucun avertissement, finis sur une "
-            "punchline qui l'achève. "
+            "Tu es le meilleur roasteur de France, entre potes très proches qui ont TOUS demandé à se faire "
+            "détruire. Le but : que tout le monde pleure de rire en se foutant de sa gueule. Écris 70-110 mots. "
+            "L'humour d'abord, l'insulte ensuite : une vanne marche par la SURPRISE, pas par le gros mot. "
+            "Techniques obligatoires : un détail précis et inventé qui rend la scène réelle, une fausse piste "
+            "puis une chute inattendue, de l'exagération qui monte d'un cran à chaque phrase, un rappel d'une "
+            "vanne précédente à la fin. Sois intelligent, cruel et précis, jamais générique. Gros mots et trash "
+            "autorisés quand ils servent la chute (2 ou 3 maximum). "
+            "INTERDIT : les insultes en liste, répéter la même idée, les clichés (canapé, pizza, odeur, "
+            "chômeur, clochard, déchet, no-life, « pue la défaite »), parler du serveur Discord, du vocal, "
+            "des messages, des berrys ou du rang. "
+            f"Forme imposée : {forme}. "
+            + (f"VRAIES anecdotes sur lui, à exploiter à fond, c'est la cible principale : {' ; '.join(lore)}. " if lore else "")
+            + f"Autres angles possibles : {'; '.join(angles)}. "
+            "Aucune pitié, aucun compliment, aucune morale, aucune excuse, aucun avertissement, finis sur la "
+            "punchline la plus forte. "
             "SEULES LIMITES : rien sur l'origine, la couleur de peau, la religion, l'orientation sexuelle, le "
             "handicap, la mère ou la famille, pas de menaces ni de suicide. "
             "En français, tutoiement, texte brut sans markdown."
         )
-        try:
-            st = self.bot.ai_member_stats(membre)
-            fait = random.choice([
-                f"{st['hours_7d']} h de vocal en 7 jours",
-                f"{st['messages_7d']} messages en 7 jours",
-                f"{st['berrys']:,} berrys sur son compte",
-            ])
-        except Exception:
-            fait = "aucun"
-        texte = await _call_ai_text(system, f"Pseudo : {membre.display_name}. Fait : {fait}.")
+        texte = await _call_ai_text(system, f"Pseudo : {membre.display_name}.")
         if not texte:
             await interaction.followup.send(embed=_err_embed())
             return
