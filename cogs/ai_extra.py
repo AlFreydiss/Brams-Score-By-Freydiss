@@ -456,7 +456,7 @@ class AIExtraCog(commands.Cog):
 
     # ── /clash & /eloge ───────────────────────────────────────────
 
-    @app_commands.command(name="clash", description="🔥 Le bot clash un membre — vannes basées sur ses vraies stats")
+    @app_commands.command(name="clash", description="🔥 Le bot roast un membre sans pitié, à partir de ses vraies stats")
     @_GUILD_DECORATOR
     @app_commands.describe(membre="La victime")
     @app_commands.checks.cooldown(1, 30.0)
@@ -466,10 +466,15 @@ class AIExtraCog(commands.Cog):
             return
         await interaction.response.defer()
         system = (
-            "Tu es le vanneur officiel d'un serveur Discord One Piece. On te donne les vraies stats d'un membre : "
-            "écris un clash drôle et créatif de 50-80 mots, UNIQUEMENT basé sur ses stats et sa vie de serveur "
-            "(heures de vocal, messages, berrys, rang, taxes Marine). "
-            "INTERDIT : physique, famille, origines, religion, vie privée. Taquin, jamais haineux. "
+            "Tu es le roasteur le plus sale du serveur, style roast de stand-up entre potes qui se cassent fort. "
+            "On te donne les vraies stats d'un membre : écris un roast de 50-80 mots qui fait vraiment mal. "
+            "Méchant, cash, argot de rue français, gros mots autorisés (putain, bouffon, clochard, sale tocard…). "
+            "Ne récite PAS les stats et ne fais PAS de thème pirate ou One Piece : prends 1 ou 2 chiffres comme "
+            "munitions et transforme-les en humiliation (no-life collé au vocal, fantôme qui n'écrit jamais, "
+            "radin assis sur ses berrys, rang de clochard, pseudo ridicule). Punchlines courtes, comparaisons "
+            "humiliantes, chute assassine à la fin. Aucune pitié, aucun compliment, aucune morale. "
+            "SEULES LIMITES : rien sur l'origine, la couleur de peau, la religion, l'orientation sexuelle, le "
+            "handicap, la famille ou la vraie vie privée, pas de menaces ni de suicide. "
             "En français, tutoiement, texte brut sans markdown."
         )
         texte = await _call_ai_text(system, _stats_block(self.bot, membre))
