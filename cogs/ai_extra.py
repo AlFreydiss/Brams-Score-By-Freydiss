@@ -290,6 +290,21 @@ def _pick_fresh(pool: list[str], recent: collections.deque, k: int) -> list[str]
     recent.extend(picked)
     return picked
 
+async def _recent_messages(channel, member, limit: int = 10) -> list[str]:
+    """Derniers messages texte du membre dans ce salon : matière première pour /clash."""
+    out: list[str] = []
+    try:
+        async with asyncio.timeout(4):
+            async for msg in channel.history(limit=300):
+                text = (msg.content or "").strip()
+                if msg.author.id == member.id and 3 <= len(text) <= 160 and not text.startswith(("/", "!", "http")):
+                    out.append(text.replace("\n", " "))
+                    if len(out) >= limit:
+                        break
+    except Exception:
+        pass
+    return out
+
 # /clash : vraies anecdotes sur des membres, à exploiter en priorité (clé = ID Discord).
 _ROAST_LORE = {
     847832035909435413: [
@@ -554,17 +569,28 @@ class AIExtraCog(commands.Cog):
             "INTERDIT : les insultes en liste, répéter la même idée, les clichés (canapé, pizza, odeur, "
             "chômeur, clochard, déchet, no-life, « pue la défaite », survêtement, Décathlon, Quechua, "
             "claquettes-chaussettes, « aura de victime », pigeon, chèvres), parler du serveur Discord, du vocal, "
-            "des messages, des berrys ou du rang. "
+            "du nombre de messages, des berrys ou du rang. "
             f"Forme imposée : {forme}. "
             + (f"VRAIES anecdotes sur lui, à exploiter à fond, c'est la cible principale : {' ; '.join(lore)}. " if lore else "")
             + f"Autres angles possibles : {'; '.join(angles)}. "
             "Aucune pitié, aucun compliment, aucune morale, aucune excuse, aucun avertissement, finis sur la "
             "punchline la plus forte. "
+            "Si on te donne ses vrais messages récents, c'est de l'or : cite-en un mot pour mot et retourne-le "
+            "contre lui, ou moque sa façon d'écrire. "
             "SEULES LIMITES : rien sur l'origine, la couleur de peau, la religion, l'orientation sexuelle, le "
             "handicap, la mère ou la famille, pas de menaces ni de suicide. "
-            "En français, tutoiement, texte brut sans markdown."
+            "Méthode : d'abord écris 8 vannes courtes et toutes différentes dans « idees », puis note-les "
+            "froidement et construis « roast » avec SEULEMENT les 3 ou 4 plus drôles, enchaînées du plus faible "
+            "au plus fort, avec un rappel à la fin. "
+            "En français, tutoiement, texte brut sans markdown. "
+            'Réponds UNIQUEMENT en JSON : {"idees": ["…", "…"], "roast": "le roast final de 70-110 mots"}'
         )
-        texte = await _call_ai_text(system, f"Pseudo : {membre.display_name}.")
+        prompt = f"Pseudo : {membre.display_name}."
+        derniers = await _recent_messages(interaction.channel, membre)
+        if derniers:
+            prompt += " Ses vrais messages récents : " + " | ".join(f"« {m} »" for m in derniers)
+        data = await _call_ai_json(system, prompt, max_tokens=900)
+        texte = _strip_markdown(str(data.get("roast") or "")).strip() if data else ""
         if not texte:
             await interaction.followup.send(embed=_err_embed())
             return
