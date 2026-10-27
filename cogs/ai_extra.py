@@ -228,6 +228,26 @@ class _AdvView(discord.ui.View):
 # ═══════════════════════════════════════════════════════════════════
 
 _HOROSCOPE_CACHE: dict[str, discord.Embed] = {}
+# /clash : 3 angles tirés au hasard à chaque roast pour qu'ils ne se ressemblent pas.
+_ROAST_ANGLES = [
+    "son hygiène catastrophique (douche, odeur, chambre, draps)",
+    "sa vie amoureuse inexistante et ses râteaux les plus humiliants",
+    "son pseudo, à démolir mot par mot",
+    "sa photo de profil et ce qu'elle dit de lui",
+    "sa carrière ratée et le boulot de merde qui l'attend",
+    "son niveau pathétique dans tous les jeux vidéo",
+    "ses goûts de chiotte (musique, fringues, animes)",
+    "sa chambre de cassos et sa vie de fond de canapé",
+    "son intelligence de poulpe et ses pires moments de bêtise",
+    "son aura de perdant que même les pigeons évitent",
+    "son style de bouffon et ses fringues de clodo",
+    "ce que ses ex disent de lui en soirée",
+    "son avenir : vieux, seul et oublié",
+    "sa façon de rager comme un gamin de 9 ans",
+    "ce que ses potes pensent vraiment de lui quand il est pas là",
+    "son ego de clown alors qu'il a rien accompli",
+]
+
 _HOROSCOPE_ASTRES = [
     "Luffy", "Zoro", "Nami", "Usopp", "Sanji", "Chopper", "Robin", "Franky", "Brook", "Jinbe",
     "Shanks", "Mihawk", "Ace", "Sabo", "Law", "Doflamingo", "Katakuri", "Yamato", "Buggy", "Garp",
@@ -465,25 +485,34 @@ class AIExtraCog(commands.Cog):
             await interaction.response.send_message("Je clash pas mes frères de code 🤖", ephemeral=True)
             return
         await interaction.response.defer()
+        angles = random.sample(_ROAST_ANGLES, 3)
         system = (
-            "Tu fais un roast entre potes très proches qui ont TOUS demandé à se faire détruire : plus c'est "
-            "violent, plus ils rigolent. Écris 50-80 mots qui humilient vraiment le membre. Niveau attendu : "
-            "clash de rap / roast de rue, vulgaire et sans filtre. Insultes franches et gros mots à chaque phrase "
-            "(bouffon, sale merde, clochard, cassos, raté, tête de con, grosse "
-            "victime, puceau, no-life, parasite, déchet…). Moque sa vie de loser en général : puceau éternel, "
-            "aucune meuf ne le calcule, chômeur, pue la défaite, inutile partout, même son micro a honte de lui. "
-            "Ses stats ne servent que de preuve : prends 1 ou 2 chiffres et retourne-les contre lui (collé au "
-            "vocal = aucune vie dehors, peu de messages = personne veut l'entendre, berrys = radin ou fauché, "
-            "rang bas = raté du serveur). Pas de thème pirate, pas de liste de stats, pas de jeu de mots gentil. "
-            "Exemples du ton : « 45 h de vocal en une semaine, frérot même ton chargeur a plus de vie sociale "
-            "que toi. » « T'écris 3 messages par semaine et ils sont tous inutiles, t'es un bruit de fond avec "
-            "un pseudo. » Aucune pitié, aucun compliment, aucune morale, aucune excuse, aucun avertissement, "
-            "finis sur une punchline qui l'achève. "
+            "Tu fais un roast trash entre potes très proches qui ont TOUS demandé à se faire détruire : plus "
+            "c'est dégueulasse et cruel, plus ils rigolent. Écris 60-90 mots qui le démolissent. Niveau : pire "
+            "roast de rue imaginable, vulgaire, crade, sans aucun filtre, des images tellement humiliantes "
+            "qu'il s'en souvient dans 10 ans. Des scènes absurdes et précises plutôt que des insultes en liste : "
+            "invente des situations honteuses qui lui seraient arrivées, des comparaisons dégueulasses, de "
+            "l'exagération totale. Gros mots partout, mais varie : ne répète jamais la même insulte et "
+            "n'utilise PAS « déchet », « pue la défaite », « parasite », « no-life », « micro ». "
+            "Parle de SA VIE, pas du serveur Discord : ne mentionne ni le vocal, ni les messages, ni les berrys, "
+            "ni le rang, ni le serveur. Seule exception : tu peux utiliser UNE fois le fait fourni, en passant. "
+            f"Angles imposés pour ce roast : {'; '.join(angles)}. "
+            "Aucune pitié, aucun compliment, aucune morale, aucune excuse, aucun avertissement, finis sur une "
+            "punchline qui l'achève. "
             "SEULES LIMITES : rien sur l'origine, la couleur de peau, la religion, l'orientation sexuelle, le "
             "handicap, la mère ou la famille, pas de menaces ni de suicide. "
             "En français, tutoiement, texte brut sans markdown."
         )
-        texte = await _call_ai_text(system, _stats_block(self.bot, membre))
+        try:
+            st = self.bot.ai_member_stats(membre)
+            fait = random.choice([
+                f"{st['hours_7d']} h de vocal en 7 jours",
+                f"{st['messages_7d']} messages en 7 jours",
+                f"{st['berrys']:,} berrys sur son compte",
+            ])
+        except Exception:
+            fait = "aucun"
+        texte = await _call_ai_text(system, f"Pseudo : {membre.display_name}. Fait : {fait}.")
         if not texte:
             await interaction.followup.send(embed=_err_embed())
             return
