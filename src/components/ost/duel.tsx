@@ -1,11 +1,10 @@
-import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { Heart, Pause, Play, Sparkle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { champion, currentMatch, ranking, roundName, shuffle } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
 import type { Match, Participant } from "@/lib/tournois/types";
-import { fetchPair } from "@/lib/versusStats.js";
 import { emitVolTrail } from "../tournois/flame-ink";
 import { useTournament } from "../tournois/provider";
 import { Plane, useSpace } from "./space";
@@ -19,94 +18,40 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
-// Changer de duel, en trois temps enchaînés :
-// 1. au vote, la carte gardée se lève sous son filet doré, l'autre s'affaisse
-//    et s'éteint ;
-// 2. la gardée s'envole vers la droite en pivotant, la perdue tombe en se
-//    dissolvant, le VS se replie ; un voile noir passe sur la salle ;
-// 3. le duel suivant arrive de la gauche, de la profondeur vers le net.
-// Le fond suit le même geste, plus lentement (parallaxe). « Annuler » fait l'inverse.
+// Au vote, la pastille reste en place (pas de saut de mise en page). Après le
+// retour de l'appui, toute la feuille glisse : l'ancien duel sort, le suivant
+// entre du côté opposé, bord à bord. Le fond suit, plus court (parallaxe).
+// « Annuler » inverse le sens.
 
 type Side = 0 | 1;
 
-// Premier plan : les cartes et le VS. L'ancien duel s'efface dans la première
-// moitié de sa course, le nouveau n'apparaît qu'ensuite : les deux ne se
-// superposent jamais en transparence. Les cartes et le VS suivent le geste
-// l'un après l'autre (l'élément de tête part le premier, arrive le premier)
-// et reculent un peu en profondeur pendant le trajet.
-// dir : 1 duel suivant (vers la droite), -1 retour (Annuler), 0 tout premier
-// duel (il monte depuis le bas).
-// Carrousel : l'ancien duel reste visible pendant qu'il accélère vers la
-// droite et ne s'éteint qu'en fin de course ; le nouveau part de la gauche un
-// instant plus tard et apparaît pendant qu'il avance. Les deux restent à des
-// places différentes : aucun fantôme superposé.
+// dir : 1 duel suivant (la feuille part à droite, la nouvelle arrive de la
+// gauche), -1 retour, 0 premier duel (fondu, sans trajet).
+// Une seule translation, sur la feuille entière. Les cartes ne bougent pas
+// dedans : deux translations plus un flou se battaient et saccadaient.
+const SWIPE = 0.46;
 const STAGE: Variants = {
-  enter: (dir: number) => (dir ? { x: dir > 0 ? "-12vw" : "12vw", opacity: 0 } : { x: 0, opacity: 1 }),
-  center: {
-    x: 0,
-    opacity: 1,
-    transition: {
-      x: { duration: 1.1, delay: 0.32, ease: T.ease.out },
-      opacity: { duration: 0.5, delay: 0.34, ease: T.ease.out },
-      staggerChildren: 0.09,
-      delayChildren: 0.32,
-    },
-  },
-  exit: (dir: number) => ({
-    x: dir >= 0 ? "12vw" : "-12vw",
-    opacity: [1, 1, 0],
-    transition: {
-      x: { duration: 0.62, ease: T.ease.inOut },
-      opacity: { duration: 0.62, times: [0, 0.55, 1], ease: "easeIn" },
-      staggerChildren: 0.06,
-      staggerDirection: -1,
-    },
+  enter: (dir: number) => ({
+    transform: dir ? `translateX(${dir > 0 ? "-100%" : "100%"})` : "translateX(0%)",
+    opacity: dir ? 1 : 0,
   }),
-};
-// Une carte dans ce mouvement : elle entre de la profondeur, pivotée, floue,
-// jusqu'au net, et sort selon son sort (gardée, perdue). AnimatePresence
-// impose son custom (le sens) à toute la scène : le sort passe donc par le
-// jeu de variantes choisi, pas par custom.
-const SHARP = { filter: "none" };
-const PIECE: Variants = {
-  enter: (dir: number) =>
-    dir
-      ? { x: dir > 0 ? -90 : 90, y: 0, rotateY: dir > 0 ? 16 : -16, opacity: 0, scale: 0.93, filter: "blur(10px)" }
-      : { x: 0, y: 34, rotateY: 0, opacity: 0, scale: 1, filter: "blur(6px)" },
-  center: {
-    x: 0,
-    y: 0,
-    rotateY: 0,
+  center: (dir: number) => ({
+    transform: "translateX(0%)",
     opacity: 1,
-    scale: 1,
-    filter: "blur(0px)",
-    transition: { duration: 1.05, ease: T.ease.out, filter: { duration: 0.75, ease: T.ease.out }, opacity: { duration: 0.6, ease: T.ease.out } },
-    transitionEnd: SHARP,
-  },
-  exit: (dir: number) => ({ x: dir >= 0 ? 70 : -70, opacity: 0, scale: 0.96, filter: "blur(6px)", transition: { duration: 0.45, ease: T.ease.in } }),
-};
-// La gardée s'envole en pivotant, la perdue tombe en se dissolvant.
-const PIECE_WIN: Variants = {
-  ...PIECE,
-  exit: (dir: number) => {
-    const s = dir >= 0 ? 1 : -1;
-    return { x: 110 * s, y: -22, rotateY: -14 * s, opacity: 0, scale: 1.03, filter: "blur(8px)", transition: { duration: 0.6, ease: T.ease.in } };
-  },
-};
-const PIECE_LOSE: Variants = {
-  ...PIECE,
-  exit: (dir: number) => ({ x: dir >= 0 ? 30 : -30, y: 80, opacity: 0, scale: 0.92, filter: "blur(12px)", transition: { duration: 0.5, ease: T.ease.in } }),
-};
-const PIECES = { idle: PIECE, win: PIECE_WIN, lose: PIECE_LOSE };
-const PIECE_VS: Variants = {
-  enter: { opacity: 0, scaleY: 0.2 },
-  center: { opacity: 1, scaleY: 1, transition: { duration: 1, delay: 0.12, ease: T.ease.out } },
-  exit: { opacity: 0, scaleY: 0.15, transition: { duration: 0.32, ease: T.ease.in } },
+    transition: dir
+      ? { transform: { duration: SWIPE, ease: T.ease.out }, opacity: { duration: 0 } }
+      : { opacity: { duration: 0.28, ease: T.ease.out }, transform: { duration: 0 } },
+  }),
+  exit: (dir: number) => ({
+    transform: `translateX(${dir >= 0 ? "100%" : "-100%"})`,
+    opacity: 1,
+    transition: { transform: { duration: SWIPE, ease: T.ease.out }, opacity: { duration: 0 } },
+  }),
 };
 const FADE: Variants = {
   enter: { opacity: 0 },
-  center: { opacity: 1, transition: { duration: 0.25 } },
-  exit: { opacity: 0, transition: { duration: 0.18 } },
+  center: { opacity: 1, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.16 } },
 };
 
 export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEndPractice: () => void }) {
@@ -280,21 +225,11 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
       <div className="ox-room" onPointerDown={onRoomDown} onPointerMove={onRoomMove} onPointerUp={onRoomUp} onPointerCancel={onRoomUp}>
         {/* À l'aveugle, les silhouettes trahiraient les animes : elles n'arrivent qu'une fois le choix fait. */}
         <Backdrop k={key} pair={run?.blind && !practice && !held ? null : pair} dir={dir.current} />
-        {/* Le rideau : un voile noir passe sur la salle pendant le changement de duel. */}
-        {!reduce && key !== "empty" ? (
-          <motion.i
-            key={`veil-${key}`}
-            className="ox-veil"
-            aria-hidden
-            initial={{ opacity: 0 }}
-            animate={{ opacity: dir.current ? [0, 0.62, 0] : 0, transition: { duration: 1.5, times: [0, 0.3, 1], ease: T.ease.inOut } }}
-          />
-        ) : null}
-        <motion.div className="ox-room-head" initial={reduce ? false : { opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.8, delay: 0.55, ease: T.ease.out } }}>
+        <motion.div className="ox-room-head" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.35, ease: T.ease.out } }}>
           {head}
         </motion.div>
         <div className="ox-room-stage">
-          <AnimatePresence mode="popLayout" custom={dir.current}>
+          <AnimatePresence custom={dir.current}>
             <motion.div key={key} className="ox-room-slide" custom={dir.current} variants={reduce ? FADE : STAGE} initial="enter" animate="center" exit="exit">
               {body}
             </motion.div>
@@ -352,7 +287,6 @@ function Duel({
   const { meta, player, saved } = useTournament();
   const reduce = useReducedMotion();
   const [picked, setPicked] = useState<Side | null>(null);
-  const [split, setSplit] = useState<number | null>(null);
   const shownAt = useRef(performance.now());
   const live = useRef(player);
   live.current = player;
@@ -392,37 +326,25 @@ function Duel({
     setPicked(side);
     const loser = side ? left : right;
     if (player.id === loser.id) player.pause();
-    if (meta.statsId && !practice) {
-      const statsId = meta.statsId;
-      timers.current.push(
-        window.setTimeout(() => {
-          fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
-            if (!r) return;
-            const total = r.a + r.b;
-            setSplit(total ? Math.round((r.a / total) * 100) : null);
-          });
-        }, 300),
-      );
-    }
+    // L'appui a le temps de se poser, puis la feuille part. Pas d'attente du pourcentage.
     owed.current = () => {
       owed.current = null;
       onDone();
     };
-    timers.current.push(window.setTimeout(() => owed.current?.(), reduce ? 700 : meta.statsId && !practice ? 1450 : 900));
+    timers.current.push(window.setTimeout(() => owed.current?.(), reduce ? 80 : 180));
   };
 
   const hidden = !!blind && picked == null;
-  const pct = (side: Side) => (split == null ? null : side ? 100 - split : split);
   return (
     <div className="ox-duel" data-picked={picked ?? undefined}>
       {[left, null, right].map((p, i) => {
         if (!p)
           return (
-            <motion.div key="vs" className="ox-vs" aria-hidden variants={reduce ? undefined : PIECE_VS}>
+            <div key="vs" className="ox-vs" aria-hidden>
               <i className="ox-vs-line" />
               <span>VS</span>
               <i className="ox-vs-line" />
-            </motion.div>
+            </div>
           );
         const side = (i ? 1 : 0) as Side;
         return (
@@ -433,7 +355,6 @@ function Duel({
             dir={dir}
             state={picked == null ? "idle" : picked === side ? "win" : "lose"}
             hidden={hidden}
-            pct={pct(side)}
             fav={saved.favorites.includes(p.id)}
             onFav={() => actions.toggleFavorite(meta.slug, p.id)}
             onListen={() => player.toggle(p)}
@@ -446,8 +367,8 @@ function Duel({
 }
 
 const INFO: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  shown: (k: number) => ({ opacity: 1, y: 0, transition: { duration: 0.6, delay: 0.32 + k * 0.06, ease: T.ease.out } }),
+  hidden: { opacity: 0 },
+  shown: (k: number) => ({ opacity: 1, transition: { duration: 0.28, delay: 0.06 + k * 0.04, ease: T.ease.out } }),
 };
 
 function Card({
@@ -456,7 +377,6 @@ function Card({
   dir,
   state,
   hidden,
-  pct,
   fav,
   onFav,
   onListen,
@@ -467,7 +387,6 @@ function Card({
   dir: number;
   state: "idle" | "win" | "lose";
   hidden: boolean;
-  pct: number | null;
   fav: boolean;
   onFav: () => void;
   onListen: () => void;
@@ -513,15 +432,15 @@ function Card({
   };
 
   const name = hidden ? (side ? "OST B" : "OST A") : engrave(p.title);
+  const arrive = !reduce && dir === 0;
   return (
     <div className={`ox-seat ox-seat--${side ? "b" : "a"}`}>
-    <motion.article
+    <article
       className={`ox-card ox-card--${side ? "b" : "a"} is-${state} ${on ? "is-on" : ""}`}
-      variants={reduce ? undefined : PIECES[state]}
-      custom={dir}
+      style={state === "idle" ? undefined : { ["--px" as string]: "0", ["--py" as string]: "0" }}
       // L'œuvre suit à peine la souris, comme vue à travers une fenêtre.
       onPointerMove={(e) => {
-        if (e.pointerType !== "mouse" || reduce) return;
+        if (e.pointerType !== "mouse" || reduce || state !== "idle") return;
         const r = e.currentTarget.getBoundingClientRect();
         e.currentTarget.style.setProperty("--px", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
         e.currentTarget.style.setProperty("--py", (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
@@ -537,8 +456,8 @@ function Card({
         ) : (
           <motion.span
             className="ox-card-img"
-            initial={reduce ? false : { scale: 1.14 }}
-            animate={{ scale: 1, transition: { duration: 1.5, ease: T.ease.out } }}
+            initial={arrive ? { scale: 1.14 } : false}
+            animate={arrive ? { scale: 1, transition: { duration: 1.5, ease: T.ease.out } } : undefined}
           >
             <Photo p={p} eager portrait={0.6} sizes="(min-height: 900px) 1100px, 900px" />
           </motion.span>
@@ -559,7 +478,7 @@ function Card({
         </span>
       ) : null}
       <div className="ox-card-info">
-        <motion.p className="ox-micro" variants={INFO} custom={0} initial={reduce ? false : "hidden"} animate="shown">
+        <motion.p className="ox-micro" variants={INFO} custom={0} initial={arrive ? "hidden" : false} animate="shown">
           {hidden ? "Titre caché" : (p.sub ?? p.group)}
         </motion.p>
         <h2 className={`ox-card-title ${name.length > 24 ? "is-long" : ""}`}>
@@ -567,20 +486,20 @@ function Card({
             {/* Le titre monte derrière un masque, comme un générique. */}
             <motion.span
               className="ox-card-title-in"
-              initial={reduce ? false : { y: "110%" }}
-              animate={{ y: 0, transition: { duration: 0.9, delay: 0.34, ease: T.ease.out } }}
+              initial={arrive ? { transform: "translateY(110%)" } : false}
+              animate={arrive ? { transform: "translateY(0%)", transition: { duration: 0.45, delay: 0.08, ease: T.ease.out } } : undefined}
             >
               {name}
             </motion.span>
           </span>
         </h2>
         {!hidden && p.artist ? (
-          <motion.p className="ox-card-artist" variants={INFO} custom={2} initial={reduce ? false : "hidden"} animate="shown">
+          <motion.p className="ox-card-artist" variants={INFO} custom={2} initial={arrive ? "hidden" : false} animate="shown">
             {p.artist}
           </motion.p>
         ) : null}
         {failed ? <p className="ox-card-artist">Piste indisponible, tu peux quand même choisir.</p> : null}
-        <motion.div className="ox-card-actions" variants={INFO} custom={3} initial={reduce ? false : "hidden"} animate="shown">
+        <motion.div className="ox-card-actions" variants={INFO} custom={3} initial={arrive ? "hidden" : false} animate="shown">
           {!hidden ? (
             <Press className={`ox-heart ${fav ? "is-on" : ""}`} onClick={onFav} aria-pressed={fav} aria-label={fav ? `Retirer ${p.title} des favoris` : `Ajouter ${p.title} aux favoris`}>
               <motion.span key={String(fav)} initial={fav && !reduce ? { scale: 0.6 } : false} animate={{ scale: 1, transition: { type: "spring", stiffness: 520, damping: 14 } }}>
@@ -588,16 +507,12 @@ function Card({
               </motion.span>
             </Press>
           ) : null}
-          {state === "idle" ? (
-            <Press className="ox-keep" onClick={onChoose}>
-              Garder
-            </Press>
-          ) : (
-            <Result pct={pct} win={state === "win"} />
-          )}
+          <button type="button" className="ox-keep" onClick={onChoose} style={state === "lose" ? { visibility: "hidden" } : undefined}>
+            {state === "win" ? "Gardée" : "Garder"}
+          </button>
         </motion.div>
       </div>
-    </motion.article>
+    </article>
     <div className={`ox-playbar ${on ? "is-on" : ""}`} onPointerDown={(e) => e.stopPropagation()}>
       <span ref={nowEl} className="ox-scrub-time">0:00</span>
       <input
@@ -626,23 +541,6 @@ function Card({
       <span ref={endEl} className="ox-scrub-time ox-scrub-time--end">–:––</span>
     </div>
     </div>
-  );
-}
-
-/** Après le choix : « Gardée », puis la part des votes du site qui défile. */
-function Result({ pct, win }: { pct: number | null; win: boolean }) {
-  const v = useMotionValue(0);
-  const text = useTransform(v, (x) => `${Math.round(x)} %`);
-  useEffect(() => {
-    if (pct == null) return;
-    const a = animate(v, pct, { duration: 0.9, ease: T.ease.out });
-    return () => a.stop();
-  }, [pct, v]);
-  return (
-    <p className="ox-result">
-      {win ? <span className="ox-kept">Gardée</span> : null}
-      {pct != null ? <motion.b>{text}</motion.b> : null}
-    </p>
   );
 }
 

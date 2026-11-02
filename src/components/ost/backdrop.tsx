@@ -11,9 +11,20 @@ import { Photo } from "./ui";
 // reste ne bouge pas d'un plan à l'autre.
 
 const BACK: Variants = {
-  enter: (dir: number) => ({ x: dir > 0 ? "-12vw" : "12vw", opacity: 0 }),
-  center: { x: 0, opacity: 1, transition: { duration: 1.2, ease: T.ease.out } },
-  exit: (dir: number) => ({ x: dir > 0 ? "12vw" : "-12vw", opacity: 0, transition: { duration: 0.8, ease: T.ease.in } }),
+  enter: (dir: number) =>
+    dir
+      ? { transform: `translateX(${dir > 0 ? "-18%" : "18%"})`, opacity: 0.4 }
+      : { transform: "translateX(0%)", opacity: 1 },
+  center: {
+    transform: "translateX(0%)",
+    opacity: 1,
+    transition: { transform: { duration: 0.46, ease: T.ease.out }, opacity: { duration: 0.32, ease: T.ease.out } },
+  },
+  exit: (dir: number) => ({
+    transform: `translateX(${dir >= 0 ? "18%" : "-18%"})`,
+    opacity: 0,
+    transition: { transform: { duration: 0.46, ease: T.ease.out }, opacity: { duration: 0.28, ease: T.ease.out } },
+  }),
 };
 const FADE: Variants = {
   enter: { opacity: 0 },

@@ -586,6 +586,7 @@
   padding: clamp(10px, 2vh, 24px) 0 4px;
 }
 .ox-room-slide {
+  grid-area: 1 / 1;
   width: 100%;
   will-change: transform, opacity;
 }
@@ -628,13 +629,11 @@
   border: 1px solid rgba(233, 228, 218, 0.1);
   background: #0b0c0c;
   transition:
-    scale 0.8s var(--ox-ease),
-    border-color 0.6s var(--ox-ease),
-    box-shadow 0.8s var(--ox-ease),
-    opacity 0.6s var(--ox-ease);
+    scale 0.45s var(--ox-ease),
+    border-color 160ms var(--ox-ease);
 }
 .ox-card:hover {
-  scale: 1.015;
+  scale: 1.012;
   border-color: rgba(185, 161, 123, 0.4);
 }
 .ox-card.is-on {
@@ -642,11 +641,12 @@
 }
 .ox-card.is-win {
   border-color: var(--ox-accent);
-  box-shadow: 0 40px 90px -46px rgba(185, 161, 123, 0.5);
 }
 .ox-card.is-lose {
-  opacity: 0.34;
-  scale: 0.985;
+  border-color: rgba(233, 228, 218, 0.05);
+}
+.ox-champ-card.is-win {
+  box-shadow: 0 40px 90px -46px rgba(185, 161, 123, 0.5);
 }
 .ox-card-art {
   position: absolute;
@@ -981,23 +981,26 @@
   color: var(--ox-accent);
 }
 .ox .ox-keep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 36px;
-  padding: 0 34px;
-  border: 1px solid rgba(233, 228, 218, 0.26);
+  min-width: 132px;
+  padding: 0 calc(34px - 0.28em) 0 34px;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: rgba(8, 9, 9, 0.3);
   font: 500 10px / 1 var(--ox-text);
-  letter-spacing: 0.5em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
+  touch-action: manipulation;
   transition:
-    border-color 0.4s var(--ox-ease),
-    color 0.4s var(--ox-ease),
-    background 0.4s var(--ox-ease);
+    background 160ms var(--ox-ease),
+    color 160ms var(--ox-ease),
+    transform 160ms var(--ox-ease);
 }
-.ox .ox-keep:hover {
-  border-color: var(--ox-accent);
-  background: rgba(185, 161, 123, 0.08);
-  color: var(--ox-accent);
+.ox .ox-keep:active {
+  transform: scale(0.97);
 }
 .ox-result {
   display: flex;
@@ -1511,8 +1514,9 @@
   }
   .ox .ox-keep {
     flex: 1;
-    padding: 0 10px;
-    letter-spacing: 0.32em;
+    min-width: 0;
+    padding: 0 calc(12px - 0.22em) 0 12px;
+    letter-spacing: 0.22em;
   }
   .ox .ox-heart {
     width: 34px;
@@ -2046,10 +2050,12 @@
   color: #f6eeea;
   letter-spacing: 0.28em;
 }
-.ox .ox-keep:hover {
-  background: #823840;
-  border-color: transparent;
-  color: #fff;
+@media (hover: hover) and (pointer: fine) {
+  .ox .ox-keep:hover {
+    background: #823840;
+    border-color: transparent;
+    color: #fff;
+  }
 }
 .ox-vol-readout {
   position: fixed;
@@ -2196,36 +2202,18 @@
   }
 }
 
-/* ── Changement de duel : vote, sortie, entrée ───────────────────── */
-/* La profondeur des cartes qui pivotent. */
-.ox-duel {
-  perspective: 1800px;
-}
-/* Au vote : la gardée se lève, l'autre s'affaisse et s'éteint. La translation
-   passe par la propriété translate, les transform restant à l'animation. */
-.ox-card {
-  transition:
-    scale 0.8s var(--ox-ease),
-    translate 0.9s var(--ox-ease),
-    border-color 0.6s var(--ox-ease),
-    box-shadow 0.8s var(--ox-ease);
-}
-.ox-card.is-win {
-  translate: 0 -10px;
-  box-shadow:
-    0 50px 110px -50px rgba(185, 161, 123, 0.6),
-    0 0 0 1px rgba(185, 161, 123, 0.25);
-}
-.ox-card.is-lose {
-  translate: 0 14px;
-  /* L'extinction passe par le contenu : l'opacité de la carte appartient à l'animation. */
-  opacity: 1;
-  border-color: rgba(233, 228, 218, 0.05);
+/* ── Changement de duel ──────────────────────────────────────────── */
+/* Le survol (scale) s'arrête au vote : il ne doit pas glisser avec la feuille. */
+.ox-duel[data-picked] .ox-card,
+.ox-duel[data-picked] .ox-card:hover {
+  scale: 1;
+  translate: none;
+  transition: border-color 160ms var(--ox-ease);
 }
 .ox-card.is-lose .ox-card-art,
 .ox-card.is-lose .ox-card-info {
-  opacity: 0.38;
-  transition: opacity 0.7s var(--ox-ease);
+  opacity: 0.45;
+  transition: opacity 160ms var(--ox-ease);
 }
 /* Le rideau, entre le fond et la scène. */
 .ox-veil {
