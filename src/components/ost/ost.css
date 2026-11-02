@@ -2019,32 +2019,16 @@
   color: rgba(233, 228, 218, 0.78);
 }
 
-/* Plaque de lecture : titre en filigrane, artiste et Garder en pastille vin, comme la régie. */
+/* Plaque de lecture : le titre reste dans la carte. Artiste et Garder en pastille vin. */
 .ox-card-title {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 .ox-card-title-mask {
   position: relative;
   z-index: 1;
   display: block;
   overflow: hidden;
-}
-.ox-card-ghost {
-  position: absolute;
-  left: 18%;
-  top: -0.42em;
-  z-index: 0;
-  max-width: 140%;
-  overflow: hidden;
-  font: inherit;
-  font-size: 1.7em;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.16);
-  pointer-events: none;
-  user-select: none;
 }
 .ox-card-info .ox-card-artist {
   display: inline-block;

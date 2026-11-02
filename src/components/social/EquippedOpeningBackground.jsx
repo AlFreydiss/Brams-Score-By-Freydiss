@@ -46,7 +46,10 @@ export default function EquippedOpeningBackground() {
   // Le son n'est possible que sur un fond ANIMÉ (vidéo) — pas une image figée.
   // Sur la boutique, la pastille flottante gênait la lecture du hero → masquée
   // (l'aperçu plein écran boutique a déjà son propre contrôle de volume).
-  const canSound = !ambientStill && Boolean(activeBg.videoUrl) && !pathname.startsWith('/boutique')
+  // Le duel a son propre lecteur. Le fond d'opening ne s'y mélange pas,
+  // et ce mute ne s'écrit pas : le réglage du visiteur revient en quittant.
+  const inTournoi = pathname.startsWith('/tournoi')
+  const canSound = !ambientStill && Boolean(activeBg.videoUrl) && !pathname.startsWith('/boutique') && !inTournoi
 
   return (
     <>
@@ -55,7 +58,7 @@ export default function EquippedOpeningBackground() {
           bg={activeBg}
           style={ambientStill ? STILL_STYLE : VIDEO_STYLE}
           stillOnly={ambientStill}
-          muted={ambientMuted}
+          muted={ambientMuted || inTournoi}
           volume={(ambientVolume ?? 45) / 100}
         />
         {/* Voile allégé : on baisse l'opacité du voile (≈0.68 effectif au lieu de

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Participant } from "@/lib/tournois/types";
-import { pauseYoutube, playYoutube, seekYoutube, setYoutubeVolume, stopYoutube, youtubeTime } from "./youtube-deck";
+import { pauseYoutube, playYoutube, seekYoutube, setYoutubeVolume, stopYoutube, youtubeAlive, youtubeTime } from "./youtube-deck";
 
 // Lecteur des tournois, sans YouTube. Un seul son à la fois :
 // - « video » : la vidéo R2 affichée dans la moitié, démutée pour l'écoute ;
@@ -82,6 +82,9 @@ const stopFade = (el: HTMLMediaElement | null | undefined) => {
 let ctx: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
 const sources = new WeakMap<HTMLMediaElement, MediaElementAudioSourceNode>();
+const wired = new WeakSet<HTMLMediaElement>();
+// Lecture en cours. Un vieux onError ne doit pas lancer le secours par-dessus.
+let playGen = 0;
 function wire(el: HTMLMediaElement) {
   try {
     if (!ctx) {
@@ -94,13 +97,17 @@ function wire(el: HTMLMediaElement) {
     }
     if (ctx.state === "suspended") ctx.resume().catch(() => {});
     if (!analyser) return;
-    // Un élément ne peut avoir qu'une seule source de toute sa vie : on la rebranche.
+    // createMediaElementSource est unique pour la vie de l'élément.
+    // connect() une deuxième fois additionne le signal : le morceau sort deux fois.
     let src = sources.get(el);
     if (!src) {
       src = ctx.createMediaElementSource(el);
       sources.set(el, src);
     }
-    src.connect(analyser);
+    if (!wired.has(el)) {
+      src.connect(analyser);
+      wired.add(el);
+    }
   } catch {
     // Sans Web Audio, la lecture continue : seul le visualiseur reste immobile.
   }
@@ -108,6 +115,7 @@ function wire(el: HTMLMediaElement) {
 export const getAnalyser = () => analyser;
 function unwire(el: HTMLMediaElement) {
   sources.get(el)?.disconnect();
+  wired.delete(el);
 }
 
 export type PlayerState = {
@@ -226,6 +234,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
     const p = current.current;
     if (p?.sound?.k === "youtube") {
       pauseYoutube();
+      audio.current?.pause();
       return;
     }
     const el = elementOf(p);
@@ -240,22 +249,28 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
     (p: Participant | null | undefined) => {
       if (!p?.sound) return;
       if (p.sound.k === "youtube") {
+        // Déjà cette vidéo : un deuxième loadVideoById laisse l'ancien flux audible.
+        if (current.current?.id === p.id && youtubeAlive()) return;
         if (current.current && current.current.id !== p.id) silence();
         audio.current?.pause();
         current.current = p;
+        const gen = ++playGen;
         set(p.id, { loading: true, ended: false });
         playYoutube(
           { id: p.sound.id, start: p.sound.start, end: p.sound.end, volume: mute.current ? 0 : readVolume() },
           {
-            onPlaying: () => { if (current.current?.id === p.id) set(p.id, { playing: true, loading: false, ended: false }); },
-            onPaused: () => { if (current.current?.id === p.id) set(p.id, { playing: false, loading: false }); },
-            onEnded: () => { if (current.current?.id === p.id) set(p.id, { playing: false, loading: false, ended: true }); },
+            onPlaying: () => { if (gen === playGen && current.current?.id === p.id) set(p.id, { playing: true, loading: false, ended: false }); },
+            onPaused: () => { if (gen === playGen && current.current?.id === p.id) set(p.id, { playing: false, loading: false }); },
+            onEnded: () => { if (gen === playGen && current.current?.id === p.id) set(p.id, { playing: false, loading: false, ended: true }); },
             onError: () => {
-              if (current.current?.id !== p.id || p.sound?.k !== "youtube") return;
+              if (gen !== playGen || current.current?.id !== p.id || p.sound?.k !== "youtube") return;
+              // La vidéo parle déjà : le secours Apple ferait le même morceau par-dessus.
+              if (youtubeAlive()) return;
               const fb = p.sound.fallback;
               if (!fb) { fail(p.id); return; }
               const preview: Participant = { ...p, sound: { k: "audio", src: fb, preview: true } };
               current.current = null;
+              stopYoutube();
               play(preview);
             },
           },
@@ -263,6 +278,15 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
         return;
       }
       stopYoutube();
+      playGen++;
+      if (
+        p.sound.k === "audio" &&
+        current.current?.id === p.id &&
+        current.current.sound?.k === "audio" &&
+        audio.current &&
+        !audio.current.paused &&
+        audio.current.dataset.id === p.id
+      ) return;
       if (current.current?.id !== p.id) silence();
       current.current = p;
       let el: HTMLMediaElement | null;
@@ -315,13 +339,19 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
 
   const toggle = useCallback(
     (p: Participant) => {
-      if (state.id === p.id && (state.playing || state.loading)) pause();
+      const cur = current.current;
+      const same = cur?.id === p.id;
+      const el = same ? elementOf(cur) : null;
+      // L'état React peut encore dire « arrêté » alors que le son tourne déjà.
+      const sounding = same && (youtubeAlive() || (!!el && !el.paused) || state.playing || state.loading);
+      if (sounding) pause();
       else play(p);
     },
-    [state, play, pause],
+    [state, play, pause, elementOf],
   );
 
   const stop = useCallback(() => {
+    playGen++;
     stopYoutube();
     silence();
     current.current = null;

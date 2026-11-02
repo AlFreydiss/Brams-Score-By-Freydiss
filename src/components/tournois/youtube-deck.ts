@@ -28,6 +28,7 @@ type YtPlayer = {
   setVolume: (v: number) => void;
   mute: () => void;
   unMute: () => void;
+  stopVideo: () => void;
   getCurrentTime: () => number;
   getDuration: () => number;
   destroy: () => void;
@@ -39,6 +40,10 @@ let ready: Promise<void> | null = null;
 let cue: Cue | null = null;
 let handlers: Handlers | null = null;
 let poll: number | null = null;
+// Chaque lecture a un jeton. Un évènement d'un chargement précédent est ignoré.
+let token = 0;
+let loadedId: string | null = null;
+let alive = false;
 
 function loadApi() {
   if (window.YT?.Player) return Promise.resolve();
@@ -90,11 +95,23 @@ function ensure() {
             onReady: () => resolve(),
             onStateChange: (e: { data: number }) => {
               const st = window.YT!.PlayerState;
-              if (e.data === st.PLAYING) handlers?.onPlaying();
-              else if (e.data === st.PAUSED) handlers?.onPaused();
-              else if (e.data === st.ENDED) handlers?.onEnded();
+              if (e.data === st.PLAYING) {
+                alive = true;
+                handlers?.onPlaying();
+              } else if (e.data === st.PAUSED) {
+                alive = false;
+                handlers?.onPaused();
+              } else if (e.data === st.ENDED) {
+                alive = false;
+                handlers?.onEnded();
+              }
             },
-            onError: () => handlers?.onError(),
+            // Erreur d'un chargement déjà remplacé : on ne lance pas le secours par-dessus.
+            onError: () => {
+              if (!cue || loadedId !== cue.id) return;
+              alive = false;
+              handlers?.onError();
+            },
           },
         });
       }),
@@ -123,32 +140,54 @@ function applyLevel(volume: number) {
   }
 }
 
+export function youtubeAlive() {
+  return alive;
+}
+
 export function playYoutube(next: Cue, nextHandlers: Handlers) {
+  const my = ++token;
+  alive = false;
+  loadedId = null;
   cue = next;
   handlers = nextHandlers;
   ensure().then(() => {
-    if (cue?.id !== next.id) return;
+    if (my !== token || cue?.id !== next.id) return;
+    try { player!.stopVideo(); } catch { /* première lecture */ }
+    if (my !== token) return;
     const load: { videoId: string; startSeconds?: number; endSeconds?: number } = {
       videoId: next.id,
       startSeconds: next.start || 0,
     };
     if (next.end) load.endSeconds = next.end;
+    loadedId = next.id;
     player!.loadVideoById(load);
+    if (my !== token) return;
     applyLevel(next.volume);
     watchEnd();
-  }).catch(() => handlers?.onError());
+  }).catch(() => {
+    if (my === token) handlers?.onError();
+  });
 }
 
 export function pauseYoutube() {
+  alive = false;
   try { player?.pauseVideo(); } catch { /* pas encore prêt */ }
 }
 
 export function stopYoutube() {
-  pauseYoutube();
+  token++;
+  alive = false;
+  loadedId = null;
   if (poll) window.clearInterval(poll);
   poll = null;
   cue = null;
   handlers = null;
+  try {
+    player?.mute();
+    player?.stopVideo();
+  } catch {
+    try { player?.pauseVideo(); } catch { /* pas encore prêt */ }
+  }
 }
 
 export function seekYoutube(seconds: number) {

@@ -563,7 +563,6 @@ function Card({
           {hidden ? "Titre caché" : (p.sub ?? p.group)}
         </motion.p>
         <h2 className={`ox-card-title ${name.length > 24 ? "is-long" : ""}`}>
-          {!hidden ? <span className="ox-card-ghost" aria-hidden>{name}</span> : null}
           <span className="ox-card-title-mask">
             {/* Le titre monte derrière un masque, comme un générique. */}
             <motion.span
