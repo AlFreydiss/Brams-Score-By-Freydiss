@@ -44,6 +44,10 @@ let poll: number | null = null;
 let token = 0;
 let loadedId: string | null = null;
 let alive = false;
+// play : on veut du son. pause : tout PLAYING qui suit est recoupé.
+// stop : plus de piste. YouTube relance souvent tout seul après pauseVideo.
+type Command = "play" | "pause" | "stop";
+let command: Command = "stop";
 
 function loadApi() {
   if (window.YT?.Player) return Promise.resolve();
@@ -83,7 +87,7 @@ function ensure() {
           width: 240,
           height: 135,
           playerVars: {
-            autoplay: 1,
+            autoplay: 0,
             controls: 0,
             disablekb: 1,
             fs: 0,
@@ -95,20 +99,31 @@ function ensure() {
             onReady: () => resolve(),
             onStateChange: (e: { data: number }) => {
               const st = window.YT!.PlayerState;
+              // 3 = BUFFERING. Hors lecture, on étouffe avant que le son revienne.
+              if ((e.data === st.PLAYING || e.data === 3) && command !== "play") {
+                alive = false;
+                try { player?.mute(); player?.pauseVideo(); } catch { /* pas prêt */ }
+                return;
+              }
+              if (command === "stop") return;
               if (e.data === st.PLAYING) {
                 alive = true;
                 handlers?.onPlaying();
               } else if (e.data === st.PAUSED) {
                 alive = false;
-                handlers?.onPaused();
+                // Un PAUSED pendant une lecture (stopVideo avant load) ne doit pas
+                // faire croire que l'utilisateur a mis en pause.
+                if (command === "pause") handlers?.onPaused();
               } else if (e.data === st.ENDED) {
                 alive = false;
+                if (command !== "play") return;
+                command = "pause";
                 handlers?.onEnded();
               }
             },
             // Erreur d'un chargement déjà remplacé : on ne lance pas le secours par-dessus.
             onError: () => {
-              if (!cue || loadedId !== cue.id) return;
+              if (command !== "play" || !cue || loadedId !== cue.id) return;
               alive = false;
               handlers?.onError();
             },
@@ -122,13 +137,20 @@ function ensure() {
 function watchEnd() {
   if (poll) window.clearInterval(poll);
   poll = window.setInterval(() => {
-    if (!player || !cue?.end) return;
+    if (!player || !cue?.end || command !== "play") return;
     const t = player.getCurrentTime();
     if (Number.isFinite(t) && t >= cue.end - 0.25) {
-      player.pauseVideo();
+      command = "pause";
+      alive = false;
+      try { player.pauseVideo(); } catch { /* ignore */ }
       handlers?.onEnded();
     }
   }, 400);
+}
+
+function kickPause() {
+  if (command !== "pause") return;
+  try { player?.mute(); player?.pauseVideo(); } catch { /* pas encore prêt */ }
 }
 
 function applyLevel(volume: number) {
@@ -146,14 +168,24 @@ export function youtubeAlive() {
 
 export function playYoutube(next: Cue, nextHandlers: Handlers) {
   const my = ++token;
+  command = "play";
   alive = false;
+  handlers = nextHandlers;
+  // Même vidéo déjà chargée : on reprend, on ne recharge pas par-dessus.
+  if (cue?.id === next.id && loadedId === next.id && player) {
+    cue = next;
+    try {
+      applyLevel(next.volume);
+      player.playVideo();
+      return;
+    } catch { /* recharge */ }
+  }
   loadedId = null;
   cue = next;
-  handlers = nextHandlers;
   ensure().then(() => {
-    if (my !== token || cue?.id !== next.id) return;
+    if (my !== token || command !== "play" || cue?.id !== next.id) return;
     try { player!.stopVideo(); } catch { /* première lecture */ }
-    if (my !== token) return;
+    if (my !== token || command !== "play") return;
     const load: { videoId: string; startSeconds?: number; endSeconds?: number } = {
       videoId: next.id,
       startSeconds: next.start || 0,
@@ -161,21 +193,28 @@ export function playYoutube(next: Cue, nextHandlers: Handlers) {
     if (next.end) load.endSeconds = next.end;
     loadedId = next.id;
     player!.loadVideoById(load);
-    if (my !== token) return;
+    if (my !== token || command !== "play") {
+      kickPause();
+      return;
+    }
     applyLevel(next.volume);
     watchEnd();
   }).catch(() => {
-    if (my === token) handlers?.onError();
+    if (my === token && command === "play") handlers?.onError();
   });
 }
 
 export function pauseYoutube() {
+  command = "pause";
   alive = false;
-  try { player?.pauseVideo(); } catch { /* pas encore prêt */ }
+  kickPause();
+  // YouTube ignore souvent le premier pauseVideo. Le second passe après la frame.
+  requestAnimationFrame(kickPause);
 }
 
 export function stopYoutube() {
   token++;
+  command = "stop";
   alive = false;
   loadedId = null;
   if (poll) window.clearInterval(poll);
@@ -194,10 +233,12 @@ export function seekYoutube(seconds: number) {
   const at = (cue?.start || 0) + Math.max(0, seconds);
   const cap = cue?.end ? Math.min(at, cue.end) : at;
   try { player?.seekTo(cap, true); } catch { /* ignore */ }
+  if (command === "pause") requestAnimationFrame(kickPause);
 }
 
 export function setYoutubeVolume(volume: number) {
   if (cue) cue.volume = volume;
+  if (command !== "play") return;
   applyLevel(volume);
 }
 

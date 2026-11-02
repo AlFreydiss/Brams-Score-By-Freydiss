@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import type { Participant } from "@/lib/tournois/types";
 import { pauseYoutube, playYoutube, seekYoutube, setYoutubeVolume, stopYoutube, youtubeAlive, youtubeTime } from "./youtube-deck";
 
-// Lecteur des tournois, sans YouTube. Un seul son à la fois :
-// - « video » : la vidéo R2 affichée dans la moitié, démutée pour l'écoute ;
-// - « audio » : un extrait officiel lu par un élément <audio> partagé.
-// Les deux passent par un analyseur Web Audio : les visualiseurs lisent le
-// vrai signal (les sources autorisent le cross-origin). Rien ne démarre sans
-// un geste de l'utilisateur.
+// Un seul son à la fois :
+// - « youtube » : la piste complète, iframe cachée ;
+// - « video » : la vidéo R2 affichée dans la moitié ;
+// - « audio » : un extrait lu par un <audio> partagé.
+// Vidéo et audio passent par un analyseur. La pause est une intention :
+// un chargement encore en vol n'a pas le droit de relancer le son.
 
 const VOL_KEY = "tournoi_volume";
 
@@ -133,6 +133,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   const volume = useSyncExternalStore(subscribeVolume, readVolume, () => 70);
   const [muted, setMutedState] = useState(false);
   const mute = useRef(false);
+  const want = useRef<"play" | "pause">("pause");
   const current = useRef<Participant | null>(null);
   const videos = useRef(new Map<string, HTMLVideoElement>());
   const started = useRef(new WeakSet<HTMLVideoElement>());
@@ -158,31 +159,42 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
         return p && current.current?.id === p.id ? p : null;
       };
       el.addEventListener("playing", () => {
+        if (want.current !== "play") {
+          el.pause();
+          return;
+        }
         const p = mine();
         if (p) set(p.id, { playing: true, loading: false, ended: false });
       });
       el.addEventListener("pause", () => {
+        if (want.current !== "pause") return;
         const p = mine();
         if (p) set(p.id, { playing: false, loading: false });
       });
       el.addEventListener("ended", () => {
         const p = mine();
-        if (p) set(p.id, { playing: false, loading: false, ended: true });
+        if (p) {
+          want.current = "pause";
+          set(p.id, { playing: false, loading: false, ended: true });
+        }
       });
       el.addEventListener("waiting", () => {
+        if (want.current !== "play") return;
         const p = mine();
         if (p) set(p.id, { loading: true });
       });
       el.addEventListener("error", () => {
         const p = owner();
+        if (p && current.current?.id === p.id) want.current = "pause";
         if (p) fail(p.id);
       });
       el.addEventListener("timeupdate", () => {
         const p = mine();
         const end = p?.sound?.k === "video" ? p.sound.end : undefined;
         if (p && end && el.currentTime >= end && !el.paused) {
+          want.current = "pause";
           el.pause();
-          set(p.id, { playing: false, ended: true });
+          set(p.id, { playing: false, loading: false, ended: true });
         }
       });
     },
@@ -245,29 +257,46 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
 
   const level = () => (mute.current ? 0 : readVolume() / 100);
 
+  const hush = () => {
+    if (audio.current) {
+      stopFade(audio.current);
+      audio.current.pause();
+    }
+    videos.current.forEach((v) => {
+      stopFade(v);
+      if (!v.paused) v.pause();
+    });
+  };
+
   const play = useCallback(
     (p: Participant | null | undefined) => {
       if (!p?.sound) return;
       if (p.sound.k === "youtube") {
         // Déjà cette vidéo : un deuxième loadVideoById laisse l'ancien flux audible.
         if (current.current?.id === p.id && youtubeAlive()) return;
+        want.current = "play";
         if (current.current && current.current.id !== p.id) silence();
-        audio.current?.pause();
+        hush();
         current.current = p;
         const gen = ++playGen;
         set(p.id, { loading: true, ended: false });
+        const live = () => want.current === "play" && gen === playGen && current.current?.id === p.id;
         playYoutube(
           { id: p.sound.id, start: p.sound.start, end: p.sound.end, volume: mute.current ? 0 : readVolume() },
           {
-            onPlaying: () => { if (gen === playGen && current.current?.id === p.id) set(p.id, { playing: true, loading: false, ended: false }); },
-            onPaused: () => { if (gen === playGen && current.current?.id === p.id) set(p.id, { playing: false, loading: false }); },
-            onEnded: () => { if (gen === playGen && current.current?.id === p.id) set(p.id, { playing: false, loading: false, ended: true }); },
+            onPlaying: () => { if (live()) set(p.id, { playing: true, loading: false, ended: false }); },
+            onPaused: () => { if (want.current === "pause" && current.current?.id === p.id) set(p.id, { playing: false, loading: false }); },
+            onEnded: () => {
+              if (!live()) return;
+              want.current = "pause";
+              set(p.id, { playing: false, loading: false, ended: true });
+            },
             onError: () => {
-              if (gen !== playGen || current.current?.id !== p.id || p.sound?.k !== "youtube") return;
+              if (!live() || p.sound?.k !== "youtube") return;
               // La vidéo parle déjà : le secours Apple ferait le même morceau par-dessus.
               if (youtubeAlive()) return;
               const fb = p.sound.fallback;
-              if (!fb) { fail(p.id); return; }
+              if (!fb) { want.current = "pause"; fail(p.id); return; }
               const preview: Participant = { ...p, sound: { k: "audio", src: fb, preview: true } };
               current.current = null;
               stopYoutube();
@@ -277,16 +306,18 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
         );
         return;
       }
-      stopYoutube();
-      playGen++;
       if (
         p.sound.k === "audio" &&
+        want.current === "play" &&
         current.current?.id === p.id &&
         current.current.sound?.k === "audio" &&
         audio.current &&
         !audio.current.paused &&
         audio.current.dataset.id === p.id
       ) return;
+      want.current = "play";
+      stopYoutube();
+      const gen = ++playGen;
       if (current.current?.id !== p.id) silence();
       current.current = p;
       let el: HTMLMediaElement | null;
@@ -317,8 +348,18 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
       set(p.id, { loading: true, ended: false });
       const target = level();
       el.play().then(
-        () => fade(el, target, 240),
-        () => set(p.id, { playing: false, loading: false }),
+        () => {
+          if (want.current !== "play" || gen !== playGen) {
+            el.pause();
+            return;
+          }
+          fade(el, target, 240);
+        },
+        () => {
+          if (gen !== playGen) return;
+          want.current = "pause";
+          set(p.id, { playing: false, loading: false });
+        },
       );
     },
     // level lit des valeurs hors React.
@@ -326,37 +367,31 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
     [silence, audioEl, playFrom, set],
   );
 
-  // Pause demandée : le son s'éteint en fondu, puis s'arrête (sauf si une
-  // lecture a repris entre-temps sur le même élément).
+  // Pause immédiate. Le fondu laissait le play() en vol rallumer le volume.
   const pause = useCallback(() => {
-    const p = current.current;
-    const el = elementOf(p);
-    if (!el || el.paused) return silence();
-    fade(el, 0, 160, () => {
-      if (current.current?.id === p?.id) silence();
-    });
-  }, [elementOf, silence]);
+    want.current = "pause";
+    playGen++;
+    pauseYoutube();
+    hush();
+    setState((s) => (s.id ? { ...s, playing: false, loading: false } : s));
+  }, []);
 
   const toggle = useCallback(
     (p: Participant) => {
-      const cur = current.current;
-      const same = cur?.id === p.id;
-      const el = same ? elementOf(cur) : null;
-      // L'état React peut encore dire « arrêté » alors que le son tourne déjà.
-      const sounding = same && (youtubeAlive() || (!!el && !el.paused) || state.playing || state.loading);
-      if (sounding) pause();
+      if (current.current?.id === p.id && want.current === "play") pause();
       else play(p);
     },
-    [state, play, pause, elementOf],
+    [play, pause],
   );
 
   const stop = useCallback(() => {
+    want.current = "pause";
     playGen++;
     stopYoutube();
-    silence();
+    hush();
     current.current = null;
     setState(IDLE);
-  }, [silence]);
+  }, []);
 
   const applyLevel = useCallback(() => {
     if (current.current?.sound?.k === "youtube") {
