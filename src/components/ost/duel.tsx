@@ -18,24 +18,31 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
-// Au vote, la pastille reste en place. La feuille part du côté gardé :
-// droite si le choix est à droite, gauche s'il est à gauche. Le suivant
-// entre par le côté opposé. Le fond suit, plus court. « Annuler » inverse.
+// Au vote, la pastille reste. C'est nous qui avançons vers la carte gardée :
+// le monde part derrière, le duel suivant était déjà du côté choisi.
+// Droite → on va à droite. Le fond (loin) suit le même sens, moins loin.
+// Tête, grain, vignette restent dans le cadre. « Annuler » inverse.
 
 type Side = 0 | 1;
 
-// dir : 1 la feuille sort à droite, -1 elle sort à gauche, 0 premier duel.
-// Une seule translation. Le flou suit la course et se lève à l'arrivée :
-// 8px, pas plus, sinon la salle saccade.
+// dir : 1 on marche à droite, -1 à gauche, 0 premier duel.
+// Translation du monde + dolly dans le même transform. Flou 8px, levé à l'arrivée.
 const SWIPE = 1.05;
 const HAZE = "blur(8px)";
+const aim = (dir: number) => (dir > 0 ? "70% 50%" : dir < 0 ? "30% 50%" : "50% 50%");
+// Le côté où l'on entre est devant nous. En sortant, ce côté reste derrière.
+const shot = (dir: number, at: "enter" | "exit") => {
+  const ahead = at === "enter" ? dir >= 0 : dir < 0;
+  return `translateX(${ahead ? "100%" : "-100%"}) scale(${at === "enter" ? "0.96" : "1.06"})`;
+};
 const STAGE: Variants = {
   enter: (dir: number) =>
     dir
-      ? { transform: `translateX(${dir > 0 ? "-100%" : "100%"})`, filter: HAZE, opacity: 1 }
-      : { transform: "translateX(0%)", filter: "blur(0px)", opacity: 0 },
+      ? { transform: shot(dir, "enter"), transformOrigin: aim(dir), filter: HAZE, opacity: 1 }
+      : { transform: "translateX(0%) scale(1)", transformOrigin: "50% 50%", filter: "blur(0px)", opacity: 0 },
   center: (dir: number) => ({
-    transform: "translateX(0%)",
+    transform: "translateX(0%) scale(1)",
+    transformOrigin: aim(dir),
     filter: "blur(0px)",
     opacity: 1,
     transition: dir
@@ -48,7 +55,8 @@ const STAGE: Variants = {
     transitionEnd: { filter: "none" },
   }),
   exit: (dir: number) => ({
-    transform: `translateX(${dir >= 0 ? "100%" : "-100%"})`,
+    transform: shot(dir, "exit"),
+    transformOrigin: aim(dir),
     filter: HAZE,
     opacity: 1,
     transition: {

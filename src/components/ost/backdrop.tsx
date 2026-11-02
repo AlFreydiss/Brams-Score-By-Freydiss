@@ -7,13 +7,13 @@ import { Photo } from "./ui";
 // géantes, très sombres, fondues vers le centre et qui dérivent lentement ;
 // une lueur dorée au centre, un vignettage, des filets en biais, quelques
 // pétales et poussières lumineuses, le grain de pellicule. Les silhouettes
-// changent avec la clé, en glissant dans le sens du duel (parallaxe) ; le
-// reste ne bouge pas d'un plan à l'autre.
+// changent avec la clé : même sens que la caméra, trajet plus court
+// (plan lointain). Vignette, grain, pétales restent.
 
 const BACK: Variants = {
   enter: (dir: number) =>
     dir
-      ? { transform: `translateX(${dir > 0 ? "-18%" : "18%"})`, opacity: 0.4 }
+      ? { transform: `translateX(${dir > 0 ? "32%" : "-32%"})`, opacity: 0.4 }
       : { transform: "translateX(0%)", opacity: 1 },
   center: {
     transform: "translateX(0%)",
@@ -21,7 +21,7 @@ const BACK: Variants = {
     transition: { transform: { duration: 1.25, ease: T.ease.inOut }, opacity: { duration: 0.7, ease: T.ease.out } },
   },
   exit: (dir: number) => ({
-    transform: `translateX(${dir >= 0 ? "18%" : "-18%"})`,
+    transform: `translateX(${dir >= 0 ? "-32%" : "32%"})`,
     opacity: 0,
     transition: { transform: { duration: 1.05, ease: T.ease.inOut }, opacity: { duration: 0.55, ease: T.ease.out } },
   }),
