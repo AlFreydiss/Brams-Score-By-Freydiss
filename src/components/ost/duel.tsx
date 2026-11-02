@@ -1,6 +1,7 @@
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "framer-motion";
-import { Heart, Minus, Pause, Play, Plus, SkipBack, SkipForward, Sparkle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Heart, Pause, Play, Sparkle, Volume2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { champion, currentMatch, ranking, roundName, shuffle } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
 import type { Match, Participant } from "@/lib/tournois/types";
@@ -396,37 +397,6 @@ function Duel({
           />
         );
       })}
-      <Deck left={left} right={right} />
-    </div>
-  );
-}
-
-/** Sous les cartes : reculer, avancer, baisser, monter. Même rond que le cœur. */
-function Deck({ left, right }: { left: Participant; right: Participant }) {
-  const { player } = useTournament();
-  const cur = player.id === left.id ? left : player.id === right.id ? right : null;
-  const jump = (delta: number) => {
-    const t = player.getTime();
-    if (!cur || !t) return;
-    const cap = t.total > 0 ? t.total : t.now + Math.max(0, delta);
-    player.seek(Math.min(Math.max(0, t.now + delta), cap));
-  };
-  const bump = (delta: number) => player.setVolume(Math.min(100, Math.max(0, (player.muted ? 0 : player.volume) + delta)));
-  return (
-    <div className="ox-deck" role="group" aria-label="Lecture">
-      <button type="button" className="ox-deck-btn" onClick={() => jump(-10)} disabled={!cur} aria-label="Reculer de 10 secondes" title="Reculer de 10 secondes">
-        <SkipBack size={14} />
-      </button>
-      <button type="button" className="ox-deck-btn" onClick={() => jump(10)} disabled={!cur} aria-label="Avancer de 10 secondes" title="Avancer de 10 secondes">
-        <SkipForward size={14} />
-      </button>
-      <i className="ox-deck-gap" aria-hidden />
-      <button type="button" className="ox-deck-btn" onClick={() => bump(-10)} aria-label="Baisser le son" title="Baisser le son">
-        <Minus size={14} />
-      </button>
-      <button type="button" className="ox-deck-btn" onClick={() => bump(10)} aria-label="Monter le son" title="Monter le son">
-        <Plus size={14} />
-      </button>
     </div>
   );
 }
@@ -463,22 +433,56 @@ function Card({
   const reduce = useReducedMotion();
   const on = player.id === p.id && (player.playing || player.loading);
   const failed = player.failed.has(p.id);
-  const bar = useRef<HTMLElement>(null);
+  const scrub = useRef<HTMLInputElement>(null);
+  const dragging = useRef(false);
   const live = useRef(player);
   live.current = player;
+  const [trail, setTrail] = useState<{ x: number; y: number; id: number }[]>([]);
+  const volDrag = useRef<{ y: number; vol: number } | null>(null);
 
-  // Avancement de l'extrait : lu à chaque image, posé en transform, hors React.
+  // La barre suit la musique, sauf pendant que tu la tires.
   useEffect(() => {
     if (!on) return;
     let raf = 0;
     const loop = () => {
       const t = live.current.getTime();
-      if (bar.current) bar.current.style.transform = `scaleX(${t.total ? Math.min(1, t.now / t.total) : 0})`;
+      const el = scrub.current;
+      if (el && !dragging.current && t?.total) {
+        const v = Math.min(1000, Math.round((t.now / t.total) * 1000));
+        el.value = String(v);
+        el.style.setProperty("--p", `${v / 10}%`);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [on]);
+
+  const place = () => {
+    const t = live.current.getTime();
+    const el = scrub.current;
+    if (!t?.total || !el) return;
+    live.current.seek((Number(el.value) / 1000) * t.total);
+  };
+
+  const volDown = (e: PointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    volDrag.current = { y: e.clientY, vol: player.muted ? 0 : player.volume };
+    setTrail([{ x: e.clientX, y: e.clientY, id: performance.now() }]);
+  };
+  const volMove = (e: PointerEvent<HTMLElement>) => {
+    const d = volDrag.current;
+    if (!d) return;
+    const next = Math.min(100, Math.max(0, d.vol + (d.y - e.clientY) * 0.45));
+    live.current.setVolume(Math.round(next));
+    setTrail((pts) => [...pts, { x: e.clientX, y: e.clientY, id: performance.now() }].slice(-16));
+  };
+  const volUp = () => {
+    volDrag.current = null;
+    setTrail([]);
+  };
 
   const name = hidden ? (side ? "OST B" : "OST A") : engrave(p.title);
   return (
@@ -513,10 +517,60 @@ function Card({
         <span className="ox-card-play" aria-hidden>
           {on && player.playing ? <Pause size={18} fill="currentColor" strokeWidth={0} /> : <Play size={18} fill="currentColor" strokeWidth={0} />}
         </span>
-        <span className="ox-card-bar" aria-hidden>
-          <i ref={bar} />
-        </span>
       </button>
+      <input
+        ref={scrub}
+        className="ox-scrub"
+        type="range"
+        min={0}
+        max={1000}
+        step={1}
+        defaultValue={0}
+        disabled={!on}
+        aria-label={`Position dans ${name}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onInput={(e) => {
+          dragging.current = true;
+          e.currentTarget.style.setProperty("--p", `${Number(e.currentTarget.value) / 10}%`);
+        }}
+        onChange={place}
+        onPointerUp={() => {
+          place();
+          dragging.current = false;
+        }}
+      />
+      {(["out", "in"] as const).map((edge) => (
+        <div
+          key={edge}
+          className={`ox-vol-side ox-vol-side--${edge} ${trail.length ? "is-drag" : ""}`}
+          onPointerDown={volDown}
+          onPointerMove={volMove}
+          onPointerUp={volUp}
+          onPointerCancel={volUp}
+          role="slider"
+          aria-label="Volume, glisser vers le haut ou le bas"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={player.muted ? 0 : player.volume}
+        >
+          <span className="ox-vol-meter" aria-hidden>
+            <i style={{ height: `${player.muted ? 0 : player.volume}%` }} />
+          </span>
+          <Volume2 size={13} strokeWidth={1.6} />
+        </div>
+      ))}
+      {trail.length
+        ? createPortal(
+            trail.map((pt, i) => (
+              <span
+                key={pt.id}
+                className="ox-trail"
+                style={{ left: pt.x, top: pt.y, opacity: (i + 1) / trail.length, transform: `translate(-50%, -50%) scale(${0.45 + (i / trail.length) * 0.7})` }}
+              />
+            )),
+            document.body,
+          )
+        : null}
       <i className="ox-card-tick" aria-hidden />
       <i className="ox-card-corners" aria-hidden />
       {state === "win" ? <i className="ox-card-sweep" aria-hidden /> : null}
