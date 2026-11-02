@@ -590,21 +590,34 @@
   will-change: transform, opacity;
 }
 .ox-duel {
-  --card-h: clamp(380px, calc(100dvh - var(--ox-top, 64px) - 236px), 600px);
+  --card-h: clamp(420px, calc(100dvh - var(--ox-top, 64px) - 280px), 660px);
   --card-w: calc(var(--card-h) * 0.6);
   display: grid;
   grid-template-columns: var(--card-w) auto var(--card-w);
   align-items: center;
   justify-content: center;
-  column-gap: clamp(56px, 11vw, 230px);
+  column-gap: clamp(48px, 9vw, 200px);
 }
-.ox-card--a {
+.ox-seat--a {
   grid-column: 1;
   grid-row: 1;
 }
-.ox-card--b {
+.ox-seat--b {
   grid-column: 3;
   grid-row: 1;
+}
+.ox-playbar {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  opacity: 0.72;
+  transition: opacity 0.4s var(--ox-ease);
+}
+.ox-seat:hover .ox-playbar,
+.ox-playbar.is-on {
+  opacity: 1;
 }
 
 /* Une carte : l'œuvre en pleine hauteur, encadrée d'un filet, le texte posé dessus. */
@@ -714,23 +727,6 @@
 .ox-card.is-win .ox-card-play,
 .ox-card.is-lose .ox-card-play {
   opacity: 0;
-}
-.ox-scrub-wrap {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 8px;
-  z-index: 6;
-  display: grid;
-  grid-template-columns: 34px 1fr 34px;
-  align-items: center;
-  gap: 8px;
-  opacity: 0;
-  transition: opacity 0.4s var(--ox-ease);
-}
-.ox-card:hover .ox-scrub-wrap,
-.ox-card.is-on .ox-scrub-wrap {
-  opacity: 1;
 }
 .ox-scrub-time {
   font: 500 10px / 1 var(--ox-text);
@@ -1485,7 +1481,7 @@
     column-gap: 12px;
     grid-template-columns: var(--card-w) var(--card-w);
   }
-  .ox-card--b {
+  .ox-seat--b {
     grid-column: 2;
   }
   .ox-vs,

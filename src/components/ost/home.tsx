@@ -220,7 +220,7 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
           <ol className="ox-steps">
             <li>
               <b>I</b>
-              <p>Deux OST face à face. Touche une carte pour écouter le morceau en entier. La barre en bas de l'image avance dans la piste. À côté de la carte, un clic glissé monte ou baisse le son.</p>
+              <p>Deux OST face à face. Touche une carte pour écouter le morceau en entier. Sous la carte, la barre avance dans la piste. N'importe où dans la salle, un clic glissé vers le haut ou le bas règle le son.</p>
             </li>
             <li>
               <b>II</b>

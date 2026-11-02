@@ -1,5 +1,5 @@
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "framer-motion";
-import { Heart, Pause, Play, Sparkle, Volume2 } from "lucide-react";
+import { Heart, Pause, Play, Sparkle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { champion, currentMatch, ranking, roundName, shuffle } from "@/lib/tournois/bracket";
@@ -109,7 +109,42 @@ const FADE: Variants = {
 };
 
 export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEndPractice: () => void }) {
-  const { meta, saved, participants } = useTournament();
+  const { meta, saved, participants, player } = useTournament();
+  const playerRef = useRef(player);
+  playerRef.current = player;
+  const volDrag = useRef<{ x: number; y: number; vol: number; on: boolean } | null>(null);
+  const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
+  const [volNow, setVolNow] = useState<number | null>(null);
+  const onRoomDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const t = e.target as HTMLElement;
+    if (t.closest("button, a, input, textarea, select, label, .ox-playbar")) return;
+    volDrag.current = { x: e.clientX, y: e.clientY, vol: player.muted ? 0 : player.volume, on: false };
+  };
+  const onRoomMove = (e: PointerEvent<HTMLDivElement>) => {
+    const d = volDrag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = d.y - e.clientY;
+    if (!d.on) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        volDrag.current = null;
+        return;
+      }
+      d.on = true;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    const next = Math.min(100, Math.max(0, Math.round(d.vol + dy * 0.45)));
+    playerRef.current.setVolume(next);
+    setVolNow(next);
+    setTrail((pts) => [...pts, { x: e.clientX, y: e.clientY }].slice(-18));
+  };
+  const onRoomUp = () => {
+    volDrag.current = null;
+    setVolNow(null);
+    setTrail([]);
+  };
   const { goTo } = useSpace();
   const reduce = useReducedMotion();
   const run = saved.run;
@@ -241,7 +276,7 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
 
   return (
     <Plane i={1} label="Tournoi">
-      <div className="ox-room">
+      <div className="ox-room" onPointerDown={onRoomDown} onPointerMove={onRoomMove} onPointerUp={onRoomUp} onPointerCancel={onRoomUp}>
         {/* À l'aveugle, les silhouettes trahiraient les animes : elles n'arrivent qu'une fois le choix fait. */}
         <Backdrop k={key} pair={run?.blind && !practice && !held ? null : pair} dir={dir.current} />
         {/* Le rideau : un voile noir passe sur la salle pendant le changement de duel. */}
@@ -264,6 +299,20 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
             </motion.div>
           </AnimatePresence>
         </div>
+        {trail.length
+          ? createPortal(
+              <svg className="ox-trail-svg" aria-hidden>
+                <polyline points={trail.map((pt) => `${pt.x},${pt.y}`).join(" ")} />
+                <circle cx={trail[trail.length - 1].x} cy={trail[trail.length - 1].y} r="3.5" />
+                {volNow != null ? (
+                  <text x={trail[trail.length - 1].x + 14} y={trail[trail.length - 1].y + 4}>
+                    {volNow}
+                  </text>
+                ) : null}
+              </svg>,
+              document.body,
+            )
+          : null}
       </div>
     </Plane>
   );
@@ -439,9 +488,6 @@ function Card({
   const dragging = useRef(false);
   const live = useRef(player);
   live.current = player;
-  const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
-  const [volNow, setVolNow] = useState<number | null>(null);
-  const volDrag = useRef<{ y: number; vol: number } | null>(null);
   const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
   // La barre suit la musique, sauf pendant que tu la tires.
@@ -471,30 +517,9 @@ function Card({
     live.current.seek((Number(el.value) / 1000) * t.total);
   };
 
-  const volDown = (e: PointerEvent<HTMLElement>) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    volDrag.current = { y: e.clientY, vol: player.muted ? 0 : player.volume };
-    setVolNow(player.muted ? 0 : player.volume);
-    setTrail([{ x: e.clientX, y: e.clientY }]);
-  };
-  const volMove = (e: PointerEvent<HTMLElement>) => {
-    const d = volDrag.current;
-    if (!d) return;
-    const next = Math.min(100, Math.max(0, Math.round(d.vol + (d.y - e.clientY) * 0.45)));
-    live.current.setVolume(next);
-    setVolNow(next);
-    setTrail((pts) => [...pts, { x: e.clientX, y: e.clientY }].slice(-18));
-  };
-  const volUp = () => {
-    volDrag.current = null;
-    setVolNow(null);
-    setTrail([]);
-  };
-
   const name = hidden ? (side ? "OST B" : "OST A") : engrave(p.title);
   return (
+    <div className={`ox-seat ox-seat--${side ? "b" : "a"}`}>
     <motion.article
       className={`ox-card ox-card--${side ? "b" : "a"} is-${state} ${on ? "is-on" : ""}`}
       variants={reduce ? undefined : PIECES[state]}
@@ -527,71 +552,9 @@ function Card({
           {on && player.playing ? <Pause size={18} fill="currentColor" strokeWidth={0} /> : <Play size={18} fill="currentColor" strokeWidth={0} />}
         </span>
       </button>
-      <div className="ox-scrub-wrap" onPointerDown={(e) => e.stopPropagation()}>
-        <span ref={nowEl} className="ox-scrub-time">0:00</span>
-        <input
-          ref={scrub}
-          className="ox-scrub"
-          type="range"
-          min={0}
-          max={1000}
-          step={1}
-          defaultValue={0}
-          aria-label={`Position dans ${name}`}
-          onPointerDown={() => {
-            dragging.current = true;
-            if (live.current.id !== p.id) live.current.play(p);
-          }}
-          onInput={(e) => {
-            dragging.current = true;
-            e.currentTarget.style.setProperty("--p", `${Number(e.currentTarget.value) / 10}%`);
-          }}
-          onChange={place}
-          onPointerUp={() => {
-            place();
-            dragging.current = false;
-          }}
-        />
-        <span ref={endEl} className="ox-scrub-time ox-scrub-time--end">–:––</span>
-      </div>
-      {(["out", "in"] as const).map((edge) => (
-        <div
-          key={edge}
-          className={`ox-vol-side ox-vol-side--${edge} ${trail.length ? "is-drag" : ""}`}
-          onPointerDown={volDown}
-          onPointerMove={volMove}
-          onPointerUp={volUp}
-          onPointerCancel={volUp}
-          role="slider"
-          aria-label="Volume, glisser vers le haut ou le bas"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={player.muted ? 0 : player.volume}
-        >
-          <span className="ox-vol-meter" aria-hidden>
-            <i style={{ height: `${player.muted ? 0 : player.volume}%` }} />
-          </span>
-          <Volume2 size={13} strokeWidth={1.6} />
-        </div>
-      ))}
-      {trail.length
-        ? createPortal(
-            <svg className="ox-trail-svg" aria-hidden>
-              <polyline points={trail.map((pt) => `${pt.x},${pt.y}`).join(" ")} />
-              <circle cx={trail[trail.length - 1].x} cy={trail[trail.length - 1].y} r="3.5" />
-              {volNow != null ? (
-                <text x={trail[trail.length - 1].x + 14} y={trail[trail.length - 1].y + 4}>
-                  {volNow}
-                </text>
-              ) : null}
-            </svg>,
-            document.body,
-          )
-        : null}
       <i className="ox-card-tick" aria-hidden />
       <i className="ox-card-corners" aria-hidden />
       {state === "win" ? <i className="ox-card-sweep" aria-hidden /> : null}
-      {/* Pendant l'écoute : un égaliseur doré, en haut à droite de l'œuvre. */}
       {on && player.playing ? (
         <span className="ox-eq" aria-hidden>
           <i />
@@ -638,6 +601,34 @@ function Card({
         </motion.div>
       </div>
     </motion.article>
+    <div className={`ox-playbar ${on ? "is-on" : ""}`} onPointerDown={(e) => e.stopPropagation()}>
+      <span ref={nowEl} className="ox-scrub-time">0:00</span>
+      <input
+        ref={scrub}
+        className="ox-scrub"
+        type="range"
+        min={0}
+        max={1000}
+        step={1}
+        defaultValue={0}
+        aria-label={`Position dans ${name}`}
+        onPointerDown={() => {
+          dragging.current = true;
+          if (live.current.id !== p.id) live.current.play(p);
+        }}
+        onInput={(e) => {
+          dragging.current = true;
+          e.currentTarget.style.setProperty("--p", `${Number(e.currentTarget.value) / 10}%`);
+        }}
+        onChange={place}
+        onPointerUp={() => {
+          place();
+          dragging.current = false;
+        }}
+      />
+      <span ref={endEl} className="ox-scrub-time ox-scrub-time--end">–:––</span>
+    </div>
+    </div>
   );
 }
 
