@@ -18,15 +18,13 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
-// Au vote, la pastille reste en place (pas de saut de mise en page). Après le
-// retour de l'appui, toute la feuille glisse : l'ancien duel sort, le suivant
-// entre du côté opposé, bord à bord. Le fond suit, plus court (parallaxe).
-// « Annuler » inverse le sens.
+// Au vote, la pastille reste en place. La feuille part du côté gardé :
+// droite si le choix est à droite, gauche s'il est à gauche. Le suivant
+// entre par le côté opposé. Le fond suit, plus court. « Annuler » inverse.
 
 type Side = 0 | 1;
 
-// dir : 1 duel suivant (la feuille part à droite, la nouvelle arrive de la
-// gauche), -1 retour, 0 premier duel (fondu, sans trajet).
+// dir : 1 la feuille sort à droite, -1 elle sort à gauche, 0 premier duel.
 // Une seule translation. Le flou suit la course et se lève à l'arrivée :
 // 8px, pas plus, sinon la salle saccade.
 const SWIPE = 1.05;
@@ -127,7 +125,6 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
   const pool = useMemo(() => participants.filter((p) => p.visual.k === "img"), [participants]);
   const [trial, setTrial] = useState(() => ({ n: 0, pair: shuffle(pool).slice(0, 2) }));
   const nextTrial = () => {
-    dir.current = 1;
     setTrial((t) => ({ n: t.n + 1, pair: shuffle(pool).slice(0, 2) }));
   };
 
@@ -166,7 +163,19 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
         </button>
       </Head>
     );
-    body = <Duel left={pair[0]} right={pair[1]} dir={dir.current} practice onChoose={() => true} onDone={nextTrial} />;
+    body = (
+      <Duel
+        left={pair[0]}
+        right={pair[1]}
+        dir={dir.current}
+        practice
+        onChoose={(side) => {
+          dir.current = side ? 1 : -1;
+          return true;
+        }}
+        onDone={nextTrial}
+      />
+    );
   } else if (run && match?.left && match.right) {
     const m = match;
     key = m.id;
@@ -178,7 +187,9 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
             type="button"
             className="ox-cap-link"
             onClick={() => {
-              dir.current = -1;
+              const vote = saved.undo?.vote;
+              const match = saved.undo?.rounds.flatMap((r) => r.matches).find((x) => x.id === vote?.matchId);
+              dir.current = match?.right?.id === vote?.winner ? -1 : 1;
               actions.undo(meta.slug);
             }}
           >
@@ -199,7 +210,7 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
         dir={dir.current}
         blind={run.blind}
         onChoose={(side, ms) => {
-          dir.current = 1;
+          dir.current = side ? 1 : -1;
           const winner = side ? m.right : m.left;
           if (!winner) return false;
           // Le store transmet aussi le duel aux statistiques du site.
@@ -207,10 +218,7 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
           if (ok) setHeld({ match: m, size });
           return ok;
         }}
-        onDone={() => {
-          dir.current = 1;
-          setHeld(null);
-        }}
+        onDone={() => setHeld(null)}
       />
     );
   } else if (run && champ) {
