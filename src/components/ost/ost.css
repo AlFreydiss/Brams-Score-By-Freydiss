@@ -576,7 +576,8 @@
   padding-top: 2px;
 }
 
-/* La scène : les cartes, centrées dans la hauteur disponible. */
+/* La scène : une vraie caméra. Les cartes sont des plans dans le volume,
+   charnière vers le VS. Le travelling anime .ox-room-slide, pas chaque carte. */
 .ox-room-stage {
   position: relative;
   z-index: 1;
@@ -584,11 +585,29 @@
   flex: 1;
   align-items: center;
   padding: clamp(10px, 2vh, 24px) 0 4px;
+  perspective: 680px;
+  perspective-origin: 50% 42%;
+}
+.ox-room-slide,
+.ox-duel,
+.ox-seat {
+  transform-style: preserve-3d;
 }
 .ox-room-slide {
   grid-area: 1 / 1;
   width: 100%;
-  will-change: transform, opacity;
+  will-change: transform;
+}
+.ox-seat--a {
+  transform: rotateY(24deg) translateZ(56px);
+  transform-origin: 100% 50%;
+}
+.ox-seat--b {
+  transform: rotateY(-24deg) translateZ(56px);
+  transform-origin: 0% 50%;
+}
+.ox-vs {
+  transform: translateZ(-90px);
 }
 .ox-duel {
   --card-h: clamp(420px, calc(100dvh - var(--ox-top, 64px) - 280px), 660px);
@@ -1487,6 +1506,15 @@
   .ox-seat--b {
     grid-column: 2;
   }
+  .ox-room-stage {
+    perspective: 860px;
+  }
+  .ox-seat--a {
+    transform: rotateY(11deg) translateZ(18px);
+  }
+  .ox-seat--b {
+    transform: rotateY(-11deg) translateZ(18px);
+  }
   .ox-vs,
   .ox-card-tick {
     display: none;
@@ -2203,6 +2231,37 @@
 }
 
 /* ── Changement de duel ──────────────────────────────────────────── */
+/* Flou de vitesse : seulement au pic du travelling, sur l'œuvre.
+   scaleX + skew dans le sens du voyage. 1.25px, pas un voile sur la salle. */
+@keyframes ox-vel-r {
+  0%, 30% { transform: none; filter: none; }
+  50% { transform: scaleX(1.12) skewX(-4deg); filter: blur(1.25px); }
+  74%, 100% { transform: none; filter: none; }
+}
+@keyframes ox-vel-l {
+  0%, 30% { transform: none; filter: none; }
+  50% { transform: scaleX(1.12) skewX(4deg); filter: blur(1.25px); }
+  74%, 100% { transform: none; filter: none; }
+}
+.ox-room-stage[data-vel="1"] .ox-card-art {
+  animation: ox-vel-r 1.4s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+.ox-room-stage[data-vel="-1"] .ox-card-art {
+  animation: ox-vel-l 1.4s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ox-room-stage {
+    perspective: none;
+  }
+  .ox-seat--a,
+  .ox-seat--b,
+  .ox-vs {
+    transform: none;
+  }
+  .ox-room-stage[data-vel] .ox-card-art {
+    animation: none;
+  }
+}
 /* Le survol (scale) s'arrête au vote : il ne doit pas glisser avec la feuille. */
 .ox-duel[data-picked] .ox-card,
 .ox-duel[data-picked] .ox-card:hover {

@@ -14,16 +14,17 @@ import { Photo } from "./ui";
 
 const CAM = 1.4;
 const BEAT = [0, 0.32, 0.7, 1] as const;
-const far = (x: string, z: number, yaw: number) => `perspective(1400px) rotateY(${yaw}deg) translate3d(${x}, 0px, ${z}px)`;
+const far = (x: string, z: number, yaw: number, tilt = 0) =>
+  `perspective(900px) rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
 const FAR_ID = far("0%", 0, 0);
 
 const backIn = (dir: number) => {
   const right = dir > 0;
   const x = (n: number) => `${right ? n : -n}%`;
-  const yaw = right ? -3 : 3;
+  const yaw = right ? -8 : 8;
   return {
-    transform: [far(x(40), -90, yaw), far(x(36), -90, yaw), far("0%", -70, 0), FAR_ID],
-    opacity: [0, 0, 1, 1],
+    transform: [far(x(42), -160, yaw, 6), far(x(36), -160, yaw, 6), far("0%", -90, 0, 3), FAR_ID],
+    opacity: [0.35, 0.4, 1, 1],
     transition: {
       duration: CAM,
       times: [...BEAT],
@@ -36,10 +37,10 @@ const BACK_EXIT: Variants = {
   exit: (dir: number) => {
     const right = dir >= 0;
     const x = (n: number) => `${right ? -n : n}%`;
-    const yaw = right ? 3 : -3;
+    const yaw = right ? 8 : -8;
     return {
-      transform: [FAR_ID, far("0%", -90, yaw), far(x(24), -90, yaw * 0.3), far(x(32), -30, 0)],
-      opacity: [1, 1, 0, 0],
+      transform: [FAR_ID, far("0%", -160, yaw, 6), far(x(26), -150, yaw * 0.3, 2), far(x(36), -40, 0, 0)],
+      opacity: [1, 0.85, 0, 0],
       transition: {
         duration: CAM,
         times: [...BEAT],
@@ -97,7 +98,7 @@ export function Backdrop({ k, pair, dir = 1, dim = false }: { k: string; pair: [
             className="ox-back-pair"
             custom={dir}
             initial={
-              reduce ? { opacity: 0 } : incoming ? { transform: incoming.transform[0], opacity: 0 } : { opacity: 0, transform: FAR_ID }
+              reduce ? { opacity: 0 } : incoming ? { transform: incoming.transform[0], opacity: incoming.opacity[0] } : { opacity: 0, transform: FAR_ID }
             }
             animate={reduce ? { opacity: 1, transition: { duration: 0.4 } } : (incoming ?? { opacity: 1, transform: FAR_ID, transition: { duration: 0.4 } })}
             exit="exit"

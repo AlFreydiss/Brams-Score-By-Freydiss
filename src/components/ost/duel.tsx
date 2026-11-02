@@ -18,31 +18,30 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
-// Au vote, la pastille reste. La caméra fait trois temps, dans un seul
-// transform (perspective + translateZ + yaw) : dézoom, travelling vers la
-// carte gardée, rezoom. Droite → on va à droite, le monde part à gauche.
-// Tête, grain, vignette restent dans le cadre. « Annuler » inverse.
+// Au vote, la pastille reste. Les cartes sont déjà en volume (rotateY sur
+// chaque siège, perspective sur la scène). La caméra : dézoom, yaw vers la
+// carte gardée, travelling, rezoom. Pas de flou sur la feuille — il aplatirait
+// le 3D. Le flou de vitesse est sur l'œuvre, seulement au pic du travelling.
+// Droite → on va à droite. Tête, grain, vignette restent. « Annuler » inverse.
 // Même minutage que le fond (backdrop.tsx, CAM).
 
 type Side = 0 | 1;
 
 // dir : 1 on marche à droite, -1 à gauche, 0 premier duel (fondu, pas de travelling).
 const CAM = 1.4;
-const HAZE = "blur(8px)";
 const pose = (x: string, z: number, yaw: number, tilt: number) =>
-  `perspective(1100px) rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
+  `rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
 const ID = pose("0%", 0, 0, 0);
 const BEAT = [0, 0.32, 0.7, 1] as const;
 
-// Le duel suivant est déjà du côté choisi, en retrait. Il attend la fin du
-// dézoom, arrive encore loin, puis la caméra pousse jusqu'au cadre.
+// Le duel suivant est déjà du côté choisi, loin et tourné. Il attend la fin
+// du dézoom, se pose encore en retrait, puis la caméra pousse dans le volume.
 const rideIn = (dir: number) => {
   const right = dir > 0;
   const x = (n: number) => `${right ? n : -n}%`;
-  const yaw = right ? -6 : 6;
+  const yaw = right ? -16 : 16;
   return {
-    transform: [pose(x(116), -210, yaw, 4), pose(x(108), -210, yaw * 0.5, 4), pose("0%", -200, 0, 2), ID],
-    filter: [HAZE, HAZE, "blur(5px)", "blur(0px)"],
+    transform: [pose(x(118), -320, yaw, 12), pose(x(110), -320, yaw * 0.65, 11), pose("0%", -260, 0, 7), ID],
     opacity: 1,
     transition: {
       duration: CAM,
@@ -55,19 +54,17 @@ const rideIn = (dir: number) => {
 const FADE_IN = {
   opacity: 1,
   transform: ID,
-  filter: "blur(0px)",
-  transition: { opacity: { duration: 0.35, ease: T.ease.out }, transform: { duration: 0 }, filter: { duration: 0 } },
+  transition: { opacity: { duration: 0.35, ease: T.ease.out }, transform: { duration: 0 } },
 };
 
-// Sortie : dézoom sur place (yaw vers la carte), travelling, hors champ.
+// Sortie : dézoom + yaw vers la carte, travelling dans le volume, hors champ.
 const EXIT: Variants = {
   exit: (dir: number) => {
     const right = dir >= 0;
     const x = (n: number) => `${right ? -n : n}%`;
-    const yaw = right ? 7 : -7;
+    const yaw = right ? 18 : -18;
     return {
-      transform: [ID, pose("0%", -210, yaw, 4), pose(x(108), -210, yaw * 0.25, 1), pose(x(120), -160, 0, 0)],
-      filter: ["blur(0px)", HAZE, HAZE, HAZE],
+      transform: [ID, pose("0%", -320, yaw, 12), pose(x(108), -300, yaw * 0.35, 5), pose(x(124), -120, 0, 0)],
       opacity: 1,
       transition: {
         duration: CAM,
@@ -124,6 +121,7 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
   const reduce = useReducedMotion();
   const run = saved.run;
   const [held, setHeld] = useState<{ match: Match; size: number } | null>(null);
+  const [vel, setVel] = useState(0);
   const dir = useRef(0);
   // Le travelling d'entrée est figé au premier rendu de la clé. Un vote
   // suivant change dir pendant que la feuille est encore là : on ne rejoue pas l'entrée.
@@ -268,6 +266,18 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
   }
   const incoming = shot.current.incoming;
 
+  useEffect(() => {
+    if (reduce || dir.current === 0) return;
+    const sign = dir.current > 0 ? 1 : -1;
+    setVel(0);
+    const raf = requestAnimationFrame(() => setVel(sign));
+    const stop = window.setTimeout(() => setVel(0), CAM * 1000);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(stop);
+    };
+  }, [key, reduce]);
+
   return (
     <Plane i={1} label="Tournoi">
       <div className="ox-room" onPointerDown={onRoomDown} onPointerMove={onRoomMove} onPointerUp={onRoomUp} onPointerCancel={onRoomUp}>
@@ -276,20 +286,17 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
         <motion.div className="ox-room-head" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.35, ease: T.ease.out } }}>
           {head}
         </motion.div>
-        <div className="ox-room-stage">
+        <div className="ox-room-stage" data-vel={vel || undefined}>
           <AnimatePresence custom={dir.current}>
             <motion.div
               key={key}
               className="ox-room-slide"
-              style={{ transformOrigin: "50% 46%" }}
+              style={{ transformOrigin: "50% 42%" }}
               custom={dir.current}
-              initial={
-                reduce ? { opacity: 0 } : incoming ? { transform: incoming.transform[0], filter: HAZE, opacity: 1 } : { opacity: 0, transform: ID }
-              }
+              initial={reduce ? { opacity: 0 } : incoming ? { transform: incoming.transform[0], opacity: 1 } : { opacity: 0, transform: ID }}
               animate={reduce ? { opacity: 1, transition: { duration: 0.2 } } : (incoming ?? FADE_IN)}
               exit="exit"
               variants={reduce ? FADE : EXIT}
-              transitionEnd={{ filter: "none" }}
             >
               {body}
             </motion.div>
