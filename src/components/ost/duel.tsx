@@ -15,7 +15,7 @@ import { engrave, Photo, Press } from "./ui";
 
 // Le plan Tournoi, en salle de projection : fond presque noir où les deux
 // œuvres du duel reviennent en silhouettes géantes, deux cartes verticales
-// encadrées, un séparateur VS doré. Toucher une carte écoute son extrait ;
+// encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
 // Changer de duel, en trois temps enchaînés :
@@ -434,11 +434,15 @@ function Card({
   const on = player.id === p.id && (player.playing || player.loading);
   const failed = player.failed.has(p.id);
   const scrub = useRef<HTMLInputElement>(null);
+  const nowEl = useRef<HTMLSpanElement>(null);
+  const endEl = useRef<HTMLSpanElement>(null);
   const dragging = useRef(false);
   const live = useRef(player);
   live.current = player;
-  const [trail, setTrail] = useState<{ x: number; y: number; id: number }[]>([]);
+  const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
+  const [volNow, setVolNow] = useState<number | null>(null);
   const volDrag = useRef<{ y: number; vol: number } | null>(null);
+  const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
   // La barre suit la musique, sauf pendant que tu la tires.
   useEffect(() => {
@@ -452,6 +456,8 @@ function Card({
         el.value = String(v);
         el.style.setProperty("--p", `${v / 10}%`);
       }
+      if (nowEl.current) nowEl.current.textContent = t?.total ? clock(t.now) : "0:00";
+      if (endEl.current) endEl.current.textContent = t?.total ? clock(t.total) : "–:––";
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -470,17 +476,20 @@ function Card({
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     volDrag.current = { y: e.clientY, vol: player.muted ? 0 : player.volume };
-    setTrail([{ x: e.clientX, y: e.clientY, id: performance.now() }]);
+    setVolNow(player.muted ? 0 : player.volume);
+    setTrail([{ x: e.clientX, y: e.clientY }]);
   };
   const volMove = (e: PointerEvent<HTMLElement>) => {
     const d = volDrag.current;
     if (!d) return;
-    const next = Math.min(100, Math.max(0, d.vol + (d.y - e.clientY) * 0.45));
-    live.current.setVolume(Math.round(next));
-    setTrail((pts) => [...pts, { x: e.clientX, y: e.clientY, id: performance.now() }].slice(-16));
+    const next = Math.min(100, Math.max(0, Math.round(d.vol + (d.y - e.clientY) * 0.45)));
+    live.current.setVolume(next);
+    setVolNow(next);
+    setTrail((pts) => [...pts, { x: e.clientX, y: e.clientY }].slice(-18));
   };
   const volUp = () => {
     volDrag.current = null;
+    setVolNow(null);
     setTrail([]);
   };
 
@@ -518,27 +527,33 @@ function Card({
           {on && player.playing ? <Pause size={18} fill="currentColor" strokeWidth={0} /> : <Play size={18} fill="currentColor" strokeWidth={0} />}
         </span>
       </button>
-      <input
-        ref={scrub}
-        className="ox-scrub"
-        type="range"
-        min={0}
-        max={1000}
-        step={1}
-        defaultValue={0}
-        disabled={!on}
-        aria-label={`Position dans ${name}`}
-        onPointerDown={(e) => e.stopPropagation()}
-        onInput={(e) => {
-          dragging.current = true;
-          e.currentTarget.style.setProperty("--p", `${Number(e.currentTarget.value) / 10}%`);
-        }}
-        onChange={place}
-        onPointerUp={() => {
-          place();
-          dragging.current = false;
-        }}
-      />
+      <div className="ox-scrub-wrap" onPointerDown={(e) => e.stopPropagation()}>
+        <span ref={nowEl} className="ox-scrub-time">0:00</span>
+        <input
+          ref={scrub}
+          className="ox-scrub"
+          type="range"
+          min={0}
+          max={1000}
+          step={1}
+          defaultValue={0}
+          aria-label={`Position dans ${name}`}
+          onPointerDown={() => {
+            dragging.current = true;
+            if (live.current.id !== p.id) live.current.play(p);
+          }}
+          onInput={(e) => {
+            dragging.current = true;
+            e.currentTarget.style.setProperty("--p", `${Number(e.currentTarget.value) / 10}%`);
+          }}
+          onChange={place}
+          onPointerUp={() => {
+            place();
+            dragging.current = false;
+          }}
+        />
+        <span ref={endEl} className="ox-scrub-time ox-scrub-time--end">–:––</span>
+      </div>
       {(["out", "in"] as const).map((edge) => (
         <div
           key={edge}
@@ -561,13 +576,15 @@ function Card({
       ))}
       {trail.length
         ? createPortal(
-            trail.map((pt, i) => (
-              <span
-                key={pt.id}
-                className="ox-trail"
-                style={{ left: pt.x, top: pt.y, opacity: (i + 1) / trail.length, transform: `translate(-50%, -50%) scale(${0.45 + (i / trail.length) * 0.7})` }}
-              />
-            )),
+            <svg className="ox-trail-svg" aria-hidden>
+              <polyline points={trail.map((pt) => `${pt.x},${pt.y}`).join(" ")} />
+              <circle cx={trail[trail.length - 1].x} cy={trail[trail.length - 1].y} r="3.5" />
+              {volNow != null ? (
+                <text x={trail[trail.length - 1].x + 14} y={trail[trail.length - 1].y + 4}>
+                  {volNow}
+                </text>
+              ) : null}
+            </svg>,
             document.body,
           )
         : null}
@@ -602,7 +619,7 @@ function Card({
             {p.artist}
           </motion.p>
         ) : null}
-        {failed ? <p className="ox-card-artist">Extrait indisponible, tu peux quand même choisir.</p> : null}
+        {failed ? <p className="ox-card-artist">Piste indisponible, tu peux quand même choisir.</p> : null}
         <motion.div className="ox-card-actions" variants={INFO} custom={3} initial={reduce ? false : "hidden"} animate="shown">
           {!hidden ? (
             <Press className={`ox-heart ${fav ? "is-on" : ""}`} onClick={onFav} aria-pressed={fav} aria-label={fav ? `Retirer ${p.title} des favoris` : `Ajouter ${p.title} aux favoris`}>
