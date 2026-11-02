@@ -36,7 +36,9 @@ function measure(src: string, aspect: number): Promise<number> {
   if (wait) return wait;
   const p = new Promise<number>((resolve) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    // TMDB bloque le mode anonyme : sans ça le cadrage échoue et, surtout,
+    // certaines balises img du tableau n'affichent rien.
+    if (src.startsWith("/")) img.crossOrigin = "anonymous";
     img.decoding = "async";
     img.onload = () => {
       try {

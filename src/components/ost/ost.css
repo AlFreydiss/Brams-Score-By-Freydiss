@@ -18,6 +18,9 @@
   font-family: var(--ox-text);
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  /* Le curseur du site est parfois masqué (curseur équipé). Ici la souris
+     reste visible partout, pas seulement au-dessus des cartes. */
+  cursor: auto;
 }
 .ox *,
 .ox *::before,

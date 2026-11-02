@@ -52,13 +52,17 @@ export function Photo({ p, className = "", eager, small, portrait, sizes }: { p:
   const manual = p.visual.k === "img" ? p.visual.pos : undefined;
   const [ready, setReady] = useState(false);
   const place = manual ? { objectPosition: manual } : pos != null ? { objectPosition: `${pos}% 50%` } : undefined;
+  // Les photos TMDB ne renvoient pas les en-têtes CORS : crossOrigin les
+  // ferait échouer et le tableau resterait noir. On ne l'active que pour les
+  // fichiers du site, dont le cadrage lit les pixels.
+  const local = src.startsWith("/");
   const img = (
     <img
       className={`ox-photo ${className} ${small ? "" : ready ? "is-ready" : "is-loading"}`}
       src={src}
-      srcSet={hi ? `${src} 1280w, ${hi} 2560w` : undefined}
-      sizes={hi ? (sizes ?? "100vw") : undefined}
-      crossOrigin="anonymous"
+      srcSet={hi && local ? `${src} 1280w, ${hi} 2560w` : undefined}
+      sizes={hi && local ? (sizes ?? "100vw") : undefined}
+      crossOrigin={local ? "anonymous" : undefined}
       alt=""
       draggable={false}
       decoding="async"

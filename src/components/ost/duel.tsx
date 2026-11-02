@@ -148,7 +148,7 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
           // Même mode d'accès que les cartes (crossOrigin), sinon le navigateur
           // retélécharge l'image au moment du glissement ; le cadrage est calculé d'avance.
           const img = new Image();
-          img.crossOrigin = "anonymous";
+          if (p.visual.src.startsWith("/")) img.crossOrigin = "anonymous";
           img.decoding = "async";
           img.src = p.visual.src;
           img.decode().catch(() => {});
