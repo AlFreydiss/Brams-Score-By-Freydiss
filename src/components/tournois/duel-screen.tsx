@@ -1,4 +1,4 @@
-import { ArrowLeftRight, BookOpenText, Expand, Heart, Maximize, Minimize, Network, Pause, Play, RotateCcw, Settings, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowLeftRight, BookOpenText, Expand, Heart, Maximize, Minimize, Minus, Network, Pause, Play, Plus, RotateCcw, Settings, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform, type Variants } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -48,7 +48,8 @@ const ENTER_MS: Record<Seam, number> = { diag: 1100, screens: 1100, feather: 110
 const PART_PX: Record<Seam, number> = { diag: 6, screens: 0, feather: 0, tape: 0, zigzag: 4, slash: 0, gutter: 0 };
 
 const EASE = [0.2, 0.8, 0.2, 1] as const;
-// Écoute alternée : durée d'un passage, et boucle sur l'extrait de 30 s.
+// Écoute alternée : chaque passage dure 7 s. Sur une piste complète, la boucle
+// couvre tout le morceau. Sur un extrait court, elle reste dans les 28 premières secondes.
 const AB_SEG = 7;
 const AB_LOOP = 28;
 const CUT = [0.7, 0, 0.2, 1] as const;
@@ -275,7 +276,9 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       const side: Side = (n % 2 === 0 && okL) || !okR ? "left" : "right";
       const p = side === "left" ? left : right;
       pl.play(p);
-      pl.seek((Math.floor(n / 2) * AB_SEG) % AB_LOOP);
+      const total = pl.getTime()?.total ?? 0;
+      const span = total > 40 ? total : AB_LOOP;
+      pl.seek((Math.floor(n / 2) * AB_SEG) % span);
       setFocus(side);
       setAbTurn({ side, n });
       n++;
@@ -674,19 +677,34 @@ function AudioBar({
   const { player } = useTournament();
   const playing = player.id === left.id ? left : player.id === right.id ? right : null;
   const active = playing && masked ? { ...playing, title: `Piste ${playing === left ? "A" : "B"}`, sub: "À l'aveugle" } : playing;
+  const jump = (delta: number) => {
+    const t = player.getTime();
+    if (!playing || !t) return;
+    const cap = t.total > 0 ? t.total : t.now + Math.max(0, delta);
+    player.seek(Math.min(Math.max(0, t.now + delta), cap));
+  };
+  const bump = (delta: number) => player.setVolume(Math.min(100, Math.max(0, (player.muted ? 0 : player.volume) + delta)));
   return (
     <div className="t-bar">
       {audio ? (
         <>
-          <button
-            type="button"
-            className="t-bar-play"
-            onClick={() => playing && player.toggle(playing)}
-            disabled={!active}
-            aria-label={active ? (player.playing ? `Mettre en pause ${active.title}` : `Reprendre ${active.title}`) : "Aucune piste en lecture"}
-          >
-            {player.playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-          </button>
+          <div className="t-transport">
+            <button type="button" className="t-bar-step" onClick={() => jump(-10)} disabled={!playing} aria-label="Reculer de 10 secondes" title="Reculer de 10 secondes">
+              <SkipBack size={15} />
+            </button>
+            <button
+              type="button"
+              className="t-bar-play"
+              onClick={() => playing && player.toggle(playing)}
+              disabled={!playing}
+              aria-label={active ? (player.playing ? `Mettre en pause ${active.title}` : `Reprendre ${active.title}`) : "Aucune piste en lecture"}
+            >
+              {player.playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+            </button>
+            <button type="button" className="t-bar-step" onClick={() => jump(10)} disabled={!playing} aria-label="Avancer de 10 secondes" title="Avancer de 10 secondes">
+              <SkipForward size={15} />
+            </button>
+          </div>
           <p className="t-bar-now">
             {active ? (
               <>
@@ -712,10 +730,16 @@ function AudioBar({
           </button>
           ) : null}
           <div className="t-vol">
+            <button type="button" className="t-bar-step" onClick={() => bump(-10)} aria-label="Baisser le son" title="Baisser le son">
+              <Minus size={15} />
+            </button>
             <button type="button" onClick={player.toggleMute} aria-pressed={player.muted} aria-label={player.muted ? "Rétablir le son" : "Couper le son"} title={player.muted ? "Rétablir le son" : "Couper le son"}>
               {player.muted || player.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <input type="range" min={0} max={100} value={player.muted ? 0 : player.volume} onChange={(e) => player.setVolume(Number(e.target.value))} aria-label="Volume" style={{ "--p": `${player.muted ? 0 : player.volume}%` } as React.CSSProperties} />
+            <button type="button" className="t-bar-step" onClick={() => bump(10)} aria-label="Monter le son" title="Monter le son">
+              <Plus size={15} />
+            </button>
           </div>
         </>
       ) : (

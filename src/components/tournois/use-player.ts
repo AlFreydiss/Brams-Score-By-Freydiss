@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Participant } from "@/lib/tournois/types";
+import { pauseYoutube, playYoutube, seekYoutube, setYoutubeVolume, stopYoutube, youtubeTime } from "./youtube-deck";
 
 // Lecteur des tournois, sans YouTube. Un seul son à la fois :
 // - « video » : la vidéo R2 affichée dans la moitié, démutée pour l'écoute ;
@@ -217,12 +218,16 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   }, []);
 
   const elementOf = useCallback((p: Participant | null): HTMLMediaElement | null => {
-    if (!p?.sound) return null;
+    if (!p?.sound || p.sound.k === "youtube") return null;
     return p.sound.k === "video" ? (videos.current.get(p.id) ?? null) : audio.current;
   }, []);
 
   const silence = useCallback(() => {
     const p = current.current;
+    if (p?.sound?.k === "youtube") {
+      pauseYoutube();
+      return;
+    }
     const el = elementOf(p);
     if (!el) return;
     el.pause();
@@ -234,6 +239,30 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   const play = useCallback(
     (p: Participant | null | undefined) => {
       if (!p?.sound) return;
+      if (p.sound.k === "youtube") {
+        if (current.current && current.current.id !== p.id) silence();
+        audio.current?.pause();
+        current.current = p;
+        set(p.id, { loading: true, ended: false });
+        playYoutube(
+          { id: p.sound.id, start: p.sound.start, end: p.sound.end, volume: mute.current ? 0 : readVolume() },
+          {
+            onPlaying: () => { if (current.current?.id === p.id) set(p.id, { playing: true, loading: false, ended: false }); },
+            onPaused: () => { if (current.current?.id === p.id) set(p.id, { playing: false, loading: false }); },
+            onEnded: () => { if (current.current?.id === p.id) set(p.id, { playing: false, loading: false, ended: true }); },
+            onError: () => {
+              if (current.current?.id !== p.id || p.sound?.k !== "youtube") return;
+              const fb = p.sound.fallback;
+              if (!fb) { fail(p.id); return; }
+              const preview: Participant = { ...p, sound: { k: "audio", src: fb, preview: true } };
+              current.current = null;
+              play(preview);
+            },
+          },
+        );
+        return;
+      }
+      stopYoutube();
       if (current.current?.id !== p.id) silence();
       current.current = p;
       let el: HTMLMediaElement | null;
@@ -293,12 +322,17 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   );
 
   const stop = useCallback(() => {
+    stopYoutube();
     silence();
     current.current = null;
     setState(IDLE);
   }, [silence]);
 
   const applyLevel = useCallback(() => {
+    if (current.current?.sound?.k === "youtube") {
+      setYoutubeVolume(mute.current ? 0 : readVolume());
+      return;
+    }
     stopFade(elementOf(current.current));
     setMedia(elementOf(current.current), { volume: mute.current ? 0 : readVolume() / 100 });
   }, [elementOf]);
@@ -324,6 +358,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
   // Position dans la piste active, en secondes.
   const getTime = useCallback((): { now: number; total: number } | null => {
     const p = current.current;
+    if (p?.sound?.k === "youtube") return youtubeTime();
     const el = elementOf(p);
     if (!p || !el) return null;
     const end = p.sound?.k === "video" ? p.sound.end : undefined;
@@ -333,6 +368,10 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
 
   const seek = useCallback(
     (seconds: number) => {
+      if (current.current?.sound?.k === "youtube") {
+        seekYoutube(seconds);
+        return;
+      }
       const el = elementOf(current.current);
       if (el) el.currentTime = seconds;
     },

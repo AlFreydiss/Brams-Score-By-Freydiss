@@ -717,7 +717,14 @@
   background: color-mix(in srgb, var(--t-bg) 82%, transparent);
   backdrop-filter: blur(8px);
 }
+.t-transport {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
 .t-bar-play,
+.t-bar-step,
 .t-bar-full,
 .t-vol button {
   display: grid;
@@ -733,8 +740,17 @@
 .t-vol button {
   border-color: transparent;
 }
-.t-bar-play:disabled {
+.t-bar-step {
+  width: 34px;
+  height: 34px;
+  color: var(--t-ink);
+}
+.t-bar-play:disabled,
+.t-bar-step:disabled {
   opacity: 0.35;
+}
+.t-bar-step:hover:not(:disabled) {
+  border-color: var(--t-ink);
 }
 .t-bar-now {
   display: flex;
@@ -2109,7 +2125,8 @@
     height: 54px;
   }
   .t-bar-now,
-  .t-vol {
+  .t-vol input[type="range"],
+  .t-bar-ab span {
     display: none;
   }
   .t-toast-slot {

@@ -134,6 +134,13 @@
   color: var(--t-bg);
 }
 
+/* Transport de la barre : mêmes ronds que le bouton lecture. */
+[data-t="ost"] .t-bar-step:hover:not(:disabled) {
+  border-color: #fff;
+  background: #fff;
+  color: var(--t-bg);
+}
+
 /* Écoute alternée en cours : la pilule passe en blanc. */
 [data-t="ost"] .t-bar-ab.is-on {
   border-color: #fff;

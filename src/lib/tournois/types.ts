@@ -5,8 +5,12 @@ export type Visual =
   | { k: "video"; src: string };
 
 // « video » : la vidéo R2 du site, affichée dans la moitié et démutée pour l'écoute.
-// « audio » : un extrait officiel (Apple Music, 30 s), lu par le lecteur du site.
-export type Sound = { k: "video"; end?: number } | { k: "audio"; src: string; link?: string; preview?: boolean };
+// « audio » : un fichier lu par le lecteur du site (extrait Apple Music, ou fichier R2).
+// « youtube » : la piste complète, lue par l'iframe YouTube jusqu'à la fin.
+export type Sound =
+  | { k: "video"; end?: number }
+  | { k: "audio"; src: string; link?: string; preview?: boolean }
+  | { k: "youtube"; id: string; start?: number; end?: number; link?: string; fallback?: string };
 
 export type Participant = {
   id: string;

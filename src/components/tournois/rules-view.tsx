@@ -6,7 +6,7 @@ export function RulesView() {
   const { meta, participants } = useTournament();
   const audio = meta.mode === "audio";
   const SOURCES: Record<string, string> = {
-    ost: "Chaque piste est un extrait officiel de 30 secondes (Apple Music), lu par le lecteur du site. Le lien sous la barre de lecture mène au morceau complet.",
+    ost: "Chaque OST est lue en entier, jusqu'à la fin du morceau.",
     openings: "Le son vient des fichiers du site, les photos des séries de The Movie Database (TMDB). Quelques titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music).",
     endings: "Le son vient des fichiers du site, les photos des séries de The Movie Database (TMDB). Quelques titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music).",
     rap: "Les clips sont lus depuis les fichiers du site. Les titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music), avec la pochette du single.",
