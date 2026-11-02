@@ -1,5 +1,5 @@
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type Variants } from "framer-motion";
-import { Heart, Pause, Play, Sparkle } from "lucide-react";
+import { Heart, Minus, Pause, Play, Plus, SkipBack, SkipForward, Sparkle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { champion, currentMatch, ranking, roundName, shuffle } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
@@ -396,6 +396,37 @@ function Duel({
           />
         );
       })}
+      <Deck left={left} right={right} />
+    </div>
+  );
+}
+
+/** Sous les cartes : reculer, avancer, baisser, monter. Même rond que le cœur. */
+function Deck({ left, right }: { left: Participant; right: Participant }) {
+  const { player } = useTournament();
+  const cur = player.id === left.id ? left : player.id === right.id ? right : null;
+  const jump = (delta: number) => {
+    const t = player.getTime();
+    if (!cur || !t) return;
+    const cap = t.total > 0 ? t.total : t.now + Math.max(0, delta);
+    player.seek(Math.min(Math.max(0, t.now + delta), cap));
+  };
+  const bump = (delta: number) => player.setVolume(Math.min(100, Math.max(0, (player.muted ? 0 : player.volume) + delta)));
+  return (
+    <div className="ox-deck" role="group" aria-label="Lecture">
+      <button type="button" className="ox-deck-btn" onClick={() => jump(-10)} disabled={!cur} aria-label="Reculer de 10 secondes" title="Reculer de 10 secondes">
+        <SkipBack size={14} />
+      </button>
+      <button type="button" className="ox-deck-btn" onClick={() => jump(10)} disabled={!cur} aria-label="Avancer de 10 secondes" title="Avancer de 10 secondes">
+        <SkipForward size={14} />
+      </button>
+      <i className="ox-deck-gap" aria-hidden />
+      <button type="button" className="ox-deck-btn" onClick={() => bump(-10)} aria-label="Baisser le son" title="Baisser le son">
+        <Minus size={14} />
+      </button>
+      <button type="button" className="ox-deck-btn" onClick={() => bump(10)} aria-label="Monter le son" title="Monter le son">
+        <Plus size={14} />
+      </button>
     </div>
   );
 }
