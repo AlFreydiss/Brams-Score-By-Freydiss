@@ -18,12 +18,12 @@ const BACK: Variants = {
   center: {
     transform: "translateX(0%)",
     opacity: 1,
-    transition: { transform: { duration: 0.46, ease: T.ease.out }, opacity: { duration: 0.32, ease: T.ease.out } },
+    transition: { transform: { duration: 1.25, ease: T.ease.inOut }, opacity: { duration: 0.7, ease: T.ease.out } },
   },
   exit: (dir: number) => ({
     transform: `translateX(${dir >= 0 ? "18%" : "-18%"})`,
     opacity: 0,
-    transition: { transform: { duration: 0.46, ease: T.ease.out }, opacity: { duration: 0.28, ease: T.ease.out } },
+    transition: { transform: { duration: 1.05, ease: T.ease.inOut }, opacity: { duration: 0.55, ease: T.ease.out } },
   }),
 };
 const FADE: Variants = {

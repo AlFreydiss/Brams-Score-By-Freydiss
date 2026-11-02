@@ -27,25 +27,37 @@ type Side = 0 | 1;
 
 // dir : 1 duel suivant (la feuille part à droite, la nouvelle arrive de la
 // gauche), -1 retour, 0 premier duel (fondu, sans trajet).
-// Une seule translation, sur la feuille entière. Les cartes ne bougent pas
-// dedans : deux translations plus un flou se battaient et saccadaient.
-const SWIPE = 0.46;
+// Une seule translation. Le flou suit la course et se lève à l'arrivée :
+// 8px, pas plus, sinon la salle saccade.
+const SWIPE = 1.05;
+const HAZE = "blur(8px)";
 const STAGE: Variants = {
-  enter: (dir: number) => ({
-    transform: dir ? `translateX(${dir > 0 ? "-100%" : "100%"})` : "translateX(0%)",
-    opacity: dir ? 1 : 0,
-  }),
+  enter: (dir: number) =>
+    dir
+      ? { transform: `translateX(${dir > 0 ? "-100%" : "100%"})`, filter: HAZE, opacity: 1 }
+      : { transform: "translateX(0%)", filter: "blur(0px)", opacity: 0 },
   center: (dir: number) => ({
     transform: "translateX(0%)",
+    filter: "blur(0px)",
     opacity: 1,
     transition: dir
-      ? { transform: { duration: SWIPE, ease: T.ease.out }, opacity: { duration: 0 } }
-      : { opacity: { duration: 0.28, ease: T.ease.out }, transform: { duration: 0 } },
+      ? {
+          transform: { duration: SWIPE, ease: T.ease.inOut },
+          filter: { duration: SWIPE, ease: T.ease.out },
+          opacity: { duration: 0 },
+        }
+      : { opacity: { duration: 0.35, ease: T.ease.out }, transform: { duration: 0 }, filter: { duration: 0 } },
+    transitionEnd: { filter: "none" },
   }),
   exit: (dir: number) => ({
     transform: `translateX(${dir >= 0 ? "100%" : "-100%"})`,
+    filter: HAZE,
     opacity: 1,
-    transition: { transform: { duration: SWIPE, ease: T.ease.out }, opacity: { duration: 0 } },
+    transition: {
+      transform: { duration: SWIPE, ease: T.ease.inOut },
+      filter: { duration: 0.62, ease: T.ease.out },
+      opacity: { duration: 0 },
+    },
   }),
 };
 const FADE: Variants = {
@@ -331,7 +343,7 @@ function Duel({
       owed.current = null;
       onDone();
     };
-    timers.current.push(window.setTimeout(() => owed.current?.(), reduce ? 80 : 180));
+    timers.current.push(window.setTimeout(() => owed.current?.(), reduce ? 80 : 90));
   };
 
   const hidden = !!blind && picked == null;
