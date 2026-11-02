@@ -1,12 +1,5 @@
 import { useEffect, useRef } from "react";
 
-// Curseur flamme des tournois OST, openings et endings.
-// Le point chaud est le pied de la flamme : il se pose sur la ligne de lecture.
-const FLAME_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="32" viewBox="0 0 24 32"><path fill="#ff5a1f" opacity=".4" d="M12 1.2c1.8 4.6 7.2 6.4 7.2 13.2 0 6.2-3.4 11.2-7.2 15.2-3.8-4-7.2-9-7.2-15.2C4.8 7.6 10.2 5.8 12 1.2z"/><path fill="#ff8a2a" d="M12 3.2c1.5 4.2 6 5.8 6 11.6 0 5.2-2.8 9.4-6 12.8-3.2-3.4-6-7.6-6-12.8 0-5.8 4.5-7.4 6-11.6z"/><path fill="#ffd15a" d="M12 8.4c.9 2.6 3.2 3.6 3.2 6.8 0 3-1.5 5.4-3.2 7.4-1.7-2-3.2-4.4-3.2-7.4 0-3.2 2.3-4.2 3.2-6.8z"/><path fill="#fff6d2" d="M12 13.2c.5 1.6 1.7 2.2 1.7 4.1 0 1.8-.8 3.2-1.7 4.4-.9-1.2-1.7-2.6-1.7-4.4 0-1.9 1.2-2.5 1.7-4.1z"/></svg>`;
-const FLAME_URI = `data:image/svg+xml,${encodeURIComponent(FLAME_SVG)}`;
-export const FLAME_THUMB = `url("${FLAME_URI}")`;
-export const FLAME_CURSOR = `url("${FLAME_URI}") 12 30, auto`;
-
 type Kind = "ember" | "ink";
 type Emit = (x: number, y: number, kind: Kind) => void;
 
@@ -45,12 +38,6 @@ export function FlameInk() {
   const fadeRef = useRef(false);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty("--flame-cursor", FLAME_CURSOR);
-    root.style.setProperty("--flame-thumb", FLAME_THUMB);
-    document.body.dataset.tournoiFlame = "1";
-    window.dispatchEvent(new Event("tournoi-flame"));
-
     const fine = window.matchMedia?.("(pointer: fine)")?.matches ?? true;
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
     const canvas = canvasRef.current;
@@ -176,10 +163,6 @@ export function FlameInk() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("contextmenu", onCtx);
-      root.style.removeProperty("--flame-cursor");
-      root.style.removeProperty("--flame-thumb");
-      delete document.body.dataset.tournoiFlame;
-      window.dispatchEvent(new Event("tournoi-flame"));
     };
   }, []);
 
