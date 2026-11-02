@@ -18,53 +18,64 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
-// Au vote, la pastille reste. C'est nous qui avançons vers la carte gardée :
-// le monde part derrière, le duel suivant était déjà du côté choisi.
-// Droite → on va à droite. Le fond (loin) suit le même sens, moins loin.
+// Au vote, la pastille reste. La caméra fait trois temps, dans un seul
+// transform (perspective + translateZ + yaw) : dézoom, travelling vers la
+// carte gardée, rezoom. Droite → on va à droite, le monde part à gauche.
 // Tête, grain, vignette restent dans le cadre. « Annuler » inverse.
+// Même minutage que le fond (backdrop.tsx, CAM).
 
 type Side = 0 | 1;
 
-// dir : 1 on marche à droite, -1 à gauche, 0 premier duel.
-// Translation du monde + dolly dans le même transform. Flou 8px, levé à l'arrivée.
-const SWIPE = 1.05;
+// dir : 1 on marche à droite, -1 à gauche, 0 premier duel (fondu, pas de travelling).
+const CAM = 1.4;
 const HAZE = "blur(8px)";
-const aim = (dir: number) => (dir > 0 ? "70% 50%" : dir < 0 ? "30% 50%" : "50% 50%");
-// Le côté où l'on entre est devant nous. En sortant, ce côté reste derrière.
-const shot = (dir: number, at: "enter" | "exit") => {
-  const ahead = at === "enter" ? dir >= 0 : dir < 0;
-  return `translateX(${ahead ? "100%" : "-100%"}) scale(${at === "enter" ? "0.96" : "1.06"})`;
-};
-const STAGE: Variants = {
-  enter: (dir: number) =>
-    dir
-      ? { transform: shot(dir, "enter"), transformOrigin: aim(dir), filter: HAZE, opacity: 1 }
-      : { transform: "translateX(0%) scale(1)", transformOrigin: "50% 50%", filter: "blur(0px)", opacity: 0 },
-  center: (dir: number) => ({
-    transform: "translateX(0%) scale(1)",
-    transformOrigin: aim(dir),
-    filter: "blur(0px)",
-    opacity: 1,
-    transition: dir
-      ? {
-          transform: { duration: SWIPE, ease: T.ease.inOut },
-          filter: { duration: SWIPE, ease: T.ease.out },
-          opacity: { duration: 0 },
-        }
-      : { opacity: { duration: 0.35, ease: T.ease.out }, transform: { duration: 0 }, filter: { duration: 0 } },
-    transitionEnd: { filter: "none" },
-  }),
-  exit: (dir: number) => ({
-    transform: shot(dir, "exit"),
-    transformOrigin: aim(dir),
-    filter: HAZE,
+const pose = (x: string, z: number, yaw: number, tilt: number) =>
+  `perspective(1100px) rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
+const ID = pose("0%", 0, 0, 0);
+const BEAT = [0, 0.32, 0.7, 1] as const;
+
+// Le duel suivant est déjà du côté choisi, en retrait. Il attend la fin du
+// dézoom, arrive encore loin, puis la caméra pousse jusqu'au cadre.
+const rideIn = (dir: number) => {
+  const right = dir > 0;
+  const x = (n: number) => `${right ? n : -n}%`;
+  const yaw = right ? -6 : 6;
+  return {
+    transform: [pose(x(116), -210, yaw, 4), pose(x(108), -210, yaw * 0.5, 4), pose("0%", -200, 0, 2), ID],
+    filter: [HAZE, HAZE, "blur(5px)", "blur(0px)"],
     opacity: 1,
     transition: {
-      transform: { duration: SWIPE, ease: T.ease.inOut },
-      filter: { duration: 0.62, ease: T.ease.out },
-      opacity: { duration: 0 },
+      duration: CAM,
+      times: [...BEAT],
+      ease: [T.ease.inOut, T.ease.inOut, T.ease.out],
     },
-  }),
+  };
+};
+
+const FADE_IN = {
+  opacity: 1,
+  transform: ID,
+  filter: "blur(0px)",
+  transition: { opacity: { duration: 0.35, ease: T.ease.out }, transform: { duration: 0 }, filter: { duration: 0 } },
+};
+
+// Sortie : dézoom sur place (yaw vers la carte), travelling, hors champ.
+const EXIT: Variants = {
+  exit: (dir: number) => {
+    const right = dir >= 0;
+    const x = (n: number) => `${right ? -n : n}%`;
+    const yaw = right ? 7 : -7;
+    return {
+      transform: [ID, pose("0%", -210, yaw, 4), pose(x(108), -210, yaw * 0.25, 1), pose(x(120), -160, 0, 0)],
+      filter: ["blur(0px)", HAZE, HAZE, HAZE],
+      opacity: 1,
+      transition: {
+        duration: CAM,
+        times: [...BEAT],
+        ease: [T.ease.out, T.ease.inOut, T.ease.inOut],
+      },
+    };
+  },
 };
 const FADE: Variants = {
   enter: { opacity: 0 },
@@ -114,6 +125,9 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
   const run = saved.run;
   const [held, setHeld] = useState<{ match: Match; size: number } | null>(null);
   const dir = useRef(0);
+  // Le travelling d'entrée est figé au premier rendu de la clé. Un vote
+  // suivant change dir pendant que la feuille est encore là : on ne rejoue pas l'entrée.
+  const shot = useRef<{ key: string; incoming: ReturnType<typeof rideIn> | null } | null>(null);
 
   const cur = useMemo(() => (run ? currentMatch(run.rounds) : null), [run]);
   const champ = useMemo(() => (run ? champion(run.rounds) : null), [run]);
@@ -248,6 +262,12 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
     );
   }
 
+  if (!shot.current || shot.current.key !== key) {
+    const mountDir = dir.current;
+    shot.current = { key, incoming: !reduce && mountDir !== 0 ? rideIn(mountDir) : null };
+  }
+  const incoming = shot.current.incoming;
+
   return (
     <Plane i={1} label="Tournoi">
       <div className="ox-room" onPointerDown={onRoomDown} onPointerMove={onRoomMove} onPointerUp={onRoomUp} onPointerCancel={onRoomUp}>
@@ -258,7 +278,19 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
         </motion.div>
         <div className="ox-room-stage">
           <AnimatePresence custom={dir.current}>
-            <motion.div key={key} className="ox-room-slide" custom={dir.current} variants={reduce ? FADE : STAGE} initial="enter" animate="center" exit="exit">
+            <motion.div
+              key={key}
+              className="ox-room-slide"
+              style={{ transformOrigin: "50% 46%" }}
+              custom={dir.current}
+              initial={
+                reduce ? { opacity: 0 } : incoming ? { transform: incoming.transform[0], filter: HAZE, opacity: 1 } : { opacity: 0, transform: ID }
+              }
+              animate={reduce ? { opacity: 1, transition: { duration: 0.2 } } : (incoming ?? FADE_IN)}
+              exit="exit"
+              variants={reduce ? FADE : EXIT}
+              transitionEnd={{ filter: "none" }}
+            >
               {body}
             </motion.div>
           </AnimatePresence>

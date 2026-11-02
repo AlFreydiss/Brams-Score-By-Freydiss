@@ -1,4 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
+import { useRef } from "react";
 import type { Participant } from "@/lib/tournois/types";
 import { T } from "./tokens";
 import { Photo } from "./ui";
@@ -7,24 +8,45 @@ import { Photo } from "./ui";
 // géantes, très sombres, fondues vers le centre et qui dérivent lentement ;
 // une lueur dorée au centre, un vignettage, des filets en biais, quelques
 // pétales et poussières lumineuses, le grain de pellicule. Les silhouettes
-// changent avec la clé : même sens que la caméra, trajet plus court
-// (plan lointain). Vignette, grain, pétales restent.
+// changent avec la clé. Plan lointain : même phrase que les cartes
+// (dézoom, travelling, retour) mais Z plus court. Vignette, grain, pétales restent.
+// CAM identique à duel.tsx.
 
-const BACK: Variants = {
-  enter: (dir: number) =>
-    dir
-      ? { transform: `translateX(${dir > 0 ? "32%" : "-32%"})`, opacity: 0.4 }
-      : { transform: "translateX(0%)", opacity: 1 },
-  center: {
-    transform: "translateX(0%)",
-    opacity: 1,
-    transition: { transform: { duration: 1.25, ease: T.ease.inOut }, opacity: { duration: 0.7, ease: T.ease.out } },
+const CAM = 1.4;
+const BEAT = [0, 0.32, 0.7, 1] as const;
+const far = (x: string, z: number, yaw: number) => `perspective(1400px) rotateY(${yaw}deg) translate3d(${x}, 0px, ${z}px)`;
+const FAR_ID = far("0%", 0, 0);
+
+const backIn = (dir: number) => {
+  const right = dir > 0;
+  const x = (n: number) => `${right ? n : -n}%`;
+  const yaw = right ? -3 : 3;
+  return {
+    transform: [far(x(40), -90, yaw), far(x(36), -90, yaw), far("0%", -70, 0), FAR_ID],
+    opacity: [0, 0, 1, 1],
+    transition: {
+      duration: CAM,
+      times: [...BEAT],
+      ease: [T.ease.inOut, T.ease.inOut, T.ease.out],
+    },
+  };
+};
+
+const BACK_EXIT: Variants = {
+  exit: (dir: number) => {
+    const right = dir >= 0;
+    const x = (n: number) => `${right ? -n : n}%`;
+    const yaw = right ? 3 : -3;
+    return {
+      transform: [FAR_ID, far("0%", -90, yaw), far(x(24), -90, yaw * 0.3), far(x(32), -30, 0)],
+      opacity: [1, 1, 0, 0],
+      transition: {
+        duration: CAM,
+        times: [...BEAT],
+        ease: [T.ease.out, T.ease.inOut, T.ease.inOut],
+      },
+    };
   },
-  exit: (dir: number) => ({
-    transform: `translateX(${dir >= 0 ? "-32%" : "32%"})`,
-    opacity: 0,
-    transition: { transform: { duration: 1.05, ease: T.ease.inOut }, opacity: { duration: 0.55, ease: T.ease.out } },
-  }),
 };
 const FADE: Variants = {
   enter: { opacity: 0 },
@@ -60,12 +82,27 @@ const DUST: [number, number, number, number][] = [
 
 export function Backdrop({ k, pair, dir = 1, dim = false }: { k: string; pair: [Participant, Participant] | null; dir?: number; dim?: boolean }) {
   const reduce = useReducedMotion();
+  const shot = useRef<{ k: string; incoming: ReturnType<typeof backIn> | null } | null>(null);
+  if (pair && (!shot.current || shot.current.k !== k)) {
+    shot.current = { k, incoming: !reduce && dir !== 0 ? backIn(dir) : null };
+  }
+  const incoming = pair && shot.current?.k === k ? shot.current.incoming : null;
   return (
     <div className={`ox-back ${dim ? "is-dim" : ""}`} aria-hidden>
       <motion.div className="ox-back-base" initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1, transition: { duration: 1.2 } }} />
       <AnimatePresence initial={false} custom={dir}>
         {pair ? (
-          <motion.div key={k} className="ox-back-pair" custom={dir} variants={reduce ? FADE : BACK} initial="enter" animate="center" exit="exit">
+          <motion.div
+            key={k}
+            className="ox-back-pair"
+            custom={dir}
+            initial={
+              reduce ? { opacity: 0 } : incoming ? { transform: incoming.transform[0], opacity: 0 } : { opacity: 0, transform: FAR_ID }
+            }
+            animate={reduce ? { opacity: 1, transition: { duration: 0.4 } } : (incoming ?? { opacity: 1, transform: FAR_ID, transition: { duration: 0.4 } })}
+            exit="exit"
+            variants={reduce ? FADE : BACK_EXIT}
+          >
             <div className="ox-ghost ox-ghost--a">
               <Photo p={pair[0]} portrait={0.9} sizes="60vw" />
             </div>
