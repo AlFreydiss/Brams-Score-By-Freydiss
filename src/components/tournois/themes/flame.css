@@ -1,0 +1,41 @@
+/* Curseur flamme + pouce de lecture. OST, openings, endings seulement. */
+
+[data-flame],
+[data-flame] :is(a, button, input, label, .ox-vol-side) {
+  cursor: var(--flame-cursor, auto);
+}
+
+.t-flame-ink {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+[data-flame] .ox-scrub,
+[data-flame] .t-seek input[type="range"] {
+  height: 34px;
+}
+
+[data-flame] .ox-scrub::-webkit-slider-thumb,
+[data-flame] .t-seek input::-webkit-slider-thumb {
+  width: 22px;
+  height: 30px;
+  margin-top: -28px;
+  border: 0;
+  border-radius: 0;
+  background: var(--flame-thumb) center / 22px 30px no-repeat;
+  box-shadow: none;
+}
+
+[data-flame] .ox-scrub::-moz-range-thumb,
+[data-flame] .t-seek input::-moz-range-thumb {
+  width: 22px;
+  height: 30px;
+  border: 0;
+  border-radius: 0;
+  background: var(--flame-thumb) center / 22px 30px no-repeat;
+  transform: translateY(-10px);
+}

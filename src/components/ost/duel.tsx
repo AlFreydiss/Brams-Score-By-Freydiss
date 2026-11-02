@@ -6,6 +6,7 @@ import { champion, currentMatch, ranking, roundName, shuffle } from "@/lib/tourn
 import { actions } from "@/lib/tournois/store";
 import type { Match, Participant } from "@/lib/tournois/types";
 import { fetchPair } from "@/lib/versusStats.js";
+import { emitVolTrail } from "../tournois/flame-ink";
 import { useTournament } from "../tournois/provider";
 import { Plane, useSpace } from "./space";
 import { T } from "./tokens";
@@ -112,14 +113,14 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
   const { meta, saved, participants, player } = useTournament();
   const playerRef = useRef(player);
   playerRef.current = player;
-  const volDrag = useRef<{ x: number; y: number; vol: number; on: boolean } | null>(null);
-  const [trail, setTrail] = useState<{ x: number; y: number }[]>([]);
-  const [volNow, setVolNow] = useState<number | null>(null);
+  const volDrag = useRef<{ x: number; y: number; vol: number; on: boolean; prev: number } | null>(null);
+  const [volNow, setVolNow] = useState<{ n: number; x: number; y: number } | null>(null);
   const onRoomDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     const t = e.target as HTMLElement;
     if (t.closest("button, a, input, textarea, select, label, .ox-playbar")) return;
-    volDrag.current = { x: e.clientX, y: e.clientY, vol: player.muted ? 0 : player.volume, on: false };
+    const vol = player.muted ? 0 : player.volume;
+    volDrag.current = { x: e.clientX, y: e.clientY, vol, on: false, prev: vol };
   };
   const onRoomMove = (e: PointerEvent<HTMLDivElement>) => {
     const d = volDrag.current;
@@ -136,14 +137,14 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
       e.currentTarget.setPointerCapture(e.pointerId);
     }
     const next = Math.min(100, Math.max(0, Math.round(d.vol + dy * 0.45)));
+    if (next < d.prev) emitVolTrail(e.clientX, e.clientY);
+    d.prev = next;
     playerRef.current.setVolume(next);
-    setVolNow(next);
-    setTrail((pts) => [...pts, { x: e.clientX, y: e.clientY }].slice(-18));
+    setVolNow({ n: next, x: e.clientX, y: e.clientY });
   };
   const onRoomUp = () => {
     volDrag.current = null;
     setVolNow(null);
-    setTrail([]);
   };
   const { goTo } = useSpace();
   const reduce = useReducedMotion();
@@ -299,17 +300,11 @@ export function DuelPlane({ practice, onEndPractice }: { practice: boolean; onEn
             </motion.div>
           </AnimatePresence>
         </div>
-        {trail.length
+        {volNow
           ? createPortal(
-              <svg className="ox-trail-svg" aria-hidden>
-                <polyline points={trail.map((pt) => `${pt.x},${pt.y}`).join(" ")} />
-                <circle cx={trail[trail.length - 1].x} cy={trail[trail.length - 1].y} r="3.5" />
-                {volNow != null ? (
-                  <text x={trail[trail.length - 1].x + 14} y={trail[trail.length - 1].y + 4}>
-                    {volNow}
-                  </text>
-                ) : null}
-              </svg>,
+              <span className="ox-vol-readout" style={{ left: volNow.x + 14, top: volNow.y - 8 }} aria-hidden>
+                {volNow.n}
+              </span>,
               document.body,
             )
           : null}
@@ -568,14 +563,17 @@ function Card({
           {hidden ? "Titre caché" : (p.sub ?? p.group)}
         </motion.p>
         <h2 className={`ox-card-title ${name.length > 24 ? "is-long" : ""}`}>
-          {/* Le titre monte derrière un masque, comme un générique. */}
-          <motion.span
-            className="ox-card-title-in"
-            initial={reduce ? false : { y: "110%" }}
-            animate={{ y: 0, transition: { duration: 0.9, delay: 0.34, ease: T.ease.out } }}
-          >
-            {name}
-          </motion.span>
+          {!hidden ? <span className="ox-card-ghost" aria-hidden>{name}</span> : null}
+          <span className="ox-card-title-mask">
+            {/* Le titre monte derrière un masque, comme un générique. */}
+            <motion.span
+              className="ox-card-title-in"
+              initial={reduce ? false : { y: "110%" }}
+              animate={{ y: 0, transition: { duration: 0.9, delay: 0.34, ease: T.ease.out } }}
+            >
+              {name}
+            </motion.span>
+          </span>
         </h2>
         {!hidden && p.artist ? (
           <motion.p className="ox-card-artist" variants={INFO} custom={2} initial={reduce ? false : "hidden"} animate="shown">

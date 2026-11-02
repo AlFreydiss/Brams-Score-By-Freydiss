@@ -201,15 +201,24 @@ export function GlobalCursorLayer() {
   const [equipped, setEquipped] = useState(null)
   // Phase dessin Freydiss Phone : on rend le curseur natif au canvas (pas de curseur custom/none).
   const [drawOpen, setDrawOpen] = useState(() => typeof document !== 'undefined' && document.body.dataset.drawOpen === 'true')
+  const [tournoiFlame, setTournoiFlame] = useState(() => typeof document !== 'undefined' && document.body.dataset.tournoiFlame === '1')
   useEffect(() => {
-    const upd = () => setDrawOpen(document.body.dataset.drawOpen === 'true')
+    const upd = () => {
+      setDrawOpen(document.body.dataset.drawOpen === 'true')
+      setTournoiFlame(document.body.dataset.tournoiFlame === '1')
+    }
+    upd()
     window.addEventListener('bp-draw-toggle', upd)
-    return () => window.removeEventListener('bp-draw-toggle', upd)
+    window.addEventListener('tournoi-flame', upd)
+    return () => {
+      window.removeEventListener('bp-draw-toggle', upd)
+      window.removeEventListener('tournoi-flame', upd)
+    }
   }, [])
   useEffect(() => {
     const read = () => {
       // En dessin : ne touche pas au curseur (laisse le natif/canvas), pas d'overlay.
-      if (document.body.dataset.drawOpen === 'true') { document.body.style.cursor = ''; return }
+      if (document.body.dataset.drawOpen === 'true' || document.body.dataset.tournoiFlame === '1') { document.body.style.cursor = ''; return }
       let payload = null
       try { const raw = localStorage.getItem(CURSOR_KEY); payload = raw ? JSON.parse(raw) : null } catch {}
       setEquipped(payload)
@@ -221,10 +230,11 @@ export function GlobalCursorLayer() {
     read()
     window.addEventListener(CURSOR_EVENT, read)
     window.addEventListener('bp-draw-toggle', read) // ré-applique en entrant/sortant du dessin
+    window.addEventListener('tournoi-flame', read)
     window.addEventListener('storage', read) // sync entre onglets
-    return () => { window.removeEventListener(CURSOR_EVENT, read); window.removeEventListener('bp-draw-toggle', read); window.removeEventListener('storage', read) }
+    return () => { window.removeEventListener(CURSOR_EVENT, read); window.removeEventListener('bp-draw-toggle', read); window.removeEventListener('tournoi-flame', read); window.removeEventListener('storage', read) }
   }, [])
-  if (drawOpen || !equipped || !equipped.animated) return null
+  if (drawOpen || tournoiFlame || !equipped || !equipped.animated) return null
   return <CustomCursorOverlay id={equipped.id} emoji={equipped.emoji} glow={equipped.glow} />
 }
 

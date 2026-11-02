@@ -8,6 +8,7 @@ import { runStatus } from "@/lib/tournois/stats";
 import { fetchPair } from "@/lib/versusStats.js";
 import { actions } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
+import { emitVolTrail } from "./flame-ink";
 import { SeekBar } from "./progress";
 import { useTournament } from "./provider";
 import { Visual } from "./visual";
@@ -674,7 +675,8 @@ function AudioBar({
   onAb?: () => void;
   abOk: boolean;
 }) {
-  const { player } = useTournament();
+  const { meta, player } = useTournament();
+  const flame = meta.slug === "openings" || meta.slug === "endings";
   const playing = player.id === left.id ? left : player.id === right.id ? right : null;
   const active = playing && masked ? { ...playing, title: `Piste ${playing === left ? "A" : "B"}`, sub: "À l'aveugle" } : playing;
   const jump = (delta: number) => {
@@ -683,7 +685,13 @@ function AudioBar({
     const cap = t.total > 0 ? t.total : t.now + Math.max(0, delta);
     player.seek(Math.min(Math.max(0, t.now + delta), cap));
   };
-  const bump = (delta: number) => player.setVolume(Math.min(100, Math.max(0, (player.muted ? 0 : player.volume) + delta)));
+  const applyVol = (next: number) => {
+    const prev = player.muted ? 0 : player.volume;
+    const v = Math.min(100, Math.max(0, next));
+    if (flame && v < prev) emitVolTrail();
+    player.setVolume(v);
+  };
+  const bump = (delta: number) => applyVol((player.muted ? 0 : player.volume) + delta);
   return (
     <div className="t-bar">
       {audio ? (
@@ -736,7 +744,7 @@ function AudioBar({
             <button type="button" onClick={player.toggleMute} aria-pressed={player.muted} aria-label={player.muted ? "Rétablir le son" : "Couper le son"} title={player.muted ? "Rétablir le son" : "Couper le son"}>
               {player.muted || player.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
-            <input type="range" min={0} max={100} value={player.muted ? 0 : player.volume} onChange={(e) => player.setVolume(Number(e.target.value))} aria-label="Volume" style={{ "--p": `${player.muted ? 0 : player.volume}%` } as React.CSSProperties} />
+            <input type="range" min={0} max={100} value={player.muted ? 0 : player.volume} onChange={(e) => applyVol(Number(e.target.value))} aria-label="Volume" style={{ "--p": `${player.muted ? 0 : player.volume}%` } as React.CSSProperties} />
             <button type="button" className="t-bar-step" onClick={() => bump(10)} aria-label="Monter le son" title="Monter le son">
               <Plus size={15} />
             </button>

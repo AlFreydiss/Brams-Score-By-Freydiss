@@ -2019,6 +2019,63 @@
   color: rgba(233, 228, 218, 0.78);
 }
 
+/* Plaque de lecture : titre en filigrane, artiste et Garder en pastille vin, comme la régie. */
+.ox-card-title {
+  position: relative;
+  overflow: visible;
+}
+.ox-card-title-mask {
+  position: relative;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+}
+.ox-card-ghost {
+  position: absolute;
+  left: 18%;
+  top: -0.42em;
+  z-index: 0;
+  max-width: 140%;
+  overflow: hidden;
+  font: inherit;
+  font-size: 1.7em;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+  user-select: none;
+}
+.ox-card-info .ox-card-artist {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 6px 12px;
+  background: #6b2e34;
+  color: #f4ebe8;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+.ox .ox-keep {
+  background: #6b2e34;
+  border-color: transparent;
+  color: #f6eeea;
+  letter-spacing: 0.28em;
+}
+.ox .ox-keep:hover {
+  background: #823840;
+  border-color: transparent;
+  color: #fff;
+}
+.ox-vol-readout {
+  position: fixed;
+  z-index: 81;
+  color: #ffd15a;
+  font: 500 11px "Cinzel", serif;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
 /* ── Finitions ────────────────────────────────────────────────────── */
 /* Au survol d'une carte, quatre coins dorés se posent autour d'elle. */
 .ox-card-corners {
