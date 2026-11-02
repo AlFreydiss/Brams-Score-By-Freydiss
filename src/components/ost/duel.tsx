@@ -18,11 +18,10 @@ import { engrave, Photo, Press } from "./ui";
 // encadrées, un séparateur VS doré. Toucher une carte écoute le morceau en entier ;
 // « Garder » la fait passer au tour suivant.
 //
-// Au vote, la pastille reste. Les cartes sont déjà en volume (rotateY sur
-// chaque siège, perspective sur la scène). La caméra : dézoom, yaw vers la
-// carte gardée, travelling, rezoom. Pas de flou sur la feuille — il aplatirait
-// le 3D. Le flou de vitesse est sur l'œuvre, seulement au pic du travelling.
-// Droite → on va à droite. Tête, grain, vignette restent. « Annuler » inverse.
+// Au vote, la pastille reste. Au repos les cartes sont plates. Le volume
+// n'existe que le temps du Garder : un dézoom court, un yaw léger vers la
+// carte, le travelling, le rezoom. Le flou de vitesse reste sur l'œuvre,
+// au pic seulement. Droite → on va à droite. « Annuler » inverse.
 // Même minutage que le fond (backdrop.tsx, CAM).
 
 type Side = 0 | 1;
@@ -30,18 +29,17 @@ type Side = 0 | 1;
 // dir : 1 on marche à droite, -1 à gauche, 0 premier duel (fondu, pas de travelling).
 const CAM = 1.4;
 const pose = (x: string, z: number, yaw: number, tilt: number) =>
-  `rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
+  `perspective(1500px) rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
 const ID = pose("0%", 0, 0, 0);
 const BEAT = [0, 0.32, 0.7, 1] as const;
 
-// Le duel suivant est déjà du côté choisi, loin et tourné. Il attend la fin
-// du dézoom, se pose encore en retrait, puis la caméra pousse dans le volume.
+// Léger : ~6° et un petit recul. Les cartes ne tournent pas tant qu'on n'a pas voté.
 const rideIn = (dir: number) => {
   const right = dir > 0;
   const x = (n: number) => `${right ? n : -n}%`;
-  const yaw = right ? -16 : 16;
+  const yaw = right ? -5 : 5;
   return {
-    transform: [pose(x(118), -320, yaw, 12), pose(x(110), -320, yaw * 0.65, 11), pose("0%", -260, 0, 7), ID],
+    transform: [pose(x(112), -80, yaw, 2), pose(x(106), -80, yaw * 0.6, 2), pose("0%", -56, 0, 1), ID],
     opacity: 1,
     transition: {
       duration: CAM,
@@ -62,9 +60,9 @@ const EXIT: Variants = {
   exit: (dir: number) => {
     const right = dir >= 0;
     const x = (n: number) => `${right ? -n : n}%`;
-    const yaw = right ? 18 : -18;
+    const yaw = right ? 5 : -5;
     return {
-      transform: [ID, pose("0%", -320, yaw, 12), pose(x(108), -300, yaw * 0.35, 5), pose(x(124), -120, 0, 0)],
+      transform: [ID, pose("0%", -80, yaw, 2), pose(x(106), -72, yaw * 0.3, 1), pose(x(114), -16, 0, 0)],
       opacity: 1,
       transition: {
         duration: CAM,

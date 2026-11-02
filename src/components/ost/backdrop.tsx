@@ -15,15 +15,15 @@ import { Photo } from "./ui";
 const CAM = 1.4;
 const BEAT = [0, 0.32, 0.7, 1] as const;
 const far = (x: string, z: number, yaw: number, tilt = 0) =>
-  `perspective(900px) rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
+  `perspective(1800px) rotateY(${yaw}deg) rotateX(${tilt}deg) translate3d(${x}, 0px, ${z}px)`;
 const FAR_ID = far("0%", 0, 0);
 
 const backIn = (dir: number) => {
   const right = dir > 0;
   const x = (n: number) => `${right ? n : -n}%`;
-  const yaw = right ? -8 : 8;
+  const yaw = right ? -2 : 2;
   return {
-    transform: [far(x(42), -160, yaw, 6), far(x(36), -160, yaw, 6), far("0%", -90, 0, 3), FAR_ID],
+    transform: [far(x(28), -36, yaw, 1), far(x(24), -36, yaw, 1), far("0%", -18, 0, 0), FAR_ID],
     opacity: [0.35, 0.4, 1, 1],
     transition: {
       duration: CAM,
@@ -37,9 +37,9 @@ const BACK_EXIT: Variants = {
   exit: (dir: number) => {
     const right = dir >= 0;
     const x = (n: number) => `${right ? -n : n}%`;
-    const yaw = right ? 8 : -8;
+    const yaw = right ? 2 : -2;
     return {
-      transform: [FAR_ID, far("0%", -160, yaw, 6), far(x(26), -150, yaw * 0.3, 2), far(x(36), -40, 0, 0)],
+      transform: [FAR_ID, far("0%", -36, yaw, 1), far(x(18), -30, 0, 0), far(x(24), -8, 0, 0)],
       opacity: [1, 0.85, 0, 0],
       transition: {
         duration: CAM,
