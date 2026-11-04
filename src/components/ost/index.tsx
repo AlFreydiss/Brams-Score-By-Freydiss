@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { actions } from "@/lib/tournois/store";
 import { useTournament } from "../tournois/provider";
 import { Board } from "./board";
 import { DuelPlane } from "./duel";
@@ -35,7 +36,7 @@ export function OstSpace() {
   const root = useRef<HTMLDivElement>(null);
   const board = useRef<HTMLDivElement>(null);
   const api = useRef<SpaceApi>(null);
-  const { saved } = useTournament();
+  const { saved, meta } = useTournament();
 
   // Une vraie partie lancée met fin au duel d'essai.
   const startedAt = saved.run?.startedAt;
@@ -86,9 +87,13 @@ export function OstSpace() {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape" && pseudo) setPseudo(false);
-      if ((e.key !== "f" && e.key !== "F") || e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if ((e.key === "c" || e.key === "C") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        actions.setPrefs(meta.slug, { cinematic: !saved.settings.cinematic });
+        return;
+      }
+      if ((e.key !== "f" && e.key !== "F") || e.ctrlKey || e.metaKey || e.altKey) return;
       toggleFull();
     };
     window.addEventListener("keydown", key);
@@ -102,7 +107,7 @@ export function OstSpace() {
   };
 
   return (
-    <div ref={root} className={`ox${pseudo ? " is-full" : ""}`} style={cssVars()}>
+    <div ref={root} className={`ox${pseudo ? " is-full" : ""}${saved.settings.cinematic ? " is-cine" : ""}${saved.settings.motion === "calme" ? " is-calme" : ""}`} style={cssVars()}>
       <SwipeSpace count={3} index={index} onSettle={onSettle} apiRef={api} overlay={<Wordline labels={LABELS} current={settled} full={full || pseudo} onFull={toggleFull} />}>
         <HomePlane
           onPractice={() => {

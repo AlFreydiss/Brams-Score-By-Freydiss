@@ -2,12 +2,13 @@ import { motion } from "framer-motion";
 import { Play } from "lucide-react";
 import { forwardRef, memo, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { currentMatch, roundName, winnerOf } from "@/lib/tournois/bracket";
-import { computeRows, rowsFromSite, sortRows, type SiteStats } from "@/lib/tournois/stats";
+import { computeRows, rowsFromSite, runStatus, sortRows, type SiteStats, type SortKey } from "@/lib/tournois/stats";
 import type { Match, Participant } from "@/lib/tournois/types";
 import { fetchStats } from "@/lib/versusStats.js";
 import { useTournament } from "../tournois/provider";
 import { Backdrop } from "./backdrop";
 import { Depth, Plane, useSpace } from "./space";
+import { Tree } from "./tree";
 import { engrave, Photo, Press } from "./ui";
 
 // Le plan Tableau : la partie en cours tour par tour, puis en descendant le
@@ -28,6 +29,7 @@ export const Board = forwardRef<HTMLDivElement>(function Board(_, ref) {
         <div className="ox-board">
           <Bracket />
           <Ranking />
+          <Insights />
           <History />
           <Favorites />
         </div>
@@ -39,6 +41,7 @@ export const Board = forwardRef<HTMLDivElement>(function Board(_, ref) {
 function Bracket() {
   const { saved } = useTournament();
   const { goTo } = useSpace();
+  const [tree, setTree] = useState(false);
   // Priorité basse : un vote ne redessine pas tout le tableau pendant le
   // glissement du duel ; il se met à jour dès que le navigateur a le temps.
   const run = useDeferredValue(saved.run);
@@ -68,7 +71,18 @@ function Bracket() {
       <p className="ox-lead">
         {played} duel{played > 1 ? "s" : ""} joué{played > 1 ? "s" : ""} sur {run.size - 1}.
       </p>
-      {rounds.map((r) => (
+      <div className="ox-seg" role="tablist" aria-label="Présentation du tableau">
+        <button type="button" role="tab" aria-selected={!tree} onClick={() => setTree(false)}>
+          Liste
+        </button>
+        <button type="button" role="tab" aria-selected={tree} onClick={() => setTree(true)}>
+          Arbre
+        </button>
+      </div>
+      {tree ? (
+        <Tree rounds={run.rounds} currentId={cur?.match.id ?? null} blind={run.blind} onOpenCurrent={() => goTo(1)} />
+      ) : null}
+      {!tree && rounds.map((r) => (
         <div key={r.id} className="ox-round-block">
           <h3 className="ox-h3">{roundName(r.size)}</h3>
           <div className="ox-matches">
@@ -131,6 +145,10 @@ function Ranking() {
   const [site, setSite] = useState<SiteStats | null>(null);
   const [mine, setMine] = useState(false);
   const [all, setAll] = useState(false);
+  const [sort, setSort] = useState<SortKey>("rank");
+  const [group, setGroup] = useState("");
+  const [artist, setArtist] = useState("");
+  const [compare, setCompare] = useState<string[]>([]);
   useEffect(() => {
     let on = true;
     if (meta.statsId) fetchStats(meta.statsId, { fresh: true }).then((m: SiteStats | null) => on && setSite(m));
@@ -138,11 +156,18 @@ function Ranking() {
       on = false;
     };
   }, [meta.statsId]);
-  const siteRows = useMemo(() => (site ? sortRows(rowsFromSite(site, participants, saved.run), "rate") : []), [site, participants, saved.run]);
-  const localRows = useMemo(() => sortRows(computeRows(saved.votes, participants, saved.run), "rank"), [saved.votes, participants, saved.run]);
+  const siteRows = useMemo(() => (site ? rowsFromSite(site, participants, saved.run) : []), [site, participants, saved.run]);
+  const localRows = useMemo(() => computeRows(saved.votes, participants, saved.run), [saved.votes, participants, saved.run]);
   const useMine = mine || !siteRows.length;
-  const rows = (useMine ? localRows : siteRows).filter((r) => r.duels > 0);
+  const base = (useMine ? localRows : siteRows).filter((r) => r.duels > 0);
+  const groups = useMemo(() => [...new Set(base.map((r) => r.p.group))].sort((a, b) => a.localeCompare(b, "fr")), [base]);
+  const artists = useMemo(() => [...new Set(base.map((r) => r.p.artist).filter((a): a is string => !!a))].sort((a, b) => a.localeCompare(b, "fr")), [base]);
+  const rows = sortRows(
+    base.filter((r) => (!group || r.p.group === group) && (!artist || r.p.artist === artist)),
+    useMine && sort === "rate" ? "rank" : sort,
+  );
   const shown = all ? rows : rows.slice(0, 10);
+  const compared = rows.filter((r) => compare.includes(r.p.id));
   return (
     <section className="ox-sec" id="classement">
       <div className="ox-sec-head">
@@ -160,6 +185,58 @@ function Ranking() {
           </div>
         ) : null}
       </div>
+      <p className="ox-hint">{useMine ? "Tes duels, sur cet appareil. Distincts des votes du site." : "Votes de tout le site. Distincts de tes choix."}</p>
+      {rows.length ? (
+        <div className="ox-filters">
+          <label>
+            Trier
+            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+              <option value="rank">Victoires</option>
+              <option value="rate">Pourcentage</option>
+              <option value="duels">Duels</option>
+              <option value="title">Titre</option>
+              <option value="group">Anime</option>
+            </select>
+          </label>
+          <label>
+            Anime
+            <select value={group} onChange={(e) => setGroup(e.target.value)}>
+              <option value="">Tous</option>
+              {groups.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </label>
+          {artists.length ? (
+            <label>
+              Compositeur
+              <select value={artist} onChange={(e) => setArtist(e.target.value)}>
+                <option value="">Tous</option>
+                {artists.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+      {compared.length >= 2 ? (
+        <ul className="ox-compare">
+          {compared.map((r) => (
+            <li key={r.p.id}>
+              <b>{engrave(r.p.title)}</b>
+              <span>
+                {r.wins} victoire{r.wins > 1 ? "s" : ""} sur {r.duels}
+                {r.rate != null ? ` · ${r.rate} %` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {rows.length ? (
         <ol className="ox-rank">
           {shown.map((r, i) => {
@@ -181,6 +258,16 @@ function Ranking() {
                     {r.wins} sur {r.duels}
                   </small>
                 </span>
+                <button
+                  type="button"
+                  className={`ox-link ${compare.includes(r.p.id) ? "is-on" : ""}`}
+                  aria-pressed={compare.includes(r.p.id)}
+                  onClick={() =>
+                    setCompare((curIds) => (curIds.includes(r.p.id) ? curIds.filter((id) => id !== r.p.id) : curIds.length >= 3 ? curIds : [...curIds, r.p.id]))
+                  }
+                >
+                  {compare.includes(r.p.id) ? "Retirer" : "Comparer"}
+                </button>
               </motion.li>
             );
           })}
@@ -192,6 +279,136 @@ function Ranking() {
         <button type="button" className="ox-link" onClick={() => setAll((v) => !v)} aria-expanded={all}>
           {all ? "Voir les 10 premières" : `Voir les ${rows.length}`}
         </button>
+      ) : null}
+    </section>
+  );
+}
+
+function Insights() {
+  const { participants, saved, byId } = useTournament();
+  const run = saved.run;
+  const votes = saved.votes;
+  const rows = useMemo(() => computeRows(votes, participants, run).filter((r) => r.duels > 0), [votes, participants, run]);
+  if (!rows.length && !votes.length && !saved.listens.length) return null;
+  const top = [...rows].sort((a, b) => b.wins - a.wins || a.losses - b.losses)[0];
+  const dropped = [...rows].sort((a, b) => b.losses - a.losses)[0];
+  const alive = run ? participants.filter((p) => {
+    const k = runStatus(run, p.id).kind;
+    return k === "alive" || k === "champion";
+  }) : [];
+  const lead = (pick: (p: (typeof alive)[number]) => string | undefined) => {
+    const m = new Map<string, number>();
+    for (const p of alive) {
+      const k = pick(p);
+      if (!k) continue;
+      m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    return [...m].sort((a, b) => b[1] - a[1])[0];
+  };
+  const anime = alive.length ? lead((p) => p.group) : undefined;
+  const composer = alive.length ? lead((p) => p.artist) : undefined;
+  const deep = [...votes].sort((a, b) => a.round - b.round)[0];
+  const slow = [...votes].filter((v) => v.ms > 0).sort((a, b) => b.ms - a.ms)[0];
+  const byGroup = new Map<string, number>();
+  for (const r of rows) byGroup.set(r.p.group, (byGroup.get(r.p.group) ?? 0) + r.wins);
+  const bars = [...byGroup].filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const max = bars[0]?.[1] ?? 1;
+  const name = (id: string) => byId.get(id)?.title ?? "—";
+  return (
+    <section className="ox-sec" id="statistiques">
+      <Depth depth={-0.12}>
+        <h2 className="ox-h1">Statistiques</h2>
+      </Depth>
+      <p className="ox-hint">Tes duels sur cet appareil, et la partie en cours. Aucun chiffre n'est complété.</p>
+      <dl className="ox-facts">
+        {votes.length ? (
+          <div>
+            <dt>Choix enregistrés</dt>
+            <dd>{votes.length}</dd>
+          </div>
+        ) : null}
+        {saved.listens.length ? (
+          <div>
+            <dt>Écoutes lancées</dt>
+            <dd>{saved.listens.length}</dd>
+          </div>
+        ) : null}
+        {top && top.wins > 0 ? (
+          <div>
+            <dt>La plus gardée</dt>
+            <dd>
+              {engrave(top.p.title)}
+              <small>
+                {top.wins} victoire{top.wins > 1 ? "s" : ""}
+              </small>
+            </dd>
+          </div>
+        ) : null}
+        {dropped && dropped.losses > 0 ? (
+          <div>
+            <dt>La plus souvent écartée</dt>
+            <dd>
+              {engrave(dropped.p.title)}
+              <small>
+                {dropped.losses} défaite{dropped.losses > 1 ? "s" : ""}
+              </small>
+            </dd>
+          </div>
+        ) : null}
+        {anime && anime[1] > 0 ? (
+          <div>
+            <dt>Anime encore le plus représenté</dt>
+            <dd>
+              {anime[0]}
+              <small>
+                {anime[1]} en lice
+              </small>
+            </dd>
+          </div>
+        ) : null}
+        {composer && composer[1] > 0 ? (
+          <div>
+            <dt>Compositeur encore le plus représenté</dt>
+            <dd>
+              {composer[0]}
+              <small>
+                {composer[1]} en lice
+              </small>
+            </dd>
+          </div>
+        ) : null}
+        {deep ? (
+          <div>
+            <dt>Victoire la plus avancée</dt>
+            <dd>
+              {name(deep.winner)}
+              <small>{roundName(deep.round)}</small>
+            </dd>
+          </div>
+        ) : null}
+        {slow ? (
+          <div>
+            <dt>Hésitation la plus longue</dt>
+            <dd>
+              {name(slow.winner)} bat {name(slow.loser)}
+              <small>{(slow.ms / 1000).toFixed(1)} s</small>
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+      {bars.length ? (
+        <>
+          <p className="ox-micro ox-bars-label">Tes victoires par anime</p>
+          <ul className="ox-bars">
+            {bars.map(([label, n]) => (
+              <li key={label}>
+                <span>{label}</span>
+                <i style={{ transform: `scaleX(${n / max})` }} />
+                <b>{n}</b>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : null}
     </section>
   );

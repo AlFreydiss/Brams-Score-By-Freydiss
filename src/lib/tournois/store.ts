@@ -17,6 +17,8 @@ export type Vote = {
   ms: number;
 };
 
+export type Listen = { id: string; at: number };
+
 export type Saved = {
   run: Run | null;
   /** Bracket juste avant le dernier choix : un seul retour en arrière possible. */
@@ -24,10 +26,39 @@ export type Saved = {
   votes: Vote[];
   favorites: string[];
   champions: { id: string; size: number; at: number }[];
-  settings: { autoplay: boolean };
+  /** Lancements d'écoute sur cet appareil, depuis que le compteur existe. */
+  listens: Listen[];
+  settings: {
+    autoplay: boolean;
+    /** solo : une piste à la fois. both : les deux cartes ont leur lecteur. */
+    listen: "solo" | "both";
+    cinematic: boolean;
+    pace: "short" | "normal" | "long";
+    sfx: boolean;
+    motion: "plein" | "calme";
+  };
 };
 
-const EMPTY: Saved = { run: null, undo: null, votes: [], favorites: [], champions: [], settings: { autoplay: false } };
+const EMPTY: Saved = {
+  run: null,
+  undo: null,
+  votes: [],
+  favorites: [],
+  champions: [],
+  listens: [],
+  settings: { autoplay: false, listen: "solo", cinematic: false, pace: "normal", sfx: false, motion: "plein" },
+};
+
+function cleanSettings(raw: Partial<Saved["settings"]> | undefined): Saved["settings"] {
+  return {
+    autoplay: !!raw?.autoplay,
+    listen: raw?.listen === "both" ? "both" : "solo",
+    cinematic: !!raw?.cinematic,
+    pace: raw?.pace === "short" || raw?.pace === "long" ? raw.pace : "normal",
+    sfx: !!raw?.sfx,
+    motion: raw?.motion === "calme" ? "calme" : "plein",
+  };
+}
 const MAX_VOTES = 3000;
 
 const key = (slug: string) => `tournoi_${slug}_v1`;
@@ -40,7 +71,13 @@ function load(slug: string): Saved {
   let saved = EMPTY;
   try {
     const raw = JSON.parse(localStorage.getItem(key(slug)) || "null");
-    if (raw && typeof raw === "object") saved = { ...EMPTY, ...raw, settings: { ...EMPTY.settings, ...raw.settings } };
+    if (raw && typeof raw === "object")
+      saved = {
+        ...EMPTY,
+        ...raw,
+        listens: Array.isArray(raw.listens) ? raw.listens.slice(-MAX_VOTES) : [],
+        settings: cleanSettings(raw.settings),
+      };
   } catch {}
   cache.set(slug, saved);
   return saved;
@@ -202,6 +239,19 @@ export const actions = {
   setAutoplay(slug: string, autoplay: boolean) {
     const s = load(slug);
     save(slug, { ...s, settings: { ...s.settings, autoplay } });
+  },
+
+  setPrefs(slug: string, patch: Partial<Saved["settings"]>) {
+    const s = load(slug);
+    save(slug, { ...s, settings: cleanSettings({ ...s.settings, ...patch }) });
+  },
+
+  /** Un lancement d'écoute. Le même morceau ne compte pas deux fois en moins de 20 s. */
+  noteListen(slug: string, id: string) {
+    const s = load(slug);
+    const prev = s.listens[s.listens.length - 1];
+    if (prev && prev.id === id && Date.now() - prev.at < 20000) return;
+    save(slug, { ...s, listens: [...s.listens, { id, at: Date.now() }].slice(-MAX_VOTES) });
   },
 
   clearHistory(slug: string) {

@@ -170,6 +170,45 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
                   Animes : {off.size ? `${groups.length - off.size} sur ${groups.length}` : `les ${groups.length}`}
                 </button>
               </div>
+              <div className="ox-setup-row">
+                <span className="ox-setup-label">Transitions</span>
+                <div className="ox-sizes" role="radiogroup" aria-label="Vitesse des transitions">
+                  {(
+                    [
+                      ["short", "Courte"],
+                      ["normal", "Normale"],
+                      ["long", "Longue"],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={saved.settings.pace === id}
+                      className="ox-size"
+                      onClick={() => actions.setPrefs(meta.slug, { pace: id })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="ox-setup-row">
+                <label className="ox-toggle">
+                  <input type="checkbox" checked={saved.settings.sfx} onChange={(e) => actions.setPrefs(meta.slug, { sfx: e.target.checked })} />
+                  <i aria-hidden />
+                  <span>Son au choix</span>
+                </label>
+                <label className="ox-toggle">
+                  <input
+                    type="checkbox"
+                    checked={saved.settings.motion === "calme"}
+                    onChange={(e) => actions.setPrefs(meta.slug, { motion: e.target.checked ? "calme" : "plein" })}
+                  />
+                  <i aria-hidden />
+                  <span>Animations calmes</span>
+                </label>
+              </div>
               <AnimatePresence initial={false}>
                 {showGroups ? (
                   <motion.div
@@ -220,7 +259,7 @@ export function HomePlane({ onPractice }: { onPractice: () => void }) {
           <ol className="ox-steps">
             <li>
               <b>I</b>
-              <p>Deux OST face à face. Touche une carte pour écouter le morceau en entier. Sous la carte, la barre avance dans la piste. N'importe où dans la salle, un clic glissé vers le haut ou le bas règle le son.</p>
+              <p>Deux OST face à face. Touche une carte pour écouter. Le titre ouvre la fiche. « Ensemble » joue les deux morceaux, chacun avec son volume. Les touches 1 et 2 gardent, C passe en cinéma.</p>
             </li>
             <li>
               <b>II</b>
