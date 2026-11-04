@@ -12,7 +12,7 @@ from .utils import fmt, get_rank
 from .views import BankView, _main_embed
 
 
-class BankCog(commands.Cog):
+class BankDashboardCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 

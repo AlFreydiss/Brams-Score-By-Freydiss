@@ -161,7 +161,7 @@ class BankCog(commands.Cog):
 
             footer_text = f"🔥 Streak : {streak_val} {streak_unit}  •  {now_str} UTC"
             if not settings.get("thumbnail_url"):
-                footer_text += "\n💡 Personnalise ton image via ⚙️ Paramètres"
+                footer_text += "  •  💡 Image perso via ⚙️ Paramètres"
             embed.set_footer(
                 text=footer_text,
                 icon_url=interaction.client.user.display_avatar.url,
@@ -177,7 +177,13 @@ class BankCog(commands.Cog):
             print(f"[BANQUE] Erreur: {e}", flush=True)
             traceback.print_exc()
             try:
-                await interaction.followup.send("❌ Une erreur est survenue.", ephemeral=True)
+                detail = f"{type(e).__name__}: {e}".replace("\n", " ")
+                if "postgres" in detail.lower() or "://" in detail:
+                    detail = type(e).__name__
+                await interaction.followup.send(
+                    f"❌ Une erreur est survenue ({detail[:160]}).",
+                    ephemeral=True,
+                )
             except Exception:
                 pass
 
