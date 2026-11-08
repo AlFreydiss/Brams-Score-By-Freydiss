@@ -21,6 +21,8 @@ export type ArenaItem = {
   accent: string;
   status: string | null;
   media: { k: "video"; src: string; start: number } | { k: "img"; src: string };
+  /** Image fixe du tournoi (panneaux du fond). */
+  still?: string;
 };
 
 type Props = {
@@ -109,6 +111,9 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         <color attach="background" args={[BG]} />
         <fog attach="fog" args={[BG, 6.5, 15]} />
         <ambientLight intensity={0.6} />
+        <Glow accent={cur.accent} />
+        <Backdrop items={items} active={active} />
+        <Dust accent={cur.accent} />
         <Ring items={items} active={active} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
         <Floor />
         <CameraRig dive={!!dive} />
@@ -243,6 +248,67 @@ function useCurvedPlane() {
   }, []);
 }
 
+// Image → texture WebGL. Une image déjà affichée ailleurs (balise <img> sans
+// CORS) reste en cache sans en-tête CORS : WebGL la refuse. Deuxième essai hors cache.
+function loadImageTexture(src: string, done: (t: THREE.Texture) => void) {
+  const loader = new THREE.TextureLoader().setCrossOrigin("anonymous");
+  const ok = (t: THREE.Texture) => {
+    t.colorSpace = THREE.SRGBColorSpace;
+    done(t);
+  };
+  loader.load(src, ok, undefined, () => loader.load(`${src}${src.includes("?") ? "&" : "?"}gl=1`, ok));
+}
+
+function useStill(src: string | undefined) {
+  const [tex, setTex] = useState<THREE.Texture | null>(null);
+  useEffect(() => {
+    if (!src) return;
+    let live = true;
+    loadImageTexture(src, (t) => (live ? setTex(t) : t.dispose()));
+    return () => {
+      live = false;
+    };
+  }, [src]);
+  useEffect(() => () => tex?.dispose(), [tex]);
+  return tex;
+}
+
+// Textures de dégradé dessinées une fois : halo rond, et masque doux pour
+// fondre les grands panneaux du fond dans le noir.
+let haloTex: THREE.Texture | null = null;
+let maskTex: THREE.Texture | null = null;
+function halo() {
+  if (haloTex) return haloTex;
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const g = c.getContext("2d")!;
+  const r = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  r.addColorStop(0, "rgba(255,255,255,1)");
+  r.addColorStop(0.35, "rgba(255,255,255,0.45)");
+  r.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = r;
+  g.fillRect(0, 0, 256, 256);
+  haloTex = new THREE.CanvasTexture(c);
+  return haloTex;
+}
+function mask() {
+  if (maskTex) return maskTex;
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 288;
+  const g = c.getContext("2d")!;
+  g.fillStyle = "#000";
+  g.fillRect(0, 0, 512, 288);
+  // Ellipse floue : plein au centre, rien sur les bords.
+  g.filter = "blur(38px)";
+  g.fillStyle = "#fff";
+  g.beginPath();
+  g.ellipse(256, 144, 190, 92, 0, 0, Math.PI * 2);
+  g.fill();
+  maskTex = new THREE.CanvasTexture(c);
+  return maskTex;
+}
+
 function useMediaTexture(media: ArenaItem["media"]) {
   const src = media.src;
   const start = media.k === "video" ? media.start : 0;
@@ -271,17 +337,7 @@ function useMediaTexture(media: ArenaItem["media"]) {
       t.colorSpace = THREE.SRGBColorSpace;
       setTex(t);
     } else {
-      const loader = new THREE.TextureLoader().setCrossOrigin("anonymous");
-      const done = (t: THREE.Texture) => {
-        if (!live) return t.dispose();
-        t.colorSpace = THREE.SRGBColorSpace;
-        setTex(t);
-      };
-      // Une image déjà affichée ailleurs (balise <img> sans CORS) reste en cache
-      // sans en-tête CORS : WebGL la refuse. Deuxième essai hors cache.
-      loader.load(src, done, undefined, () => {
-        if (live) loader.load(`${src}${src.includes("?") ? "&" : "?"}gl=1`, done);
-      });
+      loadImageTexture(src, (t) => (live ? setTex(t) : t.dispose()));
     }
     return () => {
       live = false;
@@ -354,7 +410,154 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
         <planeGeometry args={[active ? W * 0.42 : W * 0.2, 0.012]} />
         <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={active ? 1 : 0.4} />
       </mesh>
+      <Frame accent={accent} active={active} />
+      {/* Flaque de lumière au sol, dans la couleur du tournoi. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -H / 2 - 0.33, 0.55]}>
+        <planeGeometry args={[W * 1.1, 0.9]} />
+        <meshBasicMaterial map={halo()} color={accent} transparent opacity={active ? 0.3 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      </mesh>
     </group>
+  );
+}
+
+// ── Détails ──────────────────────────────────────────────────────────
+
+// Point du contour de l'écran courbe, t ∈ [0, 1) (haut, droite, bas, gauche).
+const PERIM = 2 * (W + H);
+function onFrame(t: number, out: THREE.Vector3) {
+  let d = (((t % 1) + 1) % 1) * PERIM;
+  const z = (x: number) => x * x * 0.07 + 0.012;
+  if (d < W) return out.set(-W / 2 + d, H / 2, z(-W / 2 + d));
+  d -= W;
+  if (d < H) return out.set(W / 2, H / 2 - d, z(W / 2));
+  d -= H;
+  if (d < W) return out.set(W / 2 - d, -H / 2, z(W / 2 - d));
+  d -= W;
+  return out.set(-W / 2, -H / 2 + d, z(-W / 2));
+}
+
+// Liseré fin autour de l'écran + deux lumières qui courent dessus.
+function Frame({ accent, active }: { accent: THREE.Color; active: boolean }) {
+  const line = useMemo(() => {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 160; i++) pts.push(onFrame(i / 160, new THREE.Vector3()));
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    return new THREE.Line(geo, new THREE.LineBasicMaterial({ transparent: true, toneMapped: false }));
+  }, []);
+  const runners = [useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null)];
+  const glow = useMemo(() => accent.clone().multiplyScalar(2.4), [accent]);
+  const t = useRef(Math.random());
+  const v = new THREE.Vector3();
+  useFrame((_, dt) => {
+    const m = line.material as THREE.LineBasicMaterial;
+    m.color.copy(accent);
+    m.opacity = THREE.MathUtils.damp(m.opacity, active ? 0.75 : 0.18, 4, dt);
+    t.current += dt * (active ? 0.09 : 0.04);
+    runners.forEach((r, k) => {
+      if (!r.current) return;
+      onFrame(t.current + k * 0.5, v);
+      r.current.position.copy(v);
+      const s = THREE.MathUtils.damp(r.current.scale.x, active ? 1 : 0.45, 4, dt);
+      r.current.scale.setScalar(s);
+    });
+  });
+  return (
+    <>
+      <primitive object={line} />
+      {runners.map((r, k) => (
+        <mesh key={k} ref={r}>
+          <sphereGeometry args={[0.028, 12, 12]} />
+          <meshBasicMaterial color={glow} toneMapped={false} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// Deux grands panneaux au fond, à gauche et à droite : les tournois voisins
+// de l'écran actif, fondus dans le noir, pris dans le reflet du sol.
+function Backdrop({ items, active }: { items: ArenaItem[]; active: number }) {
+  const n = items.length;
+  const left = items[(active - 1 + n) % n];
+  const right = items[(active + 1) % n];
+  return (
+    <>
+      <Pane key={`l-${left.slug}`} src={left.still} side={-1} />
+      <Pane key={`r-${right.slug}`} src={right.still} side={1} />
+    </>
+  );
+}
+
+function Pane({ src, side }: { src?: string; side: -1 | 1 }) {
+  const tex = useStill(src);
+  const mat = useRef<THREE.MeshBasicMaterial>(null);
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame((state, dt) => {
+    if (mat.current) mat.current.opacity = THREE.MathUtils.damp(mat.current.opacity, tex ? 0.62 : 0, 1.6, dt);
+    // Dérive lente, comme une affiche qui respire.
+    if (ref.current) ref.current.position.y = 0.95 + Math.sin(state.clock.elapsedTime * 0.25 + side) * 0.06;
+  });
+  if (!tex) return null;
+  return (
+    <mesh ref={ref} position={[side * 6.6, 0.95, -2.6]} rotation={[0, -side * 0.5, 0]}>
+      <planeGeometry args={[7.6, 7.6 * (9 / 16)]} />
+      <meshBasicMaterial ref={mat} map={tex} alphaMap={mask()} color="#8d8d8d" transparent opacity={0} depthWrite={false} fog={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Halo coloré derrière l'anneau : la couleur du tournoi actif.
+function Glow({ accent }: { accent: string }) {
+  const mat = useRef<THREE.MeshBasicMaterial>(null);
+  const target = useMemo(() => new THREE.Color(accent), [accent]);
+  useFrame((state, dt) => {
+    const m = mat.current;
+    if (!m) return;
+    m.color.lerp(target, 1 - Math.exp(-dt * 2));
+    m.opacity = 0.15 + Math.sin(state.clock.elapsedTime * 0.6) * 0.03;
+  });
+  return (
+    <mesh position={[0, 1.2, -5.5]}>
+      <planeGeometry args={[18, 9]} />
+      <meshBasicMaterial ref={mat} map={halo()} transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} fog={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Poussière lumineuse qui monte doucement, teintée par le tournoi actif.
+function Dust({ accent }: { accent: string }) {
+  const COUNT = 420;
+  const { geo, speed } = useMemo(() => {
+    const p = new Float32Array(COUNT * 3);
+    const s = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      p[i * 3] = (Math.random() - 0.5) * 20;
+      p[i * 3 + 1] = -1.5 + Math.random() * 6;
+      p[i * 3 + 2] = -6 + Math.random() * 13;
+      s[i] = 0.04 + Math.random() * 0.12;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    return { geo: g, speed: s };
+  }, []);
+  const mat = useRef<THREE.PointsMaterial>(null);
+  const target = useMemo(() => new THREE.Color(accent).lerp(new THREE.Color("#ffffff"), 0.45), [accent]);
+  useFrame((state, dt) => {
+    const a = geo.attributes.position as THREE.BufferAttribute;
+    const arr = a.array as Float32Array;
+    const tt = state.clock.elapsedTime;
+    for (let i = 0; i < COUNT; i++) {
+      arr[i * 3 + 1] += speed[i] * dt;
+      arr[i * 3] += Math.sin(tt * 0.3 + i) * 0.0015;
+      if (arr[i * 3 + 1] > 4.5) arr[i * 3 + 1] = -1.5;
+    }
+    a.needsUpdate = true;
+    mat.current?.color.lerp(target, 1 - Math.exp(-dt * 2));
+  });
+  return (
+    <points geometry={geo}>
+      <pointsMaterial ref={mat} size={0.035} sizeAttenuation transparent opacity={0.7} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+    </points>
   );
 }
 

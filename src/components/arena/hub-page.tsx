@@ -163,6 +163,8 @@ export default function HubPage() {
         accent: ACCENT[slug],
         status: st.progress != null ? `En cours, ${(st.label ?? "").toLowerCase()}` : st.label,
         media,
+        // Image fixe pour les panneaux du fond : celle de l'écran, ou la vignette en grand d'une vidéo.
+        still: media.k === "img" ? media.src : back?.thumb ? back.thumb.replace("/t/p/w300/", "/t/p/w1280/") : ART[slug],
       };
     });
   }, [backdrops, statuses]);
