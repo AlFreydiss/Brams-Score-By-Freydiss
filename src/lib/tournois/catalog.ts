@@ -1,7 +1,7 @@
 // Les tournois en duels de Brams Community. Chacun a son univers (thème CSS du
 // même nom dans src/components/tournois/themes) ; le moteur, lui, est commun.
 
-export type TournamentSlug = "ost" | "openings" | "endings" | "rap" | "rapvsost" | "bankai" | "panels";
+export type TournamentSlug = "ost" | "openings" | "endings" | "jeux" | "rap" | "rapvsost" | "bankai" | "panels";
 
 export type Seam = "diag" | "screens" | "feather" | "tape" | "zigzag" | "slash" | "gutter";
 
@@ -102,6 +102,26 @@ export const TOURNAMENTS: TournamentMeta[] = [
     sides: ["Premier ending", "Second ending"],
     championLabel: "Ton ending",
     groupLabel: "Animes",
+  },
+  {
+    slug: "jeux",
+    path: "ost-jeux",
+    statsId: "video-game-ost",
+    title: "Tournoi des OST de jeux vidéo",
+    brand: "OST de jeux",
+    signature: "Les musiques qui restent quand la manette est posée.",
+    tagline: "Clair Obscur, Final Fantasy, NieR, Undertale… une seule reste.",
+    lead: "{n} musiques de jeux vidéo, {g} jeux, dont l'album entier de Clair Obscur : Expedition 33. Tu écoutes l'extrait officiel des deux, tu gardes celle qui te ramène quelque part.",
+    unit: "musiques",
+    unitOne: "musique",
+    mode: "audio",
+    formats: [16, 32, 64],
+    defaultFormat: 32,
+    seam: "diag",
+    choose: "Choisir cette musique",
+    sides: ["Musique A", "Musique B"],
+    championLabel: "Ta musique de jeu",
+    groupLabel: "Jeux",
   },
   {
     slug: "rap",

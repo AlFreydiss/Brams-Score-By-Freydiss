@@ -5,12 +5,12 @@ import type { TournamentSlug } from "./catalog";
 // variables CSS dans themes/base.css (--t-serif-ost, --t-display-op…).
 // DA « Noir » : une seule voix pour tous les tournois, Geist et Geist Mono.
 const PH = "family=Geist:wght@300..600&family=Geist+Mono:wght@400;500";
-const FAMILIES: Record<TournamentSlug, string> = { ost: PH, openings: PH, endings: PH, rap: PH, rapvsost: PH, bankai: PH, panels: PH };
+const FAMILIES: Record<TournamentSlug, string> = { ost: PH, openings: PH, endings: PH, jeux: PH, rap: PH, rapvsost: PH, bankai: PH, panels: PH };
 
 // Familles d'affichage à attendre avant de montrer la page (évite le saut de
 // police sur les grands titres).
 const PH_FACES = ['300 1em "Geist"', '500 1em "Geist"', '400 1em "Geist Mono"'];
-const DISPLAY: Record<TournamentSlug, string[]> = { ost: PH_FACES, openings: PH_FACES, endings: PH_FACES, rap: PH_FACES, rapvsost: PH_FACES, bankai: PH_FACES, panels: PH_FACES };
+const DISPLAY: Record<TournamentSlug, string[]> = { ost: PH_FACES, openings: PH_FACES, endings: PH_FACES, jeux: PH_FACES, rap: PH_FACES, rapvsost: PH_FACES, bankai: PH_FACES, panels: PH_FACES };
 
 function preconnect() {
   for (const href of ["https://fonts.googleapis.com", "https://fonts.gstatic.com"]) {

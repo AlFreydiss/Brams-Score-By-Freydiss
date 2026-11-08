@@ -14,6 +14,7 @@ import { EASE, FONT, IDENTITIES, LINE, LINE_2, PANEL, type FightSlug, type Ident
 import { dominantColors } from "./palette";
 import { CommunityReveal, Confetti, Shatter, type Rect } from "./VoteShatter";
 import { VersusIntro } from "./VersusIntro";
+import { bumpStreak, Magnetic, ShortcutsPanel, StageCursor, StreakBurst, useAlternate, usePrediction } from "./FightExtras";
 
 // Duel « Fight Night » (OST, openings, endings). Deux panneaux en vrai 50/50 ;
 // celui qu'on écoute ou survole s'étend (62/38) et l'autre se désature. Au
@@ -65,6 +66,11 @@ export function DuelStage(props: Props) {
   const [intro, setIntro] = useState(true);
   const introRef = useRef(true);
   introRef.current = intro;
+  // En plus : écoute alternée (C), aide des raccourcis (?), série de votes, pronostic.
+  const [ab, setAb] = useState(false);
+  const [help, setHelp] = useState(false);
+  const [burst, setBurst] = useState<number | null>(null);
+  const prediction = usePrediction(meta.statsId, left, right);
   const shownAt = useRef(performance.now());
   const colors = useRef<Record<Side, string[]>>({ left: [id.a, id.b, id.ink], right: [id.a, id.b, id.ink] });
   const alive = useRef(true);
@@ -128,6 +134,12 @@ export function DuelStage(props: Props) {
       if (picked || leaving || introRef.current) return;
       const ok = onChoose(side, Math.round(performance.now() - shownAt.current));
       if (!ok) return;
+      setAb(false);
+      const streak = bumpStreak();
+      if (streak >= 10 && streak % 10 === 0) {
+        setBurst(streak);
+        setTimeout(() => alive.current && setBurst(null), 1900);
+      }
       const loser = OTHER[side];
       const lp = loser === "left" ? left : right;
       const st = stage.current?.getBoundingClientRect();
@@ -190,10 +202,15 @@ export function DuelStage(props: Props) {
         e.preventDefault();
         onUndo();
       } else if (k === "t" || k === "T") navigate(`/tournoi/${meta.path}/tableau`);
+      else if ((k === "c" || k === "C") && !picked) setAb((v) => !v);
+      else if (k === "?") setHelp((v) => !v);
+      else if (k === "Escape") setHelp(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [choose, listen, focus, audible, canUndo, onUndo, picked, navigate, meta.path]);
+
+  useAlternate(ab && !picked && !intro, player, left, right, setKbd);
 
   const roundLabel = round ? `${isFinal ? "Finale" : round.label} — Duel ${round.index}/${round.total}` : "Duel";
   const exit = leaving ? EXIT[id.exit] : { opacity: 1, scaleY: 1, scale: 1, clipPath: "circle(150% at 50% 50%)", filter: "brightness(1)" };
@@ -262,6 +279,16 @@ export function DuelStage(props: Props) {
             <motion.i initial={false} animate={{ scaleX: round.progress }} transition={{ duration: 1, ease: EASE }} style={{ display: "block", height: "100%", background: id.a, transformOrigin: "left" }} />
           </span>
         ) : null}
+        {prediction && !blind ? (
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.6, delay: 0.4 } }} style={{ margin: 0, fontSize: 12.5, color: id.mute }}>
+            {picked
+              ? picked === prediction.side
+                ? "Comme le pronostic du site."
+                : "Tu as déjoué le pronostic du site."
+              : <>Pronostic du site : <span style={{ color: id.ink }}>{id.sides[prediction.side === "left" ? 0 : 1]}</span> ({prediction.pct} %)</>}
+          </motion.p>
+        ) : null}
+        {ab && !picked ? <p style={{ margin: 0, fontSize: 12.5, color: id.a }}>Écoute alternée : A puis B, 7 s chacun</p> : null}
       </motion.div>
 
       {/* Raccourcis visibles, en haut à droite. */}
@@ -279,6 +306,12 @@ export function DuelStage(props: Props) {
             </span>
           </span>
         ) : null}
+        <Chip id={id} onClick={() => setAb((v) => !v)} disabled={!!picked} label={ab ? "Arrêter l'écoute alternée (C)" : "Écoute alternée A puis B (C)"}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: ab ? id.a : id.ink }}>A/B</span>
+        </Chip>
+        <Chip id={id} onClick={() => setHelp((v) => !v)} label="Raccourcis clavier (?)">
+          <span style={{ fontSize: 13, fontWeight: 600 }}>?</span>
+        </Chip>
         {canUndo && onUndo ? (
           <Chip id={id} onClick={onUndo} disabled={!!picked} label="Annuler mon dernier choix">
             <RotateCcw size={15} />
@@ -298,6 +331,9 @@ export function DuelStage(props: Props) {
         ) : null}
       </AnimatePresence>
       <AnimatePresence>{intro ? <VersusIntro key="intro" left={left} right={right} id={id} roundLabel={roundLabel} blind={!!blind} reduce={reduce} onDone={() => setIntro(false)} /> : null}</AnimatePresence>
+      <AnimatePresence>{burst ? <StreakBurst key="burst" n={burst} id={id} /> : null}</AnimatePresence>
+      <ShortcutsPanel open={help} onClose={() => setHelp(false)} id={id} alternate />
+      {!narrow ? <StageCursor id={id} host={stage} /> : null}
       {reveal ? <CommunityReveal pct={reveal.pct} total={reveal.total} ink={id.ink} mute={id.mute} accent={id.a} reduce={reduce} /> : null}
 
       {!picked ? (
@@ -533,6 +569,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
               >
                 {loaded && player.loading ? <Spinner /> : playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
               </motion.button>
+              <Magnetic>
               <motion.button
                 type="button"
                 whileHover={{ y: -1 }}
@@ -558,6 +595,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
                 Garder
                 <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, borderRadius: 999, background: "rgba(8,9,13,0.18)", fontSize: 11.5, fontWeight: 600 }}>{KEY[side]}</span>
               </motion.button>
+              </Magnetic>
             </div>
           ) : null}
         </motion.div>

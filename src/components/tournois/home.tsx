@@ -10,6 +10,8 @@ import { useTournament } from "./provider";
 import { useNarrow } from "./poster";
 import { Thumb } from "./visual";
 import { NoirArt } from "./noir/art";
+import { HomeExtras } from "../fight/HomeExtras";
+import { isFight } from "../fight/identities";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 const LINEUP = 24;
@@ -101,6 +103,7 @@ export function TournamentHome() {
       </div>
 
       <div className="t-home-body">
+        {isFight(meta.slug) ? <HomeExtras /> : null}
         <dl className="t-facts">
           <div>
             <dt>Participants</dt>

@@ -3,6 +3,7 @@ import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-
 import { Link, useNavigate } from "react-router-dom";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ArenaItem } from "../fight/arena/Arena3D";
+import { DailyDuel, RefrainRadio } from "./hub-extras";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
 import { fontsReady } from "@/lib/tournois/fonts";
@@ -24,6 +25,8 @@ const ART: Record<TournamentSlug, string> = {
   ost: "/tournoi/ost/aot-vogel.webp",
   openings: TMDB("rqbCbjB19amtOtFQbb3K2lgm2zv.jpg"),
   endings: TMDB("g9vvplRihZv1RipxRDgJ1WLaTQB.jpg"),
+  // Pochette officielle de Clair Obscur : Expedition 33 (Apple Music).
+  jeux: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/bb/57/50/bb5750a0-e786-c10b-1901-908fbc2d8f25/8721215081586.png/1200x1200bb.jpg",
   rap: "/tournoi/thumbs/rap/rap-booba-dkr.webp",
   rapvsost: TMDB("z0YhJvomqedHF85bplUJEotkN5l.jpg"),
   bankai: "/tournoi/bankai/tensa-zangetsu.webp",
@@ -33,6 +36,7 @@ const KIND: Record<TournamentSlug, string> = {
   ost: "Musique",
   openings: "Génériques",
   endings: "Génériques",
+  jeux: "Jeux vidéo",
   rap: "Rap français",
   rapvsost: "Deux mondes",
   bankai: "Bleach",
@@ -46,9 +50,9 @@ const MORE = [
   { title: "Jouer à plusieurs", text: "Un salon, des amis, un champion.", to: "/tournoi/salon", img: keyartSrc("jjk", 960) },
 ];
 const SOON = ["Personnages", "Arcs", "Pouvoirs", "Théories", "Wiki Battles", "Blind Test", "Sakuga"];
-const FEATURED: TournamentSlug[] = ["openings", "ost", "endings"];
+const FEATURED: TournamentSlug[] = ["openings", "ost", "endings", "jeux"];
 // Couleur de chaque univers (mêmes que les écrans de duel, fight/identities.ts).
-const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f" };
+const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#8fb2ff" };
 
 // La scène 3D n'est chargée qu'à l'ouverture du hub, et seulement si WebGL répond.
 const Arena3D = lazy(() => import("../fight/arena/Arena3D"));
@@ -75,6 +79,7 @@ function useStatuses() {
     ost: useSaved("ost"),
     openings: useSaved("openings"),
     endings: useSaved("endings"),
+    jeux: useSaved("jeux"),
     rap: useSaved("rap"),
     rapvsost: useSaved("rapvsost"),
     bankai: useSaved("bankai"),
@@ -95,7 +100,7 @@ function useStatuses() {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.ost, s.openings, s.endings, s.rap, s.rapvsost, s.bankai, s.panels]);
+  }, [s.ost, s.openings, s.endings, s.jeux, s.rap, s.rapvsost, s.bankai, s.panels]);
 }
 
 export default function HubPage() {
@@ -103,6 +108,7 @@ export default function HubPage() {
   const [ost, setOst] = useState<Participant[]>([]);
   const [openings, setOpenings] = useState<Participant[]>([]);
   const [endings, setEndings] = useState<Participant[]>([]);
+  const [jeux, setJeux] = useState<Participant[]>([]);
   const statuses = useStatuses();
 
   useEffect(() => {
@@ -112,6 +118,7 @@ export default function HubPage() {
     loadParticipants("ost").then((l) => on && setOst(l));
     loadParticipants("openings").then((l) => on && setOpenings(l));
     loadParticipants("endings").then((l) => on && setEndings(l));
+    loadParticipants("jeux").then((l) => on && setJeux(l));
     return () => {
       on = false;
     };
@@ -124,14 +131,17 @@ export default function HubPage() {
       return v.length ? v[Math.floor(Math.random() * v.length)] : null;
     };
     const ostImg = ost.filter((p) => p.visual.k === "img" && (p.visual as { hi?: string }).hi);
+    // Jeux : la pochette de Clair Obscur, le jeu à l'honneur du tournoi.
+    const co = jeux.find((p) => /clair obscur/i.test(p.group)) ?? jeux[0] ?? null;
     return {
       openings: pick(openings),
       endings: pick(endings),
       ost: ostImg.length ? ostImg[Math.floor(Math.random() * ostImg.length)] : null,
+      jeux: co,
     } as Record<string, Participant | null>;
     // Tirage une fois les catalogues chargés.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ost.length > 0, openings.length > 0, endings.length > 0]);
+  }, [ost.length > 0, openings.length > 0, endings.length > 0, jeux.length > 0]);
 
   // Les trois portails de l'arène 3D (données prêtes une fois les fonds tirés).
   const navigate = useNavigate();
@@ -159,6 +169,17 @@ export default function HubPage() {
   }, [backdrops, statuses]);
   const three = useWebGL();
 
+  // Duel du jour : tiré parmi les génériques et les musiques de jeux (sons lisibles par le site).
+  const dailyPools = useMemo(
+    () => [
+      { slug: "openings", statsId: "anime-openings", title: "openings", accent: ACCENT.openings, list: openings },
+      { slug: "endings", statsId: "anime-endings", title: "endings", accent: ACCENT.endings, list: endings },
+      { slug: "jeux", statsId: "video-game-ost", title: "OST de jeux vidéo", accent: ACCENT.jeux, list: jeux },
+    ],
+    [openings, endings, jeux],
+  );
+  const radioList = useMemo(() => [...openings, ...endings], [openings, endings]);
+
   return (
     <MotionConfig reducedMotion="user">
       <div className={`nx-root nf ${ready ? "is-ready" : ""}`}>
@@ -175,6 +196,12 @@ export default function HubPage() {
         )}
 
         <div className="nf-body">
+          <div className="nf-block">
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -8 }}>
+              <RefrainRadio list={radioList} />
+            </div>
+            <DailyDuel pools={dailyPools} />
+          </div>
           {GROUPS.map((g) => (
             <Block key={g.title} title={g.title} text={g.text}>
               <div className={`nf-grid nf-grid--${g.slugs.length > 3 ? "wide" : "tight"}`}>
@@ -218,7 +245,7 @@ export default function HubPage() {
 
 // Les tournois rangés par nature : ce qu'on écoute, ce qu'on regarde.
 const GROUPS: { title: string; text: string; slugs: TournamentSlug[] }[] = [
-  { title: "Musique", text: "Tu écoutes les deux, tu gardes ta préférée.", slugs: ["ost", "openings", "endings", "rap", "rapvsost"] },
+  { title: "Musique", text: "Tu écoutes les deux, tu gardes ta préférée.", slugs: ["ost", "openings", "endings", "jeux", "rap", "rapvsost"] },
   { title: "Images", text: "Une image contre une autre, sans le son.", slugs: ["bankai", "panels"] },
 ];
 

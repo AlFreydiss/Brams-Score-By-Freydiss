@@ -6,6 +6,7 @@ import type { Match, Participant } from "@/lib/tournois/types";
 import { Champion } from "./champion";
 import { DuelScreen, type RoundInfo } from "./duel-screen";
 import { DuelStage } from "../fight/DuelStage";
+import { isFight } from "../fight/identities";
 import { useTournament } from "./provider";
 import { Recap } from "./recap";
 import { Setup } from "./setup";
@@ -101,7 +102,7 @@ export function DuelPage() {
   const showMatch = run ? (held?.match ?? cur?.match ?? null) : null;
   const showSize = held?.roundSize ?? cur?.round.size ?? 0;
   // OST, openings et endings : scène « Fight Night » (src/components/fight).
-  const immersive = meta.slug === "ost" || meta.slug === "openings" || meta.slug === "endings";
+  const immersive = isFight(meta.slug);
 
   return (
     <div className="t-duel-page">

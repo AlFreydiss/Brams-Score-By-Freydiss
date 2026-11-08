@@ -4,7 +4,7 @@ import { fonts } from "@/styles/typography";
 // réactif au son, transition de sortie et curseur. Pas les mêmes cartes
 // recolorées : chaque univers a sa façon de bouger.
 
-export type FightSlug = "ost" | "openings" | "endings";
+export type FightSlug = "ost" | "openings" | "endings" | "jeux";
 export type ReactStyle = "vinyl" | "crt" | "dust";
 export type ExitStyle = "spin" | "zap" | "fade";
 
@@ -60,6 +60,17 @@ export const IDENTITIES: Record<FightSlug, Identity> = {
     exit: "fade",
     sides: ["Fin A", "Fin B"],
   },
+  jeux: {
+    name: "L'Écran Titre",
+    bg: "#08090d",
+    ink: "#f4f2ec",
+    mute: "#8b8a85",
+    a: "#8fb2ff",
+    b: "#d6e2ff",
+    react: "crt",
+    exit: "fade",
+    sides: ["Joueur 1", "Joueur 2"],
+  },
 };
 
 /** Courbe commune (BFR / portfolio) : départ franc, arrivée très douce. */
@@ -68,6 +79,6 @@ export const LINE = "rgba(244, 242, 236, 0.08)";
 export const LINE_2 = "rgba(244, 242, 236, 0.16)";
 export const PANEL = "#0e1014";
 
-export const isFight = (slug: string): slug is FightSlug => slug === "ost" || slug === "openings" || slug === "endings";
+export const isFight = (slug: string): slug is FightSlug => slug === "ost" || slug === "openings" || slug === "endings" || slug === "jeux";
 
 export const FONT = fonts;

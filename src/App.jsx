@@ -759,6 +759,7 @@ export default function App() {
         <Route path="/tournoi/openings/*" element={<PageLayout><TournamentSection key="openings" slug="openings" /></PageLayout>} />
         <Route path="/tournoi/opening" element={<Navigate to="/tournoi/openings" replace />} />
         <Route path="/tournoi/endings/*" element={<PageLayout><TournamentSection key="endings" slug="endings" /></PageLayout>} />
+        <Route path="/tournoi/ost-jeux/*" element={<PageLayout><TournamentSection key="jeux" slug="jeux" /></PageLayout>} />
         <Route path="/tournoi/ending" element={<Navigate to="/tournoi/endings" replace />} />
         <Route path="/tournoi/rap-vs-ost/*" element={<PageLayout><TournamentSection key="rapvsost" slug="rapvsost" /></PageLayout>} />
         <Route path="/tournoi/rap-fr/*" element={<PageLayout><TournamentSection key="rap" slug="rap" /></PageLayout>} />

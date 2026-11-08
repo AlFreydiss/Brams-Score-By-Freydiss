@@ -7,6 +7,7 @@ const LOADERS: Record<TournamentSlug, () => Promise<{ default: unknown }>> = {
   ost: () => import("./data/ost.json"),
   openings: () => import("./data/openings.json"),
   endings: () => import("./data/endings.json"),
+  jeux: () => import("./data/jeux.json"),
   rap: () => import("./data/rap.json"),
   rapvsost: () => import("./data/rapvsost.json"),
   bankai: () => import("./data/bankai.json"),

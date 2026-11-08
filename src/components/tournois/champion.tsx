@@ -6,6 +6,10 @@ import { actions } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
 import { useTournament } from "./provider";
 import { Thumb, Visual } from "./visual";
+import { shareChampionCard } from "../fight/shareCard";
+
+// Couleur de chaque univers sur la carte partagée (mêmes que fight/identities.ts).
+const ACCENTS: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#8fb2ff" };
 
 // Temps passé sur un duel avant de choisir (écoute comprise).
 function duration(ms: number) {
@@ -35,6 +39,7 @@ export function Champion() {
     return steps;
   }, [run, champ, saved.votes]);
   const [copied, setCopied] = useState(false);
+  const [card, setCard] = useState<null | "busy" | "shared" | "downloaded" | "failed">(null);
   // Compte à rebours : ton top joué du dernier au champion, extrait après extrait.
   const countdown = useMemo(() => [...top].reverse().map((r) => r.p), [top]);
   const [step, setStep] = useState<number | null>(null);
@@ -161,6 +166,18 @@ export function Champion() {
           <Link to={`/tournoi/${meta.path}/classement`}>Voir le classement</Link>
           <button type="button" onClick={copy}>
             {copied ? "Top copié" : "Copier mon top"}
+          </button>
+          <button
+            type="button"
+            disabled={card === "busy"}
+            onClick={async () => {
+              setCard("busy");
+              const r = await shareChampionCard({ tournament: meta.title, accent: ACCENTS[meta.slug] ?? "#d9a35a", champ, podium: top.map((t) => t.p) });
+              setCard(r);
+              setTimeout(() => setCard(null), 2500);
+            }}
+          >
+            {card === "busy" ? "Préparation…" : card === "shared" ? "Carte partagée" : card === "downloaded" ? "Carte téléchargée" : card === "failed" ? "Carte indisponible" : "Partager ma carte"}
           </button>
           {saved.undo ? (
             <button type="button" onClick={() => actions.undo(meta.slug)}>
