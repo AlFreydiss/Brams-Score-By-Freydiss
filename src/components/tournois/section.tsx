@@ -19,14 +19,30 @@ import { isFight } from "../fight/identities";
 import "./themes/index.css";
 
 // Un tournoi en duels : /tournoi/<path> et ses pages (duel, tableau,
-// classement, historique, favoris, duel test, règles). Tous les tournois
-// partagent la DA « Phosphore violet » (themes/phosphore.css).
+// classement, historique, favoris, duel test, règles). DA noire commune
+// (themes/noir.css) ; OST, openings, endings et jeux ont la scène « Fight
+// Night » (src/components/fight).
 export default function TournamentSection({ slug }: { slug: TournamentSlug }) {
   return (
     <div data-t={slug} className="t-root nx-root">
-      <Suspense fallback={<div className="t-loading" aria-busy="true" />}>
+      <Suspense fallback={<SectionLoading />}>
         <Loaded slug={slug} />
       </Suspense>
+    </div>
+  );
+}
+
+
+// Pendant le chargement du catalogue : un trait qui se remplit, jamais un écran vide.
+function SectionLoading() {
+  return (
+    <div aria-busy="true" aria-label="Chargement du tournoi" style={{ minHeight: "calc(100dvh - 4rem)", display: "grid", placeItems: "center", background: "#08090d" }}>
+      <div style={{ display: "grid", justifyItems: "center", gap: 14, fontFamily: "Inter, system-ui, sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#8b8a85" }}>
+        <span style={{ display: "block", width: 160, height: 1, background: "rgba(244,242,236,0.16)", overflow: "hidden" }}>
+          <motion.i initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ duration: 1.1, repeat: Infinity, ease: [0.65, 0, 0.35, 1] }} style={{ display: "block", width: "100%", height: "100%", background: "#f4f2ec" }} />
+        </span>
+        Chargement du tournoi
+      </div>
     </div>
   );
 }

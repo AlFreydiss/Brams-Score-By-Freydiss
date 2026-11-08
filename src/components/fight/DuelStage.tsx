@@ -212,6 +212,17 @@ export function DuelStage(props: Props) {
 
   useAlternate(ab && !picked && !intro, player, left, right, setKbd);
 
+  // Réglage « lancer la première piste à chaque duel » : elle part à la fin de l'intro.
+  const { saved } = useTournament();
+  const autoplay = saved.settings.autoplay;
+  useEffect(() => {
+    if (intro || !autoplay) return;
+    const first = player.failed.has(left.id) ? right : left;
+    if (!player.failed.has(first.id)) player.play(first);
+    // Une fois par duel, quand l'intro se termine.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intro]);
+
   const roundLabel = round ? `${isFinal ? "Finale" : round.label} — Duel ${round.index}/${round.total}` : "Duel";
   const exit = leaving ? EXIT[id.exit] : { opacity: 1, scaleY: 1, scale: 1, clipPath: "circle(150% at 50% 50%)", filter: "brightness(1)" };
 
@@ -266,9 +277,9 @@ export function DuelStage(props: Props) {
       <motion.div
         initial={reduce ? false : { opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE, delay: 0.2 } }}
-        style={{ position: "absolute", top: 22, left: 24, zIndex: 24, display: "grid", gap: 10 }}
+        style={{ position: "absolute", top: narrow ? 16 : 22, left: narrow ? 16 : 24, right: narrow ? 150 : undefined, zIndex: 24, display: "grid", gap: 10 }}
       >
-        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.mute }}>
+        <p style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: narrow ? 6 : 10, fontFamily: FONT.body, fontSize: narrow ? 10 : 11, fontWeight: 600, letterSpacing: narrow ? "0.14em" : "0.22em", textTransform: "uppercase", color: id.mute }}>
           <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
           {id.name}
           <span aria-hidden style={{ width: 3, height: 3, borderRadius: 999, background: id.mute }} />
@@ -719,7 +730,7 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
             <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onListen} aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${masked(p)}`} style={{ width: 50, height: 50, border: 0, borderRadius: 999, display: "grid", placeItems: "center", background: playing ? id.a : "rgba(255,255,255,0.16)", color: playing ? id.bg : id.ink }}>
               {playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}
             </motion.button>
-            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: 999, background: id.ink, color: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: 16 }}>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: 999, background: id.a, color: id.bg, fontFamily: FONT.body, fontWeight: 600, fontSize: 15 }}>
               Garder
             </motion.button>
             <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ height: 50, padding: "0 18px", border: 0, borderRadius: 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontWeight: 600, fontSize: 14 }}>

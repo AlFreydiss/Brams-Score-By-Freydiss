@@ -40,6 +40,8 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const [visible, setVisible] = useState(true);
   const wrap = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; t: number } | null>(null);
+  // Un glissé ne doit pas se terminer en clic sur le portail (plongée involontaire).
+  const dragged = useRef(false);
   const n = items.length;
   const go = (d: number) => setActive((a) => (a + d + n) % n);
 
@@ -79,7 +81,13 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
     <div
       ref={wrap}
       style={{ position: "relative", height: "min(88dvh, 880px)", minHeight: 540, background: BG, overflow: "hidden", touchAction: "pan-y", userSelect: "none" }}
-      onPointerDown={(e) => (drag.current = { x: e.clientX, t: performance.now() })}
+      onPointerDown={(e) => {
+        drag.current = { x: e.clientX, t: performance.now() };
+        dragged.current = false;
+      }}
+      onPointerMove={(e) => {
+        if (drag.current && Math.abs(e.clientX - drag.current.x) > 10) dragged.current = true;
+      }}
       onPointerUp={(e) => {
         const d = drag.current;
         drag.current = null;
@@ -101,7 +109,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         <color attach="background" args={[BG]} />
         <fog attach="fog" args={[BG, 6.5, 15]} />
         <ambientLight intensity={0.6} />
-        <Ring items={items} active={active} onPick={(i) => (i === active ? enter(items[i]) : setActive(i))} />
+        <Ring items={items} active={active} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
         <Floor />
         <CameraRig dive={!!dive} />
         <EffectComposer>
@@ -197,13 +205,14 @@ function Ring({ items, active, onPick }: { items: ArenaItem[]; active: number; o
   const n = items.length;
   const step = (Math.PI * 2) / n;
   const target = useRef(0);
-  // Rotation continue : on prend le chemin le plus court vers le portail visé.
+  // Rotation continue : depuis l'angle actuel, on prend le chemin le plus
+  // court vers le portail visé (du dernier au premier = un seul cran).
   useEffect(() => {
     const want = -active * step;
-    let t = target.current;
-    while (want - t > Math.PI) t += Math.PI * 2;
-    while (want - t < -Math.PI) t -= Math.PI * 2;
-    target.current = t + (want - t);
+    const TAU = Math.PI * 2;
+    const cur = target.current;
+    const d = ((((want - cur + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
+    target.current = cur + d;
   }, [active, step]);
   useFrame((_, dt) => {
     const g = group.current;
@@ -235,22 +244,25 @@ function useCurvedPlane() {
 }
 
 function useMediaTexture(media: ArenaItem["media"]) {
+  const src = media.src;
+  const start = media.k === "video" ? media.start : 0;
+  const kind = media.k;
   const [tex, setTex] = useState<THREE.Texture | null>(null);
   useEffect(() => {
     let live = true;
     let video: HTMLVideoElement | null = null;
-    if (media.k === "video") {
+    if (kind === "video") {
       video = document.createElement("video");
       video.crossOrigin = "anonymous";
       video.muted = true;
       video.loop = true;
       video.playsInline = true;
       video.preload = "auto";
-      video.src = `${media.src}#t=${media.start}`;
+      video.src = `${src}#t=${start}`;
       video.addEventListener(
         "loadedmetadata",
         () => {
-          if (video && video.currentTime < media.start - 1) video.currentTime = media.start;
+          if (video && video.currentTime < start - 1) video.currentTime = start;
         },
         { once: true },
       );
@@ -259,7 +271,7 @@ function useMediaTexture(media: ArenaItem["media"]) {
       t.colorSpace = THREE.SRGBColorSpace;
       setTex(t);
     } else {
-      new THREE.TextureLoader().setCrossOrigin("anonymous").load(media.src, (t) => {
+      new THREE.TextureLoader().setCrossOrigin("anonymous").load(src, (t) => {
         if (!live) return t.dispose();
         t.colorSpace = THREE.SRGBColorSpace;
         setTex(t);
@@ -273,7 +285,8 @@ function useMediaTexture(media: ArenaItem["media"]) {
         video.load();
       }
     };
-  }, [media]);
+  // La texture dépend de la source seule : un nouvel objet pour la même vidéo ne la recharge pas.
+  }, [kind, src, start]);
   useEffect(() => () => tex?.dispose(), [tex]);
   return tex;
 }
@@ -297,6 +310,10 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
     const z = Math.cos(angle) * r;
     g.position.x = THREE.MathUtils.damp(g.position.x, x, 5, dt);
     g.position.z = THREE.MathUtils.damp(g.position.z, z, 5, dt);
+    // Les portails des côtés pivotent à moitié vers la caméra : jamais vus de tranche.
+    const ring = g.parent?.rotation.y ?? 0;
+    const net = Math.atan2(Math.sin(angle + ring), Math.cos(angle + ring));
+    g.rotation.y = angle - net * 0.45;
     if (mat.current) {
       const c = active ? 1 : 0.45;
       mat.current.color.setScalar(THREE.MathUtils.damp(mat.current.color.r, c, 4, dt));

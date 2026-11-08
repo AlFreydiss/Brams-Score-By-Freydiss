@@ -29,7 +29,8 @@ export function AudioReactiveLayer({ id, active, player, reduce }: Props) {
     if (!c) return;
     const g = c.getContext("2d");
     if (!g) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // Grand canevas plein panneau : densité plafonnée (un écran 4K coûterait 4 fois plus à chaque image).
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     const resize = () => {
       const r = c.getBoundingClientRect();
       c.width = Math.max(1, Math.round(r.width * dpr));

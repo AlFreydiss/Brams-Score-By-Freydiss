@@ -61,7 +61,9 @@ export const VersusIntro = memo(function VersusIntro({ left, right, id, roundLab
 
   // Clic ou touche : on passe.
   useEffect(() => {
-    const skip = (e: Event) => {
+    // Toute touche passe l'intro, sauf Tab et les modificateurs (navigation au clavier).
+    const skip = (e: KeyboardEvent) => {
+      if (e.key === "Tab" || e.key === "Shift" || e.key === "Alt" || e.key === "Control" || e.key === "Meta") return;
       e.preventDefault();
       e.stopPropagation();
       finish.current();

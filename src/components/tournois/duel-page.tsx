@@ -92,10 +92,17 @@ export function DuelPage() {
       .slice(0, 2);
     for (const m of next)
       for (const p of [m.left, m.right]) {
-        if (p?.visual.k !== "img") continue;
+        if (!p) continue;
         const img = new Image();
         img.decoding = "async";
-        img.src = p.visual.src;
+        // Image de fond, ou vignette en grand pour l'intro des génériques.
+        img.src = p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/");
+        // Extrait audio (OST de jeux) : on récupère déjà son en-tête.
+        if (p.sound?.k === "audio") {
+          const a = new Audio();
+          a.preload = "metadata";
+          a.src = p.sound.src;
+        }
       }
   }, [run, cur]);
 
