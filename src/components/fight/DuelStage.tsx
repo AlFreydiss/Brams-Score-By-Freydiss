@@ -1,0 +1,756 @@
+import { Network, Pause, Play, RotateCcw } from "lucide-react";
+import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue, type PanInfo } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { fetchPair } from "@/lib/versusStats.js";
+import type { Participant } from "@/lib/tournois/types";
+import type { RoundInfo, Side } from "../tournois/duel-screen";
+import { useTournament } from "../tournois/provider";
+import type { Player } from "../tournois/use-player";
+import { AudioReactiveLayer } from "./AudioReactiveLayer";
+import { impact, shatter as shatterSfx, whoosh } from "./audio/sfx";
+import { FloatingPlayer } from "./FloatingPlayer";
+import { FONT, IDENTITIES, type FightSlug, type Identity } from "./identities";
+import { dominantColors } from "./palette";
+import { CommunityReveal, Confetti, Flash, Shatter, type Rect } from "./VoteShatter";
+
+// Duel « Fight Night » (OST, openings, endings). Deux panneaux en vrai 50/50 ;
+// celui qu'on écoute ou survole s'étend (62/38) et l'autre se désature. Au
+// vote, le perdant se brise, le gagnant prend l'écran, la communauté répond.
+
+type Props = {
+  left: Participant;
+  right: Participant;
+  round: RoundInfo | null;
+  isFinal?: boolean;
+  blind?: boolean;
+  canUndo?: boolean;
+  onUndo?: () => void;
+  onChoose: (side: Side, ms: number) => boolean;
+  onDone: () => void;
+};
+
+const KEY: Record<Side, string> = { left: "A", right: "B" };
+const OTHER: Record<Side, Side> = { left: "right", right: "left" };
+const imgOf = (p: Participant) => (p.visual.k === "img" ? p.visual.src : p.thumb);
+
+function useNarrow() {
+  const [n, setN] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 760px)");
+    const on = () => setN(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return n;
+}
+
+export function DuelStage(props: Props) {
+  const { left, right, round, isFinal, blind, canUndo, onUndo, onChoose, onDone } = props;
+  const { meta, player } = useTournament();
+  const id = IDENTITIES[meta.slug as FightSlug];
+  const navigate = useNavigate();
+  const reduce = !!useReducedMotion();
+  const narrow = useNarrow();
+  const stage = useRef<HTMLDivElement>(null);
+  const panels = { left: useRef<HTMLDivElement>(null), right: useRef<HTMLDivElement>(null) };
+  const [hover, setHover] = useState<Side | null>(null);
+  const [kbd, setKbd] = useState<Side | null>(null);
+  const [picked, setPicked] = useState<Side | null>(null);
+  const [fx, setFx] = useState<{ rect: Rect; src: string; origin: { x: number; y: number }; colors: string[] } | null>(null);
+  const [reveal, setReveal] = useState<{ pct: number | null; total: number } | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const shownAt = useRef(performance.now());
+  const colors = useRef<Record<Side, string[]>>({ left: [id.a, id.b, id.ink], right: [id.a, id.b, id.ink] });
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  // Couleurs des deux images préparées dès l'arrivée du duel (confettis du gagnant).
+  useEffect(() => {
+    dominantColors(imgOf(left), [id.a, id.b, id.ink]).then((c) => (colors.current.left = c));
+    dominantColors(imgOf(right), [id.a, id.b, id.ink]).then((c) => (colors.current.right = c));
+  }, [left, right, id]);
+
+  // La scène remplit l'écran sous les barres du site.
+  useLayoutEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    if (!document.fullscreenElement && window.scrollY > 0) window.scrollTo({ top: 0, behavior: "instant" });
+    const fit = () => {
+      if (document.fullscreenElement) return el.style.removeProperty("height");
+      el.style.height = `calc(100dvh - ${Math.round(el.getBoundingClientRect().top + window.scrollY)}px)`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
+  // Entrée : souffle des deux panneaux qui arrivent.
+  useEffect(() => {
+    if (!reduce) whoosh(0.5);
+  }, [reduce]);
+
+  // Au démontage, le duel coupe sa propre piste.
+  const live = useRef(player);
+  live.current = player;
+  useEffect(
+    () => () => {
+      const pl = live.current;
+      if (pl.id === left.id || pl.id === right.id) pl.stop();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const playingSide: Side | null = player.id === left.id ? "left" : player.id === right.id ? "right" : null;
+  const audible = playingSide && player.playing ? playingSide : null;
+  const focus: Side | null = picked ?? hover ?? audible ?? kbd;
+  const masked = useCallback((p: Participant) => (blind && !picked ? `Piste ${p.id === left.id ? "A" : "B"}` : p.title), [blind, picked, left.id]);
+
+  const listen = useCallback(
+    (side: Side) => {
+      const p = side === "left" ? left : right;
+      if (picked || player.failed.has(p.id)) return;
+      setKbd(side);
+      player.toggle(p);
+    },
+    [left, right, picked, player],
+  );
+
+  const choose = useCallback(
+    (side: Side) => {
+      if (picked || leaving) return;
+      const ok = onChoose(side, Math.round(performance.now() - shownAt.current));
+      if (!ok) return;
+      const loser = OTHER[side];
+      const lp = loser === "left" ? left : right;
+      const st = stage.current?.getBoundingClientRect();
+      const lr = panels[loser].current?.getBoundingClientRect();
+      const wr = panels[side].current?.getBoundingClientRect();
+      if (player.id === lp.id) player.pause();
+      setPicked(side);
+      if (st && lr && wr) {
+        setFx({
+          rect: { x: lr.left - st.left, y: lr.top - st.top, w: lr.width, h: lr.height },
+          src: imgOf(lp),
+          origin: { x: wr.left - st.left + wr.width / 2, y: wr.top - st.top + wr.height * 0.55 },
+          colors: colors.current[side],
+        });
+      }
+      impact(1);
+      if (!reduce) setTimeout(shatterSfx, 260);
+      // Verdict de la communauté (la base garde le vote, puis on lit la répartition).
+      if (meta.statsId) {
+        const statsId = meta.statsId;
+        setTimeout(() => {
+          fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
+            if (!alive.current) return;
+            const total = r ? r.a + r.b : 0;
+            const mine = r ? (side === "left" ? r.a : r.b) : 0;
+            setReveal({ pct: total ? Math.round((mine / total) * 100) : null, total });
+          });
+        }, 450);
+      } else setReveal({ pct: null, total: 0 });
+      // Lecture du verdict, puis sortie propre au tournoi et duel suivant.
+      setTimeout(() => {
+        if (!alive.current) return;
+        setLeaving(true);
+        if (!reduce) whoosh(0.4);
+        setTimeout(() => alive.current && onDone(), reduce ? 200 : id.exit === "fade" ? 750 : 480);
+      }, reduce ? 1400 : 2700);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [picked, leaving, onChoose, left, right, player, reduce, meta.statsId, onDone, id.exit],
+  );
+
+  // Clavier : A / B garder, ← → choisir le côté (et basculer l'écoute), Espace
+  // lecture, Retour arrière annuler, T tableau.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key;
+      if (k === "a" || k === "A") choose("left");
+      else if (k === "b" || k === "B") choose("right");
+      else if (k === "ArrowLeft" || k === "ArrowRight") {
+        e.preventDefault();
+        const side: Side = k === "ArrowLeft" ? "left" : "right";
+        setKbd(side);
+        if (audible && audible !== side) listen(side);
+      } else if (k === " ") {
+        e.preventDefault();
+        listen(focus ?? "left");
+      } else if (k === "Backspace" && canUndo && onUndo && !picked) {
+        e.preventDefault();
+        onUndo();
+      } else if (k === "t" || k === "T") navigate(`/tournoi/${meta.path}/tableau`);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [choose, listen, focus, audible, canUndo, onUndo, picked, navigate, meta.path]);
+
+  const roundLabel = round ? `${isFinal ? "Finale" : round.label} — Duel ${round.index}/${round.total}` : "Duel";
+  const exit = leaving ? EXIT[id.exit] : { opacity: 1, scaleY: 1, scale: 1, clipPath: "circle(150% at 50% 50%)", filter: "brightness(1)" };
+
+  return (
+    <motion.div
+      ref={stage}
+      animate={exit}
+      transition={leaving ? EXIT_T[id.exit] : { duration: 0 }}
+      style={{
+        position: "relative",
+        height: "calc(100dvh - 120px)",
+        minHeight: 540,
+        overflow: "hidden",
+        background: id.bg,
+        color: id.ink,
+        fontFamily: FONT.body,
+        userSelect: "none",
+        transformOrigin: "50% 50%",
+      }}
+    >
+      {narrow ? (
+        <Deck {...{ left, right, id, player, picked, blind: !!blind, masked, listen, choose, reduce }} />
+      ) : (
+        <div style={{ display: "flex", height: "100%" }}>
+          {(["left", "right"] as const).map((side) => (
+            <PanelSlot key={side} side={side} first={side === "left"}>
+              <Panel
+                side={side}
+                p={side === "left" ? left : right}
+                id={id}
+                player={player}
+                focus={focus}
+                picked={picked}
+                hidden={!!blind && !picked}
+                masked={masked}
+                reduce={reduce}
+                refEl={panels[side]}
+                posterAt={meta.posterAt}
+                isFinal={!!isFinal}
+                championLabel={meta.championLabel}
+                onHover={setHover}
+                onListen={listen}
+                onChoose={choose}
+              />
+            </PanelSlot>
+          ))}
+        </div>
+      )}
+
+      {/* Bandeau broadcast du round, en haut au centre. */}
+      <motion.div
+        initial={reduce ? false : { x: "-120%" }}
+        animate={{ x: 0, transition: { type: "spring", bounce: 0.2, duration: 0.8, delay: 0.25 } }}
+        style={{
+          position: "absolute",
+          top: 18,
+          left: 0,
+          zIndex: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "9px 18px 9px 20px",
+          background: id.ink,
+          color: id.bg,
+          fontFamily: FONT.display,
+          fontWeight: 800,
+          fontSize: 13,
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          clipPath: "polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)",
+        }}
+      >
+        <span style={{ width: 8, height: 8, borderRadius: 999, background: id.a }} aria-hidden />
+        {id.name}
+        <span style={{ opacity: 0.55 }}>|</span>
+        {roundLabel}
+      </motion.div>
+      {round ? (
+        <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.08)", zIndex: 24 }}>
+          <motion.i initial={false} animate={{ scaleX: round.progress }} transition={{ type: "spring", bounce: 0, duration: 1 }} style={{ display: "block", height: "100%", background: id.a, transformOrigin: "left" }} />
+        </div>
+      ) : null}
+
+      {/* Raccourcis visibles, en haut à droite. */}
+      <div style={{ position: "absolute", top: 16, right: 18, zIndex: 24, display: "flex", alignItems: "center", gap: 6 }}>
+        {!narrow ? (
+          <span style={{ display: "flex", gap: 10, marginRight: 8, fontSize: 12.5, color: id.mute }}>
+            <span>
+              <Kbd id={id}>A</Kbd> <Kbd id={id}>B</Kbd> garder
+            </span>
+            <span>
+              <Kbd id={id}>Espace</Kbd> écouter
+            </span>
+            <span>
+              <Kbd id={id}>←</Kbd> <Kbd id={id}>→</Kbd> choisir
+            </span>
+          </span>
+        ) : null}
+        {canUndo && onUndo ? (
+          <Chip id={id} onClick={onUndo} disabled={!!picked} label="Annuler mon dernier choix">
+            <RotateCcw size={15} />
+          </Chip>
+        ) : null}
+        <Link to={`/tournoi/${meta.path}/tableau`} aria-label="Tableau du tournoi" style={chipStyle(id)}>
+          <Network size={15} />
+        </Link>
+      </div>
+
+      <AnimatePresence>
+        {fx ? (
+          <>
+            <Shatter key="sh" rect={fx.rect} src={fx.src} reduce={reduce} />
+            {!reduce ? <Flash key="fl" /> : null}
+            {!reduce ? <Confetti key="cf" origin={fx.origin} colors={fx.colors} /> : null}
+          </>
+        ) : null}
+      </AnimatePresence>
+      {reveal ? <CommunityReveal pct={reveal.pct} total={reveal.total} ink={id.ink} mute={id.mute} accent={id.a} reduce={reduce} /> : null}
+
+      {!picked ? (
+        <FloatingPlayer
+          id={id}
+          player={player}
+          playing={playingSide ? (playingSide === "left" ? left : right) : null}
+          ready={focus ? (focus === "left" ? left : right) : null}
+          readyKey={focus ? KEY[focus] : null}
+          masked={masked}
+          onPlayReady={() => listen(focus ?? "left")}
+        />
+      ) : null}
+    </motion.div>
+  );
+}
+
+// Sorties propres à chaque univers.
+const EXIT = {
+  zap: { scaleY: 0.004, filter: "brightness(3)", opacity: 0.9, scale: 1, clipPath: "circle(150% at 50% 50%)" },
+  spin: { clipPath: "circle(0% at 50% 50%)", scale: 1.06, opacity: 1, scaleY: 1, filter: "brightness(1)" },
+  fade: { opacity: 0, scale: 1.02, scaleY: 1, clipPath: "circle(150% at 50% 50%)", filter: "brightness(0.4)" },
+} as const;
+const EXIT_T = {
+  zap: { duration: 0.32, ease: [0.7, 0, 0.84, 0] },
+  spin: { duration: 0.5, ease: [0.65, 0, 0.35, 1] },
+  fade: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
+} as const;
+
+function PanelSlot({ side, first, children }: { side: Side; first: boolean; children: React.ReactNode }) {
+  return (
+    <>
+      {!first ? <Divider /> : null}
+      <div data-slot={side} style={{ display: "contents" }}>
+        {children}
+      </div>
+    </>
+  );
+}
+
+// Le VS vit dans la jointure : il suit la frontière quand un côté s'étend.
+function Divider() {
+  const { meta } = useTournament();
+  const id = IDENTITIES[meta.slug as FightSlug];
+  return (
+    <div style={{ position: "relative", width: 0, zIndex: 12 }} aria-hidden>
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: -1, width: 2, background: `linear-gradient(to bottom, transparent, ${id.ink}55 30%, ${id.ink}55 70%, transparent)` }} />
+      <motion.div
+        initial={{ scale: 2.4, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1, transition: { type: "spring", bounce: 0.45, duration: 0.7, delay: 0.35 } }}
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: 0,
+          translate: "-50% -50%",
+          display: "grid",
+          placeItems: "center",
+          width: 64,
+          height: 64,
+          borderRadius: 999,
+          background: id.bg,
+          boxShadow: `0 0 0 1.5px ${id.ink}, 0 0 40px ${id.a}66`,
+          fontFamily: FONT.display,
+          fontWeight: 800,
+          fontSize: 20,
+          letterSpacing: "-0.02em",
+          color: id.ink,
+        }}
+      >
+        VS
+      </motion.div>
+    </div>
+  );
+}
+
+type PanelProps = {
+  side: Side;
+  p: Participant;
+  id: Identity;
+  player: Player;
+  focus: Side | null;
+  picked: Side | null;
+  hidden: boolean;
+  masked: (p: Participant) => string;
+  reduce: boolean;
+  refEl: React.RefObject<HTMLDivElement | null>;
+  posterAt?: number;
+  isFinal: boolean;
+  championLabel: string;
+  onHover: (s: Side | null) => void;
+  onListen: (s: Side) => void;
+  onChoose: (s: Side) => void;
+};
+
+function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, refEl, posterAt, isFinal, championLabel, onHover, onListen, onChoose }: PanelProps) {
+  const loaded = player.id === p.id;
+  const playing = loaded && player.playing;
+  const win = picked === side;
+  const lose = !!picked && !win;
+  const grow = picked ? (win ? 100 : 0.0001) : focus ? (focus === side ? 62 : 38) : 50;
+  const dim = !picked && focus && focus !== side;
+
+  // Inclinaison 3D légère sur 3 couches (fond, voile, texte), au ressort.
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 140, damping: 20 });
+  const sy = useSpring(my, { stiffness: 140, damping: 20 });
+  const rotY = useTransform(sx, (v) => v * 3.2);
+  const rotX = useTransform(sy, (v) => -v * 2.4);
+  const bgX = useTransform(sx, (v) => v * -16);
+  const bgY = useTransform(sy, (v) => v * -10);
+  const txX = useTransform(sx, (v) => v * 12);
+  const txY = useTransform(sy, (v) => v * 8);
+
+  return (
+    <motion.div
+      ref={refEl}
+      initial={reduce ? false : { x: side === "left" ? "-40%" : "40%", opacity: 0 }}
+      animate={{ x: 0, opacity: lose ? 0 : 1, flexGrow: grow }}
+      transition={{
+        x: { type: "spring", bounce: 0.32, duration: 0.85 },
+        opacity: lose ? { duration: 0.01 } : { duration: 0.4 },
+        flexGrow: { type: "spring", bounce: picked ? 0.15 : 0, duration: picked ? 0.9 : 0.7 },
+      }}
+      onPointerEnter={(e) => e.pointerType === "mouse" && onHover(side)}
+      onPointerLeave={() => {
+        onHover(null);
+        mx.set(0);
+        my.set(0);
+      }}
+      onPointerMove={(e) => {
+        if (reduce || e.pointerType !== "mouse") return;
+        const r = e.currentTarget.getBoundingClientRect();
+        mx.set(((e.clientX - r.left) / r.width) * 2 - 1);
+        my.set(((e.clientY - r.top) / r.height) * 2 - 1);
+      }}
+      style={{ position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer" }}
+      onClick={() => !picked && onListen(side)}
+      role="group"
+      aria-label={`${id.sides[side === "left" ? 0 : 1]} : ${masked(p)}`}
+    >
+      <motion.div style={{ position: "absolute", inset: 0, rotateY: rotY, rotateX: rotX, transformStyle: "preserve-3d" }}>
+        {/* Couche 1 : l'image ou la vidéo. */}
+        <motion.div
+          animate={{ filter: dim ? "grayscale(0.85) blur(2px) brightness(0.55)" : "grayscale(0) blur(0px) brightness(1)", scale: win ? 1.06 : 1.1 }}
+          transition={{ filter: { duration: 0.5 }, scale: { type: "spring", bounce: 0, duration: 1.2 } }}
+          style={{ position: "absolute", inset: "-3%", x: bgX, y: bgY }}
+        >
+          <Media p={p} player={player} posterAt={posterAt} />
+        </motion.div>
+        {hidden ? (
+          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: "clamp(140px, 20vw, 320px)", color: id.a, letterSpacing: "-0.06em" }}>
+            {KEY[side]}
+          </div>
+        ) : null}
+        {/* Couche 2 : voiles et calque réactif au son. */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(to top, ${id.bg} 0%, ${id.bg}cc 22%, transparent 58%), linear-gradient(to ${side === "left" ? "right" : "left"}, ${id.bg}99, transparent 40%)`,
+          }}
+        />
+        <AudioReactiveLayer id={id} active={loaded} player={player} reduce={reduce} />
+        {/* Couche 3 : le texte et les commandes. */}
+        <motion.div
+          style={{
+            position: "absolute",
+            left: "clamp(24px, 3.4vw, 56px)",
+            right: "clamp(24px, 3.4vw, 56px)",
+            bottom: "clamp(108px, 15vh, 150px)",
+            display: "grid",
+            gap: 12,
+            x: txX,
+            y: txY,
+            zIndex: 6,
+          }}
+        >
+          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontSize: 13, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: id.a }}>
+            {id.sides[side === "left" ? 0 : 1]}
+            {playing ? <EqBars color={id.a} /> : null}
+          </p>
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: FONT.display,
+              fontWeight: 800,
+              fontSize: p.title.length > 22 ? "clamp(30px, 3.6vw, 60px)" : "clamp(38px, 4.6vw, 84px)",
+              lineHeight: 0.95,
+              letterSpacing: "-0.04em",
+              color: id.ink,
+              textWrap: "balance",
+              overflowWrap: "break-word",
+            }}
+          >
+            {masked(p)}
+          </h2>
+          <p style={{ margin: 0, fontSize: 15.5, color: id.ink, opacity: 0.82 }}>{hidden ? "Titre caché jusqu'à ton choix" : [p.sub, p.note, p.artist].filter(Boolean).join(" — ")}</p>
+          {win ? (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.6, delay: 0.2 } }}
+              style={{ margin: "6px 0 0", fontFamily: FONT.display, fontWeight: 800, fontSize: 18, color: id.a }}
+            >
+              {isFinal ? championLabel : "Passe au tour suivant"}
+            </motion.p>
+          ) : null}
+          {!picked ? (
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => onListen(side)}
+                disabled={player.failed.has(p.id)}
+                aria-pressed={playing}
+                aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${masked(p)}`}
+                style={{
+                  display: "grid",
+                  placeItems: "center",
+                  width: 54,
+                  height: 54,
+                  border: 0,
+                  borderRadius: 999,
+                  background: playing ? id.a : "rgba(255,255,255,0.14)",
+                  backdropFilter: "blur(14px)",
+                  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.22)",
+                  color: playing ? id.bg : id.ink,
+                  cursor: "pointer",
+                }}
+              >
+                {loaded && player.loading ? <Spinner /> : playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+              </motion.button>
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => onChoose(side)}
+                aria-label={`Garder ${masked(p)}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 14,
+                  height: 54,
+                  padding: "0 12px 0 26px",
+                  border: 0,
+                  borderRadius: 999,
+                  background: id.ink,
+                  color: id.bg,
+                  fontFamily: FONT.display,
+                  fontWeight: 800,
+                  fontSize: 17,
+                  letterSpacing: "-0.01em",
+                  cursor: "pointer",
+                }}
+              >
+                Garder
+                <span style={{ display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: 8, background: id.bg, color: id.ink, fontSize: 13 }}>{KEY[side]}</span>
+              </motion.button>
+            </div>
+          ) : null}
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Image, vidéo R2 (arrêtée sur une image tant qu'on ne l'écoute pas), ou repli
+// sur la vignette. La vidéo s'enregistre auprès du lecteur pour porter le son.
+function Media({ p, player, posterAt = 20 }: { p: Participant; player: Player; posterAt?: number }) {
+  const [src, setSrc] = useState(p.visual.k === "img" ? ((p.visual as { hi?: string }).hi && !(p.visual as { hi?: string }).hi?.includes("/original/") ? (p.visual as { hi?: string }).hi : p.visual.src) : null);
+  const [ready, setReady] = useState(false);
+  const register = player.register;
+  const release = player.release;
+  const videoRef = useCallback(
+    (el: HTMLVideoElement | null) => {
+      if (!el) return;
+      register(p, el);
+      // Vidéo déjà prête (cache) : l'événement de chargement est passé avant nous.
+      if (el.readyState >= 2) setReady(true);
+      return () => release(p, el);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [p.id, register, release],
+  );
+  const fill: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" };
+  if (p.visual.k === "video" && !player.failed.has(p.id)) {
+    return <video ref={videoRef} crossOrigin="anonymous" src={`${p.visual.src}#t=${p.sound?.k === "video" ? (p.sound.hook ?? posterAt) : posterAt}`} muted playsInline preload="metadata" onLoadedData={() => setReady(true)} onCanPlay={() => setReady(true)} onSeeked={() => setReady(true)} style={fill} />;
+  }
+  return (
+    <img
+      src={src ?? p.thumb}
+      alt=""
+      draggable={false}
+      decoding="async"
+      onLoad={() => setReady(true)}
+      onError={() => (src !== p.thumb ? setSrc(p.thumb) : setReady(true))}
+      style={fill}
+    />
+  );
+}
+
+// ── Mobile : deck de deux cartes, swipe façon Tinder ─────────────────
+function Deck({ left, right, id, player, picked, blind, masked, listen, choose, reduce }: { left: Participant; right: Participant; id: Identity; player: Player; picked: Side | null; blind: boolean; masked: (p: Participant) => string; listen: (s: Side) => void; choose: (s: Side) => void; reduce: boolean }) {
+  const [top, setTop] = useState<Side>("left");
+  const order: Side[] = top === "left" ? ["right", "left"] : ["left", "right"];
+  return (
+    <div style={{ position: "absolute", inset: "70px 14px 112px" }}>
+      {order.map((side, k) => (
+        <DeckCard
+          key={side}
+          side={side}
+          p={side === "left" ? left : right}
+          id={id}
+          player={player}
+          isTop={k === 1}
+          picked={picked}
+          hidden={blind && !picked}
+          masked={masked}
+          reduce={reduce}
+          onKeep={() => choose(side)}
+          onPass={() => setTop(OTHER[side])}
+          onListen={() => listen(side)}
+        />
+      ))}
+      <p style={{ position: "absolute", left: 0, right: 0, bottom: -34, margin: 0, textAlign: "center", fontSize: 12.5, color: id.mute }}>
+        Glisse à droite pour garder, à gauche pour voir l'autre
+      </p>
+    </div>
+  );
+}
+
+function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, onKeep, onPass, onListen }: { side: Side; p: Participant; id: Identity; player: Player; isTop: boolean; picked: Side | null; hidden: boolean; masked: (p: Participant) => string; reduce: boolean; onKeep: () => void; onPass: () => void; onListen: () => void }) {
+  const x = useMotionValue(0);
+  const rot = useTransform(x, (v) => v / 18);
+  const keepGlow = useTransform(x, (v) => Math.max(0, Math.min(1, v / 140)));
+  const passGlow = useTransform(x, (v) => Math.max(0, Math.min(1, -v / 140)));
+  const playing = player.id === p.id && player.playing;
+  const lose = !!picked && picked !== side;
+  const end = (_: unknown, info: PanInfo) => {
+    const v = info.offset.x + info.velocity.x * 0.2;
+    if (v > 130) {
+      animate(x, 600, { type: "spring", bounce: 0, duration: 0.45, velocity: info.velocity.x });
+      onKeep();
+    } else if (v < -130) {
+      animate(x, -600, { type: "spring", bounce: 0, duration: 0.4, velocity: info.velocity.x }).then(() => {
+        onPass();
+        x.set(0);
+      });
+    } else animate(x, 0, { type: "spring", bounce: 0.3, duration: 0.5, velocity: info.velocity.x });
+  };
+  return (
+    <motion.div
+      drag={isTop && !picked ? "x" : false}
+      dragElastic={0.9}
+      dragMomentum={false}
+      onDragEnd={end}
+      animate={{ scale: isTop ? 1 : 0.93, y: isTop ? 0 : 14, opacity: lose ? 0 : 1 }}
+      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+      style={{ position: "absolute", inset: 0, x, rotate: reduce ? 0 : rot, borderRadius: 20, overflow: "hidden", background: id.bg, boxShadow: "0 30px 60px -30px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(255,255,255,0.1)", touchAction: "pan-y" }}
+      onClick={() => isTop && !picked && onListen()}
+    >
+      <div style={{ position: "absolute", inset: 0 }}>
+        <Media p={p} player={player} />
+      </div>
+      {hidden ? <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: 160, color: id.a }}>{KEY[side]}</div> : null}
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${id.bg} 0%, ${id.bg}aa 30%, transparent 60%)` }} />
+      <AudioReactiveLayer id={id} active={player.id === p.id} player={player} reduce={reduce} />
+      {/* La couleur fuit sur le bord de sortie. */}
+      <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: keepGlow, background: `linear-gradient(to left, ${id.a}cc, transparent 55%)` }} />
+      <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: passGlow, background: `linear-gradient(to right, ${id.b}aa, transparent 55%)` }} />
+      <div style={{ position: "absolute", left: 20, right: 20, bottom: 20, display: "grid", gap: 8, zIndex: 6 }}>
+        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: id.a }}>
+          {id.sides[side === "left" ? 0 : 1]} {playing ? "— en écoute" : ""}
+        </p>
+        <h2 style={{ margin: 0, fontFamily: FONT.display, fontWeight: 800, fontSize: 36, lineHeight: 0.98, letterSpacing: "-0.04em", color: id.ink }}>{masked(p)}</h2>
+        <p style={{ margin: 0, fontSize: 14, color: id.ink, opacity: 0.8 }}>{hidden ? "Titre caché" : [p.sub, p.artist].filter(Boolean).join(" — ")}</p>
+        {isTop && !picked ? (
+          <div style={{ display: "flex", gap: 10, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+            <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onListen} aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${masked(p)}`} style={{ width: 50, height: 50, border: 0, borderRadius: 999, display: "grid", placeItems: "center", background: playing ? id.a : "rgba(255,255,255,0.16)", color: playing ? id.bg : id.ink }}>
+              {playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}
+            </motion.button>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: 999, background: id.ink, color: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: 16 }}>
+              Garder
+            </motion.button>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ height: 50, padding: "0 18px", border: 0, borderRadius: 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontWeight: 600, fontSize: 14 }}>
+              L'autre
+            </motion.button>
+          </div>
+        ) : null}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Petits éléments ──────────────────────────────────────────────────
+function EqBars({ color }: { color: string }) {
+  return (
+    <span aria-hidden style={{ display: "inline-flex", alignItems: "end", gap: 2, height: 12 }}>
+      {[0, 1, 2].map((k) => (
+        <motion.i
+          key={k}
+          animate={{ scaleY: [0.3, 1, 0.5, 0.9, 0.3] }}
+          transition={{ duration: 0.9 + k * 0.15, repeat: Infinity, ease: "easeInOut" }}
+          style={{ display: "block", width: 3, height: 12, background: color, transformOrigin: "bottom", borderRadius: 1 }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function Spinner() {
+  return <motion.span aria-hidden animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} style={{ display: "block", width: 18, height: 18, borderRadius: 999, border: "2px solid currentColor", borderRightColor: "transparent" }} />;
+}
+
+function Kbd({ id, children }: { id: Identity; children: React.ReactNode }) {
+  return <kbd style={{ display: "inline-block", minWidth: 20, padding: "2px 6px", borderRadius: 5, boxShadow: `inset 0 0 0 1px ${id.ink}40`, fontFamily: "ui-monospace, monospace", fontSize: 11, color: id.ink, textAlign: "center" }}>{children}</kbd>;
+}
+
+const chipStyle = (id: Identity): React.CSSProperties => ({
+  display: "grid",
+  placeItems: "center",
+  width: 36,
+  height: 36,
+  border: 0,
+  borderRadius: 999,
+  background: "rgba(10,10,12,0.55)",
+  backdropFilter: "blur(12px)",
+  boxShadow: `inset 0 0 0 1px ${id.ink}30`,
+  color: id.ink,
+  cursor: "pointer",
+});
+
+function Chip({ id, onClick, disabled, label, children }: { id: Identity; onClick: () => void; disabled?: boolean; label: string; children: React.ReactNode }) {
+  return (
+    <motion.button type="button" whileTap={{ scale: 0.9 }} onClick={onClick} disabled={disabled} aria-label={label} title={label} style={{ ...chipStyle(id), opacity: disabled ? 0.35 : 1 }}>
+      {children}
+    </motion.button>
+  );
+}
+
+export type { MotionValue };

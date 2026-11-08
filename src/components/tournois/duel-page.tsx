@@ -5,7 +5,7 @@ import { actions } from "@/lib/tournois/store";
 import type { Match, Participant } from "@/lib/tournois/types";
 import { Champion } from "./champion";
 import { DuelScreen, type RoundInfo } from "./duel-screen";
-import { ImmersiveDuel } from "./immersive";
+import { DuelStage } from "../fight/DuelStage";
 import { useTournament } from "./provider";
 import { Recap } from "./recap";
 import { Setup } from "./setup";
@@ -100,16 +100,8 @@ export function DuelPage() {
 
   const showMatch = run ? (held?.match ?? cur?.match ?? null) : null;
   const showSize = held?.roundSize ?? cur?.round.size ?? 0;
-  // OST, openings et endings : duel immersif plein écran.
+  // OST, openings et endings : scène « Fight Night » (src/components/fight).
   const immersive = meta.slug === "ost" || meta.slug === "openings" || meta.slug === "endings";
-  // Prochain duel déjà connu (ses deux concurrents tirés), pour l'aperçu au bord droit.
-  const peek = useMemo(() => {
-    if (!run || !showMatch) return null;
-    for (const r of run.rounds)
-      for (const m of r.matches)
-        if (m.id !== showMatch.id && m.status !== "closed" && m.left && m.right) return { match: m, size: r.size };
-    return null;
-  }, [run, showMatch]);
 
   return (
     <div className="t-duel-page">
@@ -123,12 +115,10 @@ export function DuelPage() {
           <motion.div key="immersive" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.4 } }} exit={{ opacity: 0, transition: { duration: 0.3 } }}>
             {/* Une scène par duel ; elle remonte à la place exacte où l'aperçu
                 du duel suivant s'est arrêté : pas de saut visible. */}
-            <ImmersiveDuel
+            <DuelStage
               key={showMatch.id}
               left={showMatch.left}
               right={showMatch.right}
-              peek={peek?.match.left ?? null}
-              peekLabel={peek ? (peek.size === showSize ? "Duel suivant" : roundName(peek.size)) : showSize === 2 ? "Champion" : "Tour suivant"}
               round={info}
               isFinal={showSize === 2}
               blind={!!run?.blind}
