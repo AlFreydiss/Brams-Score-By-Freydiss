@@ -1,0 +1,318 @@
+/* Hero du tournoi des OST de jeux vidéo (jeux-hero.tsx). */
+
+@font-face {
+  font-family: "Gambetta";
+  src: url("/fonts/gambetta/Gambetta-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gambetta";
+  src: url("/fonts/gambetta/Gambetta-LightItalic.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gambetta";
+  src: url("/fonts/gambetta/Gambetta-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.jh {
+  --jh-ink: #f4f2ec;
+  --jh-mute: rgba(244, 242, 236, 0.62);
+  --jh-line: rgba(244, 242, 236, 0.22);
+  --jh-bg: #08090d;
+  --jh-side: clamp(20px, 5vw, 72px);
+  --jh-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: clamp(560px, 84svh, 940px);
+  color: var(--jh-ink);
+  background: var(--jh-bg);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/* Images : fondu lent, et un recul de caméra pendant que l'image est à l'écran. */
+.jh-slides {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.jh-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.08);
+  transition:
+    opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0s linear 1.8s;
+  will-change: opacity, transform;
+}
+.jh-slide.is-on {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 9s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.jh.is-still .jh-slide {
+  transform: none;
+  transition: opacity 1.2s ease;
+}
+
+/* Voile : le texte se lit à gauche, la page reprend en bas. */
+.jh-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(8, 9, 13, 0.92) 0%, rgba(8, 9, 13, 0.72) 32%, rgba(8, 9, 13, 0.12) 64%, rgba(8, 9, 13, 0) 100%),
+    linear-gradient(0deg, var(--jh-bg) 0%, rgba(8, 9, 13, 0.55) 22%, rgba(8, 9, 13, 0) 48%),
+    linear-gradient(180deg, rgba(8, 9, 13, 0.55) 0%, rgba(8, 9, 13, 0) 18%);
+}
+
+.jh-copy {
+  position: absolute;
+  left: var(--jh-side);
+  bottom: clamp(120px, 17svh, 170px);
+  max-width: min(640px, 88vw);
+}
+.jh-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0 0 22px;
+  font: 500 11px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--jh-mute);
+}
+.jh-eyebrow span + span::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  margin-right: 18px;
+  vertical-align: middle;
+  background: var(--jh-line);
+}
+.jh .jh-title {
+  margin: 0;
+  font-family: "Gambetta", "Iowan Old Style", Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(48px, 7.4vw, 118px);
+  line-height: 0.94;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  animation: jh-rise 1.2s var(--jh-ease) both;
+}
+.jh-title em {
+  font-style: italic;
+  color: #e9dcc0;
+}
+.jh-lede {
+  margin: 26px 0 0;
+  max-width: 46ch;
+  font: 400 clamp(15px, 1.15vw, 17px) / 1.6 "Geist", system-ui, sans-serif;
+  color: var(--jh-mute);
+  text-wrap: pretty;
+  animation: jh-rise 1.2s var(--jh-ease) 0.12s both;
+}
+.jh-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 28px;
+  margin-top: 34px;
+  animation: jh-rise 1.2s var(--jh-ease) 0.22s both;
+}
+.jh-go {
+  display: inline-flex;
+  align-items: center;
+  padding: 16px 28px;
+  border-radius: 2px;
+  background: var(--jh-ink);
+  color: #0b0b0d;
+  font: 500 15px/1 "Geist", system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition:
+    background-color 0.25s ease,
+    transform 0.2s var(--jh-ease);
+}
+.jh-go:hover {
+  background: #e9dcc0;
+}
+.jh-go:active {
+  transform: scale(0.98);
+}
+.jh-link {
+  color: var(--jh-ink);
+  font: 400 15px/1 "Geist", system-ui, sans-serif;
+  text-decoration: underline;
+  text-decoration-color: var(--jh-line);
+  text-underline-offset: 6px;
+  transition: text-decoration-color 0.25s ease;
+}
+.jh-link:hover {
+  text-decoration-color: var(--jh-ink);
+}
+.jh-go:focus-visible,
+.jh-link:focus-visible,
+.jh-ticks button:focus-visible {
+  outline: 1px solid var(--jh-ink);
+  outline-offset: 4px;
+}
+
+/* Bas : le jeu à l'écran à gauche, la position à droite. */
+.jh-foot {
+  position: absolute;
+  left: var(--jh-side);
+  right: var(--jh-side);
+  bottom: clamp(28px, 5svh, 48px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(244, 242, 236, 0.12);
+}
+.jh-caption {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  animation: jh-fade 0.9s ease both;
+}
+.jh-caption em {
+  font: italic 300 clamp(18px, 1.5vw, 22px) / 1.1 "Gambetta", Georgia, serif;
+  color: var(--jh-ink);
+}
+.jh-caption small {
+  font: 500 10.5px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--jh-mute);
+}
+.jh-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.jh-index {
+  font: 500 12px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+.jh-index i {
+  font-style: normal;
+  color: var(--jh-mute);
+}
+.jh-ticks {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jh-ticks button {
+  display: block;
+  width: 30px;
+  padding: 10px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.jh-ticks button i {
+  display: block;
+  height: 1px;
+  background: var(--jh-line);
+  background-image: linear-gradient(var(--jh-ink), var(--jh-ink));
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  transition: background-color 0.3s ease;
+}
+.jh-ticks button.is-past i {
+  background-size: 100% 100%;
+  opacity: 0.55;
+}
+.jh-ticks button.is-on i {
+  animation: jh-tick linear both;
+}
+.jh-ticks button:hover i {
+  background-color: rgba(244, 242, 236, 0.5);
+}
+
+@keyframes jh-tick {
+  from {
+    background-size: 0% 100%;
+  }
+  to {
+    background-size: 100% 100%;
+  }
+}
+@keyframes jh-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes jh-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .jh {
+    height: clamp(560px, 88svh, 760px);
+  }
+  /* index.css force tous les h1 mobiles à 48 px max (!important). */
+  .jh .jh-title {
+    font-size: clamp(46px, 14vw, 68px) !important;
+  }
+  .jh-veil {
+    background:
+      linear-gradient(0deg, var(--jh-bg) 0%, rgba(8, 9, 13, 0.82) 38%, rgba(8, 9, 13, 0.2) 70%, rgba(8, 9, 13, 0.35) 100%);
+  }
+  .jh-copy {
+    right: var(--jh-side);
+    bottom: 128px;
+  }
+  .jh-lede {
+    margin-top: 18px;
+  }
+  .jh-ctas {
+    margin-top: 26px;
+  }
+  .jh-ticks {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jh-title,
+  .jh-lede,
+  .jh-ctas,
+  .jh-caption {
+    animation: none;
+  }
+}

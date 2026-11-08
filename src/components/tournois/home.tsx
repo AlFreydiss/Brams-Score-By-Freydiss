@@ -12,6 +12,7 @@ import { Thumb } from "./visual";
 import { NoirArt } from "./noir/art";
 import { HomeExtras } from "../fight/HomeExtras";
 import { isFight } from "../fight/identities";
+import { JeuxHero } from "./jeux-hero";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 const LINEUP = 24;
@@ -73,6 +74,15 @@ export function TournamentHome() {
 
   return (
     <div className="t-home">
+      {meta.slug === "jeux" ? (
+        <JeuxHero
+          tracks={participants.length}
+          games={groups}
+          counts={new Map(lineup)}
+          cta={run && !finished ? `Reprendre, duel ${done + 1}` : "Participer au tournoi"}
+          base={base}
+        />
+      ) : (
       <div className="nx-hero">
         <div className="nx-hero-copy">
           <h1 className="nx-title">{meta.title}</h1>
@@ -101,6 +111,7 @@ export function TournamentHome() {
           </div>
         ) : null}
       </div>
+      )}
 
       <div className="t-home-body">
         {isFight(meta.slug) ? <HomeExtras /> : null}
