@@ -23,6 +23,19 @@ const SLIDES: Slide[] = [
 ];
 
 const HOLD = 7000;
+
+// Mouvements de caméra, un par image (panoramique, zoom avant, zoom arrière…).
+const MOVES = [
+  { x0: "-2.5%", y0: "1%", s0: 1.16, x1: "1.5%", y1: "-1%", s1: 1.05 },
+  { x0: "0%", y0: "0%", s0: 1.03, x1: "-1%", y1: "1.5%", s1: 1.17 },
+  { x0: "2.5%", y0: "-1.5%", s0: 1.14, x1: "-2%", y1: "1%", s1: 1.07 },
+  { x0: "0%", y0: "2.5%", s0: 1.15, x1: "0%", y1: "-2%", s1: 1.06 },
+];
+const vars = (s: Slide, k: number) => {
+  const m = MOVES[k % MOVES.length];
+  const [cx, cy] = s.pos.split(" ");
+  return { objectPosition: s.pos, "--cx": cx, "--cy": cy, "--x0": m.x0, "--y0": m.y0, "--s0": m.s0, "--x1": m.x1, "--y1": m.y1, "--s1": m.s1 } as React.CSSProperties;
+};
 const src = (s: Slide, small = false) => `/tournoi/jeux-hero/${s.id}${small ? "-s" : ""}.webp`;
 
 export function JeuxHero({
@@ -39,6 +52,9 @@ export function JeuxHero({
   base: string;
 }) {
   const [i, setI] = useState(0);
+  // Image qui s'en va (elle avance vers nous en se floutant).
+  const [prev, setPrev] = useState<number | null>(null);
+  const iRef = useRef(0);
   // Images montées au fil du défilement : l'actuelle et la suivante seulement.
   const [mounted, setMounted] = useState(() => new Set([0, 1]));
   const [paused, setPaused] = useState(false);
@@ -46,6 +62,9 @@ export function JeuxHero({
 
   const go = useCallback((n: number) => {
     const k = (n + SLIDES.length) % SLIDES.length;
+    if (k === iRef.current) return;
+    setPrev(iRef.current);
+    iRef.current = k;
     setI(k);
     setMounted((m) => (m.has(k) && m.has((k + 1) % SLIDES.length) ? m : new Set([...m, k, (k + 1) % SLIDES.length])));
   }, []);
@@ -85,6 +104,13 @@ export function JeuxHero({
       aria-roledescription="carrousel"
       aria-label="Jeux du tournoi"
       onPointerDown={onDown}
+      onPointerMove={(e) => {
+        // Profondeur : le décor glisse un peu à l'opposé de la souris.
+        if (reduce || e.pointerType !== "mouse") return;
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--px", ((e.clientX - r.left) / r.width - 0.5).toFixed(3));
+        e.currentTarget.style.setProperty("--py", ((e.clientY - r.top) / r.height - 0.5).toFixed(3));
+      }}
       onPointerUp={onUp}
       onPointerCancel={() => (drag.current = null)}
     >
@@ -93,7 +119,7 @@ export function JeuxHero({
           mounted.has(k) ? (
             <img
               key={s.id}
-              className={`jh-slide ${k === i ? "is-on" : ""}`}
+              className={`jh-slide ${k === i ? "is-on" : k === prev ? "is-off" : ""}`}
               src={src(s)}
               srcSet={`${src(s, true)} ${s.w / 2}w, ${src(s)} ${s.w}w`}
               sizes="100vw"
@@ -101,7 +127,7 @@ export function JeuxHero({
               draggable={false}
               decoding="async"
               fetchPriority={k === 0 ? "high" : "low"}
-              style={{ objectPosition: s.pos }}
+              style={vars(s, k)}
             />
           ) : null,
         )}
@@ -149,6 +175,81 @@ export function JeuxHero({
               </li>
             ))}
           </ol>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Sous le hero : la tracklist et le générique de fin ───────────────
+
+type Track = { id: string; title: string; sub?: string; thumb: string };
+
+/**
+ * « Au programme » façon dos de vinyle (pistes numérotées, une à écouter),
+ * et la liste des jeux en générique de fin qui défile tout seul.
+ */
+export function JeuxProgram({
+  tracks,
+  lineup,
+  playingId,
+  loadingId,
+  onListen,
+}: {
+  tracks: Track[];
+  lineup: [string, number][];
+  playingId: string | null;
+  loadingId: string | null;
+  onListen: (id: string) => void;
+}) {
+  const list = tracks.slice(0, 12);
+  return (
+    <section className="jp" aria-label="Programme du tournoi">
+      <div className="jp-tracks">
+        <header className="jp-head">
+          <h2>Au programme</h2>
+          <p>Une sélection du tournoi. Appuie pour écouter.</p>
+        </header>
+        <ol className="jp-list">
+          {list.map((t, k) => {
+            const on = playingId === t.id;
+            return (
+              <li key={t.id}>
+                <button type="button" className={`jp-row ${on ? "is-on" : ""}`} onClick={() => onListen(t.id)} aria-pressed={on} aria-label={`${on ? "Mettre en pause" : "Écouter"} ${t.title}`}>
+                  <span className="jp-n">{on ? <i className="jp-eq" aria-hidden><b /><b /><b /></i> : String(k + 1).padStart(2, "0")}</span>
+                  <img className="jp-cover" src={t.thumb} alt="" loading="lazy" decoding="async" />
+                  <span className="jp-text">
+                    <b>{t.title}</b>
+                    <small>{loadingId === t.id ? "Chargement…" : t.sub}</small>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <div className="jp-credits">
+        <header className="jp-head">
+          <h2>Générique</h2>
+          <p>
+            {lineup.length} jeux, par nombre de musiques.
+          </p>
+        </header>
+        <div className="jp-roll" tabIndex={0} aria-label={`Les ${lineup.length} jeux du tournoi`}>
+          {/* Deux copies à la suite : la boucle ne se voit pas. */}
+          <div className="jp-roll-in">
+            {[0, 1].map((copy) => (
+              <dl key={copy} aria-hidden={copy === 1}>
+                {lineup.map(([g, n]) => (
+                  <div key={g}>
+                    <dt>{n === 1 ? "1 musique" : `${n} musiques`}</dt>
+                    <dd>{g}</dd>
+                  </div>
+                ))}
+              </dl>
+            ))}
+          </div>
         </div>
       </div>
     </section>

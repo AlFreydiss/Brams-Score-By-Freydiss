@@ -12,7 +12,7 @@ import { Thumb } from "./visual";
 import { NoirArt } from "./noir/art";
 import { HomeExtras } from "../fight/HomeExtras";
 import { isFight } from "../fight/identities";
-import { JeuxHero } from "./jeux-hero";
+import { JeuxHero, JeuxProgram } from "./jeux-hero";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 const LINEUP = 24;
@@ -136,6 +136,19 @@ export function TournamentHome() {
           </div>
         </dl>
 
+        {meta.slug === "jeux" ? (
+          <JeuxProgram
+            tracks={rail}
+            lineup={lineup}
+            playingId={player.playing ? player.id : null}
+            loadingId={player.loading ? player.id : null}
+            onListen={(id) => {
+              const p = byId.get(id);
+              if (p) listen(p);
+            }}
+          />
+        ) : (
+        <>
         <section className="t-program">
           <div className="t-program-head">
             <h2>Au programme</h2>
@@ -195,6 +208,8 @@ export function TournamentHome() {
             </ul>
           </section>
         ) : null}
+        </>
+        )}
 
         {cur || lastP || popular.length ? (
           <div className="t-home-grid">

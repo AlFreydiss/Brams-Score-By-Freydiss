@@ -1,27 +1,5 @@
 /* Hero du tournoi des OST de jeux vidéo (jeux-hero.tsx). */
 
-@font-face {
-  font-family: "Gambetta";
-  src: url("/fonts/gambetta/Gambetta-Light.woff2") format("woff2");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Gambetta";
-  src: url("/fonts/gambetta/Gambetta-LightItalic.woff2") format("woff2");
-  font-weight: 300;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Gambetta";
-  src: url("/fonts/gambetta/Gambetta-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 .jh {
   --jh-ink: #f4f2ec;
   --jh-mute: rgba(244, 242, 236, 0.62);
@@ -29,6 +7,9 @@
   --jh-bg: #08090d;
   --jh-side: clamp(20px, 5vw, 72px);
   --jh-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --jh-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  --jh-wear: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27260%27 height=%27260%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%273%27 seed=%277%27/%3E%3CfeColorMatrix values=%270 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -9 0 0 0 6.6%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E");
+  --jh-gold: linear-gradient(180deg, #fbf3e0 0%, #efdcb2 34%, #d2ad6e 58%, #a47b42 80%, #6e4f2a 100%);
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -39,11 +20,15 @@
   user-select: none;
 }
 
-/* Images : fondu lent, et un recul de caméra pendant que l'image est à l'écran. */
+/* Images : chaque image s'ouvre en cercle de lumière depuis son point fort
+   (floue et surexposée, puis nette), vit avec son propre mouvement de caméra,
+   et l'ancienne avance vers nous en se floutant. La souris donne la profondeur. */
 .jh-slides {
   position: absolute;
-  inset: 0;
+  inset: -3%;
   z-index: -2;
+  transform: translate3d(calc(var(--px, 0) * -22px), calc(var(--py, 0) * -14px), 0);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .jh-slide {
   position: absolute;
@@ -53,22 +38,63 @@
   max-width: none;
   object-fit: cover;
   opacity: 0;
-  transform: scale(1.08);
-  transition:
-    opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0s linear 1.8s;
-  will-change: opacity, transform;
+  z-index: 0;
+  will-change: transform, clip-path, filter;
+}
+.jh-slide.is-off {
+  opacity: 1;
+  z-index: 1;
+  animation: jh-out 1.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 .jh-slide.is-on {
   opacity: 1;
-  transform: scale(1);
-  transition:
-    opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 9s cubic-bezier(0.25, 0.1, 0.25, 1);
+  z-index: 2;
+  animation:
+    jh-in 1.7s cubic-bezier(0.65, 0, 0.35, 1) both,
+    jh-kb 9.5s cubic-bezier(0.33, 0, 0.2, 1) both;
 }
-.jh.is-still .jh-slide {
+@keyframes jh-in {
+  from {
+    clip-path: circle(0% at var(--cx) var(--cy));
+    filter: blur(16px) brightness(1.9) saturate(0.6);
+  }
+  60% {
+    filter: blur(2px) brightness(1.15) saturate(0.95);
+  }
+  to {
+    clip-path: circle(150% at var(--cx) var(--cy));
+    filter: none;
+  }
+}
+@keyframes jh-kb {
+  from {
+    transform: translate3d(var(--x0), var(--y0), 0) scale(var(--s0));
+  }
+  to {
+    transform: translate3d(var(--x1), var(--y1), 0) scale(var(--s1));
+  }
+}
+@keyframes jh-out {
+  from {
+    transform: translate3d(var(--x1), var(--y1), 0) scale(var(--s1));
+    filter: none;
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(var(--x1), var(--y1), 0) scale(calc(var(--s1) + 0.14));
+    filter: blur(12px) brightness(0.6);
+    opacity: 0;
+  }
+}
+.jh.is-still .jh-slides {
   transform: none;
-  transition: opacity 1.2s ease;
+}
+.jh.is-still .jh-slide.is-on {
+  animation: jh-fade 1.2s ease both;
+}
+.jh.is-still .jh-slide.is-off {
+  animation: none;
+  opacity: 0;
 }
 
 /* Voile : le texte se lit à gauche, la page reprend en bas. */
@@ -87,40 +113,49 @@
   position: absolute;
   left: var(--jh-side);
   bottom: clamp(120px, 17svh, 170px);
-  max-width: min(640px, 88vw);
+  max-width: min(900px, 88vw);
 }
 .jh-eyebrow {
-  display: flex;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px 18px;
-  margin: 0 0 22px;
-  font: 500 11px/1 "Geist Mono", ui-monospace, monospace;
-  letter-spacing: 0.22em;
+  gap: 6px 16px;
+  margin: 0 0 18px;
+  padding-bottom: 12px;
+  font: 600 clamp(12px, 1vw, 15px) / 1 var(--jh-display);
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--jh-mute);
+  color: #efe3c8;
+  /* Le filet doré sous la ligne, comme sous « Clair Obscur ». */
+  background: linear-gradient(90deg, rgba(210, 173, 110, 0), rgba(210, 173, 110, 0.85) 18%, rgba(210, 173, 110, 0.85) 82%, rgba(210, 173, 110, 0)) bottom / 100% 1px no-repeat;
 }
 .jh-eyebrow span + span::before {
-  content: "";
-  display: inline-block;
-  width: 14px;
-  height: 1px;
-  margin-right: 18px;
-  vertical-align: middle;
-  background: var(--jh-line);
+  content: "·";
+  margin-right: 16px;
+  color: rgba(210, 173, 110, 0.9);
 }
+/* Titre façon logo : capitales romaines, or poli de haut en bas, usure en éclats. */
 .jh .jh-title {
   margin: 0;
-  font-family: "Gambetta", "Iowan Old Style", Georgia, serif;
-  font-weight: 300;
-  font-size: clamp(48px, 7.4vw, 118px);
-  line-height: 0.94;
-  letter-spacing: -0.025em;
+  font-family: var(--jh-display);
+  font-weight: 400;
+  font-size: clamp(40px, 5.6vw, 96px);
+  line-height: 1.04;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
   text-wrap: balance;
+  color: transparent;
+  background: var(--jh-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-mask-image: var(--jh-wear);
+  mask-image: var(--jh-wear);
+  -webkit-mask-size: 260px 260px;
+  mask-size: 260px 260px;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
   animation: jh-rise 1.2s var(--jh-ease) both;
 }
 .jh-title em {
-  font-style: italic;
-  color: #e9dcc0;
+  font-style: normal;
 }
 .jh-lede {
   margin: 26px 0 0;
@@ -196,8 +231,11 @@
   animation: jh-fade 0.9s ease both;
 }
 .jh-caption em {
-  font: italic 300 clamp(18px, 1.5vw, 22px) / 1.1 "Gambetta", Georgia, serif;
-  color: var(--jh-ink);
+  font: 600 clamp(16px, 1.3vw, 20px) / 1.1 var(--jh-display);
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #efe3c8;
 }
 .jh-caption small {
   font: 500 10.5px/1 "Geist Mono", ui-monospace, monospace;
@@ -287,7 +325,7 @@
   }
   /* index.css force tous les h1 mobiles à 48 px max (!important). */
   .jh .jh-title {
-    font-size: clamp(46px, 14vw, 68px) !important;
+    font-size: clamp(34px, 10vw, 52px) !important;
   }
   .jh-veil {
     background:
@@ -313,6 +351,231 @@
   .jh-lede,
   .jh-ctas,
   .jh-caption {
+    animation: none;
+  }
+}
+
+
+/* ── Programme : tracklist + générique ───────────────────────────── */
+.jp {
+  --jp-gold: #d2ad6e;
+  --jp-ink: #f4f2ec;
+  --jp-mute: rgba(244, 242, 236, 0.56);
+  --jp-rule: rgba(244, 242, 236, 0.09);
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: start;
+}
+.jp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid transparent;
+  background: linear-gradient(90deg, rgba(210, 173, 110, 0.75), rgba(210, 173, 110, 0)) bottom / 100% 1px no-repeat;
+}
+.jp .jp-head h2 {
+  margin: 0;
+  font: 400 clamp(22px, 2vw, 30px) / 1 "Cinzel", Georgia, serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #efe3c8;
+}
+.jp-head p {
+  margin: 0;
+  font: 400 13px/1.4 "Geist", system-ui, sans-serif;
+  color: var(--jp-mute);
+}
+
+.jp-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: clamp(16px, 2.4vw, 36px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.jp-row {
+  display: grid;
+  grid-template-columns: 30px 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 11px 10px 11px 6px;
+  border: 0;
+  border-bottom: 1px solid var(--jp-rule);
+  background: none;
+  color: var(--jp-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+.jp-row:hover {
+  background: rgba(244, 242, 236, 0.035);
+}
+.jp-row:focus-visible {
+  outline: 1px solid var(--jp-gold);
+  outline-offset: -1px;
+}
+.jp-n {
+  display: grid;
+  place-items: center;
+  height: 20px;
+  font: 400 15px/1 "Cinzel", Georgia, serif;
+  color: var(--jp-gold);
+  font-variant-numeric: lining-nums;
+}
+.jp-cover {
+  width: 46px;
+  height: 46px;
+  max-width: none;
+  object-fit: cover;
+  border-radius: 2px;
+  filter: saturate(0.85);
+  transition: filter 0.3s ease;
+}
+.jp-row:hover .jp-cover,
+.jp-row.is-on .jp-cover {
+  filter: none;
+}
+.jp-text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.jp-text b {
+  overflow: hidden;
+  font: 500 14.5px/1.25 "Geist", system-ui, sans-serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.jp-text small {
+  overflow: hidden;
+  font: 600 10.5px/1.2 "Cinzel", Georgia, serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--jp-mute);
+}
+.jp-row.is-on .jp-text b {
+  color: #efe3c8;
+}
+/* Égaliseur de la piste en cours. */
+.jp-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+.jp-eq b {
+  width: 3px;
+  height: 100%;
+  background: var(--jp-gold);
+  transform-origin: bottom;
+  animation: jp-eq 0.9s ease-in-out infinite alternate;
+}
+.jp-eq b:nth-child(2) {
+  animation-duration: 0.65s;
+}
+.jp-eq b:nth-child(3) {
+  animation-duration: 1.1s;
+}
+@keyframes jp-eq {
+  from {
+    transform: scaleY(0.25);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Générique de fin : défile tout seul, s'arrête sous la souris. */
+.jp-roll {
+  position: relative;
+  height: 452px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent);
+  outline: none;
+}
+.jp-roll-in {
+  animation: jp-roll 70s linear infinite;
+}
+.jp-roll:hover .jp-roll-in,
+.jp-roll:focus-visible .jp-roll-in {
+  animation-play-state: paused;
+}
+.jp-roll dl {
+  margin: 0;
+  padding: 0 0 28px;
+}
+.jp-roll dl > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: baseline;
+  padding: 7px 0;
+}
+.jp-roll dt {
+  text-align: right;
+  font: 400 11px/1.3 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--jp-mute);
+}
+.jp-roll dd {
+  margin: 0;
+  font: 400 15px/1.3 "Cinzel", Georgia, serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--jp-ink);
+}
+.jp-roll dl > div:first-child dd {
+  color: #efe3c8;
+}
+@keyframes jp-roll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 900px) {
+  .jp {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .jp-list {
+    grid-template-columns: 1fr;
+  }
+  .jp-head {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .jp-roll {
+    height: 360px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jp-roll {
+    height: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .jp-roll-in {
+    animation: none;
+  }
+  .jp-roll dl[aria-hidden="true"] {
+    display: none;
+  }
+  .jp-eq b {
     animation: none;
   }
 }
