@@ -1,0 +1,54 @@
+/* Duel du tournoi des OST de jeux vidéo (DuelStage, slug « jeux »). */
+
+/* L'art du jeu respire : lente dérive de caméra, plus de lumière à l'écoute. */
+.jx-art {
+  animation: jx-drift 26s ease-in-out infinite alternate;
+  transition:
+    opacity 0.6s ease,
+    filter 0.9s ease;
+}
+.jx-art.is-playing {
+  filter: brightness(1.1) saturate(1.12);
+}
+@keyframes jx-drift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.09) translate3d(-1.6%, -1.2%, 0);
+  }
+}
+
+/* Titre : chaque mot en or, un reflet de lumière passe de mot en mot. */
+.jx-word {
+  display: inline-block;
+  padding-top: 0.16em;
+  margin-top: -0.16em;
+  color: transparent;
+  background:
+    linear-gradient(105deg, transparent 42%, rgba(255, 247, 225, 0.9) 50%, transparent 58%) 100% 0 / 300% 100% no-repeat,
+    linear-gradient(180deg, #fbf3e0 0%, #efdcb2 34%, #d2ad6e 58%, #a47b42 80%, #6e4f2a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: jx-shine 7s cubic-bezier(0.4, 0, 0.2, 1) 1.6s infinite;
+}
+@keyframes jx-shine {
+  0%,
+  70% {
+    background-position:
+      100% 0,
+      0 0;
+  }
+  100% {
+    background-position:
+      0% 0,
+      0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-art,
+  .jx-word {
+    animation: none;
+  }
+}

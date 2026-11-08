@@ -1,0 +1,138 @@
+/* Hero des tournois OST, openings, endings (arena-hero.tsx). Reprend la mise
+   en scène du hero jeux (.jh) avec la typo du site et la couleur de chaque
+   univers (identities.ts). */
+
+.ah {
+  --jh-display: "Bricolage Grotesque", system-ui, sans-serif;
+}
+.jh .ah-title {
+  font-weight: 800;
+  font-size: clamp(42px, 5.8vw, 98px);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-transform: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.ah .jh-lede {
+  font-family: "Inter", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+.ah .jh-eyebrow,
+.ah .jh-caption small,
+.ah .jh-go,
+.ah .jh-link {
+  font-family: "Inter", system-ui, sans-serif;
+}
+.ah .jh-caption em {
+  letter-spacing: -0.01em;
+  text-transform: none;
+  font-weight: 700;
+  font-size: clamp(18px, 1.5vw, 24px);
+}
+
+/* Salle de Concert : or ambré du vinyle. */
+.ah--ost {
+  --jh-gold: linear-gradient(180deg, #fff6e6 0%, #f6dfb4 40%, #d9a35a 78%, #9a6a2e 100%);
+}
+/* Générique de fin : lumière chaude de fin de journée. */
+.ah--endings {
+  --jh-gold: linear-gradient(180deg, #fff4ea 0%, #f6d6a8 42%, #e9875f 82%, #a8502f 100%);
+}
+
+/* L'Antenne : blanc d'écran, rouge chaîne, léger décalage RVB. */
+.jh .ah--openings .ah-title,
+.ah--openings .jh-title.ah-title {
+  background: none;
+  color: #f4f2ec;
+  -webkit-text-fill-color: currentColor;
+  text-shadow:
+    -2px 0 rgba(239, 77, 90, 0.55),
+    2px 0 rgba(111, 211, 234, 0.55);
+  animation: jh-rise 1.2s var(--jh-ease) both;
+}
+.ah--openings .ah-title em {
+  color: #ef4d5a;
+}
+.ah--openings .jh-eyebrow {
+  background: linear-gradient(90deg, rgba(239, 77, 90, 0), rgba(239, 77, 90, 0.8) 18%, rgba(111, 211, 234, 0.8) 82%, rgba(111, 211, 234, 0)) bottom / 100% 1px no-repeat;
+}
+.ah--openings .jh-eyebrow span + span::before {
+  color: #ef4d5a;
+}
+
+/* Lignes de balayage et léger scintillement de tube. */
+.ah-scan {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+  animation: ah-flicker 4s steps(1) infinite;
+}
+@keyframes ah-flicker {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  37% {
+    opacity: 0.6;
+  }
+  38% {
+    opacity: 0.8;
+  }
+  71% {
+    opacity: 0.68;
+  }
+}
+
+/* Affichage de chaîne à chaque zapping, comme un vieux téléviseur. */
+.ah-osd {
+  position: absolute;
+  top: clamp(24px, 4svh, 40px);
+  right: var(--jh-side);
+  z-index: 2;
+  margin: 0;
+  font: 600 clamp(20px, 2vw, 30px) / 1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  color: #9ff0c4;
+  text-shadow: 0 0 12px rgba(159, 240, 196, 0.6);
+  animation: ah-osd 2.6s steps(1) both;
+}
+@keyframes ah-osd {
+  0% {
+    opacity: 0;
+  }
+  8%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ah-scan,
+  .ah-osd {
+    animation: none;
+  }
+}
+
+/* Programme sous le hero (JeuxProgram) : typo du site au lieu de Trajan. */
+.is-arena .jp .jp-head h2 {
+  font: 700 clamp(22px, 2vw, 30px) / 1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+.is-arena .jp-n {
+  font: 500 13px/1 "Geist Mono", ui-monospace, monospace;
+}
+.is-arena .jp-text small {
+  font: 500 11px/1.2 "Inter", system-ui, sans-serif;
+}
+.is-arena .jp-roll dd {
+  font: 600 15px/1.3 "Bricolage Grotesque", system-ui, sans-serif;
+  text-transform: none;
+}

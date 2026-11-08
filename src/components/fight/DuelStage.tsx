@@ -15,6 +15,18 @@ import { dominantColors } from "./palette";
 import { CommunityReveal, Confetti, Shatter, type Rect } from "./VoteShatter";
 import { VersusIntro } from "./VersusIntro";
 import { bumpStreak, Magnetic, ShortcutsPanel, StageCursor, StreakBurst, useAlternate, usePrediction } from "./FightExtras";
+import { jeuArt } from "./jeux-art";
+import { Gommage, type TransitionMode } from "../tournois/gommage";
+import { useAdobeKit } from "../tournois/adobe-kit";
+import { Embers } from "./Embers";
+import "./jeux-duel.css";
+
+// Tournoi des OST de jeux vidéo : l'univers du hero (art du jeu, Trajan doré),
+// et au vote le perdant se consume en pétales (le Gommage de Clair Obscur).
+const TRAJAN = '"trajan-pro-3", "Cinzel", Georgia, serif';
+
+// Au vote, le perdant disparaît à la façon de son univers (voir gommage.ts).
+const VOTE_FX: Record<FightSlug, TransitionMode> = { jeux: "burn", ost: "vinyl", openings: "tv", endings: "dust" };
 
 // Duel « Fight Night » (OST, openings, endings). Deux panneaux en vrai 50/50 ;
 // celui qu'on écoute ou survole s'étend (62/38) et l'autre se désature. Au
@@ -57,8 +69,10 @@ export function DuelStage(props: Props) {
   const { left, right, round, isFinal, blind, canUndo, onUndo, onChoose, onDone } = props;
   const { meta, player } = useTournament();
   const id = IDENTITIES[meta.slug as FightSlug];
+  const jeux = meta.slug === "jeux";
   const navigate = useNavigate();
   const reduce = !!useReducedMotion();
+  useAdobeKit(jeux);
   const narrow = useNarrow();
   const stage = useRef<HTMLDivElement>(null);
   const panels = { left: useRef<HTMLDivElement>(null), right: useRef<HTMLDivElement>(null) };
@@ -103,6 +117,16 @@ export function DuelStage(props: Props) {
   const prediction = usePrediction(meta.statsId, left, right);
   const shownAt = useRef(performance.now());
   const colors = useRef<Record<Side, string[]>>({ left: [id.a, id.b, id.ink], right: [id.a, id.b, id.ink] });
+  const gom = useRef<Gommage | null>(null);
+  useEffect(() => {
+    if (reduce || !stage.current) return;
+    const g = new Gommage(stage.current);
+    gom.current = g;
+    return () => {
+      g.destroy();
+      gom.current = null;
+    };
+  }, [reduce]);
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -176,8 +200,18 @@ export function DuelStage(props: Props) {
       const lr = panels[loser].current?.getBoundingClientRect();
       const wr = panels[side].current?.getBoundingClientRect();
       if (player.id === lp.id) player.pause();
+      // Gommage : à lancer avant que le perdant ne disparaisse du DOM visible.
+      const media = panels[loser].current?.querySelector<HTMLImageElement | HTMLVideoElement>("video, img");
+      const burnt =
+        !!st && !!lr && !!media && !!gom.current?.start(media, {
+          box: { x: lr.left - st.left, y: lr.top - st.top, w: lr.width, h: lr.height },
+          dir: loser === "left" ? 1 : -1,
+          mode: VOTE_FX[meta.slug as FightSlug],
+        });
       setPicked(side);
-      if (st && lr && wr) {
+      if (burnt) {
+        // Pas d'éclats ni de confettis : la disparition du perdant suffit.
+      } else if (st && lr && wr) {
         setFx({
           rect: { x: lr.left - st.left, y: lr.top - st.top, w: lr.width, h: lr.height },
           src: imgOf(lp),
@@ -186,7 +220,10 @@ export function DuelStage(props: Props) {
         });
       }
       impact(1);
-      if (!reduce) setTimeout(shatterSfx, 260);
+      if (!reduce) {
+        if (burnt) whoosh(0.55);
+        else setTimeout(shatterSfx, 260);
+      }
       // Verdict de la communauté (la base garde le vote, puis on lit la répartition).
       if (meta.statsId) {
         const statsId = meta.statsId;
@@ -214,7 +251,7 @@ export function DuelStage(props: Props) {
       setTimeout(go, reduce ? 1000 : VERDICT_MS);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [picked, leaving, onChoose, left, right, player, reduce, meta.statsId, onDone, id.exit],
+    [picked, leaving, onChoose, left, right, player, reduce, meta.statsId, onDone, id.exit, jeux],
   );
 
   // Clavier : A / B garder, ← → choisir le côté (et basculer l'écoute), Espace
@@ -305,6 +342,7 @@ export function DuelStage(props: Props) {
                 posterAt={meta.posterAt}
                 isFinal={!!isFinal}
                 championLabel={meta.championLabel}
+                jeux={jeux}
                 onHover={setHover}
                 onListen={listen}
                 onChoose={choose}
@@ -313,6 +351,8 @@ export function DuelStage(props: Props) {
           ))}
         </div>
       )}
+
+      {meta.slug !== "openings" ? <Embers active={!!audible} zIndex={2} tint={meta.slug === "endings" ? "dust" : "gold"} density={jeux ? 1 : 0.7} /> : null}
 
       {/* En-tête : étiquette du tournoi et du round, filet de progression. */}
       <motion.div
@@ -446,12 +486,12 @@ function Divider() {
           height: 46,
           borderRadius: 999,
           background: PANEL,
-          boxShadow: `0 0 0 1px ${LINE_2}, 0 10px 30px -10px rgba(0,0,0,0.8)`,
-          fontFamily: FONT.body,
+          fontFamily: meta.slug === "jeux" ? TRAJAN : FONT.body,
           fontWeight: 600,
           fontSize: 11,
           letterSpacing: "0.14em",
-          color: id.ink,
+          color: meta.slug === "jeux" ? id.b : id.ink,
+          boxShadow: meta.slug === "jeux" ? `0 0 0 1px ${id.a}66, 0 10px 30px -10px rgba(0,0,0,0.8)` : `0 0 0 1px ${LINE_2}, 0 10px 30px -10px rgba(0,0,0,0.8)`,
         }}
       >
         VS
@@ -474,12 +514,13 @@ type PanelProps = {
   posterAt?: number;
   isFinal: boolean;
   championLabel: string;
+  jeux?: boolean;
   onHover: (s: Side | null) => void;
   onListen: (s: Side) => void;
   onChoose: (s: Side) => void;
 };
 
-function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, refEl, posterAt, isFinal, championLabel, onHover, onListen, onChoose }: PanelProps) {
+function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, refEl, posterAt, isFinal, championLabel, jeux, onHover, onListen, onChoose }: PanelProps) {
   const loaded = player.id === p.id;
   const playing = loaded && player.playing;
   const win = picked === side;
@@ -533,7 +574,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
           transition={{ filter: { duration: 0.5 }, scale: { type: "spring", bounce: 0, duration: 1.2 } }}
           style={{ position: "absolute", inset: "-3%", x: bgX, y: bgY }}
         >
-          <Media p={p} player={player} posterAt={posterAt} />
+          {jeux ? <JeuxBackdrop p={p} playing={playing} /> : <Media p={p} player={player} posterAt={posterAt} />}
         </motion.div>
         {hidden ? (
           <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: "clamp(140px, 20vw, 320px)", color: id.a, letterSpacing: "-0.06em" }}>
@@ -550,6 +591,23 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
           }}
         />
         <AudioReactiveLayer id={id} active={loaded} player={player} reduce={reduce} />
+        {jeux && win && !reduce ? (
+          <>
+            {/* Sacre du gagnant : un reflet d'or traverse le panneau une fois, filet doré. */}
+            <motion.div
+              aria-hidden
+              initial={{ x: "-120%" }}
+              animate={{ x: "120%", transition: { duration: 1.3, ease: [0.4, 0, 0.2, 1], delay: 0.35 } }}
+              style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", background: "linear-gradient(105deg, transparent 30%, rgba(255,231,176,0) 38%, rgba(255,231,176,0.32) 50%, rgba(255,231,176,0) 62%, transparent 70%)", mixBlendMode: "screen" }}
+            />
+            <motion.div
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.8, delay: 0.3 } }}
+              style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", borderRadius: 16, boxShadow: `inset 0 0 0 1px ${id.a}aa, inset 0 0 80px -20px ${id.a}66` }}
+            />
+          </>
+        ) : null}
         {/* Couche 3 : le texte et les commandes. */}
         <motion.div
           style={{
@@ -564,32 +622,66 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
             zIndex: 6,
           }}
         >
-          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.mute }}>
+          {jeux && !hidden ? (
+            <img src={p.thumb} alt="" draggable={false} style={{ width: 58, height: 58, objectFit: "cover", borderRadius: 2, boxShadow: `0 0 0 1px ${id.a}88, 0 12px 30px -8px rgba(0,0,0,0.9)`, marginBottom: 4 }} />
+          ) : null}
+          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontFamily: jeux ? TRAJAN : undefined, fontSize: jeux ? 12 : 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: jeux ? id.b : id.mute }}>
             <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
-            {id.sides[side === "left" ? 0 : 1]}
+            {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]}
             {playing ? <EqBars color={id.a} /> : null}
           </p>
           <h2
-            style={{
-              margin: 0,
-              fontFamily: FONT.display,
-              fontWeight: 700,
-              fontSize: p.title.length > 22 ? "clamp(24px, 2.4vw, 40px)" : "clamp(30px, 3.1vw, 54px)",
-              lineHeight: 1.02,
-              letterSpacing: "-0.03em",
-              color: id.ink,
-              textWrap: "balance",
-              overflowWrap: "break-word",
-            }}
+            style={
+              jeux
+                ? {
+                    margin: 0,
+                    fontFamily: TRAJAN,
+                    fontWeight: 400,
+                    fontSize: p.title.length > 22 ? "clamp(22px, 2.2vw, 36px)" : "clamp(28px, 2.9vw, 50px)",
+                    lineHeight: 1.06,
+                    letterSpacing: "0.03em",
+                    textTransform: "uppercase",
+                    textWrap: "balance",
+                    overflowWrap: "break-word",
+                    filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 10px 30px rgba(0,0,0,0.6))",
+                  }
+                : {
+                    margin: 0,
+                    fontFamily: FONT.display,
+                    fontWeight: 700,
+                    fontSize: p.title.length > 22 ? "clamp(24px, 2.4vw, 40px)" : "clamp(30px, 3.1vw, 54px)",
+                    lineHeight: 1.02,
+                    letterSpacing: "-0.03em",
+                    color: id.ink,
+                    textWrap: "balance",
+                    overflowWrap: "break-word",
+                  }
+            }
           >
-            {masked(p)}
+            {jeux
+              ? masked(p)
+                  .split(" ")
+                  .map((w, k, all) => (
+                    <motion.span
+                      key={`${p.id}-${k}`}
+                      className="jx-word"
+                      initial={reduce ? false : { opacity: 0, y: "0.5em", filter: "blur(6px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: EASE, delay: 0.25 + k * 0.07 + (side === "right" ? 0.12 : 0) } }}
+                      style={{ animationDelay: `${1.6 + k * 0.09}s`, marginRight: k < all.length - 1 ? "0.28em" : 0 }}
+                    >
+                      {w}
+                    </motion.span>
+                  ))
+              : masked(p)}
           </h2>
-          <p style={{ margin: 0, fontSize: 14, color: id.mute }}>{hidden ? "Titre caché jusqu'à ton choix" : [p.sub, p.note, p.artist].filter(Boolean).join(" — ")}</p>
+          <p style={{ margin: 0, fontSize: jeux ? 13 : 14, fontFamily: jeux ? TRAJAN : undefined, letterSpacing: jeux ? "0.04em" : undefined, color: id.mute }}>
+            {hidden ? "Titre caché jusqu'à ton choix" : jeux ? [p.note, p.artist].filter(Boolean).join(" — ") : [p.sub, p.note, p.artist].filter(Boolean).join(" — ")}
+          </p>
           {win ? (
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE, delay: 0.2 } }}
-              style={{ margin: "4px 0 0", display: "flex", alignItems: "center", gap: 10, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.a }}
+              style={{ margin: "4px 0 0", display: "flex", alignItems: "center", gap: 10, fontFamily: jeux ? TRAJAN : undefined, fontSize: jeux ? 12 : 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.a }}
             >
               <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
               {isFinal ? championLabel : "Passe au tour suivant"}
@@ -633,19 +725,21 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
                   alignItems: "center",
                   gap: 12,
                   height: 44,
-                  padding: "0 8px 0 20px",
+                  padding: jeux ? "0 8px 0 22px" : "0 8px 0 20px",
                   border: 0,
-                  borderRadius: 999,
-                  background: id.a,
+                  borderRadius: jeux ? 2 : 999,
+                  background: jeux ? "#f4f2ec" : id.a,
                   color: id.bg,
-                  fontFamily: FONT.body,
+                  fontFamily: jeux ? TRAJAN : FONT.body,
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: jeux ? 12.5 : 14,
+                  letterSpacing: jeux ? "0.16em" : undefined,
+                  textTransform: jeux ? "uppercase" : undefined,
                   cursor: "pointer",
                 }}
               >
                 Garder
-                <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, borderRadius: 999, background: "rgba(8,9,13,0.18)", fontSize: 11.5, fontWeight: 600 }}>{KEY[side]}</span>
+                <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, borderRadius: jeux ? 2 : 999, background: "rgba(8,9,13,0.12)", fontSize: 11.5, fontWeight: 600, letterSpacing: 0 }}>{KEY[side]}</span>
               </motion.button>
               </Magnetic>
             </div>
@@ -688,6 +782,23 @@ function Media({ p, player, posterAt = 20 }: { p: Participant; player: Player; p
       onError={() => (src !== p.thumb ? setSrc(p.thumb) : setReady(true))}
       style={fill}
     />
+  );
+}
+
+// Fond d'un panneau jeux : l'art officiel du jeu ; à défaut, la pochette
+// agrandie et floutée, avec la pochette nette posée dessus.
+function JeuxBackdrop({ p, playing }: { p: Participant; playing: boolean }) {
+  const art = jeuArt(p.sub);
+  const [ready, setReady] = useState(false);
+  const fill: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" };
+  const cls = `jx-art ${playing ? "is-playing" : ""}`;
+  if (art) return <img className={cls} src={art.src} alt="" draggable={false} decoding="async" onLoad={() => setReady(true)} style={{ ...fill, objectPosition: art.pos, transition: "opacity 0.6s ease, filter 0.9s ease" }} />;
+  const src = imgOf(p);
+  return (
+    <>
+      <img src={src} alt="" draggable={false} decoding="async" onLoad={() => setReady(true)} style={{ ...fill, filter: "blur(36px) saturate(1.2) brightness(0.55)", transform: "scale(1.25)" }} />
+      <img src={src} alt="" draggable={false} style={{ position: "absolute", top: "12%", left: "50%", translate: "-50% 0", width: "min(44%, 340px)", aspectRatio: "1", objectFit: "cover", borderRadius: 3, boxShadow: "0 40px 80px -20px rgba(0,0,0,0.9)", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" }} />
+    </>
   );
 }
 

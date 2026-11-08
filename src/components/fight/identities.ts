@@ -65,9 +65,10 @@ export const IDENTITIES: Record<FightSlug, Identity> = {
     bg: "#08090d",
     ink: "#f4f2ec",
     mute: "#8b8a85",
-    a: "#8fb2ff",
-    b: "#d6e2ff",
-    react: "crt",
+    // Même univers que le hero du tournoi : or de Clair Obscur, Trajan.
+    a: "#d2ad6e",
+    b: "#efdcb2",
+    react: "dust",
     exit: "fade",
     sides: ["Joueur 1", "Joueur 2"],
   },

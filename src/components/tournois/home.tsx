@@ -13,6 +13,7 @@ import { NoirArt } from "./noir/art";
 import { HomeExtras } from "../fight/HomeExtras";
 import { isFight } from "../fight/identities";
 import { JeuxHero, JeuxProgram } from "./jeux-hero";
+import { ArenaHero } from "./arena-hero";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 const LINEUP = 24;
@@ -29,6 +30,7 @@ export function TournamentHome() {
   const rail = useClientDraw(`${meta.slug}:rail`, participants, 18) ?? [];
   const audio = meta.mode === "audio";
   const base = `/tournoi/${meta.path}`;
+  const arena = meta.slug === "ost" || meta.slug === "openings" || meta.slug === "endings";
 
   const run = saved.run;
   const cur = run ? currentMatch(run.rounds) : null;
@@ -73,12 +75,21 @@ export function TournamentHome() {
   const popular = fromSite ? sitePopular : localPopular;
 
   return (
-    <div className="t-home">
+    <div className={`t-home ${arena ? "is-arena" : ""}`}>
       {meta.slug === "jeux" ? (
         <JeuxHero
           tracks={participants.length}
           games={groups}
           counts={new Map(lineup)}
+          cta={run && !finished ? `Reprendre, duel ${done + 1}` : "Participer au tournoi"}
+          base={base}
+        />
+      ) : arena ? (
+        <ArenaHero
+          slug={meta.slug as "ost" | "openings" | "endings"}
+          participants={participants}
+          groups={groups}
+          lede={fill(meta.lead, participants)}
           cta={run && !finished ? `Reprendre, duel ${done + 1}` : "Participer au tournoi"}
           base={base}
         />
@@ -136,7 +147,7 @@ export function TournamentHome() {
           </div>
         </dl>
 
-        {meta.slug === "jeux" ? (
+        {meta.slug === "jeux" || arena ? (
           <JeuxProgram
             tracks={rail}
             lineup={lineup}
