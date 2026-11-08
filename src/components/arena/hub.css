@@ -1,0 +1,445 @@
+/* Hub des tournois façon streaming — DA « Noir » (tokens dans tournois/themes/noir.css).
+   La feuille globale ajoute 110 px aux <section> : chaque bloc fixe son propre padding. */
+
+.nf {
+  --nf-side: clamp(16px, 4vw, 64px);
+  --nf-card: clamp(240px, 21vw, 360px);
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--nx-p);
+  color: var(--nx-ink);
+  font-family: var(--nx-sans);
+  opacity: 0;
+  transition: opacity 0.5s var(--nx-ease);
+}
+.nf.is-ready {
+  opacity: 1;
+}
+
+/* ── Panneau d'accueil ───────────────────────────────────────────── */
+.nf .nf-bill {
+  position: relative;
+  height: min(86dvh, 860px);
+  min-height: 520px;
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+.nf-bill-media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.nf-bill-media :is(video, img) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  animation: nf-drift 22s var(--nx-ease) both;
+}
+@keyframes nf-drift {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+.nf-bill-shade {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(to right, rgba(9, 9, 10, 0.92) 0%, rgba(9, 9, 10, 0.6) 32%, rgba(9, 9, 10, 0) 62%),
+    linear-gradient(to top, var(--nx-p) 0%, rgba(9, 9, 10, 0.4) 22%, rgba(9, 9, 10, 0) 45%),
+    linear-gradient(to bottom, rgba(9, 9, 10, 0.5), rgba(9, 9, 10, 0) 18%);
+}
+.nf-bill-copy {
+  position: absolute;
+  left: var(--nf-side);
+  bottom: clamp(56px, 13vh, 140px);
+  width: min(620px, calc(100% - 2 * var(--nf-side)));
+}
+.nf-kind {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  font-size: 14px;
+  color: var(--nx-ink2);
+}
+.nf-kind span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(242, 241, 238, 0.12);
+  backdrop-filter: blur(12px);
+  font-size: 12.5px;
+  color: var(--nx-ink);
+}
+.nf .nf-bill-title {
+  margin: 0;
+  font: 500 clamp(48px, 6.4vw, 108px) / 0.92 var(--nx-sans);
+  letter-spacing: -0.055em;
+  color: var(--nx-ink);
+  text-wrap: balance;
+}
+.nf-bill-text {
+  margin: 18px 0 0;
+  max-width: 46ch;
+  font-size: clamp(16px, 1.25vw, 19px);
+  line-height: 1.45;
+  color: var(--nx-ink2);
+  text-wrap: pretty;
+}
+.nf-bill-now {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--nx-mut);
+}
+.nf-bill-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+.nf :is(.nf-play, .nf-more) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 26px 0 22px;
+  border: 0;
+  border-radius: 10px;
+  font: 500 16.5px/1 var(--nx-sans);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.12s;
+}
+.nf .nf-play {
+  background: var(--nx-ink);
+  color: var(--nx-p);
+}
+.nf .nf-play:hover {
+  background: #fff;
+}
+.nf .nf-more {
+  background: rgba(242, 241, 238, 0.16);
+  backdrop-filter: blur(16px) saturate(140%);
+  color: var(--nx-ink);
+}
+.nf .nf-more:hover {
+  background: rgba(242, 241, 238, 0.26);
+}
+.nf :is(.nf-play, .nf-more):active {
+  transform: scale(0.96);
+}
+.nf-bill-side {
+  position: absolute;
+  right: var(--nf-side);
+  bottom: clamp(56px, 13vh, 140px);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nf .nf-mute {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(9, 9, 10, 0.4);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px var(--nx-rule2);
+  color: var(--nx-ink);
+  cursor: pointer;
+}
+.nf-dots {
+  display: flex;
+  gap: 6px;
+}
+.nf .nf-dots button {
+  width: 34px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  align-items: center;
+}
+.nf .nf-dots button::before {
+  content: "";
+  grid-area: 1 / 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--nx-rule2);
+}
+.nf-dots i {
+  grid-area: 1 / 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--nx-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.nf-dots .is-on i {
+  animation: nf-fill linear forwards;
+}
+@keyframes nf-fill {
+  to { transform: scaleX(1); }
+}
+
+/* ── Rangées ─────────────────────────────────────────────────────── */
+.nf-rows {
+  position: relative;
+  z-index: 2;
+  margin-top: -40px;
+  padding-bottom: 96px;
+  display: grid;
+  gap: clamp(36px, 5vh, 56px);
+}
+.nf .nf-row,
+.nf .nf-soon {
+  padding: 0;
+  min-width: 0;
+}
+.nf-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 var(--nf-side);
+  margin-bottom: 14px;
+}
+.nf .nf-row-title {
+  margin: 0;
+  font: 500 clamp(18px, 1.5vw, 22px) / 1.2 var(--nx-sans);
+  letter-spacing: -0.02em;
+  color: var(--nx-ink);
+}
+.nf-row-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.5px;
+  color: var(--nx-mut);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nf-row-more:hover {
+  color: var(--nx-ink);
+}
+.nf-row-wrap {
+  position: relative;
+}
+.nf-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--nf-card);
+  gap: 10px;
+  padding: 18px var(--nf-side) 26px;
+  margin: -18px 0 -26px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 var(--nf-side);
+  scrollbar-width: none;
+}
+.nf-track::-webkit-scrollbar {
+  display: none;
+}
+.nf .nf-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: var(--nf-side);
+  min-width: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  color: var(--nx-ink);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.nf .nf-arrow--l {
+  left: 0;
+  background: linear-gradient(to right, rgba(9, 9, 10, 0.85), transparent);
+}
+.nf .nf-arrow--r {
+  right: 0;
+  background: linear-gradient(to left, rgba(9, 9, 10, 0.85), transparent);
+}
+.nf-row-wrap:hover .nf-arrow:not(:disabled),
+.nf .nf-arrow:focus-visible {
+  opacity: 1;
+}
+.nf .nf-arrow:disabled {
+  pointer-events: none;
+}
+
+/* Cartes : l'image s'agrandit et la carte se soulève au survol. */
+.nf .nf-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  scroll-snap-align: start;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.45s var(--nx-ease);
+}
+.nf-card-art {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--nx-p2);
+  box-shadow: 0 0 0 1px var(--nx-rule);
+  transition: box-shadow 0.35s var(--nx-ease);
+}
+.nf-card-art :is(img, video) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  transition: transform 0.7s var(--nx-ease), opacity 0.4s;
+}
+.nf-card-art video {
+  opacity: 0;
+}
+.nf-card.is-live .nf-card-art video {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .nf .nf-card:hover {
+    transform: translateY(-6px);
+  }
+  .nf .nf-card:hover .nf-card-art {
+    box-shadow: 0 0 0 1px var(--nx-rule2), 0 24px 48px -20px rgba(0, 0, 0, 0.9);
+  }
+  .nf .nf-card:hover .nf-card-art img {
+    transform: scale(1.06);
+  }
+}
+.nf .nf-card:active {
+  transform: scale(0.98);
+}
+.nf-card-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.nf-card-body b {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nf-card-body small {
+  font-size: 13px;
+  color: var(--nx-mut);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nf-card-progress {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(242, 241, 238, 0.25);
+  overflow: hidden;
+}
+.nf-card-progress i {
+  display: block;
+  height: 100%;
+  background: var(--nx-ink);
+}
+.nf .nf-card-play {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--nx-ink);
+  color: var(--nx-p);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s, transform 0.35s var(--nx-ease), background-color 0.2s;
+}
+.nf .nf-card:hover .nf-card-play,
+.nf .nf-card-play:focus-visible,
+.nf .nf-card.is-playing .nf-card-play {
+  opacity: 1;
+  transform: none;
+}
+.nf .nf-card.is-playing .nf-card-art {
+  box-shadow: 0 0 0 1.5px var(--nx-ink);
+}
+
+.nf-soon {
+  padding: 0 var(--nf-side) !important;
+}
+.nf-soon p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+.nf-soon span {
+  padding: 8px 14px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--nx-rule);
+  font-size: 13.5px;
+  color: var(--nx-mut);
+}
+
+@media (max-width: 760px) {
+  .nf {
+    --nf-card: 72vw;
+  }
+  .nf .nf-bill {
+    height: 78dvh;
+  }
+  .nf .nf-bill-title {
+    font-size: clamp(40px, 12vw, 56px) !important;
+    line-height: 0.95 !important;
+  }
+  .nf .nf-row-title {
+    font-size: 18px !important;
+  }
+  .nf-bill-side {
+    bottom: auto;
+    top: 20px;
+  }
+  .nf .nf-arrow {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-bill-media :is(video, img) {
+    animation: none;
+  }
+  .nf-dots .is-on i {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .nf :is(.nf-more, .nf-mute, .nf-kind span) {
+    backdrop-filter: none;
+    background: var(--nx-p3);
+  }
+}
