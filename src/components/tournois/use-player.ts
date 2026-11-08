@@ -325,7 +325,8 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
         const v = videos.current.get(p.id) ?? null;
         if (v && (!started.current.has(v) || v.ended)) {
           started.current.add(v);
-          v.currentTime = playFrom;
+          // « Refrain direct » : une piste analysée démarre à son moment le plus fort.
+          v.currentTime = p.sound.hook ?? playFrom;
         }
         el = v;
       } else {

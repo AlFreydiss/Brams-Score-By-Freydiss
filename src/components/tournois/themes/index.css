@@ -1,10 +1,4 @@
 @import "./base.css";
 @import "./home.css";
-@import "./ost.css";
-@import "./openings.css";
-@import "./endings.css";
-@import "./rap.css";
-@import "./rapvsost.css";
-@import "./bankai.css";
-@import "./panels.css";
-@import "./flame.css";
+@import "./noir.css";
+@import "./immersive.css";

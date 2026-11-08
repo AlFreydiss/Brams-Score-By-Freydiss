@@ -7,9 +7,9 @@ import { useClientDraw } from "@/lib/tournois/client-draw";
 import { computeRows, rowsFromSite, sortRows, type SiteStats } from "@/lib/tournois/stats";
 import { fetchStats } from "@/lib/versusStats.js";
 import { useTournament } from "./provider";
-import { PosterScene, useNarrow } from "./poster";
+import { useNarrow } from "./poster";
 import { Thumb } from "./visual";
-import { OstArena } from "../arena/ost-home";
+import { NoirArt } from "./noir/art";
 
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
 const LINEUP = 24;
@@ -25,8 +25,6 @@ export function TournamentHome() {
   const preview = useClientDraw(`${meta.slug}:home`, participants, 2) ?? [];
   const rail = useClientDraw(`${meta.slug}:rail`, participants, 18) ?? [];
   const audio = meta.mode === "audio";
-  // Le tournoi d'OST a son affiche « Rouge contre Bleu ».
-  const arena = meta.slug === "ost";
   const base = `/tournoi/${meta.path}`;
 
   const run = saved.run;
@@ -72,38 +70,37 @@ export function TournamentHome() {
   const popular = fromSite ? sitePopular : localPopular;
 
   return (
-    <div className="t-home" data-seam={meta.seam}>
-{arena ? (
-        <OstArena />
-      ) : (
-      <section className={`t-hero ${narrow ? "is-v" : "is-h"}`}>
-        <PosterScene pair={preview} />
-        <div className="t-hero-copy">
-          <p className="t-eyebrow">{meta.signature}</p>
-          <h1 className="t-hero-title">{meta.title}</h1>
-          <p className="t-lead">{fill(meta.lead, participants)}</p>
-          <div className="t-home-ctas">
-            <Link to={`${base}/duel`} className="t-go">
-              {run && !finished ? `Reprendre ma partie, duel ${done + 1}` : "Participer au tournoi"}
+    <div className="t-home">
+      <div className="nx-hero">
+        <div className="nx-hero-copy">
+          <h1 className="nx-title">{meta.title}</h1>
+          <p className="nx-lede">{fill(meta.lead, participants)}</p>
+          <div className="nx-ctas">
+            <Link to={`${base}/duel`} className="nx-go">
+              {run && !finished ? `Reprendre, duel ${done + 1}` : "Participer au tournoi"}
             </Link>
-            <Link to={`${base}/classement`} className="t-ghost">
-              Découvrir le classement
+            <Link to={`${base}/classement`} className="nx-ghost-link">
+              Voir le classement
             </Link>
           </div>
         </div>
         {preview.length === 2 ? (
-          <p className="t-hero-bill">
-            <span>À l’affiche</span>
-            <b>{preview[0].title}</b>
-            <i>contre</i>
-            <b>{preview[1].title}</b>
-          </p>
+          <div className="nx-hero-bill" aria-label={`À l'affiche : ${preview[0].title} contre ${preview[1].title}`}>
+            {preview.map((p, i) => (
+              <figure key={p.id} className="nx-bill-card">
+                <NoirArt p={p} ratio={audio ? 2 : 4 / 3} posterAt={meta.posterAt} sizes={narrow ? "100vw" : "34vw"} />
+                <figcaption>
+                  <span>{i === 0 ? "A" : "B"}</span>
+                  <b>{p.title}</b>
+                  <small>{p.sub}</small>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         ) : null}
-      </section>
-      )}
+      </div>
 
       <div className="t-home-body">
-{arena ? null : (
         <dl className="t-facts">
           <div>
             <dt>Participants</dt>
@@ -124,7 +121,6 @@ export function TournamentHome() {
             <dd>{saved.votes.length.toLocaleString("fr-FR")}</dd>
           </div>
         </dl>
-        )}
 
         <section className="t-program">
           <div className="t-program-head">

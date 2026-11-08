@@ -8,7 +8,8 @@ export type Visual =
 // « audio » : un fichier lu par le lecteur du site (extrait Apple Music, ou fichier R2).
 // « youtube » : la piste complète, lue par l'iframe YouTube jusqu'à la fin.
 export type Sound =
-  | { k: "video"; end?: number }
+  /** hook : début du passage le plus fort (secondes), mesuré hors ligne. */
+  | { k: "video"; end?: number; hook?: number }
   | { k: "audio"; src: string; link?: string; preview?: boolean }
   | { k: "youtube"; id: string; start?: number; end?: number; link?: string; fallback?: string };
 

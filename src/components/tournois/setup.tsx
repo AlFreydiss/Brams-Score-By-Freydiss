@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useClientDraw } from "@/lib/tournois/client-draw";
 import { useTournament } from "./provider";
-import { PosterScene } from "./poster";
-import { BroadcastBackdrop } from "../arena/broadcast";
-import { loadArenaFonts } from "../arena/fonts";
-import "../arena/arena.css";
+import { NoirArt } from "./noir/art";
 
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
 // duel : deux participants tirés au hasard, coupés dans le style du tournoi.
@@ -23,11 +20,6 @@ export function Setup() {
   const [blind, setBlind] = useState(false);
   const [q, setQ] = useState("");
   const preview = useClientDraw(`${meta.slug}:setup`, participants, 2) ?? [];
-  // Le tournoi d'OST se lance sur son affiche de combat.
-  const arena = meta.slug === "ost";
-  useEffect(() => {
-    if (arena) loadArenaFonts();
-  }, [arena]);
 
   const pool = participants.filter((p) => !off.has(p.group));
   const capacity = meta.balanced ? 2 * Math.min(pool.filter((p) => p.camp === "rap").length, pool.filter((p) => p.camp !== "rap").length) : pool.length;
@@ -48,19 +40,10 @@ export function Setup() {
     });
 
   return (
-    <div className={arena ? "t-setup ar ar-setup" : "t-setup"}>
-      {arena ? (
-        <BroadcastBackdrop
-          left={preview[0] ? { src: preview[0].visual.k === "img" ? preview[0].visual.src : preview[0].thumb } : null}
-          right={preview[1] ? { src: preview[1].visual.k === "img" ? preview[1].visual.src : preview[1].thumb } : null}
-        />
-      ) : (
-        <PosterScene pair={preview} />
-      )}
-      <div className="t-setup-box">
-        <p className="t-eyebrow">{meta.signature}</p>
-        <h1 className="t-setup-title">{meta.title}</h1>
-        <p className="t-lead">{fill(meta.lead, participants)}</p>
+    <div className="nx-setup">
+      <div className="nx-setup-box">
+        <h1 className="nx-title">{meta.title}</h1>
+        <p className="nx-lede">{fill(meta.lead, participants)}</p>
 
         <fieldset className="t-field">
           <legend>Nombre {de(meta.unit)}</legend>
@@ -136,6 +119,20 @@ export function Setup() {
         </button>
         <p className="t-note">Tirage au hasard à chaque partie. Ta partie est sauvegardée sur ce navigateur : tu peux la reprendre plus tard.</p>
       </div>
+      {preview.length === 2 ? (
+        <div className="nx-setup-preview" aria-hidden>
+          {preview.map((p, i) => (
+            <figure key={p.id} className="nx-bill-card">
+              <NoirArt p={p} ratio={meta.mode === "audio" ? 2 : 4 / 3} posterAt={meta.posterAt} sizes="40vw" />
+              <figcaption>
+                <span>{i === 0 ? "A" : "B"}</span>
+                <b>{p.title}</b>
+                <small>{p.sub}</small>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

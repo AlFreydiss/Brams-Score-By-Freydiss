@@ -3,27 +3,14 @@ import type { TournamentSlug } from "./catalog";
 // Une voix typographique par tournoi, chargée depuis Google Fonts seulement à
 // l'ouverture du tournoi concerné. Les noms de familles sont exposés en
 // variables CSS dans themes/base.css (--t-serif-ost, --t-display-op…).
-const FAMILIES: Record<TournamentSlug, string> = {
-  ost: "family=Cinzel:wght@400..900&family=Cinzel+Decorative:wght@400;700;900&family=Outfit:wght@300..700",
-  openings: "family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@500;700",
-  endings: "family=Instrument+Serif:ital@0;1&family=Karla:wght@400;500;600;700",
-  rap: "family=Anton&family=Permanent+Marker&family=Inter:wght@400;500;600;700;800",
-  rapvsost: "family=Big+Shoulders:wght@400;700;900&family=Inter:wght@400;500;600;700;800",
-  bankai: "family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@500;700",
-  panels: "family=Mochiy+Pop+One&family=Zen+Kaku+Gothic+New:wght@500;700",
-};
+// DA « Noir » : une seule voix pour tous les tournois, Geist et Geist Mono.
+const PH = "family=Geist:wght@300..600&family=Geist+Mono:wght@400;500";
+const FAMILIES: Record<TournamentSlug, string> = { ost: PH, openings: PH, endings: PH, rap: PH, rapvsost: PH, bankai: PH, panels: PH };
 
 // Familles d'affichage à attendre avant de montrer la page (évite le saut de
 // police sur les grands titres).
-const DISPLAY: Record<TournamentSlug, string[]> = {
-  ost: ['700 1em "Cinzel"', '500 1em "Outfit"'],
-  openings: ['1em "Dela Gothic One"', '700 1em "Zen Kaku Gothic New"'],
-  endings: ['italic 1em "Instrument Serif"', '1em "Karla"'],
-  rap: ['1em "Anton"', '1em "Permanent Marker"'],
-  rapvsost: ['900 1em "Big Shoulders"', '1em "Inter"'],
-  bankai: ['800 1em "Shippori Mincho B1"', '1em "Zen Kaku Gothic New"'],
-  panels: ['1em "Mochiy Pop One"', '1em "Zen Kaku Gothic New"'],
-};
+const PH_FACES = ['300 1em "Geist"', '500 1em "Geist"', '400 1em "Geist Mono"'];
+const DISPLAY: Record<TournamentSlug, string[]> = { ost: PH_FACES, openings: PH_FACES, endings: PH_FACES, rap: PH_FACES, rapvsost: PH_FACES, bankai: PH_FACES, panels: PH_FACES };
 
 function preconnect() {
   for (const href of ["https://fonts.googleapis.com", "https://fonts.gstatic.com"]) {
@@ -37,7 +24,9 @@ function preconnect() {
 }
 
 export function loadFonts(slug: TournamentSlug): HTMLLinkElement {
-  const id = `t-fonts-${slug}`;
+  // Même feuille pour tous les tournois : un seul chargement.
+  const id = "t-fonts-noir";
+  void slug;
   const found = document.getElementById(id) as HTMLLinkElement | null;
   if (found) return found;
   preconnect();

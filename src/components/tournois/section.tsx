@@ -14,19 +14,14 @@ import { TournamentProvider } from "./provider";
 import { RankingView } from "./ranking-view";
 import { RulesView } from "./rules-view";
 import { SubNav } from "./subnav";
-import { OstSpace } from "../ost";
-import { FlameInk } from "./flame-ink";
 import "./themes/index.css";
 
 // Un tournoi en duels : /tournoi/<path> et ses pages (duel, tableau,
-// classement, historique, favoris, duel test, règles).
-const FLAME_SLUGS = new Set<TournamentSlug>(["ost", "openings", "endings"]);
-
+// classement, historique, favoris, duel test, règles). Tous les tournois
+// partagent la DA « Phosphore violet » (themes/phosphore.css).
 export default function TournamentSection({ slug }: { slug: TournamentSlug }) {
-  const flame = FLAME_SLUGS.has(slug);
   return (
-    <div data-t={slug} className="t-root" data-flame={flame ? "" : undefined}>
-      {flame ? <FlameInk /> : null}
+    <div data-t={slug} className="t-root nx-root">
       <Suspense fallback={<div className="t-loading" aria-busy="true" />}>
         <Loaded slug={slug} />
       </Suspense>
@@ -51,14 +46,6 @@ function Loaded({ slug }: { slug: TournamentSlug }) {
   const meta = tournament(slug);
   const location = useLocation();
   if (!meta) return <Navigate to="/tournoi" replace />;
-  // Tournoi d'OST : l'espace en trois plans, sans barre de navigation.
-  if (slug === "ost") {
-    return (
-      <TournamentProvider slug={slug} participants={list}>
-        <OstSpace />
-      </TournamentProvider>
-    );
-  }
   return (
     <TournamentProvider slug={slug} participants={list}>
       <SubNav />

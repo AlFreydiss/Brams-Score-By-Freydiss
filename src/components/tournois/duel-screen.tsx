@@ -1,18 +1,14 @@
-import { ArrowLeftRight, BookOpenText, Expand, Heart, Maximize, Minimize, Minus, Network, Pause, Play, Plus, RotateCcw, Settings, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
-import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform, type Variants } from "framer-motion";
+import { ArrowLeftRight, BookOpenText, Expand, Heart, Maximize, Minimize, Network, Pause, Play, RotateCcw, Settings, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
+import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Seam } from "@/lib/tournois/catalog";
-import { edgeFor, gapFor, shape } from "@/lib/tournois/geometry";
 import { runStatus } from "@/lib/tournois/stats";
 import { fetchPair } from "@/lib/versusStats.js";
 import { actions } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
-import { emitVolTrail } from "./flame-ink";
-import { SeekBar } from "./progress";
 import { useTournament } from "./provider";
-import { Visual } from "./visual";
-import { Visualizer } from "./visualizer";
+import { NoirArt, Spectrum } from "./noir/art";
+import { SeekBar } from "./progress";
 
 export type Side = "left" | "right";
 
@@ -42,65 +38,35 @@ type Props = {
   swiped?: boolean;
 };
 
-// Durée de l'entrée propre à chaque univers avant que le duel soit jouable.
-// Même rythme dans chaque univers : seule la forme de la coupe change.
-const ENTER_MS: Record<Seam, number> = { diag: 1100, screens: 1100, feather: 1100, tape: 1100, zigzag: 1100, slash: 1100, gutter: 1100 };
-// Écart (px) entre les deux moitiés une fois coupées.
-const PART_PX: Record<Seam, number> = { diag: 6, screens: 0, feather: 0, tape: 0, zigzag: 4, slash: 0, gutter: 0 };
-
-const EASE = [0.2, 0.8, 0.2, 1] as const;
 // Écoute alternée : chaque passage dure 7 s. Sur une piste complète, la boucle
 // couvre tout le morceau. Sur un extrait court, elle reste dans les 28 premières secondes.
 const AB_SEG = 7;
 const AB_LOOP = 28;
-const CUT = [0.7, 0, 0.2, 1] as const;
+const KEY: Record<Side, string> = { left: "A", right: "B" };
 
-function useNarrow() {
-  const [narrow, setNarrow] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 760px)");
-    const on = () => setNarrow(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-  return narrow;
-}
-
-export function DuelScreen(props: Props) {
-  const narrow = useNarrow();
-  // Changer d'orientation recalcule toute la géométrie : on remonte la scène.
-  return <Stage key={narrow ? "v" : "h"} vertical={narrow} {...props} />;
-}
-
-function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, onChoose, onDone, swiped, vertical }: Props & { vertical: boolean }) {
+// Duel « Phosphore violet » : deux cartes côte à côte (l'une sous l'autre sur
+// mobile). Chaque visuel est dessiné en caractères violets et devient photo
+// quand sa piste joue, au survol, et pour la carte gardée.
+export function DuelScreen({ left, right, round, isFinal, practice, blind, canUndo, onUndo, onChoose, onDone, swiped }: Props) {
   const { meta, player, saved } = useTournament();
   const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const seam = meta.seam;
   const audio = meta.mode === "audio";
-  // Openings et endings gardent leur régie d'origine : pas d'écoute alternée.
-  const abOk = audio && seam !== "screens" && seam !== "feather";
+  // Les génériques vidéo gardent une écoute simple : pas d'alternance A/B.
+  const abOk = audio && meta.slug !== "openings" && meta.slug !== "endings";
   const stageRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const [phase, setPhase] = useState<"enter" | "open" | "picked">(reduce || swiped ? "open" : "enter");
+  const [ready, setReady] = useState(!!(reduce || swiped));
   const [picked, setPicked] = useState<Side | null>(null);
   const [focus, setFocus] = useState<Side>("left");
   const [toast, setToast] = useState<{ text: string; tone: "ok" | "err" } | null>(null);
   const [settings, setSettings] = useState(false);
   const [zoom, setZoom] = useState<Participant | null>(null);
-  // Le plein écran vit sur la page du duel, pas sur la scène : chaque duel
-  // remonte une scène neuve, et le navigateur quitte le plein écran quand
-  // l'élément affiché disparaît.
   const [full, setFull] = useState(() => typeof document !== "undefined" && !!document.fullscreenElement);
-  // Répartition des votes du site sur ce duel, lue juste après le choix.
   const [split, setSplit] = useState<{ left: number; total: number } | null>(null);
-  // Écoute alternée : A puis B, 7 s chacun, au même passage du morceau.
   const [ab, setAb] = useState(false);
   const [abTurn, setAbTurn] = useState<{ side: Side; n: number } | null>(null);
   const alive = useRef(true);
   useEffect(() => {
-    // Remis à vrai au montage : le double montage du mode strict ne le laisse pas à faux.
     alive.current = true;
     return () => {
       alive.current = false;
@@ -108,87 +74,30 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   }, []);
   const shownAt = useRef(0);
 
-  const s = useMotionValue(50);
-  const open = useMotionValue(reduce || swiped ? 1 : 0);
-  const w = useMotionValue(1200);
-  const h = useMotionValue(800);
-
-  // Le duel occupe tout l'écran sous les barres : on le remet en place s'il a
-  // défilé (bouton de départ cliqué plus bas dans la page, par exemple).
+  // Le duel commence en haut de page ; il devient jouable après l'impression des cartes.
   useEffect(() => {
     if (window.scrollY > 0 && !document.fullscreenElement) window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
-
-  // Taille réelle de la scène (marges comprises pour la planche) : sert aux
-  // écarts en pixels et au tracé du trait.
-  useEffect(() => {
-    const el = sceneRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => {
-      w.set(e.contentRect.width);
-      h.set(e.contentRect.height);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [w, h]);
-
-  const geo = () => shape(seam, s.get(), vertical, gapFor(seam, vertical ? h.get() : w.get()));
-  const clipL = useTransform(() => geo().left);
-  const clipR = useTransform(() => geo().right);
-  const boxL = useTransform(() => `${geo().leftBox}%`);
-  const boxR = useTransform(() => `${geo().rightBox}%`);
-  const seamPath = useTransform(() => {
-    const pts = geo().seam;
-    const W = w.get();
-    const H = h.get();
-    return pts.map(([x, y], i) => `${i ? "L" : "M"}${((x * W) / 100).toFixed(1)} ${((y * H) / 100).toFixed(1)}`).join(" ");
-  });
-  const outlineL = useTransform(() => polyPath(geo().left, w.get(), h.get()));
-  const outlineR = useTransform(() => polyPath(geo().right, w.get(), h.get()));
-  const featherVar = useTransform(() => `${s.get()}%`);
-  const vsX = useTransform(() => {
-    const pts = geo().seam;
-    return `${(pts[0][0] + pts[pts.length - 1][0]) / 2}%`;
-  });
-  const vsY = useTransform(() => {
-    const pts = geo().seam;
-    return `${(pts[0][1] + pts[pts.length - 1][1]) / 2}%`;
-  });
-  const partL = useTransform(open, (o) => -o * PART_PX[seam]);
-  const partR = useTransform(open, (o) => o * PART_PX[seam]);
-
-  // Entrée : chaque univers a sa propre ouverture (CSS, selon data-phase), puis
-  // les deux moitiés s'écartent et le duel devient jouable.
-  useEffect(() => {
-    if (reduce || swiped) {
+    if (ready) {
       shownAt.current = performance.now();
       return;
     }
-    const enter = ENTER_MS[seam];
-    const a = animate(open, 1, { delay: (enter * 0.72) / 1000, duration: 0.8, ease: EASE });
     const t = setTimeout(() => {
-      setPhase("open");
+      setReady(true);
       shownAt.current = performance.now();
-    }, enter);
-    return () => {
-      a.stop();
-      clearTimeout(t);
-    };
+    }, 520);
+    return () => clearTimeout(t);
     // Une seule entrée, au montage.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduce, seam, open]);
+  }, []);
 
   // Lecture automatique de la piste A, seulement si l'utilisateur l'a demandée.
   useEffect(() => {
-    if (phase !== "open" || !audio || !saved.settings.autoplay) return;
-    const first = player.failed.has(left.id) ? right : left;
-    player.play(first);
-    // Une seule fois par duel, à l'ouverture.
+    if (!ready || !audio || !saved.settings.autoplay) return;
+    player.play(player.failed.has(left.id) ? right : left);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  }, [ready]);
 
-  // Le duel suivant repart d'un lecteur propre. Pendant le glissement, l'ancien
-  // duel ne coupe que sa propre piste : le nouveau a déjà pu en lancer une.
+  // Le duel suivant repart d'un lecteur propre : l'ancien ne coupe que sa propre piste.
   const live = useRef(player);
   live.current = player;
   useEffect(
@@ -196,7 +105,6 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       const pl = live.current;
       if (pl.id === left.id || pl.id === right.id) pl.stop();
     },
-    // Au démontage seulement.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -207,45 +115,33 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
     return () => clearTimeout(t);
   }, [toast]);
 
-  const lean = (side: Side | null) => {
-    // Des écrans de régie ne bougent pas : pas de bascule au survol.
-    if (vertical || picked || phase !== "open" || seam === "screens") return;
-    animate(s, side === "left" ? 53 : side === "right" ? 47 : 50, { type: "spring", stiffness: 260, damping: 30 });
-  };
-
   const choose = useCallback(
     (side: Side) => {
-      if (picked || phase !== "open") return;
+      if (picked || !ready) return;
       const ok = onChoose(side, Math.round(performance.now() - shownAt.current));
       if (!ok) {
         setToast({ text: "Ce duel est déjà tranché. Recharge la page pour reprendre.", tone: "err" });
         return;
       }
       setPicked(side);
-      setPhase("picked");
       setAb(false);
-      // Le perdant se tait : seul le gagnant peut encore jouer pendant le verdict.
       const loser = side === "left" ? right : left;
       if (player.id === loser.id) player.pause();
-      setToast({ text: practice ? "Duel test : ce choix ne compte pas." : "Vote enregistré. L'aventure continue.", tone: "ok" });
-      animate(s, edgeFor(seam, side, vertical), { duration: reduce ? 0 : 0.8, ease: CUT });
+      setToast({ text: practice ? "Duel test : ce choix ne compte pas." : "Vote enregistré.", tone: "ok" });
       if (meta.statsId) {
         const statsId = meta.statsId;
-        // Laisse le vote arriver en base avant de lire la répartition.
         setTimeout(() => {
           fetchPair(statsId, left.id, right.id).then((r: { a: number; b: number } | null) => {
             if (!r || !alive.current) return;
             const total = r.a + r.b;
-            // Le verdict prend la place du message de confirmation.
             if (total) setToast(null);
             setSplit({ left: total ? Math.round((r.a / total) * 100) : 50, total });
           });
         }, 400);
       }
-      // Le verdict se lit, puis le duel suivant arrive sans faire attendre.
       setTimeout(onDone, reduce ? 900 : meta.statsId ? 1800 : 1100);
     },
-    [picked, phase, onChoose, practice, s, seam, vertical, reduce, onDone, meta.statsId, left, right, player],
+    [picked, ready, onChoose, practice, reduce, onDone, meta.statsId, left, right, player],
   );
 
   const listen = useCallback(
@@ -259,8 +155,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
     [audio, left, right, player],
   );
 
-  // Écoute alternée : chaque tour relance l'autre moitié au même passage
-  // (0 s, 0 s, puis 7 s, 7 s…), pour comparer à l'oreille sans rien toucher.
+  // Écoute alternée : chaque tour relance l'autre carte au même passage.
   const playerRef = useRef(player);
   playerRef.current = player;
   useEffect(() => {
@@ -275,8 +170,7 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
       const okR = !pl.failed.has(right.id);
       if (!okL && !okR) return setAb(false);
       const side: Side = (n % 2 === 0 && okL) || !okR ? "left" : "right";
-      const p = side === "left" ? left : right;
-      pl.play(p);
+      pl.play(side === "left" ? left : right);
       const total = pl.getTime()?.total ?? 0;
       const span = total > 40 ? total : AB_LOOP;
       pl.seek((Math.floor(n / 2) * AB_SEG) % span);
@@ -302,15 +196,18 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
 
-  // Clavier : ← → écouter (ou choisir, pour les images), Entrée choisir,
-  // Espace pause, F favori, T tableau, Retour arrière annuler.
+  // Clavier : A / B garder, ← → écouter (ou choisir, pour les images),
+  // Entrée garder la carte active, Espace pause, C alternance, F favori,
+  // T tableau, Retour arrière annuler.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t?.closest("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
       if (zoom || settings) return;
       const k = e.key;
-      if (k === "ArrowLeft" || k === "ArrowRight") {
+      if (k === "a" || k === "A") choose("left");
+      else if (k === "b" || k === "B") choose("right");
+      else if (k === "ArrowLeft" || k === "ArrowRight") {
         e.preventDefault();
         const side: Side = k === "ArrowLeft" ? "left" : "right";
         if (audio) listen(side);
@@ -334,43 +231,39 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [audio, listen, choose, focus, zoom, settings, meta.slug, left, right, practice, navigate, canUndo, onUndo, picked]);
+  }, [audio, abOk, listen, choose, focus, zoom, settings, meta.slug, meta.path, left, right, practice, navigate, canUndo, onUndo, picked]);
 
-  const halves: { side: Side; p: Participant; clip: typeof clipL; box: typeof boxL; part: typeof partL; outline: typeof outlineL }[] = [
-    { side: "left", p: left, clip: clipL, box: boxL, part: partL, outline: outlineL },
-    { side: "right", p: right, clip: clipR, box: boxR, part: partR, outline: outlineR },
-  ];
+  const ratio = audio ? 2 : 4 / 3;
 
   return (
-    <div
-      ref={stageRef}
-      className={`t-stage ${vertical ? "is-v" : "is-h"} ${full ? "is-full" : ""}`}
-      data-seam={seam}
-      data-swiped={swiped || undefined}
-      data-phase={phase}
-      data-picked={picked ?? undefined}
-      onPointerLeave={(e) => {
-        lean(null);
-        e.currentTarget.style.setProperty("--mx", "0");
-        e.currentTarget.style.setProperty("--my", "0");
-      }}
-      onPointerMove={(e) => {
-        if (e.pointerType !== "mouse" || reduce) return;
-        const r = e.currentTarget.getBoundingClientRect();
-        e.currentTarget.style.setProperty("--mx", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
-        e.currentTarget.style.setProperty("--my", (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3));
-      }}
-    >
-      <motion.div
-        ref={sceneRef}
-        className="t-scene"
-        initial={swiped ? false : reduce ? { opacity: 0 } : "hidden"}
-        animate={reduce ? { opacity: 1 } : "shown"}
-        exit={reduce ? { opacity: 0 } : "gone"}
-        variants={SCENE_VARIANTS[seam]}
-        style={seam === "feather" ? ({ "--s": featherVar } as never) : undefined}
-      >
-        {halves.map(({ side, p, clip, box, part, outline }) => {
+    <div ref={stageRef} className={`nx-duel ${full ? "is-full" : ""}`} data-ready={ready || undefined} data-picked={picked ?? undefined}>
+      <header className="nx-duel-head">
+        <div>
+          <h1 className="nx-title">{meta.title}</h1>
+          <p className="nx-lede">{practice ? "Duel test : rien n'est enregistré." : meta.signature}</p>
+        </div>
+        <div className="nx-round">
+          {practice ? (
+            <span>Essai</span>
+          ) : round ? (
+            <>
+              <span>{isFinal ? "Finale" : round.label}</span>
+              <b>
+                Duel {round.index} / {round.total}
+              </b>
+              <span className="nx-round-bar" aria-hidden>
+                <i style={{ transform: `scaleX(${round.progress})` }} />
+              </span>
+            </>
+          ) : null}
+        </div>
+      </header>
+
+      {meta.balanced && !practice ? <CampMeter /> : null}
+
+      <div className="nx-cards">
+        {(["left", "right"] as const).map((side) => {
+          const p = side === "left" ? left : right;
           const loaded = player.id === p.id;
           const playing = loaded && player.playing;
           const loading = loaded && player.loading;
@@ -381,175 +274,133 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
           const hidden = blind && !picked;
           const sideName = meta.balanced && p.camp ? (p.camp === "rap" ? "Rap FR" : "OST anime") : meta.sides[side === "left" ? 0 : 1];
           return (
-            <motion.section
+            <motion.article
               key={side}
-              data-camp={p.camp}
-              aria-label={`${sideName} : ${hidden ? "titre caché" : `${p.title}, ${p.sub ?? ""}`}`}
-              className={`t-half t-half--${side} ${playing ? "is-playing" : ""} ${focus === side ? "is-focus" : ""} ${win ? "is-win" : ""} ${lose ? "is-lose" : ""} ${failed ? "is-failed" : ""}`}
-              style={{ clipPath: seam === "feather" ? undefined : clip, [vertical ? "y" : "x"]: part }}
-              onPointerEnter={(e) => e.pointerType !== "touch" && lean(side)}
+              className={`nx-card ${playing ? "is-playing" : ""} ${focus === side ? "is-focus" : ""} ${win ? "is-win" : ""} ${lose ? "is-lose" : ""} ${failed ? "is-failed" : ""}`}
+              aria-label={`${sideName} : ${hidden ? "titre caché" : `${p.title}${p.sub ? `, ${p.sub}` : ""}`}`}
+              initial={swiped || reduce ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.5, delay: side === "left" ? 0.04 : 0.12, ease: [0.16, 1, 0.3, 1] } }}
+              onPointerEnter={() => setFocus(side)}
             >
-              <motion.div className="t-media" style={{ [vertical ? "height" : "width"]: box }}>
-                {/* À l'aveugle, une piste dont le son est la vidéo garde sa vidéo
-                    (sans elle, Écouter ne lit rien) : la lettre la couvre. */}
-                {!hidden || p.sound?.k === "video" ? <Visual p={p} player={player} posterAt={meta.posterAt} /> : null}
-                {hidden ? (
-                  <span className="t-blind" aria-hidden>
-                    {side === "left" ? "A" : "B"}
-                  </span>
-                ) : null}
-              </motion.div>
-              {audio ? <Visualizer seam={seam} active={playing} side={side} /> : null}
               <button
                 type="button"
-                className="t-hit"
+                className="nx-card-art"
+                onClick={() => (audio ? listen(side) : choose(side))}
+                disabled={!ready || !!picked}
                 tabIndex={-1}
                 aria-hidden
-                disabled={phase !== "open"}
-                onClick={() => (audio ? listen(side) : choose(side))}
-              />
-              <div className="t-info">
-                {win ? <p className="t-kept">{practice ? "Ton choix (essai)" : isFinal ? meta.championLabel : "Passe au tour suivant"}</p> : null}
-                <p className="t-side">
-                  {sideName}
-                  {abTurn?.side === side ? <i key={abTurn.n} className="t-ab-tick" aria-hidden /> : null}
+              >
+                {hidden && p.sound?.k !== "video" ? (
+                  <span className="nx-blind">{KEY[side]}</span>
+                ) : (
+                  <NoirArt p={p} player={player} ratio={ratio} posterAt={meta.posterAt} sizes="(max-width: 760px) 100vw, 48vw" />
+                )}
+                {hidden && p.sound?.k === "video" ? <span className="nx-blind is-over">{KEY[side]}</span> : null}
+                {abTurn?.side === side ? <i key={abTurn.n} className="nx-ab-tick" aria-hidden /> : null}
+              </button>
+
+              <div className="nx-card-meta">
+                <p className="nx-card-sub">
+                  {hidden ? "Titre caché jusqu'à ton choix" : [p.sub, p.artist].filter(Boolean).join(", ")}
                 </p>
-                <p className="t-sub">{hidden ? "Titre caché jusqu'à ton choix" : p.sub}</p>
-                <h2 className={`t-title ${!hidden && p.title.length > 24 ? "is-long" : ""}`}>{hidden ? "À l'aveugle" : p.title}</h2>
-                {!hidden && (p.artist || p.note) ? (
-                  <p className="t-artist">{[p.artist, p.note].filter(Boolean).join(", ")}</p>
+                <h2 className={`nx-card-title ${!hidden && p.title.length > 26 ? "is-long" : ""}`}>{hidden ? `Piste ${KEY[side]}` : p.title}</h2>
+                {win ? <p className="nx-kept">{practice ? "Ton choix, pour l'essai" : isFinal ? meta.championLabel : "Passe au tour suivant"}</p> : null}
+                {win && split && !split.total ? <p className="nx-note">Aucun autre vote sur ce duel pour l'instant.</p> : null}
+                {failed ? <p className="nx-note">Lecture impossible : la source ne répond pas. Tu peux quand même voter.</p> : null}
+
+                {audio ? (
+                  <div className="nx-sound">
+                    <Spectrum active={loaded} player={player} />
+                    <SeekBar player={player} active={loaded} label={`Position dans ${hidden ? `la piste ${KEY[side]}` : p.title}`} className="nx-seek" />
+                  </div>
                 ) : null}
-                {win && split && !split.total ? <p className="t-rate">Aucun autre vote sur ce duel pour l’instant.</p> : null}
-                {failed ? <p className="t-fail">Lecture impossible : la source ne répond pas. Tu peux quand même voter.</p> : null}
+
                 {!picked ? (
-                  <>
-                    <div className="t-ctrl">
-                      {audio ? (
-                        <button
-                          type="button"
-                          className="t-btn t-btn--play"
-                          onClick={() => listen(side)}
-                          disabled={failed || phase === "enter"}
-                          aria-pressed={playing}
-                          aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${hidden ? sideName : p.title}`}
-                        >
-                          {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-                          <span>{failed ? "Indisponible" : loading ? "Chargement…" : playing ? "Pause" : loaded && player.ended ? "Réécouter" : loaded ? "Reprendre" : "Écouter"}</span>
-                        </button>
-                      ) : (
-                        <button type="button" className="t-btn t-btn--play" onClick={() => setZoom(p)} disabled={hidden}>
-                          <Expand size={16} />
-                          <span>Agrandir</span>
-                        </button>
-                      )}
+                  <div className="nx-row">
+                    {audio ? (
                       <button
                         type="button"
-                        className={`t-btn t-btn--icon t-fav ${fav ? "is-on" : ""}`}
-                        onClick={() => actions.toggleFavorite(meta.slug, p.id)}
-                        aria-pressed={fav}
-                        aria-label={fav ? `Retirer ${p.title} des favoris` : `Ajouter ${p.title} aux favoris`}
-                        title={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
-                        disabled={hidden}
+                        className="nx-play"
+                        onClick={() => listen(side)}
+                        disabled={failed || !ready}
+                        aria-pressed={playing}
+                        aria-label={`${playing ? "Mettre en pause" : loaded && player.ended ? "Réécouter" : "Écouter"} ${hidden ? `la piste ${KEY[side]}` : p.title}`}
                       >
-                        <Heart size={18} fill={fav ? "currentColor" : "none"} />
+                        {loading ? <span className="nx-spin" aria-hidden /> : playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
                       </button>
-                    </div>
-                    {audio ? <SeekBar player={player} active={loaded} label={`Position dans ${hidden ? sideName : p.title}`} /> : null}
+                    ) : (
+                      <button type="button" className="nx-ghost" onClick={() => setZoom(p)} disabled={hidden} aria-label={`Agrandir ${p.title}`}>
+                        <Expand size={15} />
+                        <span>Agrandir</span>
+                      </button>
+                    )}
+                    <button type="button" className="nx-keep" onClick={() => choose(side)} disabled={!ready} aria-label={`${meta.choose} : ${hidden ? `piste ${KEY[side]}` : p.title}`}>
+                      Garder
+                    </button>
+                    <kbd className="nx-key" aria-hidden>
+                      {KEY[side]}
+                    </kbd>
                     <button
                       type="button"
-                      className="t-choose"
-                      onClick={() => choose(side)}
-                      disabled={phase !== "open"}
-                      aria-label={`${meta.choose} : ${hidden ? sideName : p.title}`}
+                      className={`nx-fav ${fav ? "is-on" : ""}`}
+                      onClick={() => actions.toggleFavorite(meta.slug, p.id)}
+                      aria-pressed={fav}
+                      aria-label={fav ? `Retirer ${p.title} des favoris` : `Ajouter ${p.title} aux favoris`}
+                      title={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      disabled={hidden}
                     >
-                      {meta.choose}
+                      <Heart size={16} fill={fav ? "currentColor" : "none"} />
                     </button>
-                  </>
+                  </div>
                 ) : null}
               </div>
-              {seam === "gutter" ? (
-                <svg className="t-frame" aria-hidden>
-                  <motion.path d={outline} />
-                </svg>
-              ) : null}
-            </motion.section>
+            </motion.article>
           );
         })}
+      </div>
 
-        <svg className="t-seam" aria-hidden>
-          <defs>
-            <motion.path id={`seam-${meta.slug}`} d={seamPath} />
-          </defs>
-          <motion.path className="t-seam-line" d={seamPath} />
-          {seam === "tape" ? (
-            <>
-              <motion.path className="t-tape" d={seamPath} />
-              <text className="t-tape-text">
-                <textPath href={`#seam-${meta.slug}`} startOffset="50%" textAnchor="middle">
-                  {meta.sides[0]}  ·  {meta.sides[1]}
-                </textPath>
-              </text>
-            </>
-          ) : null}
-        </svg>
+      {split ? <VoteSplit split={split} picked={picked} reduce={!!reduce} /> : null}
 
-        {/* Le VS, posé au milieu de la coupe, la suit quand elle penche. */}
-        <motion.span className="t-vs" style={{ left: vsX, top: vsY }} aria-hidden>
-          VS
-        </motion.span>
-
-        <div className="t-card" aria-hidden>
-          <Card seam={seam} round={round} isFinal={isFinal} practice={practice} />
-        </div>
-      </motion.div>
-
-      <div className="t-top">
-        <div className="t-top-progress" aria-hidden>
-          <i style={{ transform: `scaleX(${round?.progress ?? 0})` }} />
-        </div>
-        <p className="t-round">
-          {practice ? (
-            <span>Duel test : rien n’est enregistré</span>
-          ) : round ? (
-            <>
-              <span>{round.label}</span>
-              <b>
-                Duel {round.index} / {round.total}
-              </b>
-              <small>
-                {round.remaining} duel{round.remaining > 1 ? "s" : ""} restant{round.remaining > 1 ? "s" : ""} avant le champion
-              </small>
-            </>
-          ) : null}
-        </p>
-        {meta.balanced && !practice ? <CampMeter /> : null}
-        <div className="t-tools">
+      <footer className="nx-dock">
+        <div className="nx-dock-tools">
           {canUndo && onUndo ? (
             <button type="button" onClick={onUndo} title="Annuler mon dernier choix (Retour arrière)" disabled={!!picked}>
-              <RotateCcw size={16} />
+              <RotateCcw size={15} />
               <span>Annuler</span>
             </button>
           ) : null}
           {!practice ? (
             <Link to={`/tournoi/${meta.path}/tableau`} title="Voir tout le tableau (T)">
-              <Network size={16} />
+              <Network size={15} />
               <span>Tableau</span>
             </Link>
           ) : null}
-          <Link to={`/tournoi/${meta.path}/regles`} title="Règles du tournoi">
-            <BookOpenText size={16} />
+          <Link to={`/tournoi/${meta.path}/regles`}>
+            <BookOpenText size={15} />
             <span>Règles</span>
           </Link>
-          {audio ? (
-            <button type="button" onClick={() => setSettings((v) => !v)} aria-expanded={settings} title="Paramètres">
-              <Settings size={16} />
-              <span>Paramètres</span>
+          {abOk ? (
+            <button type="button" className={ab ? "is-on" : ""} onClick={() => setAb((v) => !v)} disabled={!!picked} aria-pressed={ab} title="Écoute alternée : A puis B, 7 secondes chacun (C)">
+              <ArrowLeftRight size={15} />
+              <span>{ab ? "Alternance en cours" : "Écoute alternée"}</span>
             </button>
           ) : null}
         </div>
+        {audio ? <Transport left={left} right={right} masked={!!blind && !picked} /> : <p className="nx-hint">Clique une image ou appuie sur A ou B pour garder.</p>}
+        <div className="nx-dock-tools">
+          {audio ? (
+            <button type="button" onClick={() => setSettings((v) => !v)} aria-expanded={settings} title="Paramètres">
+              <Settings size={15} />
+              <span className="nx-sr">Paramètres</span>
+            </button>
+          ) : null}
+          <button type="button" onClick={toggleFull} aria-label={full ? "Quitter le plein écran" : "Plein écran"} title={full ? "Quitter le plein écran" : "Plein écran"}>
+            {full ? <Minimize size={15} /> : <Maximize size={15} />}
+          </button>
+        </div>
         {settings ? (
-          <div className="t-settings" role="dialog" aria-label="Paramètres du duel">
-            <label className="t-switch">
+          <div className="nx-settings" role="dialog" aria-label="Paramètres du duel">
+            <label className="nx-switch">
               <input type="checkbox" checked={saved.settings.autoplay} onChange={(e) => actions.setAutoplay(meta.slug, e.target.checked)} />
               <span aria-hidden />
               <span>
@@ -557,42 +408,28 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
                 <small>Désactivé par défaut : rien ne joue sans que tu le demandes.</small>
               </span>
             </label>
-            <p className="t-keys">
-              <kbd>←</kbd> <kbd>→</kbd> écouter, {abOk ? <><kbd>C</kbd> écoute alternée, </> : null}<kbd>Entrée</kbd> choisir, <kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
+            <p className="nx-keys">
+              <kbd>A</kbd> <kbd>B</kbd> garder, <kbd>←</kbd> <kbd>→</kbd> écouter, {abOk ? <><kbd>C</kbd> alternance, </> : null}<kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
             </p>
-            <button type="button" className="t-close" onClick={() => setSettings(false)} aria-label="Fermer les paramètres">
-              <X size={16} />
+            <button type="button" className="nx-close" onClick={() => setSettings(false)} aria-label="Fermer les paramètres">
+              <X size={15} />
             </button>
           </div>
         ) : null}
-      </div>
+      </footer>
 
-      {split ? <VoteSplit split={split} picked={picked} reduce={!!reduce} /> : null}
-
-      <AudioBar
-        left={left}
-        right={right}
-        masked={!!blind && !picked}
-        audio={audio}
-        full={full}
-        onFull={toggleFull}
-        ab={ab}
-        onAb={picked ? undefined : () => setAb((v) => !v)}
-        abOk={abOk}
-      />
-
-      <div className="t-toast-slot" role="status" aria-live="polite">
-        {toast ? <p className={`t-toast t-toast--${toast.tone}`}>{toast.text}</p> : null}
+      <div className="nx-toast-slot" role="status" aria-live="polite">
+        {toast ? <p className={`nx-toast nx-toast--${toast.tone}`}>{toast.text}</p> : null}
       </div>
 
       {zoom ? (
-        <div className="t-zoom" role="dialog" aria-label={zoom.title} onClick={() => setZoom(null)}>
+        <div className="nx-zoom" role="dialog" aria-label={zoom.title} onClick={() => setZoom(null)}>
           <img src={zoom.visual.k === "img" ? zoom.visual.src : zoom.thumb} alt={zoom.title} />
           <p>
             {zoom.title} <small>{zoom.sub}</small>
           </p>
-          <button type="button" className="t-close" onClick={() => setZoom(null)} aria-label="Fermer">
-            <X size={18} />
+          <button type="button" className="nx-close" onClick={() => setZoom(null)} aria-label="Fermer">
+            <X size={16} />
           </button>
         </div>
       ) : null}
@@ -600,171 +437,48 @@ function Stage({ left, right, round, isFinal, practice, blind, canUndo, onUndo, 
   );
 }
 
-function polyPath(poly: string, W: number, H: number) {
-  const pts = poly
-    .slice(8, -1)
-    .split(",")
-    .map((pair) => pair.trim().split(" ").map((v) => parseFloat(v)));
-  return pts.map(([x, y], i) => `${i ? "L" : "M"}${((x * W) / 100).toFixed(1)} ${((y * H) / 100).toFixed(1)}`).join(" ") + " Z";
-}
-
-// Ouverture et fermeture de la scène : un fondu, le même pour tous les univers.
-const FADE: Variants = {
-  hidden: { opacity: 0 },
-  shown: { opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
-  gone: { opacity: 0, transition: { duration: 0.32, ease: [0.4, 0, 1, 1] } },
-};
-const SCENE_VARIANTS: Record<Seam, Variants> = { diag: FADE, screens: FADE, feather: FADE, tape: FADE, zigzag: FADE, slash: FADE, gutter: FADE };
-
-// Carton affiché avant la coupe, dans le ton de chaque univers.
-function Card({ seam, round, isFinal, practice }: { seam: Seam; round: RoundInfo | null; isFinal?: boolean; practice?: boolean }) {
-  const n = practice ? "Essai" : isFinal ? "Finale" : `${round?.index ?? ""}`;
-  const label = practice ? "Duel test" : (round?.label ?? "");
-  if (seam === "screens") {
-    return (
-      <>
-        <span className="t-bars" />
-        <b>{n}</b>
-      </>
-    );
-  }
-  if (seam === "slash") {
-    return (
-      <>
-        <span className="t-kanji">卍解</span>
-        <p>{label}</p>
-      </>
-    );
-  }
-  if (seam === "gutter") {
-    return (
-      <>
-        <p>Planche</p>
-        <b>{n}</b>
-      </>
-    );
-  }
-  return (
-    <>
-      <p>{label}</p>
-      <b>{n}</b>
-    </>
-  );
-}
-
-// Barre audio globale : une seule piste active, nommée, jamais d'ambiguïté.
-function AudioBar({
-  left,
-  right,
-  masked,
-  audio,
-  full,
-  onFull,
-  ab,
-  onAb,
-  abOk,
-}: {
-  left: Participant;
-  right: Participant;
-  /** À l'aveugle : la barre nomme la piste A ou B, jamais son titre. */
-  masked: boolean;
-  audio: boolean;
-  full: boolean;
-  onFull: () => void;
-  ab: boolean;
-  onAb?: () => void;
-  abOk: boolean;
-}) {
-  const { meta, player } = useTournament();
-  const flame = meta.slug === "openings" || meta.slug === "endings";
+// Lecteur commun : la piste active, nommée, avance / recul et volume.
+function Transport({ left, right, masked }: { left: Participant; right: Participant; masked: boolean }) {
+  const { player } = useTournament();
   const playing = player.id === left.id ? left : player.id === right.id ? right : null;
-  const active = playing && masked ? { ...playing, title: `Piste ${playing === left ? "A" : "B"}`, sub: "À l'aveugle" } : playing;
+  const name = playing ? (masked ? `Piste ${playing === left ? "A" : "B"}` : playing.title) : null;
   const jump = (delta: number) => {
     const t = player.getTime();
     if (!playing || !t) return;
     const cap = t.total > 0 ? t.total : t.now + Math.max(0, delta);
     player.seek(Math.min(Math.max(0, t.now + delta), cap));
   };
-  const applyVol = (next: number) => {
-    const prev = player.muted ? 0 : player.volume;
-    const v = Math.min(100, Math.max(0, next));
-    if (flame && v < prev) emitVolTrail();
-    player.setVolume(v);
-  };
-  const bump = (delta: number) => applyVol((player.muted ? 0 : player.volume) + delta);
+  const vol = player.muted ? 0 : player.volume;
   return (
-    <div className="t-bar">
-      {audio ? (
-        <>
-          <div className="t-transport">
-            <button type="button" className="t-bar-step" onClick={() => jump(-10)} disabled={!playing} aria-label="Reculer de 10 secondes" title="Reculer de 10 secondes">
-              <SkipBack size={15} />
-            </button>
-            <button
-              type="button"
-              className="t-bar-play"
-              onClick={() => playing && player.toggle(playing)}
-              disabled={!playing}
-              aria-label={active ? (player.playing ? `Mettre en pause ${active.title}` : `Reprendre ${active.title}`) : "Aucune piste en lecture"}
-            >
-              {player.playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
-            </button>
-            <button type="button" className="t-bar-step" onClick={() => jump(10)} disabled={!playing} aria-label="Avancer de 10 secondes" title="Avancer de 10 secondes">
-              <SkipForward size={15} />
-            </button>
-          </div>
-          <p className="t-bar-now">
-            {active ? (
-              <>
-                <b>{active.title}</b>
-                <small>{active.sub}</small>
-              </>
-            ) : (
-              <small>Aucune piste en lecture. Lance l’une des deux pour comparer.</small>
-            )}
-          </p>
-          <SeekBar player={player} active={!!active} label={active ? `Position dans ${active.title}` : "Aucune piste en lecture"} className="t-bar-seek" />
-          {abOk ? (
-          <button
-            type="button"
-            className={`t-bar-ab ${ab ? "is-on" : ""}`}
-            onClick={onAb}
-            disabled={!onAb}
-            aria-pressed={ab}
-            title="Écoute alternée : A puis B, 7 secondes chacun (C)"
-          >
-            <ArrowLeftRight size={16} />
-            <span>{ab ? "Alternance en cours" : "Écoute alternée"}</span>
-          </button>
-          ) : null}
-          <div className="t-vol">
-            <button type="button" className="t-bar-step" onClick={() => bump(-10)} aria-label="Baisser le son" title="Baisser le son">
-              <Minus size={15} />
-            </button>
-            <button type="button" onClick={player.toggleMute} aria-pressed={player.muted} aria-label={player.muted ? "Rétablir le son" : "Couper le son"} title={player.muted ? "Rétablir le son" : "Couper le son"}>
-              {player.muted || player.volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-            <input type="range" min={0} max={100} value={player.muted ? 0 : player.volume} onChange={(e) => applyVol(Number(e.target.value))} aria-label="Volume" style={{ "--p": `${player.muted ? 0 : player.volume}%` } as React.CSSProperties} />
-            <button type="button" className="t-bar-step" onClick={() => bump(10)} aria-label="Monter le son" title="Monter le son">
-              <Plus size={15} />
-            </button>
-          </div>
-        </>
-      ) : (
-        <p className="t-bar-now is-hint">
-          <small className="t-hint-pointer">Clique sur une moitié pour la choisir, ou utilise ← →.</small>
-          <small className="t-hint-touch">Touche une moitié pour la choisir.</small>
-        </p>
-      )}
-      <button type="button" className="t-bar-full" onClick={onFull} aria-label={full ? "Quitter le plein écran" : "Plein écran"} title={full ? "Quitter le plein écran" : "Plein écran"}>
-        {full ? <Minimize size={18} /> : <Maximize size={18} />}
+    <div className="nx-transport">
+      <button type="button" onClick={() => jump(-10)} disabled={!playing} aria-label="Reculer de 10 secondes" title="Reculer de 10 secondes">
+        <SkipBack size={14} />
       </button>
+      <button type="button" className="nx-transport-play" onClick={() => playing && player.toggle(playing)} disabled={!playing} aria-label={name ? (player.playing ? `Mettre en pause ${name}` : `Reprendre ${name}`) : "Aucune piste en lecture"}>
+        {player.playing ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+      </button>
+      <button type="button" onClick={() => jump(10)} disabled={!playing} aria-label="Avancer de 10 secondes" title="Avancer de 10 secondes">
+        <SkipForward size={14} />
+      </button>
+      <p className="nx-now">{name ?? "Aucune piste en lecture"}</p>
+      <button type="button" onClick={player.toggleMute} aria-pressed={player.muted} aria-label={player.muted ? "Rétablir le son" : "Couper le son"}>
+        {player.muted || player.volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
+      </button>
+      <input
+        type="range"
+        className="nx-vol"
+        min={0}
+        max={100}
+        value={vol}
+        onChange={(e) => player.setVolume(Number(e.target.value))}
+        aria-label="Volume"
+        style={{ "--p": `${vol}%` } as React.CSSProperties}
+      />
     </div>
   );
 }
 
-// Après le choix : le verdict du site sur ce duel. Un filet coupé à la
-// proportion des votes, les deux pourcentages qui montent jusqu'à leur valeur.
+// Après le choix : la répartition des votes du site sur ce duel.
 function VoteSplit({ split, picked, reduce }: { split: { left: number; total: number }; picked: Side | null; reduce: boolean }) {
   const v = useMotionValue(reduce ? split.left : 50);
   const [shown, setShown] = useState(reduce ? split.left : 50);
@@ -778,19 +492,19 @@ function VoteSplit({ split, picked, reduce }: { split: { left: number; total: nu
   if (!split.total) return null;
   return (
     <motion.div
-      className="t-split"
+      className="nx-split"
       data-picked={picked ?? undefined}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { duration: 0.3 } }}
       role="img"
-      aria-label={`Votes du site sur ce duel : ${split.left} % à gauche, ${100 - split.left} % à droite, ${split.total} votes`}
+      aria-label={`Votes du site sur ce duel : ${split.left} % pour A, ${100 - split.left} % pour B, ${split.total} votes`}
     >
-      <b className="t-split-n t-split-n--l">{shown}<small>%</small></b>
-      <span className="t-split-track">
+      <b>{shown} %</b>
+      <span className="nx-split-track">
         <motion.i style={{ width }} />
       </span>
-      <b className="t-split-n t-split-n--r">{100 - shown}<small>%</small></b>
-      <small className="t-split-total">
+      <b>{100 - shown} %</b>
+      <small>
         {split.total} vote{split.total > 1 ? "s" : ""} sur le site
       </small>
     </motion.div>
@@ -807,7 +521,7 @@ function CampMeter() {
     for (const p of [m.left, m.right]) if (p && runStatus(run, p.id).kind !== "out") alive[p.camp === "rap" ? "rap" : "ost"]++;
   const total = alive.rap + alive.ost || 1;
   return (
-    <div className="t-camps" role="img" aria-label={`Encore en lice : ${alive.rap} rap, ${alive.ost} OST`}>
+    <div className="nx-camps" role="img" aria-label={`Encore en lice : ${alive.rap} rap, ${alive.ost} OST`}>
       <span>Rap FR {alive.rap}</span>
       <i style={{ "--r": `${(alive.rap / total) * 100}%` } as React.CSSProperties} />
       <span>{alive.ost} OST anime</span>
