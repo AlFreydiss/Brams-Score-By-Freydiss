@@ -1,14 +1,13 @@
-import { ChevronLeft, ChevronRight, Info, Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { Info, Play, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
 import { fontsReady } from "@/lib/tournois/fonts";
 import { currentMatch, roundName } from "@/lib/tournois/bracket";
 import { useSaved } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
-import { fetchStats } from "@/lib/versusStats.js";
 import { keyartSrc } from "../animehub/keyart.js";
 import "../tournois/themes/noir.css";
 import "./hub.css";
@@ -47,7 +46,6 @@ const MORE = [
 ];
 const SOON = ["Personnages", "Arcs", "Pouvoirs", "Théories", "Wiki Battles", "Blind Test", "Sakuga"];
 const FEATURED: TournamentSlug[] = ["openings", "ost", "endings"];
-const HEADLINERS = ["aot-vogel", "naruto-sadness-and-sorrow", "ds-kamado-tanjiro", "op-binks", "jujutsu-kaisen-hollow-purple", "howl-merry-go-round"];
 const ROTATE_MS = 11000;
 
 const bySlug = (s: TournamentSlug) => TOURNAMENTS.find((t) => t.slug === s) as TournamentMeta;
@@ -86,7 +84,6 @@ export default function HubPage() {
   const [ost, setOst] = useState<Participant[]>([]);
   const [openings, setOpenings] = useState<Participant[]>([]);
   const [endings, setEndings] = useState<Participant[]>([]);
-  const [site, setSite] = useState<Map<string, { wins: number; duels: number }> | null>(null);
   const statuses = useStatuses();
 
   useEffect(() => {
@@ -96,7 +93,6 @@ export default function HubPage() {
     loadParticipants("ost").then((l) => on && setOst(l));
     loadParticipants("openings").then((l) => on && setOpenings(l));
     loadParticipants("endings").then((l) => on && setEndings(l));
-    fetchStats("anime-ost").then((m: Map<string, { wins: number; duels: number }> | null) => on && setSite(m));
     return () => {
       on = false;
     };
@@ -118,83 +114,76 @@ export default function HubPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ost.length > 0, openings.length > 0, endings.length > 0]);
 
-  const popular = useMemo(() => {
-    const byId = new Map(ost.map((p) => [p.id, p]));
-    const ranked = site
-      ? [...site.entries()]
-          .filter(([, s]) => s.duels >= 3)
-          .sort((a, b) => b[1].wins / b[1].duels - a[1].wins / a[1].duels || b[1].wins - a[1].wins)
-          .map(([id]) => byId.get(id))
-          .filter((p): p is Participant => !!p)
-      : [];
-    const fill = HEADLINERS.map((id) => byId.get(id)).filter((p): p is Participant => !!p);
-    const rest = ost.filter((p) => p.visual.k === "img").slice(0, 24);
-    return [...new Set([...ranked, ...fill, ...rest])].slice(0, 18);
-  }, [site, ost]);
-
-  const showcase = useMemo(() => {
-    const v = openings.filter((p) => p.visual.k === "video");
-    return [...v].sort(() => Math.random() - 0.5).slice(0, 18);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openings.length]);
-
-  const resume = TOURNAMENTS.filter((t) => statuses[t.slug].progress != null);
-
   return (
     <MotionConfig reducedMotion="user">
       <div className={`nx-root nf ${ready ? "is-ready" : ""}`}>
         <Billboard backdrops={backdrops} statuses={statuses} />
 
-        <div className="nf-rows">
-          {resume.length ? (
-            <Row title="Reprendre ta partie">
-              {resume.map((t) => (
-                <TournamentCard key={t.slug} meta={t} status={statuses[t.slug]} resume />
+        <div className="nf-body">
+          {GROUPS.map((g) => (
+            <Block key={g.title} title={g.title} text={g.text}>
+              <div className={`nf-grid nf-grid--${g.slugs.length > 3 ? "wide" : "tight"}`}>
+                {g.slugs.map((s, k) => (
+                  <TournamentCard key={s} meta={bySlug(s)} status={statuses[s]} index={k} />
+                ))}
+              </div>
+            </Block>
+          ))}
+
+          <Block title="Autres modes" text="Doublage, studio, salon entre amis.">
+            <div className="nf-grid nf-grid--modes">
+              {MORE.map((m, k) => (
+                <motion.div key={m.to} {...cardIn(k)}>
+                  <Link to={m.to} className="nf-card">
+                    <span className="nf-card-art">
+                      <img src={m.img} alt="" loading="lazy" decoding="async" />
+                    </span>
+                    <span className="nf-card-body">
+                      <b>{m.title}</b>
+                      <small>{m.text}</small>
+                    </span>
+                  </Link>
+                </motion.div>
               ))}
-            </Row>
-          ) : null}
+            </div>
+          </Block>
 
-          <Row title="Tous les tournois">
-            {TOURNAMENTS.map((t) => (
-              <TournamentCard key={t.slug} meta={t} status={statuses[t.slug]} />
-            ))}
-          </Row>
-
-          {showcase.length ? (
-            <Row title="Openings à l'affiche" more={{ label: "Lancer le tournoi", to: "/tournoi/openings/duel" }}>
-              {showcase.map((p) => (
-                <VideoCard key={p.id} p={p} to="/tournoi/openings" />
-              ))}
-            </Row>
-          ) : null}
-
-          {popular.length ? <OstRow items={popular} /> : null}
-
-          <Row title="Autres modes">
-            {MORE.map((m) => (
-              <Link key={m.to} to={m.to} className="nf-card nf-card--mode">
-                <span className="nf-card-art">
-                  <img src={m.img} alt="" loading="lazy" decoding="async" />
-                </span>
-                <span className="nf-card-body">
-                  <b>{m.title}</b>
-                  <small>{m.text}</small>
-                </span>
-              </Link>
-            ))}
-          </Row>
-
-          <section className="nf-soon" aria-label="Bientôt">
-            <h2 className="nf-row-title">Bientôt</h2>
-            <p>
+          <Block title="Bientôt">
+            <p className="nf-soon">
               {SOON.map((s) => (
                 <span key={s}>{s}</span>
               ))}
             </p>
-          </section>
+          </Block>
         </div>
       </div>
     </MotionConfig>
+  );
+}
+
+// Les tournois rangés par nature : ce qu'on écoute, ce qu'on regarde.
+const GROUPS: { title: string; text: string; slugs: TournamentSlug[] }[] = [
+  { title: "Musique", text: "Tu écoutes les deux, tu gardes ta préférée.", slugs: ["ost", "openings", "endings", "rap", "rapvsost"] },
+  { title: "Images", text: "Une image contre une autre, sans le son.", slugs: ["bankai", "panels"] },
+];
+
+// Apparition des cartes à l'entrée dans l'écran, en léger décalage.
+const cardIn = (k: number) => ({
+  initial: { opacity: 0, y: 18 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: "-40px" },
+  transition: { type: "spring" as const, bounce: 0, duration: 0.8, delay: Math.min(k, 6) * 0.05 },
+});
+
+function Block({ title, text, children }: { title: string; text?: string; children: React.ReactNode }) {
+  return (
+    <div className="nf-block">
+      <div className="nf-block-head">
+        <h2 className="nf-row-title">{title}</h2>
+        {text ? <p>{text}</p> : null}
+      </div>
+      {children}
+    </div>
   );
 }
 
@@ -324,148 +313,28 @@ function BackVideo({ src, start, muted, poster }: { src: string; start: number; 
   );
 }
 
-// ── Rangées ──────────────────────────────────────────────────────────
-function Row({ title, more, children }: { title: string; more?: { label: string; to: string }; children: React.ReactNode }) {
-  const track = useRef<HTMLDivElement>(null);
-  const [edges, setEdges] = useState({ start: true, end: false });
-  const measure = useCallback(() => {
-    const el = track.current;
-    if (!el) return;
-    setEdges({ start: el.scrollLeft < 8, end: el.scrollLeft + el.clientWidth > el.scrollWidth - 8 });
-  }, []);
-  useEffect(() => {
-    measure();
-    const el = track.current;
-    if (!el) return;
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [measure]);
-  const page = (dir: number) => track.current?.scrollBy({ left: dir * track.current.clientWidth * 0.82, behavior: "smooth" });
+// ── Carte de tournoi ─────────────────────────────────────────────────
+function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status: { label: string | null; progress: number | null }; index: number }) {
+  const running = status.progress != null;
   return (
-    <motion.section className="nf-row" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ type: "spring", bounce: 0, duration: 0.9 }}>
-      <div className="nf-row-head">
-        <h2 className="nf-row-title">{title}</h2>
-        {more ? (
-          <Link to={more.to} className="nf-row-more">
-            {more.label}
-            <ChevronRight size={15} />
-          </Link>
-        ) : null}
-      </div>
-      <div className="nf-row-wrap">
-        <button type="button" className="nf-arrow nf-arrow--l" onClick={() => page(-1)} disabled={edges.start} aria-label={`Défiler ${title} vers la gauche`}>
-          <ChevronLeft size={26} />
-        </button>
-        <div ref={track} className="nf-track" onScroll={measure}>
-          {children}
-        </div>
-        <button type="button" className="nf-arrow nf-arrow--r" onClick={() => page(1)} disabled={edges.end} aria-label={`Défiler ${title} vers la droite`}>
-          <ChevronRight size={26} />
-        </button>
-      </div>
-    </motion.section>
-  );
-}
-
-function TournamentCard({ meta, status, resume }: { meta: TournamentMeta; status: { label: string | null; progress: number | null }; resume?: boolean }) {
-  return (
-    <Link to={`/tournoi/${meta.path}${resume ? "/duel" : ""}`} className="nf-card">
-      <span className="nf-card-art">
-        <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />
-        {status.progress != null ? (
-          <span className="nf-card-progress" aria-hidden>
-            <i style={{ width: `${Math.round(status.progress * 100)}%` }} />
+    <motion.div {...cardIn(index)}>
+      <Link to={`/tournoi/${meta.path}${running ? "/duel" : ""}`} className="nf-card">
+        <span className="nf-card-art">
+          <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />
+          {running ? (
+            <span className="nf-card-progress" aria-hidden>
+              <i style={{ width: `${Math.round((status.progress ?? 0) * 100)}%` }} />
+            </span>
+          ) : null}
+        </span>
+        <span className="nf-card-body">
+          <span className="nf-card-top">
+            <b>{meta.title}</b>
+            {status.label ? <em>{running ? `En cours, ${status.label.toLowerCase()}` : status.label}</em> : null}
           </span>
-        ) : null}
-      </span>
-      <span className="nf-card-body">
-        <b>{meta.title}</b>
-        <small>{resume && status.label ? status.label : meta.tagline}</small>
-      </span>
-    </Link>
-  );
-}
-
-// Carte vidéo : l'image au repos, la vidéo (muette, au passage fort) après un
-// court survol, comme sur une plateforme de streaming.
-function VideoCard({ p, to }: { p: Participant; to: string }) {
-  const [hover, setHover] = useState(false);
-  const [live, setLive] = useState(false);
-  const timer = useRef(0);
-  const start = p.sound?.k === "video" ? (p.sound.hook ?? 30) : 0;
-  return (
-    <Link
-      to={to}
-      className={`nf-card nf-card--video ${live ? "is-live" : ""}`}
-      onPointerEnter={() => {
-        setHover(true);
-        timer.current = window.setTimeout(() => setLive(true), 450);
-      }}
-      onPointerLeave={() => {
-        clearTimeout(timer.current);
-        setHover(false);
-        setLive(false);
-      }}
-    >
-      <span className="nf-card-art">
-        <img src={p.thumb} alt="" loading="lazy" decoding="async" />
-        {hover && p.visual.k === "video" ? <video src={`${p.visual.src}#t=${start}`} autoPlay muted playsInline preload="auto" onPlaying={() => setLive(true)} /> : null}
-      </span>
-      <span className="nf-card-body">
-        <b>{p.title}</b>
-        <small>{[p.sub, p.note].filter(Boolean).join(", ")}</small>
-      </span>
-    </Link>
-  );
-}
-
-// OST populaires : l'extrait officiel (Apple Music) quand il existe.
-function OstRow({ items }: { items: Participant[] }) {
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState<string | null>(null);
-  useEffect(() => () => audio.current?.pause(), []);
-  const src = (p: Participant) => (p.sound?.k === "audio" ? p.sound.src : p.sound?.k === "youtube" ? p.sound.fallback : undefined);
-  const toggle = (p: Participant) => {
-    const s = src(p);
-    if (!s) return;
-    audio.current ??= new Audio();
-    const a = audio.current;
-    if (playing === p.id) {
-      a.pause();
-      setPlaying(null);
-      return;
-    }
-    a.src = s;
-    a.volume = 0.7;
-    a.onended = () => setPlaying(null);
-    a.play().then(
-      () => setPlaying(p.id),
-      () => setPlaying(null),
-    );
-  };
-  return (
-    <Row title="OST populaires" more={{ label: "Classement", to: "/tournoi/ost/classement" }}>
-      {items.map((p) => {
-        const on = playing === p.id;
-        const can = !!src(p);
-        return (
-          <div key={p.id} className={`nf-card nf-card--ost ${on ? "is-playing" : ""}`}>
-            <span className="nf-card-art">
-              <img src={p.visual.k === "img" ? p.visual.src : p.thumb} alt="" loading="lazy" decoding="async" />
-              {can ? (
-                <button type="button" className="nf-card-play" onClick={() => toggle(p)} aria-pressed={on} aria-label={`${on ? "Mettre en pause" : "Écouter un extrait de"} ${p.title}`}>
-                  {on ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                </button>
-              ) : null}
-            </span>
-            <span className="nf-card-body">
-              <b>{p.title}</b>
-              <small>{p.sub}</small>
-            </span>
-          </div>
-        );
-      })}
-    </Row>
+          <small>{meta.tagline}</small>
+        </span>
+      </Link>
+    </motion.div>
   );
 }

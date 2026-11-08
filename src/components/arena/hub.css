@@ -406,6 +406,121 @@
   color: var(--nx-mut);
 }
 
+/* ── Corps : tournois en grille, puis le reste ───────────────────── */
+.nf-body {
+  position: relative;
+  z-index: 2;
+  max-width: 1440px;
+  margin: -32px auto 0;
+  padding: 0 var(--nf-side) 112px;
+  display: grid;
+  gap: clamp(48px, 7vh, 80px);
+}
+.nf-block {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.nf-block + .nf-block {
+  padding-top: clamp(40px, 6vh, 64px);
+  border-top: 1px solid var(--nx-rule);
+}
+.nf-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+}
+.nf-block-head p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--nx-mut);
+}
+.nf .nf-block .nf-row-title {
+  font-size: clamp(22px, 1.9vw, 28px);
+  letter-spacing: -0.03em;
+}
+.nf-grid {
+  display: grid;
+  gap: 28px 18px;
+}
+/* Musique : les trois phares en grand, puis les deux rap. */
+.nf-grid--wide {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.nf-grid--wide > :nth-child(-n + 3) {
+  grid-column: span 2;
+}
+.nf-grid--wide > :nth-child(n + 4) {
+  grid-column: span 3;
+}
+.nf-grid--wide > :nth-child(n + 4) .nf-card-art {
+  aspect-ratio: 21 / 9;
+}
+.nf-grid--tight {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.nf-grid--tight .nf-card-art {
+  aspect-ratio: 21 / 9;
+}
+.nf-grid--modes {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.nf-grid > * {
+  min-width: 0;
+}
+.nf-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.nf-card-top b {
+  font-size: 16.5px;
+}
+.nf-card-top em {
+  flex: none;
+  font-style: normal;
+  font-size: 12.5px;
+  color: var(--nx-ink2);
+}
+.nf .nf-soon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0 !important;
+}
+@media (max-width: 1000px) {
+  .nf-grid--wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nf-grid--wide > :nth-child(n) {
+    grid-column: auto;
+  }
+  .nf-grid--wide > :first-child {
+    grid-column: 1 / -1;
+  }
+  .nf-grid--wide > :nth-child(n + 4) .nf-card-art {
+    aspect-ratio: 16 / 9;
+  }
+  .nf-grid--modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .nf-grid--wide,
+  .nf-grid--tight,
+  .nf-grid--modes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nf-block-head {
+    display: grid;
+    gap: 4px;
+  }
+}
+
 @media (max-width: 760px) {
   .nf {
     --nf-card: 72vw;
