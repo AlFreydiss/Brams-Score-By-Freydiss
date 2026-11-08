@@ -14,6 +14,8 @@ import { TournamentProvider } from "./provider";
 import { RankingView } from "./ranking-view";
 import { RulesView } from "./rules-view";
 import { SubNav } from "./subnav";
+import { RoadToFinal } from "../fight/bracket/RoadToFinal";
+import { isFight } from "../fight/identities";
 import "./themes/index.css";
 
 // Un tournoi en duels : /tournoi/<path> et ses pages (duel, tableau,
@@ -60,7 +62,7 @@ function Loaded({ slug }: { slug: TournamentSlug }) {
       <Routes location={location}>
         <Route index element={<TournamentHome />} />
         <Route path="duel" element={<DuelPage />} />
-        <Route path="tableau" element={<BracketView />} />
+        <Route path="tableau" element={isFight(slug) ? <RoadToFinal /> : <BracketView />} />
         <Route path="classement" element={<RankingView />} />
         <Route path="historique" element={<HistoryView />} />
         <Route path="favoris" element={<FavoritesView />} />

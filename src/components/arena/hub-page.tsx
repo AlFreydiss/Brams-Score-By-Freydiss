@@ -1,7 +1,8 @@
 import { Info, Play, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import type { ArenaItem } from "../fight/arena/Arena3D";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
 import { fontsReady } from "@/lib/tournois/fonts";
@@ -46,6 +47,24 @@ const MORE = [
 ];
 const SOON = ["Personnages", "Arcs", "Pouvoirs", "Théories", "Wiki Battles", "Blind Test", "Sakuga"];
 const FEATURED: TournamentSlug[] = ["openings", "ost", "endings"];
+// Couleur de chaque univers (mêmes que les écrans de duel, fight/identities.ts).
+const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f" };
+
+// La scène 3D n'est chargée qu'à l'ouverture du hub, et seulement si WebGL répond.
+const Arena3D = lazy(() => import("../fight/arena/Arena3D"));
+function useWebGL() {
+  const [ok] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    try {
+      const c = document.createElement("canvas");
+      return !!(c.getContext("webgl2") || c.getContext("webgl"));
+    } catch {
+      return false;
+    }
+  });
+  return ok;
+}
 const ROTATE_MS = 11000;
 
 const bySlug = (s: TournamentSlug) => TOURNAMENTS.find((t) => t.slug === s) as TournamentMeta;
@@ -114,10 +133,46 @@ export default function HubPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ost.length > 0, openings.length > 0, endings.length > 0]);
 
+  // Les trois portails de l'arène 3D (données prêtes une fois les fonds tirés).
+  const navigate = useNavigate();
+  const arenaItems = useMemo((): ArenaItem[] | null => {
+    if (!backdrops.openings || !backdrops.endings) return null;
+    return FEATURED.map((slug) => {
+      const meta = bySlug(slug);
+      const back = backdrops[slug];
+      const st = statuses[slug];
+      const media: ArenaItem["media"] =
+        back?.visual.k === "video"
+          ? { k: "video", src: back.visual.src, start: back.sound?.k === "video" ? (back.sound.hook ?? 30) : 30 }
+          : { k: "img", src: back?.visual.k === "img" ? ((back.visual as { hi?: string }).hi ?? back.visual.src) : ART[slug] };
+      return {
+        slug,
+        title: meta.title,
+        tagline: meta.tagline,
+        path: meta.path,
+        kind: KIND[slug],
+        accent: ACCENT[slug],
+        status: st.progress != null ? `En cours, ${(st.label ?? "").toLowerCase()}` : st.label,
+        media,
+      };
+    });
+  }, [backdrops, statuses]);
+  const three = useWebGL();
+
   return (
     <MotionConfig reducedMotion="user">
       <div className={`nx-root nf ${ready ? "is-ready" : ""}`}>
-        <Billboard backdrops={backdrops} statuses={statuses} />
+        {three && arenaItems ? (
+          <Suspense fallback={<div style={{ height: "min(88dvh, 880px)", minHeight: 540, background: "#08090d" }} aria-busy="true" />}>
+            <Arena3D
+              items={arenaItems}
+              onPlay={(it) => navigate(`/tournoi/${it.path}/duel`)}
+              onInfo={(it) => navigate(`/tournoi/${it.path}`)}
+            />
+          </Suspense>
+        ) : (
+          <Billboard backdrops={backdrops} statuses={statuses} />
+        )}
 
         <div className="nf-body">
           {GROUPS.map((g) => (
