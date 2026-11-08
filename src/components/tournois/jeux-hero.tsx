@@ -28,7 +28,7 @@ const HOLD = 7000;
 
 // Trajan Pro 3, la police du logo de Clair Obscur, via un web project Adobe
 // Fonts (licence de l'abonnement Adobe). Vide = Cinzel, son équivalent libre.
-const ADOBE_KIT = "";
+const ADOBE_KIT = "hpu1sfw";
 function useAdobeKit() {
   useEffect(() => {
     if (!ADOBE_KIT || document.getElementById("adobe-kit")) return;
