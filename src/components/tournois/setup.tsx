@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
-import { useClientDraw } from "@/lib/tournois/client-draw";
 import { useTournament } from "./provider";
-import { NoirArt } from "./noir/art";
+import { SetupWall } from "./setup-wall";
+import { IDENTITIES, isFight } from "../fight/identities";
 
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
 // duel : deux participants tirés au hasard, coupés dans le style du tournoi.
@@ -19,7 +19,6 @@ export function Setup() {
   const [size, setSize] = useState(meta.defaultFormat);
   const [blind, setBlind] = useState(false);
   const [q, setQ] = useState("");
-  const preview = useClientDraw(`${meta.slug}:setup`, participants, 2) ?? [];
 
   const pool = participants.filter((p) => !off.has(p.group));
   const capacity = meta.balanced ? 2 * Math.min(pool.filter((p) => p.camp === "rap").length, pool.filter((p) => p.camp !== "rap").length) : pool.length;
@@ -30,6 +29,24 @@ export function Setup() {
   // Beaucoup d'animes : une recherche pour retrouver le sien dans la liste.
   const needle = q.trim().toLocaleLowerCase("fr");
   const shownGroups = needle ? groups.filter(([g]) => g.toLocaleLowerCase("fr").includes(needle)) : groups;
+
+  // Le tirage est fait ici, pas au clic : le mur montre la vraie partie.
+  const offKey = [...off].sort().join("|");
+  const drawn = useMemo(
+    () => (effective ? draw(pool, effective, meta.balanced) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [offKey, effective, meta.balanced, participants],
+  );
+  const [launching, setLaunching] = useState(false);
+  const timer = useRef(0);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const launch = () => {
+    if (!effective || launching) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setLaunching(true);
+    timer.current = window.setTimeout(() => actions.start(meta.slug, drawn, blind), reduce ? 0 : 820);
+  };
+  const accent = isFight(meta.slug) ? IDENTITIES[meta.slug].a : "#f4f2ec";
 
   const toggle = (g: string) =>
     setOff((prev) => {
@@ -112,27 +129,14 @@ export function Setup() {
         <button
           type="button"
           className="t-go"
-          disabled={!effective}
-          onClick={() => effective && actions.start(meta.slug, draw(pool, effective, meta.balanced), blind)}
+          disabled={!effective || launching}
+          onClick={launch}
         >
           {effective ? `Lancer le tournoi en ${effective} ${meta.unit}` : "Pas assez de participants"}
         </button>
         <p className="t-note">Tirage au hasard à chaque partie. Ta partie est sauvegardée sur ce navigateur : tu peux la reprendre plus tard.</p>
       </div>
-      {preview.length === 2 ? (
-        <div className="nx-setup-preview" aria-hidden>
-          {preview.map((p, i) => (
-            <figure key={p.id} className="nx-bill-card">
-              <NoirArt p={p} ratio={meta.mode === "audio" ? 2 : 4 / 3} posterAt={meta.posterAt} sizes="40vw" />
-              <figcaption>
-                <span>{i === 0 ? "A" : "B"}</span>
-                <b>{p.title}</b>
-                <small>{p.sub}</small>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      ) : null}
+      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} /> : null}
     </div>
   );
 }

@@ -2770,3 +2770,12 @@
 .t-champ-head h2 {
   margin: 0 !important;
 }
+
+/* Pages de tournoi : pas de barre de défilement sur le bord droit (le
+   défilement à la molette, au clavier et au doigt reste). */
+html:has(.t-root) {
+  scrollbar-width: none;
+}
+html:has(.t-root)::-webkit-scrollbar {
+  display: none;
+}

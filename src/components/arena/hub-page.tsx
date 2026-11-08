@@ -52,7 +52,7 @@ const MORE = [
 const SOON = ["Personnages", "Arcs", "Pouvoirs", "Théories", "Wiki Battles", "Blind Test", "Sakuga"];
 const FEATURED: TournamentSlug[] = ["openings", "ost", "endings", "jeux"];
 // Couleur de chaque univers (mêmes que les écrans de duel, fight/identities.ts).
-const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#8fb2ff" };
+const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#d2ad6e", rap: "#f4f2ec", rapvsost: "#f4f2ec", bankai: "#9fc4ff", panels: "#f4f2ec" };
 
 // La scène 3D n'est chargée qu'à l'ouverture du hub, et seulement si WebGL répond.
 const Arena3D = lazy(() => import("../fight/arena/Arena3D"));
@@ -195,14 +195,6 @@ export default function HubPage() {
         ) : (
           <Billboard backdrops={backdrops} statuses={statuses} />
         )}
-
-        {/* Ambiance sous l'arène : les visuels des tournois en grandes taches
-            de lumière floues qui dérivent lentement derrière les sections. */}
-        <div className="nf-ambient" aria-hidden>
-          {(["ost", "openings", "endings", "jeux"] as TournamentSlug[]).map((s) => (
-            <img key={s} src={ART[s]} alt="" loading="lazy" decoding="async" />
-          ))}
-        </div>
 
         <div className="nf-body">
           <div className="nf-block">
@@ -409,7 +401,11 @@ function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status:
   const running = status.progress != null;
   return (
     <motion.div {...cardIn(index)}>
-      <Link to={`/tournoi/${meta.path}${running ? "/duel" : ""}`} className="nf-card">
+      <Link
+        to={`/tournoi/${meta.path}${running ? "/duel" : ""}`}
+        className={`nf-card nf-card--poster nf-card--${meta.slug}`}
+        style={{ "--acc": ACCENT[meta.slug] ?? "#f4f2ec" } as React.CSSProperties}
+      >
         <span className="nf-card-art">
           <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />
           {running ? (
@@ -417,13 +413,11 @@ function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status:
               <i style={{ width: `${Math.round((status.progress ?? 0) * 100)}%` }} />
             </span>
           ) : null}
-        </span>
-        <span className="nf-card-body">
-          <span className="nf-card-top">
+          <span className="nf-card-body">
+            {status.label ? <em className="nf-card-status">{running ? `En cours, ${status.label.toLowerCase()}` : status.label}</em> : null}
             <b>{meta.title}</b>
-            {status.label ? <em>{running ? `En cours, ${status.label.toLowerCase()}` : status.label}</em> : null}
+            <small>{meta.tagline}</small>
           </span>
-          <small>{meta.tagline}</small>
         </span>
       </Link>
     </motion.div>
