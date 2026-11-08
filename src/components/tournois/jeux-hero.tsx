@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./jeux-hero.css";
+import { Gommage } from "./gommage";
+import { useAdobeKit } from "./adobe-kit";
+import { Embers } from "../fight/Embers";
 
 // Accueil du tournoi des OST de jeux vidéo : l'art des jeux en plein écran,
 // sans logo, qui défile tout seul (fondu lent + léger recul de caméra). Une
@@ -12,33 +15,18 @@ import "./jeux-hero.css";
 type Slide = { id: string; game: string; pos: string; w: number; video?: string };
 
 const SLIDES: Slide[] = [
-  { id: "clair-obscur", game: "Clair Obscur: Expedition 33", pos: "54% 42%", w: 2560 },
-  { id: "elden-ring", game: "Elden Ring", pos: "50% 46%", w: 1920 },
-  { id: "ghost-of-tsushima", game: "Ghost of Tsushima", pos: "52% 55%", w: 1920 },
-  { id: "hollow-knight", game: "Hollow Knight", pos: "70% 40%", w: 1920 },
-  { id: "journey", game: "Journey", pos: "48% 62%", w: 1920 },
-  { id: "god-of-war", game: "God of War", pos: "70% 40%", w: 1920 },
-  { id: "nier-automata", game: "NieR:Automata", pos: "50% 42%", w: 1920 },
-  { id: "ori", game: "Ori and the Blind Forest", pos: "52% 50%", w: 1920 },
-  { id: "last-of-us", game: "The Last of Us", pos: "56% 36%", w: 1920 },
-  { id: "ff7", game: "Final Fantasy VII", pos: "70% 50%", w: 1920 },
+  { id: "clair-obscur", game: "Clair Obscur: Expedition 33", pos: "54% 42%", w: 2560, video: "/tournoi/jeux-hero/clair-obscur.mp4" },
+  { id: "elden-ring", game: "Elden Ring", pos: "50% 46%", w: 3840, video: "/tournoi/jeux-hero/elden-ring.mp4" },
+  { id: "ghost-of-tsushima", game: "Ghost of Tsushima", pos: "60% 50%", w: 3840 },
+  { id: "journey", game: "Journey", pos: "50% 45%", w: 3840 },
+  { id: "god-of-war", game: "God of War", pos: "45% 40%", w: 3840 },
+  { id: "nier-automata", game: "NieR:Automata", pos: "60% 55%", w: 3840 },
+  { id: "ori", game: "Ori and the Blind Forest", pos: "50% 50%", w: 3840 },
+  { id: "last-of-us", game: "The Last of Us", pos: "62% 55%", w: 3840 },
+  { id: "ff7", game: "Final Fantasy VII", pos: "40% 22%", w: 3840 },
 ];
 
 const HOLD = 7000;
-
-// Trajan Pro 3, la police du logo de Clair Obscur, via un web project Adobe
-// Fonts (licence de l'abonnement Adobe). Vide = Cinzel, son équivalent libre.
-const ADOBE_KIT = "hpu1sfw";
-function useAdobeKit() {
-  useEffect(() => {
-    if (!ADOBE_KIT || document.getElementById("adobe-kit")) return;
-    const l = document.createElement("link");
-    l.id = "adobe-kit";
-    l.rel = "stylesheet";
-    l.href = `https://use.typekit.net/${ADOBE_KIT}.css`;
-    document.head.appendChild(l);
-  }, []);
-}
 
 // Mouvements de caméra, un par image (panoramique, zoom avant, zoom arrière…).
 const MOVES = [
@@ -77,9 +65,26 @@ export function JeuxHero({
   const [paused, setPaused] = useState(false);
   const reduce = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
+  // Gommage : l'image sortante est redessinée en WebGL et s'efface en pétales.
+  const slidesRef = useRef<HTMLDivElement>(null);
+  const els = useRef<(HTMLImageElement | HTMLVideoElement | null)[]>([]);
+  const gom = useRef<Gommage | null>(null);
+  const [burning, setBurning] = useState(false);
+  useEffect(() => {
+    if (reduce || !slidesRef.current) return;
+    const g = new Gommage(slidesRef.current);
+    gom.current = g;
+    return () => {
+      g.destroy();
+      gom.current = null;
+    };
+  }, [reduce]);
+
   const go = useCallback((n: number) => {
     const k = (n + SLIDES.length) % SLIDES.length;
     if (k === iRef.current) return;
+    const out = els.current[iRef.current];
+    setBurning(!!(out && gom.current?.start(out)));
     setPrev(iRef.current);
     iRef.current = k;
     setI(k);
@@ -131,12 +136,15 @@ export function JeuxHero({
       onPointerUp={onUp}
       onPointerCancel={() => (drag.current = null)}
     >
-      <div className="jh-slides" aria-hidden>
+      <div className={`jh-slides ${burning ? "is-burning" : ""}`} ref={slidesRef} aria-hidden>
         {SLIDES.map((s, k) =>
           mounted.has(k) ? (
             s.video && !reduce ? (
               <video
                 key={s.id}
+                ref={(e) => {
+                  els.current[k] = e;
+                }}
                 className={`jh-slide ${k === i ? "is-on" : k === prev ? "is-off" : ""}`}
                 src={s.video}
                 poster={src(s, true)}
@@ -150,6 +158,9 @@ export function JeuxHero({
             ) : (
             <img
               key={s.id}
+              ref={(e) => {
+                  els.current[k] = e;
+                }}
               className={`jh-slide ${k === i ? "is-on" : k === prev ? "is-off" : ""}`}
               src={src(s)}
               srcSet={`${src(s, true)} ${s.w / 2}w, ${src(s)} ${s.w}w`}
@@ -165,6 +176,7 @@ export function JeuxHero({
         )}
       </div>
       <div className="jh-veil" aria-hidden />
+      <Embers active density={0.8} zIndex={0} />
 
       <div className="jh-copy">
         <p className="jh-eyebrow">

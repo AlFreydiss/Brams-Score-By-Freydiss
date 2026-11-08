@@ -86,6 +86,29 @@
     opacity: 0;
   }
 }
+/* Gommage (gommage.ts) : l'ancienne image est redessinée dans un canvas et se
+   consume en pétales ; la nouvelle attend dessous, dans l'ombre, et s'éclaire
+   à mesure que la brûlure passe. */
+.jh-slides.is-burning .jh-slide.is-off {
+  animation: none;
+  opacity: 0;
+}
+.jh-slides.is-burning .jh-slide.is-on {
+  animation:
+    jh-wake 2.1s cubic-bezier(0.33, 0, 0.2, 1) both,
+    jh-kb 9.5s cubic-bezier(0.33, 0, 0.2, 1) both;
+}
+@keyframes jh-wake {
+  from {
+    filter: brightness(0.35) saturate(0.5) contrast(1.1);
+  }
+  55% {
+    filter: brightness(0.8) saturate(0.85);
+  }
+  to {
+    filter: none;
+  }
+}
 .jh.is-still .jh-slides {
   transform: none;
 }
@@ -144,7 +167,10 @@
   text-transform: uppercase;
   text-wrap: balance;
   color: transparent;
-  background: var(--jh-gold);
+  /* Or poli + un reflet de lumière qui traverse le titre toutes les 8 s. */
+  background:
+    linear-gradient(105deg, transparent 42%, rgba(255, 247, 225, 0.85) 50%, transparent 58%) 100% 0 / 300% 100% no-repeat,
+    var(--jh-gold);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-mask-image: var(--jh-wear);
@@ -152,7 +178,22 @@
   -webkit-mask-size: 260px 260px;
   mask-size: 260px 260px;
   filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
-  animation: jh-rise 1.2s var(--jh-ease) both;
+  animation:
+    jh-rise 1.2s var(--jh-ease) both,
+    jh-shine 8s cubic-bezier(0.4, 0, 0.2, 1) 2.2s infinite;
+}
+@keyframes jh-shine {
+  0%,
+  72% {
+    background-position:
+      100% 0,
+      0 0;
+  }
+  100% {
+    background-position:
+      0% 0,
+      0 0;
+  }
 }
 .jh-title em {
   font-style: normal;
@@ -160,7 +201,8 @@
 .jh-lede {
   margin: 26px 0 0;
   max-width: 46ch;
-  font: 400 clamp(15px, 1.15vw, 17px) / 1.6 "Geist", system-ui, sans-serif;
+  font: 400 clamp(15px, 1.15vw, 18px) / 1.7 var(--jh-display);
+  letter-spacing: 0.03em;
   color: var(--jh-mute);
   text-wrap: pretty;
   animation: jh-rise 1.2s var(--jh-ease) 0.12s both;
@@ -180,8 +222,9 @@
   border-radius: 2px;
   background: var(--jh-ink);
   color: #0b0b0d;
-  font: 500 15px/1 "Geist", system-ui, sans-serif;
-  letter-spacing: 0.01em;
+  font: 600 13px/1 var(--jh-display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   text-decoration: none;
   transition:
     background-color 0.25s ease,
@@ -195,7 +238,9 @@
 }
 .jh-link {
   color: var(--jh-ink);
-  font: 400 15px/1 "Geist", system-ui, sans-serif;
+  font: 600 13px/1 var(--jh-display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   text-decoration: underline;
   text-decoration-color: var(--jh-line);
   text-underline-offset: 6px;
@@ -238,7 +283,7 @@
   color: #efe3c8;
 }
 .jh-caption small {
-  font: 500 10.5px/1 "Geist Mono", ui-monospace, monospace;
+  font: 600 11px/1 var(--jh-display);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--jh-mute);
@@ -249,7 +294,7 @@
   gap: 20px;
 }
 .jh-index {
-  font: 500 12px/1 "Geist Mono", ui-monospace, monospace;
+  font: 600 13px/1 var(--jh-display);
   letter-spacing: 0.12em;
   font-variant-numeric: tabular-nums;
 }
