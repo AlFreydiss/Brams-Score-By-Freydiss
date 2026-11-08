@@ -271,10 +271,16 @@ function useMediaTexture(media: ArenaItem["media"]) {
       t.colorSpace = THREE.SRGBColorSpace;
       setTex(t);
     } else {
-      new THREE.TextureLoader().setCrossOrigin("anonymous").load(src, (t) => {
+      const loader = new THREE.TextureLoader().setCrossOrigin("anonymous");
+      const done = (t: THREE.Texture) => {
         if (!live) return t.dispose();
         t.colorSpace = THREE.SRGBColorSpace;
         setTex(t);
+      };
+      // Une image déjà affichée ailleurs (balise <img> sans CORS) reste en cache
+      // sans en-tête CORS : WebGL la refuse. Deuxième essai hors cache.
+      loader.load(src, done, undefined, () => {
+        if (live) loader.load(`${src}${src.includes("?") ? "&" : "?"}gl=1`, done);
       });
     }
     return () => {
@@ -315,7 +321,8 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
     const net = Math.atan2(Math.sin(angle + ring), Math.cos(angle + ring));
     g.rotation.y = angle - net * 0.45;
     if (mat.current) {
-      const c = active ? 1 : 0.45;
+      // Sans texture, l'écran reste sombre (jamais une plaque blanche).
+      const c = !tex ? 0.07 : active ? 1 : 0.45;
       mat.current.color.setScalar(THREE.MathUtils.damp(mat.current.color.r, c, 4, dt));
     }
   });
@@ -338,7 +345,9 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
           document.body.style.cursor = "";
         }}
       >
-        <meshBasicMaterial ref={mat} map={tex ?? undefined} color={tex ? "#ffffff" : "#111317"} toneMapped={false} side={THREE.DoubleSide} />
+        {/* Clé sur la texture : un matériau compilé sans map ne l'affiche jamais
+            ensuite (shader sans USE_MAP), d'où les écrans blancs. */}
+        <meshBasicMaterial key={tex?.uuid ?? "none"} ref={mat} map={tex ?? null} color={tex ? "#ffffff" : "#111317"} toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
       {/* Un filet de couleur sous l'écran, la seule touche de l'univers. */}
       <mesh position={[0, -H / 2 - 0.09, 0.18]}>
