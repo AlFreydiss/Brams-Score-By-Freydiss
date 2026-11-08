@@ -6,7 +6,9 @@
   --nf-card: clamp(240px, 21vw, 360px);
   min-height: 100dvh;
   overflow-x: clip;
-  background: var(--nx-p);
+  position: relative;
+  isolation: isolate;
+  background: #08090d;
   color: var(--nx-ink);
   font-family: var(--nx-sans);
   opacity: 0;
@@ -556,5 +558,72 @@
   .nf :is(.nf-more, .nf-mute, .nf-kind span) {
     backdrop-filter: none;
     background: var(--nx-p3);
+  }
+}
+
+/* ── Ambiance sous l'arène ───────────────────────────────────────── */
+.nf-ambient {
+  position: absolute;
+  top: min(88dvh, 880px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.nf-ambient::after {
+  /* Raccord avec le bas de l'arène, puis la lumière revient. */
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 260px;
+  background: linear-gradient(#08090d, rgba(8, 9, 13, 0));
+}
+.nf-ambient img {
+  position: absolute;
+  width: 62vw;
+  max-width: none;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 50%;
+  filter: blur(70px) saturate(1.9);
+  opacity: 0.58;
+  will-change: transform;
+  animation: nf-drift 26s ease-in-out infinite alternate;
+}
+.nf-ambient img:nth-child(1) {
+  top: 2%;
+  left: -18vw;
+}
+.nf-ambient img:nth-child(2) {
+  top: 26%;
+  right: -20vw;
+  animation-duration: 32s;
+  animation-delay: -8s;
+}
+.nf-ambient img:nth-child(3) {
+  top: 52%;
+  left: -14vw;
+  animation-duration: 29s;
+  animation-delay: -15s;
+}
+.nf-ambient img:nth-child(4) {
+  top: 76%;
+  right: -16vw;
+  animation-duration: 35s;
+  animation-delay: -4s;
+}
+@keyframes nf-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6vw, -4vh, 0) scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-ambient img {
+    animation: none;
   }
 }

@@ -41,7 +41,9 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const [dive, setDive] = useState<ArenaItem | null>(null);
   const [visible, setVisible] = useState(true);
   const wrap = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ x: number; t: number } | null>(null);
+  const drag = useRef<{ x: number; y: number; t: number } | null>(null);
+  // Décalage du glissé en cours (px), lu à chaque image par la scène.
+  const dragOff = useRef({ x: 0, y: 0 });
   // Un glissé ne doit pas se terminer en clic sur le portail (plongée involontaire).
   const dragged = useRef(false);
   const n = items.length;
@@ -84,18 +86,31 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
       ref={wrap}
       style={{ position: "relative", height: "min(88dvh, 880px)", minHeight: 540, background: BG, overflow: "hidden", touchAction: "pan-y", userSelect: "none" }}
       onPointerDown={(e) => {
-        drag.current = { x: e.clientX, t: performance.now() };
+        if ((e.target as HTMLElement).closest("button")) return;
+        drag.current = { x: e.clientX, y: e.clientY, t: performance.now() };
         dragged.current = false;
       }}
       onPointerMove={(e) => {
-        if (drag.current && Math.abs(e.clientX - drag.current.x) > 10) dragged.current = true;
+        const d = drag.current;
+        if (!d) return;
+        // La scène suit le doigt : l'anneau tourne, la caméra bascule.
+        dragOff.current = { x: e.clientX - d.x, y: e.clientY - d.y };
+        if (Math.hypot(dragOff.current.x, dragOff.current.y) > 10) dragged.current = true;
       }}
       onPointerUp={(e) => {
         const d = drag.current;
         drag.current = null;
+        dragOff.current = { x: 0, y: 0 };
         if (!d) return;
         const dx = e.clientX - d.x;
-        if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+        const dy = e.clientY - d.y;
+        // Horizontal : gauche / droite. Vertical : vers le haut = suivant.
+        if (Math.abs(dx) > 50 && Math.abs(dx) >= Math.abs(dy)) go(dx < 0 ? 1 : -1);
+        else if (Math.abs(dy) > 60) go(dy < 0 ? 1 : -1);
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+        dragOff.current = { x: 0, y: 0 };
       }}
       onWheel={(e) => {
         if (Math.abs(e.deltaX) > 24 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) go(e.deltaX > 0 ? 1 : -1);
@@ -112,16 +127,24 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         <fog attach="fog" args={[BG, 6.5, 15]} />
         <ambientLight intensity={0.6} />
         <Glow accent={cur.accent} />
-        <Backdrop items={items} active={active} />
+        <Orbit items={items} active={active} drag={dragOff} />
         <Dust accent={cur.accent} />
-        <Ring items={items} active={active} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
+        <Ring items={items} active={active} drag={dragOff} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
         <Floor />
-        <CameraRig dive={!!dive} />
+        <CameraRig dive={!!dive} drag={dragOff} />
         <EffectComposer>
           <Bloom intensity={0.35} luminanceThreshold={0.55} luminanceSmoothing={0.3} mipmapBlur />
           <Vignette eskil={false} offset={0.2} darkness={0.75} />
         </EffectComposer>
       </Canvas>
+
+      {/* Sur l'écran central, le doigt pilote la scène dans les deux sens
+          (ailleurs, glisser verticalement fait défiler la page). Un appui plonge. */}
+      <div
+        aria-hidden
+        onClick={() => (dragged.current ? undefined : enter(cur))}
+        style={{ position: "absolute", left: "27%", right: "27%", top: "22%", bottom: "30%", touchAction: "none", cursor: "pointer" }}
+      />
 
       {/* Texte du portail actif, en bas à gauche. */}
       <div style={{ position: "absolute", left: "clamp(20px, 4vw, 64px)", bottom: "clamp(36px, 8vh, 84px)", width: "min(520px, calc(100% - 40px))", pointerEvents: "none" }}>
@@ -205,7 +228,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
 
 // ── Scène ────────────────────────────────────────────────────────────
 
-function Ring({ items, active, onPick }: { items: ArenaItem[]; active: number; onPick: (i: number) => void }) {
+function Ring({ items, active, drag, onPick }: { items: ArenaItem[]; active: number; drag: React.MutableRefObject<{ x: number; y: number }>; onPick: (i: number) => void }) {
   const group = useRef<THREE.Group>(null);
   const n = items.length;
   const step = (Math.PI * 2) / n;
@@ -222,7 +245,7 @@ function Ring({ items, active, onPick }: { items: ArenaItem[]; active: number; o
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
-    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, target.current, 4.2, dt);
+    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, target.current + drag.current.x * 0.005, 4.2, dt);
   });
   return (
     <group ref={group}>
@@ -476,32 +499,55 @@ function Frame({ accent, active }: { accent: THREE.Color; active: boolean }) {
 
 // Deux grands panneaux au fond, à gauche et à droite : les tournois voisins
 // de l'écran actif, fondus dans le noir, pris dans le reflet du sol.
-function Backdrop({ items, active }: { items: ArenaItem[]; active: number }) {
+// Second anneau, plus grand, derrière les écrans : une grande image fondue par
+// tournoi, placée entre deux portails. Il tourne avec l'anneau mais en retard
+// (profondeur), et chaque image s'efface quand elle passe devant la caméra.
+const R2 = 8.6;
+function Orbit({ items, active, drag }: { items: ArenaItem[]; active: number; drag: React.MutableRefObject<{ x: number; y: number }> }) {
+  const group = useRef<THREE.Group>(null);
   const n = items.length;
-  const left = items[(active - 1 + n) % n];
-  const right = items[(active + 1) % n];
+  const step = (Math.PI * 2) / n;
+  const target = useRef(0);
+  useEffect(() => {
+    const want = -active * step;
+    const TAU = Math.PI * 2;
+    const d = ((((want - target.current + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
+    target.current += d;
+  }, [active, step]);
+  useFrame((_, dt) => {
+    const g = group.current;
+    if (g) g.rotation.y = THREE.MathUtils.damp(g.rotation.y, target.current + drag.current.x * 0.0035, 2.2, dt);
+  });
   return (
-    <>
-      <Pane key={`l-${left.slug}`} src={left.still} side={-1} />
-      <Pane key={`r-${right.slug}`} src={right.still} side={1} />
-    </>
+    <group ref={group}>
+      {items.map((it, i) => (
+        <Pane key={it.slug} src={it.still} angle={i * step + step / 2} />
+      ))}
+    </group>
   );
 }
 
-function Pane({ src, side }: { src?: string; side: -1 | 1 }) {
+function Pane({ src, angle }: { src?: string; angle: number }) {
   const tex = useStill(src);
   const mat = useRef<THREE.MeshBasicMaterial>(null);
   const ref = useRef<THREE.Mesh>(null);
+  const w = useMemo(() => new THREE.Vector3(), []);
   useFrame((state, dt) => {
-    if (mat.current) mat.current.opacity = THREE.MathUtils.damp(mat.current.opacity, tex ? 0.62 : 0, 1.6, dt);
+    const m = ref.current;
+    if (!m || !mat.current) return;
+    // Visible au fond, effacée en passant vers la caméra.
+    m.getWorldPosition(w);
+    const back = 1 - THREE.MathUtils.smoothstep(w.z, -2.5, 3);
+    mat.current.opacity = THREE.MathUtils.damp(mat.current.opacity, tex ? 0.6 * back : 0, 3, dt);
+    m.visible = mat.current.opacity > 0.01;
     // Dérive lente, comme une affiche qui respire.
-    if (ref.current) ref.current.position.y = 0.95 + Math.sin(state.clock.elapsedTime * 0.25 + side) * 0.06;
+    m.position.y = 1.1 + Math.sin(state.clock.elapsedTime * 0.25 + angle) * 0.08;
   });
   if (!tex) return null;
   return (
-    <mesh ref={ref} position={[side * 6.6, 0.95, -2.6]} rotation={[0, -side * 0.5, 0]}>
-      <planeGeometry args={[7.6, 7.6 * (9 / 16)]} />
-      <meshBasicMaterial ref={mat} map={tex} alphaMap={mask()} color="#8d8d8d" transparent opacity={0} depthWrite={false} fog={false} toneMapped={false} />
+    <mesh ref={ref} position={[Math.sin(angle) * R2, 1.1, Math.cos(angle) * R2]} rotation={[0, angle + Math.PI, 0]}>
+      <planeGeometry args={[8.4, 8.4 * (9 / 16)]} />
+      <meshBasicMaterial ref={mat} map={tex} alphaMap={mask()} color="#8d8d8d" transparent opacity={0} depthWrite={false} fog={false} toneMapped={false} side={THREE.DoubleSide} />
     </mesh>
   );
 }
@@ -584,7 +630,7 @@ function Floor() {
 
 // Caméra : léger balancement au repos, plongée vers le portail au clic
 // (avance + champ qui s'élargit, effet « dolly zoom »).
-function CameraRig({ dive }: { dive: boolean }) {
+function CameraRig({ dive, drag }: { dive: boolean; drag: React.MutableRefObject<{ x: number; y: number }> }) {
   const { camera, pointer } = useThree();
   const t0 = useRef<number | null>(null);
   useFrame((state, dt) => {
@@ -601,7 +647,9 @@ function CameraRig({ dive }: { dive: boolean }) {
       return;
     }
     cam.position.x = THREE.MathUtils.damp(cam.position.x, pointer.x * 0.5, 2.5, dt);
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.35 + pointer.y * 0.18, 2.5, dt);
+    // Glissé vertical : la caméra monte ou descend autour de l'anneau (bascule 3D).
+    const tilt = THREE.MathUtils.clamp(drag.current.y * 0.008, -1.4, 2.2);
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.35 + pointer.y * 0.18 + tilt, drag.current.y ? 6 : 2.5, dt);
     cam.lookAt(0, 0, R * 0.55);
   });
   return null;

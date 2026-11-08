@@ -196,6 +196,14 @@ export default function HubPage() {
           <Billboard backdrops={backdrops} statuses={statuses} />
         )}
 
+        {/* Ambiance sous l'arène : les visuels des tournois en grandes taches
+            de lumière floues qui dérivent lentement derrière les sections. */}
+        <div className="nf-ambient" aria-hidden>
+          {(["ost", "openings", "endings", "jeux"] as TournamentSlug[]).map((s) => (
+            <img key={s} src={ART[s]} alt="" loading="lazy" decoding="async" />
+          ))}
+        </div>
+
         <div className="nf-body">
           <div className="nf-block">
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -8 }}>
