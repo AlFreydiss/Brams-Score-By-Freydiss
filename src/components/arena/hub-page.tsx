@@ -25,8 +25,8 @@ const ART: Record<TournamentSlug, string> = {
   ost: "/tournoi/ost/aot-vogel.webp",
   openings: TMDB("rqbCbjB19amtOtFQbb3K2lgm2zv.jpg"),
   endings: TMDB("g9vvplRihZv1RipxRDgJ1WLaTQB.jpg"),
-  // Pochette officielle de Clair Obscur : Expedition 33 (Apple Music).
-  jeux: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/bb/57/50/bb5750a0-e786-c10b-1901-908fbc2d8f25/8721215081586.png/1200x1200bb.jpg",
+  // Fond d'écran de Clair Obscur : Expedition 33 en 16:9 (la pochette carrée s'étirait floue sur l'écran large).
+  jeux: "/tournoi/jeux-hero/clair-obscur.webp",
   rap: "/tournoi/thumbs/rap/rap-booba-dkr.webp",
   rapvsost: TMDB("z0YhJvomqedHF85bplUJEotkN5l.jpg"),
   bankai: "/tournoi/bankai/tensa-zangetsu.webp",
@@ -131,13 +131,12 @@ export default function HubPage() {
       return v.length ? v[Math.floor(Math.random() * v.length)] : null;
     };
     const ostImg = ost.filter((p) => p.visual.k === "img" && (p.visual as { hi?: string }).hi);
-    // Jeux : la pochette de Clair Obscur, le jeu à l'honneur du tournoi.
-    const co = jeux.find((p) => /clair obscur/i.test(p.group)) ?? jeux[0] ?? null;
     return {
       openings: pick(openings),
       endings: pick(endings),
       ost: ostImg.length ? ostImg[Math.floor(Math.random() * ostImg.length)] : null,
-      jeux: co,
+      // Jeux : toujours le fond d'écran de Clair Obscur (ART.jeux).
+      jeux: null,
     } as Record<string, Participant | null>;
     // Tirage une fois les catalogues chargés.
     // eslint-disable-next-line react-hooks/exhaustive-deps

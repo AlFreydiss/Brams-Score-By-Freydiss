@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { getEquippedBgId, setEquippedBgId, getBgById } from '../data/opening-backgrounds.js'
-import { equipShopItem } from '../lib/berryShop.js'
+import { equipShopItem, fetchMyInventory } from '../lib/berryShop.js'
 import { supabase } from '../lib/supabase.js'
 
 const Ctx = createContext(null)
@@ -37,17 +37,22 @@ export function OpeningBgProvider({ children }) {
     if (!supabase) return
     let subscription
     try {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
         if (!session) return
-        try {
-          const { data: inv } = await supabase.rpc('get_my_inventory')
-          if (!Array.isArray(inv)) return
-          const equipped = inv.find(item => item.reward_type === 'opening_background' && item.equipped)
-          if (equipped) {
-            setEquippedBgId(equipped.item_id)
-            setEquippedIdState(equipped.item_id)
-          }
-        } catch { /* fallback localStorage */ }
+        // Hors du callback, et en REST direct : un supabase.rpc() lancé DANS
+        // onAuthStateChange attend le verrou d'auth et ne se résout jamais. Le
+        // fond équipé n'était alors retrouvé que via le localStorage : nouveau
+        // navigateur ou cache vidé = plus d'opening sur l'accueil.
+        setTimeout(async () => {
+          try {
+            const inv = await fetchMyInventory()
+            const equipped = inv.find(item => item.reward_type === 'opening_background' && item.equipped)
+            if (equipped) {
+              setEquippedBgId(equipped.item_id)
+              setEquippedIdState(equipped.item_id)
+            }
+          } catch { /* fallback localStorage */ }
+        }, 0)
       })
       subscription = data?.subscription
     } catch { /* supabase non initialisé */ }
