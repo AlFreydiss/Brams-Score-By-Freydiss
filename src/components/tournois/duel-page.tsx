@@ -10,6 +10,7 @@ import { isFight } from "../fight/identities";
 import { useTournament } from "./provider";
 import { Recap } from "./recap";
 import { Setup } from "./setup";
+import { warmYoutube } from "./youtube-deck";
 
 // Passage d'un duel au suivant : un glissement continu. Le duel tranché sort
 // par la droite pendant que le suivant entre par la gauche ; « Annuler » fait
@@ -86,6 +87,8 @@ export function DuelPage() {
   // celui-ci : la coupe suivante s'ouvre sur des images déjà prêtes.
   useEffect(() => {
     if (!run || !cur) return;
+    // Pistes complètes YouTube : le lecteur caché se prépare pendant l'intro.
+    if (cur.match.left?.sound?.k === "youtube" || cur.match.right?.sound?.k === "youtube") warmYoutube();
     const next = run.rounds
       .flatMap((r) => r.matches)
       .filter((m) => m.id !== cur.match.id && m.status !== "closed" && m.left && m.right)

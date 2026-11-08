@@ -145,6 +145,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Helpers internes (préchargement Vite, interop CommonJS) : partagés par
+          // tout le site. Sans cette règle, Rollup les rangeait dans le chunk r3f
+          // et chaque page téléchargeait three.js + r3f (~4 Mo) pour rien.
+          if (id.includes('vite/preload-helper') ||
+              id.includes('vite/modulepreload-polyfill') ||
+              id.includes('commonjsHelpers'))               return 'vendor'
           // postprocessing s'isole proprement (dépend de r3f, pas l'inverse → pas de cycle).
           // drei reste avec r3f : le séparer crée un cycle drei↔r3f (ordre de chargement cassé).
           if (id.includes('@react-three/postprocessing') ||

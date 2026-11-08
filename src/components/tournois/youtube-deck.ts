@@ -192,6 +192,10 @@ function createDeck(domId: string, left: number) {
 
   return {
     alive: () => alive,
+    // Prépare l'API et le lecteur caché sans rien jouer.
+    warm() {
+      void ensure();
+    },
     play(next: Cue, nextHandlers: Handlers) {
       const my = ++token;
       command = "play";
@@ -363,4 +367,9 @@ export function youtubeTime(): { now: number; total: number } | null {
 }
 export function youtubeTimeSlot(slot: YtSlot) {
   return deck(slot).time();
+}
+
+/** Charge l'API YouTube et prépare le lecteur principal à l'avance : le premier son part sans attente. */
+export function warmYoutube() {
+  decks.a.warm();
 }

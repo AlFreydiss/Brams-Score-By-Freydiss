@@ -24,7 +24,7 @@ type Props = {
 const sharp = (u: string) => u.replace("/t/p/w300/", "/t/p/w1280/");
 const imgOf = (p: Participant) => (p.visual.k === "img" ? ((p.visual as { hi?: string }).hi && !(p.visual as { hi?: string }).hi?.includes("/original/") ? (p.visual as { hi?: string }).hi : p.visual.src) : sharp(p.thumb));
 
-const HOLD = 2300;
+const HOLD = 1800;
 const SLAM = 0.08;
 const HIT = 0.56;
 

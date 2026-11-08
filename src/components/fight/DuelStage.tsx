@@ -47,6 +47,12 @@ function useNarrow() {
   return n;
 }
 
+// Vrai dès qu'une intro a été montrée pendant cette visite.
+let introSeen = false;
+
+// Temps de lecture du verdict avant le duel suivant (un clic ou une touche le passe).
+const VERDICT_MS = 1500;
+
 export function DuelStage(props: Props) {
   const { left, right, round, isFinal, blind, canUndo, onUndo, onChoose, onDone } = props;
   const { meta, player } = useTournament();
@@ -62,10 +68,34 @@ export function DuelStage(props: Props) {
   const [fx, setFx] = useState<{ rect: Rect; src: string; origin: { x: number; y: number }; colors: string[] } | null>(null);
   const [reveal, setReveal] = useState<{ pct: number | null; total: number } | null>(null);
   const [leaving, setLeaving] = useState(false);
-  // Intro « versus » avant chaque duel ; tant qu'elle joue, le duel ne répond pas au clavier.
-  const [intro, setIntro] = useState(true);
-  const introRef = useRef(true);
+  // Intro « versus » seulement aux moments forts : premier duel de la session,
+  // premier duel de chaque tour, finale. Les autres duels s'ouvrent tout de
+  // suite (l'intro à chaque duel coûtait ~2,7 s, soit ~3 min sur un tournoi).
+  // Tant qu'elle joue, le duel ne répond pas au clavier.
+  const [intro, setIntro] = useState(() => {
+    const full = !introSeen || !!isFinal || round?.index === 1;
+    introSeen = true;
+    return full;
+  });
+  const introRef = useRef(intro);
   introRef.current = intro;
+  // Passage immédiat au duel suivant pendant le verdict (posé par choose).
+  const advance = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!picked) return;
+    // Petit délai : le clic qui a voté ne doit pas aussi sauter le verdict.
+    let on = false;
+    const t = setTimeout(() => (on = true), 350);
+    const skip = (e: PointerEvent) => {
+      if (!on || (e.target as HTMLElement | null)?.closest?.("a, [role=dialog]")) return;
+      advance.current?.();
+    };
+    window.addEventListener("pointerdown", skip);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("pointerdown", skip);
+    };
+  }, [picked]);
   // En plus : écoute alternée (C), aide des raccourcis (?), série de votes, pronostic.
   const [ab, setAb] = useState(false);
   const [help, setHelp] = useState(false);
@@ -170,12 +200,18 @@ export function DuelStage(props: Props) {
         }, 450);
       } else setReveal({ pct: null, total: 0 });
       // Lecture du verdict, puis sortie propre au tournoi et duel suivant.
-      setTimeout(() => {
-        if (!alive.current) return;
+      // Un clic ou une touche pendant le verdict y passe tout de suite.
+      let gone = false;
+      const go = () => {
+        if (gone || !alive.current) return;
+        gone = true;
+        advance.current = null;
         setLeaving(true);
         if (!reduce) whoosh(0.4);
-        setTimeout(() => alive.current && onDone(), reduce ? 200 : id.exit === "fade" ? 750 : 480);
-      }, reduce ? 1400 : 2700);
+        setTimeout(() => alive.current && onDone(), reduce ? 200 : id.exit === "fade" ? 500 : 400);
+      };
+      advance.current = go;
+      setTimeout(go, reduce ? 1000 : VERDICT_MS);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [picked, leaving, onChoose, left, right, player, reduce, meta.statsId, onDone, id.exit],
@@ -188,6 +224,11 @@ export function DuelStage(props: Props) {
       const t = e.target as HTMLElement | null;
       if (introRef.current || t?.closest?.("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key;
+      if (picked && advance.current && k !== "Tab" && k !== "Shift") {
+        e.preventDefault();
+        advance.current();
+        return;
+      }
       if (k === "a" || k === "A") choose("left");
       else if (k === "b" || k === "B") choose("right");
       else if (k === "ArrowLeft" || k === "ArrowRight") {
@@ -370,8 +411,8 @@ const EXIT = {
 } as const;
 const EXIT_T = {
   zap: { duration: 0.32, ease: [0.7, 0, 0.84, 0] },
-  spin: { duration: 0.5, ease: [0.65, 0, 0.35, 1] },
-  fade: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
+  spin: { duration: 0.4, ease: [0.65, 0, 0.35, 1] },
+  fade: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
 } as const;
 
 function PanelSlot({ side, first, children }: { side: Side; first: boolean; children: React.ReactNode }) {
