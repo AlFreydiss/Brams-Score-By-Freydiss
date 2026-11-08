@@ -7,7 +7,7 @@
   --jh-bg: #08090d;
   --jh-side: clamp(20px, 5vw, 72px);
   --jh-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --jh-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  --jh-display: "trajan-pro-3", "Cinzel", Georgia, serif;
   --jh-wear: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27260%27 height=%27260%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%273%27 seed=%277%27/%3E%3CfeColorMatrix values=%270 0 0 0 1 0 0 0 0 1 0 0 0 0 1 -9 0 0 0 6.6%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23n)%27/%3E%3C/svg%3E");
   --jh-gold: linear-gradient(180deg, #fbf3e0 0%, #efdcb2 34%, #d2ad6e 58%, #a47b42 80%, #6e4f2a 100%);
   position: relative;

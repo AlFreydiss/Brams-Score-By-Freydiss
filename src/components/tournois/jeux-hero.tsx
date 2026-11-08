@@ -7,7 +7,9 @@ import "./jeux-hero.css";
 // colonne de texte sur un voile, le nom du jeu en bas, un filet par image.
 // Rien d'autre : c'est l'image qui parle.
 
-type Slide = { id: string; game: string; pos: string; w: number };
+// video : boucle animée (cheveux, lumière, fumée) générée depuis l'image ;
+// l'image sert d'affiche le temps qu'elle charge, et de repli.
+type Slide = { id: string; game: string; pos: string; w: number; video?: string };
 
 const SLIDES: Slide[] = [
   { id: "clair-obscur", game: "Clair Obscur: Expedition 33", pos: "54% 42%", w: 2560 },
@@ -23,6 +25,20 @@ const SLIDES: Slide[] = [
 ];
 
 const HOLD = 7000;
+
+// Trajan Pro 3, la police du logo de Clair Obscur, via un web project Adobe
+// Fonts (licence de l'abonnement Adobe). Vide = Cinzel, son équivalent libre.
+const ADOBE_KIT = "";
+function useAdobeKit() {
+  useEffect(() => {
+    if (!ADOBE_KIT || document.getElementById("adobe-kit")) return;
+    const l = document.createElement("link");
+    l.id = "adobe-kit";
+    l.rel = "stylesheet";
+    l.href = `https://use.typekit.net/${ADOBE_KIT}.css`;
+    document.head.appendChild(l);
+  }, []);
+}
 
 // Mouvements de caméra, un par image (panoramique, zoom avant, zoom arrière…).
 const MOVES = [
@@ -51,6 +67,7 @@ export function JeuxHero({
   cta: string;
   base: string;
 }) {
+  useAdobeKit();
   const [i, setI] = useState(0);
   // Image qui s'en va (elle avance vers nous en se floutant).
   const [prev, setPrev] = useState<number | null>(null);
@@ -117,6 +134,20 @@ export function JeuxHero({
       <div className="jh-slides" aria-hidden>
         {SLIDES.map((s, k) =>
           mounted.has(k) ? (
+            s.video && !reduce ? (
+              <video
+                key={s.id}
+                className={`jh-slide ${k === i ? "is-on" : k === prev ? "is-off" : ""}`}
+                src={s.video}
+                poster={src(s, true)}
+                muted
+                loop
+                playsInline
+                autoPlay
+                preload={k === i ? "auto" : "metadata"}
+                style={vars(s, k)}
+              />
+            ) : (
             <img
               key={s.id}
               className={`jh-slide ${k === i ? "is-on" : k === prev ? "is-off" : ""}`}
@@ -129,6 +160,7 @@ export function JeuxHero({
               fetchPriority={k === 0 ? "high" : "low"}
               style={vars(s, k)}
             />
+            )
           ) : null,
         )}
       </div>
