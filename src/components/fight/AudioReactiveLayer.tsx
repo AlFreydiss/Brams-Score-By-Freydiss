@@ -187,7 +187,7 @@ export function AudioReactiveLayer({ id, active, player, reduce }: Props) {
           inset: 0,
           pointerEvents: "none",
           opacity: 0,
-          boxShadow: `inset 0 0 90px 6px ${id.a}66, inset 0 0 0 1.5px ${id.a}88`,
+          boxShadow: `inset 0 0 70px 0 ${id.a}40, inset 0 0 0 1px ${id.a}99`,
           transition: "opacity 120ms linear",
           zIndex: 3,
         }}
@@ -201,8 +201,6 @@ export function AudioReactiveLayer({ id, active, player, reduce }: Props) {
             inset: 0,
             pointerEvents: "none",
             zIndex: 3,
-            backgroundImage: "repeating-linear-gradient(to bottom, rgba(0,0,0,0.12) 0 1px, transparent 1px 4px)",
-            mixBlendMode: "multiply",
           }}
         />
       ) : null}

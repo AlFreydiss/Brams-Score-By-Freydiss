@@ -293,7 +293,8 @@ function createDeck(domId: string, left: number) {
       applyLevel(volume);
     },
     time(): { now: number; total: number } | null {
-      if (!player || !cue) return null;
+      // L'iframe existe avant que son API soit prête : pas encore de position à lire.
+      if (!player || !cue || typeof player.getCurrentTime !== "function" || typeof player.getDuration !== "function") return null;
       const start = cue.start || 0;
       const nowAbs = player.getCurrentTime() || 0;
       const dur = player.getDuration() || 0;

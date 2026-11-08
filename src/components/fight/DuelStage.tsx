@@ -10,9 +10,10 @@ import type { Player } from "../tournois/use-player";
 import { AudioReactiveLayer } from "./AudioReactiveLayer";
 import { impact, shatter as shatterSfx, whoosh } from "./audio/sfx";
 import { FloatingPlayer } from "./FloatingPlayer";
-import { FONT, IDENTITIES, type FightSlug, type Identity } from "./identities";
+import { EASE, FONT, IDENTITIES, LINE, LINE_2, PANEL, type FightSlug, type Identity } from "./identities";
 import { dominantColors } from "./palette";
-import { CommunityReveal, Confetti, Flash, Shatter, type Rect } from "./VoteShatter";
+import { CommunityReveal, Confetti, Shatter, type Rect } from "./VoteShatter";
+import { VersusIntro } from "./VersusIntro";
 
 // Duel « Fight Night » (OST, openings, endings). Deux panneaux en vrai 50/50 ;
 // celui qu'on écoute ou survole s'étend (62/38) et l'autre se désature. Au
@@ -32,7 +33,7 @@ type Props = {
 
 const KEY: Record<Side, string> = { left: "A", right: "B" };
 const OTHER: Record<Side, Side> = { left: "right", right: "left" };
-const imgOf = (p: Participant) => (p.visual.k === "img" ? p.visual.src : p.thumb);
+const imgOf = (p: Participant) => (p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
 
 function useNarrow() {
   const [n, setN] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches);
@@ -60,6 +61,10 @@ export function DuelStage(props: Props) {
   const [fx, setFx] = useState<{ rect: Rect; src: string; origin: { x: number; y: number }; colors: string[] } | null>(null);
   const [reveal, setReveal] = useState<{ pct: number | null; total: number } | null>(null);
   const [leaving, setLeaving] = useState(false);
+  // Intro « versus » avant chaque duel ; tant qu'elle joue, le duel ne répond pas au clavier.
+  const [intro, setIntro] = useState(true);
+  const introRef = useRef(true);
+  introRef.current = intro;
   const shownAt = useRef(performance.now());
   const colors = useRef<Record<Side, string[]>>({ left: [id.a, id.b, id.ink], right: [id.a, id.b, id.ink] });
   const alive = useRef(true);
@@ -90,10 +95,6 @@ export function DuelStage(props: Props) {
     return () => window.removeEventListener("resize", fit);
   }, []);
 
-  // Entrée : souffle des deux panneaux qui arrivent.
-  useEffect(() => {
-    if (!reduce) whoosh(0.5);
-  }, [reduce]);
 
   // Au démontage, le duel coupe sa propre piste.
   const live = useRef(player);
@@ -124,7 +125,7 @@ export function DuelStage(props: Props) {
 
   const choose = useCallback(
     (side: Side) => {
-      if (picked || leaving) return;
+      if (picked || leaving || introRef.current) return;
       const ok = onChoose(side, Math.round(performance.now() - shownAt.current));
       if (!ok) return;
       const loser = OTHER[side];
@@ -173,7 +174,7 @@ export function DuelStage(props: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      if (t?.closest?.("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (introRef.current || t?.closest?.("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key;
       if (k === "a" || k === "A") choose("left");
       else if (k === "b" || k === "B") choose("right");
@@ -207,7 +208,8 @@ export function DuelStage(props: Props) {
         height: "calc(100dvh - 120px)",
         minHeight: 540,
         overflow: "hidden",
-        background: id.bg,
+        // Une seule lueur d'ambiance, à la couleur du tournoi, très basse.
+        background: `radial-gradient(70% 55% at 50% -10%, ${id.a}1f, transparent 70%), ${id.bg}`,
         color: id.ink,
         fontFamily: FONT.body,
         userSelect: "none",
@@ -217,7 +219,7 @@ export function DuelStage(props: Props) {
       {narrow ? (
         <Deck {...{ left, right, id, player, picked, blind: !!blind, masked, listen, choose, reduce }} />
       ) : (
-        <div style={{ display: "flex", height: "100%" }}>
+        <div style={{ display: "flex", gap: 7, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box" }}>
           {(["left", "right"] as const).map((side) => (
             <PanelSlot key={side} side={side} first={side === "left"}>
               <Panel
@@ -243,39 +245,24 @@ export function DuelStage(props: Props) {
         </div>
       )}
 
-      {/* Bandeau broadcast du round, en haut au centre. */}
+      {/* En-tête : étiquette du tournoi et du round, filet de progression. */}
       <motion.div
-        initial={reduce ? false : { x: "-120%" }}
-        animate={{ x: 0, transition: { type: "spring", bounce: 0.2, duration: 0.8, delay: 0.25 } }}
-        style={{
-          position: "absolute",
-          top: 18,
-          left: 0,
-          zIndex: 24,
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "9px 18px 9px 20px",
-          background: id.ink,
-          color: id.bg,
-          fontFamily: FONT.display,
-          fontWeight: 800,
-          fontSize: 13,
-          letterSpacing: "0.04em",
-          textTransform: "uppercase",
-          clipPath: "polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)",
-        }}
+        initial={reduce ? false : { opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE, delay: 0.2 } }}
+        style={{ position: "absolute", top: 22, left: 24, zIndex: 24, display: "grid", gap: 10 }}
       >
-        <span style={{ width: 8, height: 8, borderRadius: 999, background: id.a }} aria-hidden />
-        {id.name}
-        <span style={{ opacity: 0.55 }}>|</span>
-        {roundLabel}
+        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.mute }}>
+          <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
+          {id.name}
+          <span aria-hidden style={{ width: 3, height: 3, borderRadius: 999, background: id.mute }} />
+          <span style={{ color: id.ink }}>{roundLabel}</span>
+        </p>
+        {round ? (
+          <span aria-hidden style={{ display: "block", width: 180, height: 1, background: LINE_2, overflow: "hidden" }}>
+            <motion.i initial={false} animate={{ scaleX: round.progress }} transition={{ duration: 1, ease: EASE }} style={{ display: "block", height: "100%", background: id.a, transformOrigin: "left" }} />
+          </span>
+        ) : null}
       </motion.div>
-      {round ? (
-        <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.08)", zIndex: 24 }}>
-          <motion.i initial={false} animate={{ scaleX: round.progress }} transition={{ type: "spring", bounce: 0, duration: 1 }} style={{ display: "block", height: "100%", background: id.a, transformOrigin: "left" }} />
-        </div>
-      ) : null}
 
       {/* Raccourcis visibles, en haut à droite. */}
       <div style={{ position: "absolute", top: 16, right: 18, zIndex: 24, display: "flex", alignItems: "center", gap: 6 }}>
@@ -306,11 +293,11 @@ export function DuelStage(props: Props) {
         {fx ? (
           <>
             <Shatter key="sh" rect={fx.rect} src={fx.src} reduce={reduce} />
-            {!reduce ? <Flash key="fl" /> : null}
             {!reduce ? <Confetti key="cf" origin={fx.origin} colors={fx.colors} /> : null}
           </>
         ) : null}
       </AnimatePresence>
+      <AnimatePresence>{intro ? <VersusIntro key="intro" left={left} right={right} id={id} roundLabel={roundLabel} blind={!!blind} reduce={reduce} onDone={() => setIntro(false)} /> : null}</AnimatePresence>
       {reveal ? <CommunityReveal pct={reveal.pct} total={reveal.total} ink={id.ink} mute={id.mute} accent={id.a} reduce={reduce} /> : null}
 
       {!picked ? (
@@ -357,10 +344,9 @@ function Divider() {
   const id = IDENTITIES[meta.slug as FightSlug];
   return (
     <div style={{ position: "relative", width: 0, zIndex: 12 }} aria-hidden>
-      <div style={{ position: "absolute", top: 0, bottom: 0, left: -1, width: 2, background: `linear-gradient(to bottom, transparent, ${id.ink}55 30%, ${id.ink}55 70%, transparent)` }} />
       <motion.div
-        initial={{ scale: 2.4, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1, transition: { type: "spring", bounce: 0.45, duration: 0.7, delay: 0.35 } }}
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1, transition: { duration: 0.7, ease: EASE, delay: 0.3 } }}
         style={{
           position: "absolute",
           top: "50%",
@@ -368,15 +354,15 @@ function Divider() {
           translate: "-50% -50%",
           display: "grid",
           placeItems: "center",
-          width: 64,
-          height: 64,
+          width: 46,
+          height: 46,
           borderRadius: 999,
-          background: id.bg,
-          boxShadow: `0 0 0 1.5px ${id.ink}, 0 0 40px ${id.a}66`,
-          fontFamily: FONT.display,
-          fontWeight: 800,
-          fontSize: 20,
-          letterSpacing: "-0.02em",
+          background: PANEL,
+          boxShadow: `0 0 0 1px ${LINE_2}, 0 10px 30px -10px rgba(0,0,0,0.8)`,
+          fontFamily: FONT.body,
+          fontWeight: 600,
+          fontSize: 11,
+          letterSpacing: "0.14em",
           color: id.ink,
         }}
       >
@@ -418,22 +404,22 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
   const my = useMotionValue(0);
   const sx = useSpring(mx, { stiffness: 140, damping: 20 });
   const sy = useSpring(my, { stiffness: 140, damping: 20 });
-  const rotY = useTransform(sx, (v) => v * 3.2);
-  const rotX = useTransform(sy, (v) => -v * 2.4);
-  const bgX = useTransform(sx, (v) => v * -16);
-  const bgY = useTransform(sy, (v) => v * -10);
-  const txX = useTransform(sx, (v) => v * 12);
-  const txY = useTransform(sy, (v) => v * 8);
+  const rotY = useTransform(sx, (v) => v * 2);
+  const rotX = useTransform(sy, (v) => -v * 1.5);
+  const bgX = useTransform(sx, (v) => v * -10);
+  const bgY = useTransform(sy, (v) => v * -6);
+  const txX = useTransform(sx, (v) => v * 6);
+  const txY = useTransform(sy, (v) => v * 4);
 
   return (
     <motion.div
       ref={refEl}
-      initial={reduce ? false : { x: side === "left" ? "-40%" : "40%", opacity: 0 }}
-      animate={{ x: 0, opacity: lose ? 0 : 1, flexGrow: grow }}
+      initial={reduce ? false : { y: 28, opacity: 0 }}
+      animate={{ y: 0, opacity: lose ? 0 : 1, flexGrow: grow }}
       transition={{
-        x: { type: "spring", bounce: 0.32, duration: 0.85 },
-        opacity: lose ? { duration: 0.01 } : { duration: 0.4 },
-        flexGrow: { type: "spring", bounce: picked ? 0.15 : 0, duration: picked ? 0.9 : 0.7 },
+        y: { duration: 0.9, ease: EASE, delay: side === "left" ? 0.05 : 0.15 },
+        opacity: lose ? { duration: 0.01 } : { duration: 0.6, ease: EASE },
+        flexGrow: { duration: picked ? 0.9 : 0.75, ease: EASE },
       }}
       onPointerEnter={(e) => e.pointerType === "mouse" && onHover(side)}
       onPointerLeave={() => {
@@ -447,7 +433,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
         mx.set(((e.clientX - r.left) / r.width) * 2 - 1);
         my.set(((e.clientY - r.top) / r.height) * 2 - 1);
       }}
-      style={{ position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer" }}
+      style={{ position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", borderRadius: 16, background: PANEL, boxShadow: `0 0 0 1px ${LINE}` }}
       onClick={() => !picked && onListen(side)}
       role="group"
       aria-label={`${id.sides[side === "left" ? 0 : 1]} : ${masked(p)}`}
@@ -480,17 +466,18 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
         <motion.div
           style={{
             position: "absolute",
-            left: "clamp(24px, 3.4vw, 56px)",
-            right: "clamp(24px, 3.4vw, 56px)",
-            bottom: "clamp(108px, 15vh, 150px)",
+            left: "clamp(22px, 2.6vw, 40px)",
+            right: "clamp(22px, 2.6vw, 40px)",
+            bottom: "clamp(22px, 3.4vh, 36px)",
             display: "grid",
-            gap: 12,
+            gap: 10,
             x: txX,
             y: txY,
             zIndex: 6,
           }}
         >
-          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontSize: 13, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: id.a }}>
+          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.mute }}>
+            <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
             {id.sides[side === "left" ? 0 : 1]}
             {playing ? <EqBars color={id.a} /> : null}
           </p>
@@ -498,10 +485,10 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
             style={{
               margin: 0,
               fontFamily: FONT.display,
-              fontWeight: 800,
-              fontSize: p.title.length > 22 ? "clamp(30px, 3.6vw, 60px)" : "clamp(38px, 4.6vw, 84px)",
-              lineHeight: 0.95,
-              letterSpacing: "-0.04em",
+              fontWeight: 700,
+              fontSize: p.title.length > 22 ? "clamp(24px, 2.4vw, 40px)" : "clamp(30px, 3.1vw, 54px)",
+              lineHeight: 1.02,
+              letterSpacing: "-0.03em",
               color: id.ink,
               textWrap: "balance",
               overflowWrap: "break-word",
@@ -509,22 +496,22 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
           >
             {masked(p)}
           </h2>
-          <p style={{ margin: 0, fontSize: 15.5, color: id.ink, opacity: 0.82 }}>{hidden ? "Titre caché jusqu'à ton choix" : [p.sub, p.note, p.artist].filter(Boolean).join(" — ")}</p>
+          <p style={{ margin: 0, fontSize: 14, color: id.mute }}>{hidden ? "Titre caché jusqu'à ton choix" : [p.sub, p.note, p.artist].filter(Boolean).join(" — ")}</p>
           {win ? (
             <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transition: { type: "spring", bounce: 0.3, duration: 0.6, delay: 0.2 } }}
-              style={{ margin: "6px 0 0", fontFamily: FONT.display, fontWeight: 800, fontSize: 18, color: id.a }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE, delay: 0.2 } }}
+              style={{ margin: "4px 0 0", display: "flex", alignItems: "center", gap: 10, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.a }}
             >
+              <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
               {isFinal ? championLabel : "Passe au tour suivant"}
             </motion.p>
           ) : null}
           {!picked ? (
-            <div style={{ display: "flex", gap: 10, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.92 }}
+                whileTap={{ scale: 0.94 }}
                 onClick={() => onListen(side)}
                 disabled={player.failed.has(p.id)}
                 aria-pressed={playing}
@@ -532,44 +519,44 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
                 style={{
                   display: "grid",
                   placeItems: "center",
-                  width: 54,
-                  height: 54,
+                  width: 44,
+                  height: 44,
                   border: 0,
                   borderRadius: 999,
-                  background: playing ? id.a : "rgba(255,255,255,0.14)",
-                  backdropFilter: "blur(14px)",
-                  boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.22)",
+                  background: playing ? id.ink : "rgba(8,9,13,0.55)",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: `inset 0 0 0 1px ${playing ? id.ink : LINE_2}`,
                   color: playing ? id.bg : id.ink,
                   cursor: "pointer",
+                  transition: "background-color 0.25s, color 0.25s",
                 }}
               >
-                {loaded && player.loading ? <Spinner /> : playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+                {loaded && player.loading ? <Spinner /> : playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
               </motion.button>
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.94 }}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => onChoose(side)}
                 aria-label={`Garder ${masked(p)}`}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 14,
-                  height: 54,
-                  padding: "0 12px 0 26px",
+                  gap: 12,
+                  height: 44,
+                  padding: "0 8px 0 20px",
                   border: 0,
                   borderRadius: 999,
-                  background: id.ink,
+                  background: id.a,
                   color: id.bg,
-                  fontFamily: FONT.display,
-                  fontWeight: 800,
-                  fontSize: 17,
-                  letterSpacing: "-0.01em",
+                  fontFamily: FONT.body,
+                  fontWeight: 600,
+                  fontSize: 14,
                   cursor: "pointer",
                 }}
               >
                 Garder
-                <span style={{ display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: 8, background: id.bg, color: id.ink, fontSize: 13 }}>{KEY[side]}</span>
+                <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, borderRadius: 999, background: "rgba(8,9,13,0.18)", fontSize: 11.5, fontWeight: 600 }}>{KEY[side]}</span>
               </motion.button>
             </div>
           ) : null}

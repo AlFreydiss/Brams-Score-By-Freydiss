@@ -134,7 +134,7 @@ export function Confetti({ origin, colors, delay = 320 }: { origin: { x: number;
     c.width = r.width * dpr;
     c.height = r.height * dpr;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const parts = Array.from({ length: 150 }, () => {
+    const parts = Array.from({ length: 70 }, () => {
       const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.25;
       const v = 7 + Math.random() * 11;
       return {
@@ -221,9 +221,9 @@ export function CommunityReveal({ pct, total, ink, mute, accent, reduce }: { pct
         padding: "18px 26px 20px",
         minWidth: "min(420px, calc(100vw - 32px))",
         borderRadius: 18,
-        background: "rgba(8,8,10,0.78)",
+        background: "rgba(14,16,20,0.9)",
         backdropFilter: "blur(18px)",
-        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.12), 0 30px 80px -30px rgba(0,0,0,0.9)",
+        boxShadow: "inset 0 0 0 1px rgba(244,242,236,0.12), 0 30px 80px -30px rgba(0,0,0,0.9)",
         color: ink,
         textAlign: "center",
         pointerEvents: "none",
@@ -233,7 +233,7 @@ export function CommunityReveal({ pct, total, ink, mute, accent, reduce }: { pct
         <p style={{ margin: 0, fontFamily: FONT.display, fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em" }}>Premier vote sur ce duel</p>
       ) : (
         <>
-          <p style={{ margin: 0, fontFamily: FONT.display, fontWeight: 800, fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 1, letterSpacing: "-0.04em" }}>
+          <p style={{ margin: 0, fontFamily: FONT.display, fontWeight: 700, fontSize: "clamp(36px, 4vw, 52px)", lineHeight: 1, letterSpacing: "-0.035em" }}>
             <span ref={num}>0</span>
             <span style={{ fontSize: "0.5em", marginLeft: 4 }}>%</span>
           </p>
