@@ -32,7 +32,8 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
     if (!ready.length) return null;
     const rnd = seeded(Number(day.replace(/-/g, "")));
     const pool = ready[Math.floor(rnd() * ready.length)];
-    const list = pool.list.filter((p) => p.sound?.k === "video" || p.sound?.k === "audio");
+    // Sons lisibles ici : vidéo du site, extrait audio, ou YouTube avec son extrait de secours.
+    const list = pool.list.filter((p) => p.sound?.k === "video" || p.sound?.k === "audio" || (p.sound?.k === "youtube" && !!p.sound.fallback));
     const a = list[Math.floor(rnd() * list.length)];
     let b = list[Math.floor(rnd() * list.length)];
     for (let k = 0; b.id === a.id && k < 8; k++) b = list[Math.floor(rnd() * list.length)];
@@ -66,7 +67,7 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
     media.current?.pause();
     if (playing === p.id) return setPlaying(null);
     const el = p.visual.k === "video" ? Object.assign(document.createElement("video"), { crossOrigin: "anonymous" }) : new Audio();
-    el.src = p.visual.k === "video" ? p.visual.src : p.sound?.k === "audio" ? p.sound.src : "";
+    el.src = p.visual.k === "video" ? p.visual.src : p.sound?.k === "audio" ? p.sound.src : p.sound?.k === "youtube" ? (p.sound.fallback ?? "") : "";
     const start = p.sound?.k === "video" ? (p.sound.hook ?? 0) : 0;
     el.addEventListener("loadedmetadata", () => (el.currentTime = start), { once: true });
     el.volume = 0.7;
