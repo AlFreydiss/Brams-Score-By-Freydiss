@@ -202,3 +202,13 @@ export function gameTheme(game: string | undefined): GameTheme {
   loadFont(t.gf);
   return t;
 }
+
+/** Couleur du nom du jeu : la couleur de l'univers, sauf si elle est trop sombre pour être lue sur le noir. */
+export function labelColor(t: GameTheme) {
+  const v = parseInt(t.accent.slice(1), 16);
+  const [r, g, b] = [(v >> 16) & 255, (v >> 8) & 255, v & 255].map((c) => {
+    const x = c / 255;
+    return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.16 ? t.mute : t.accent;
+}

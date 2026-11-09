@@ -1,4 +1,4 @@
-import { Network, Pause, Play, RotateCcw } from "lucide-react";
+import { Maximize2, Minimize2, Network, Pause, Play, RotateCcw } from "lucide-react";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue, type PanInfo } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -9,7 +9,7 @@ import { useTournament } from "../tournois/provider";
 import type { Player } from "../tournois/use-player";
 import { AudioReactiveLayer } from "./AudioReactiveLayer";
 import { fadeVoice, impact, shatter as shatterSfx, voteVoice, whoosh } from "./audio/sfx";
-import { gameTheme, type GameTheme } from "./jeux-themes";
+import { gameTheme, labelColor } from "./jeux-themes";
 import { GameAura } from "./GameAura";
 import { FloatingPlayer } from "./FloatingPlayer";
 import { EASE, FONT, IDENTITIES, LINE, LINE_2, PANEL, type FightSlug, type Identity } from "./identities";
@@ -155,7 +155,25 @@ export function DuelStage(props: Props) {
     };
     fit();
     window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
+    document.addEventListener("fullscreenchange", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+      document.removeEventListener("fullscreenchange", fit);
+    };
+  }, []);
+
+  // Plein écran (bouton ou touche F) : le duel seul, sans les barres du site ni du tournoi.
+  const [full, setFull] = useState(() => typeof document !== "undefined" && !!document.fullscreenElement);
+  useEffect(() => {
+    const on = () => setFull(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", on);
+    return () => document.removeEventListener("fullscreenchange", on);
+  }, []);
+  const toggleFull = useCallback(() => {
+    const el = stage.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else el.requestFullscreen?.().catch(() => {});
   }, []);
 
 
@@ -295,12 +313,13 @@ export function DuelStage(props: Props) {
         onUndo();
       } else if (k === "t" || k === "T") navigate(`/tournoi/${meta.path}/tableau`);
       else if ((k === "c" || k === "C") && !picked) setAb((v) => !v);
+      else if (k === "f" || k === "F") toggleFull();
       else if (k === "?") setHelp((v) => !v);
       else if (k === "Escape") setHelp(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choose, listen, focus, audible, canUndo, onUndo, picked, navigate, meta.path]);
+  }, [choose, listen, focus, audible, canUndo, onUndo, picked, navigate, meta.path, toggleFull]);
 
   useAlternate(ab && !picked && !intro, player, left, right, setKbd);
 
@@ -426,6 +445,9 @@ export function DuelStage(props: Props) {
         <Link to={`/tournoi/${meta.path}/tableau`} aria-label="Tableau du tournoi" style={chipStyle(id)}>
           <Network size={15} />
         </Link>
+        <Chip id={id} onClick={toggleFull} label={full ? "Quitter le plein écran (F)" : "Plein écran (F)"}>
+          {full ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </Chip>
       </div>
 
       <AnimatePresence>
@@ -670,7 +692,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
             zIndex: 6,
           }}
         >
-          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? th.accent : id.mute }}>
+          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? labelColor(th) : id.mute }}>
             <span aria-hidden style={{ width: 18, height: th?.id === "pixel" ? 4 : 1, background: th ? th.accent : id.a }} />
             {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]}
             {playing ? <EqBars color={id.a} /> : null}
@@ -966,7 +988,7 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
       <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: passGlow, background: `linear-gradient(to right, ${id.b}aa, transparent 55%)` }} />
       {th && !hidden ? <GameAura kind={th.aura} accent={th.accent} active={player.id === p.id} zIndex={5} /> : null}
       <div style={{ ...vars, position: "absolute", left: 20, right: 20, bottom: 20, display: "grid", gap: 8, zIndex: 6 } as React.CSSProperties}>
-        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(11 * Math.min(1, th.scale + 0.25)) : 12, fontWeight: th ? th.weight : 600, letterSpacing: th ? (th.id === "pixel" ? "0.04em" : "0.2em") : "0.06em", textTransform: "uppercase", color: th ? th.accent : id.a }}>
+        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(11 * Math.min(1, th.scale + 0.25)) : 12, fontWeight: th ? th.weight : 600, letterSpacing: th ? (th.id === "pixel" ? "0.04em" : "0.2em") : "0.06em", textTransform: "uppercase", color: th ? labelColor(th) : id.a }}>
           {th && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]} {playing ? (th ? <EqBars color={th.accent} /> : "— en écoute") : ""}
         </p>
         {th ? (

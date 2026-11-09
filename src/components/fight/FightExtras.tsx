@@ -95,6 +95,7 @@ export function ShortcutsPanel({ open, onClose, id, alternate }: { open: boolean
     ...(alternate ? ([["C", "Écoute alternée A puis B, 7 s chacun"]] as [string, string][]) : []),
     ["Retour arrière", "Annuler le dernier choix"],
     ["T", "Ouvrir le tableau"],
+    ["F", "Plein écran"],
     ["?", "Afficher ou masquer cette aide"],
   ];
   return (
