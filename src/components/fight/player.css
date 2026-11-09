@@ -267,21 +267,52 @@
   background: #fff;
 }
 
+/* Mobile : capsule compacte (le deck de cartes est juste au-dessus) : pochette,
+   titre, piste, lecture. Ni sauts de 10 s, ni volume, ni rappel des touches. */
 @media (max-width: 760px) {
   .fp {
-    grid-template-columns: 44px minmax(0, 1fr) auto;
-    gap: 12px;
+    bottom: 10px;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 6px 8px 6px 6px;
+    border-radius: 16px;
   }
   .fp-art {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
   }
-  .fp-vol {
+  .fp-vol,
+  .fp .fp-ctrl .fp-btn.fp-btn,
+  .fp-title-in em:has(kbd) {
     display: none;
+  }
+  .fp-mid {
+    gap: 2px;
+  }
+  .fp-wave {
+    height: 20px;
+  }
+  .fp .fp-play.fp-play {
+    width: 40px;
+    height: 40px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .fp.is-playing .fp-art {
     animation: none;
+  }
+}
+
+/* Consigne selon l'appareil : survol à la souris, bouton au doigt. */
+.fp-hint-touch {
+  display: none;
+}
+@media (hover: none) {
+  .fp-hint-mouse {
+    display: none;
+  }
+  .fp-hint-touch {
+    display: inline;
   }
 }

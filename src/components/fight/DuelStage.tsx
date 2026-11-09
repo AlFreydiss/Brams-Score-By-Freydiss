@@ -397,7 +397,7 @@ export function DuelStage(props: Props) {
       <motion.div
         initial={reduce ? false : { opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE, delay: 0.2 } }}
-        style={{ position: "absolute", top: narrow ? 16 : 22, left: narrow ? 16 : 24, right: narrow ? 150 : undefined, zIndex: 24, display: "grid", gap: 10 }}
+        style={{ position: "absolute", top: narrow ? 16 : 22, left: narrow ? 16 : 24, right: narrow ? 196 : undefined, zIndex: 24, display: "grid", gap: 10 }}
       >
         <p style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: narrow ? 6 : 10, fontFamily: FONT.body, fontSize: narrow ? 10 : 11, fontWeight: 600, letterSpacing: narrow ? "0.14em" : "0.22em", textTransform: "uppercase", color: id.mute }}>
           <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />

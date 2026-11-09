@@ -152,7 +152,7 @@ export function FloatingPlayer({ id, player, playing, ready, readyKey, masked, o
               exit={{ opacity: 0, y: -6, filter: "blur(3px)", transition: { duration: 0.15 } }}
               className="fp-title-in"
             >
-              <b>{shown ? masked(shown) : "Survole un côté pour l'écouter"}</b>
+              <b>{shown ? masked(shown) : <><span className="fp-hint-mouse">Survole un côté pour l'écouter</span><span className="fp-hint-touch">Appuie sur lecture pour écouter</span></>}</b>
               <em>
                 {playing
                   ? hideArt

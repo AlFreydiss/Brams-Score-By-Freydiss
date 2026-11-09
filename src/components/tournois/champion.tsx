@@ -7,6 +7,9 @@ import type { Participant } from "@/lib/tournois/types";
 import { useTournament } from "./provider";
 import { Thumb, Visual } from "./visual";
 import { shareChampionCard } from "../fight/shareCard";
+import { bgOf, type Bg } from "../fight/jeux-art";
+import { gameTheme } from "../fight/jeux-themes";
+import "../fight/jeux-themes.css";
 
 // Couleur de chaque univers sur la carte partagée (mêmes que fight/identities.ts).
 const ACCENTS: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#8fb2ff" };
@@ -59,6 +62,10 @@ export function Champion() {
   if (!run || !champ) return null;
   const audio = meta.mode === "audio";
   const playing = player.id === champ.id && player.playing;
+  // Jeux : le fond 4K de la piste et l'univers de son jeu (police, encre, entrée).
+  const jeux = meta.slug === "jeux";
+  const bg = jeux ? bgOf(champ as Participant & { bg?: Bg }) : null;
+  const th = jeux ? gameTheme(champ.sub) : null;
 
   const copy = async () => {
     const lines = [`Mon top ${meta.title} sur Brams Community :`, ...top.slice(0, 4).map((r) => `${r.rank}. ${r.p.title} (${r.p.sub ?? r.p.group})`)];
@@ -77,17 +84,31 @@ export function Champion() {
     ) : null;
 
   return (
-    <div className="t-champ">
+    <div className={`t-champ ${jeux ? "t-champ--jeux" : ""}`} style={th ? ({ "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow } as React.CSSProperties) : undefined}>
       <div className="t-champ-hero">
         <div className="t-champ-media">
-          <Visual p={champ} posterAt={meta.posterAt} alt="" sizes="100vw" />
+          {bg && !bg.video ? (
+            <img className="t-champ-bg" src={bg.src} srcSet={bg.hi ? `${bg.src} 1920w, ${bg.hi} 3840w` : undefined} sizes="100vw" alt="" style={{ objectPosition: bg.pos }} />
+          ) : bg?.video ? (
+            <video className="t-champ-bg" src={bg.video} poster={bg.src} muted loop autoPlay playsInline style={{ objectPosition: bg.pos }} />
+          ) : (
+            <Visual p={champ} posterAt={meta.posterAt} alt="" sizes="100vw" />
+          )}
         </div>
         <div className="t-champ-txt">
           <p className="t-kept">
             {meta.championLabel}, sur {run.size} {meta.unit}
           </p>
           <p className="t-sub">{champ.sub}</p>
-          <h1 className={`t-title ${champ.title.length > 24 ? "is-long" : ""}`}>{champ.title}</h1>
+          <h1 className={`t-title ${champ.title.length > 24 ? "is-long" : ""}`} style={th ? { fontFamily: th.font, fontWeight: th.weight, letterSpacing: `${th.track}em`, textTransform: th.upper ? "uppercase" : "none" } : undefined}>
+            {th
+              ? champ.title.split(" ").map((w, k, all) => (
+                  <span key={k} className={`jg-e jg-in--${th.entry}`} style={{ animationDelay: `${0.5 + k * 0.08}s`, marginRight: k < all.length - 1 ? "0.26em" : 0 }}>
+                    <span className={`jg-w ${th.ink.startsWith("linear") ? "is-grad" : "is-solid"}`}>{w}</span>
+                  </span>
+                ))
+              : champ.title}
+          </h1>
           {champ.artist ? <p className="t-artist">{champ.artist}</p> : null}
           <div className="t-ctrl">
             {audio ? (

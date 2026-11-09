@@ -229,3 +229,170 @@
 .nx-root[data-t="jeux"] .t-page ul li::marker {
   color: #d2ad6e;
 }
+
+/* Mobile : la barre garde ses onglets (défilables), « Tous les tournois » part
+   comme sur les autres tournois ; les outils du duel sans capsule (place). */
+@media (max-width: 760px) {
+  .nx-root[data-t="jeux"] .t-all {
+    display: none;
+  }
+  .nx-root[data-t="jeux"] .t-subnav {
+    height: 50px;
+    gap: 14px;
+  }
+  .nx-root[data-t="jeux"] .t-brand {
+    flex: none;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    gap: 9px;
+  }
+  .nx-root[data-t="jeux"] .t-subnav-links a {
+    padding: 6px 9px;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+  }
+  .nx-root[data-t="jeux"] .t-sub-ind {
+    bottom: -1px;
+  }
+  .jx-tools {
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+}
+
+/* Fin de tour (recap.tsx) : les affiches du tour suivant, gravées. */
+.nx-root[data-t="jeux"] .t-recap-box .t-eyebrow {
+  font: 400 12px "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #d2ad6e;
+}
+.nx-root[data-t="jeux"] .t-recap-title {
+  font: 400 clamp(36px, 4.6vw, 72px) / 1.04 "trajan-pro-3", "Cinzel", Georgia, serif !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: transparent !important;
+  background: linear-gradient(180deg, #fbf3e0 0%, #e9cf98 48%, #a77c3c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.nx-root[data-t="jeux"] :is(.t-recap-x, .t-recap-vs i) {
+  font: 400 10.5px "trajan-pro-3", "Cinzel", Georgia, serif;
+  font-style: normal;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #d2ad6e;
+}
+.nx-root[data-t="jeux"] .t-recap-pairs > li {
+  border-color: rgba(210, 173, 110, 0.16) !important;
+}
+/* Bouton « Continuer » : le cartouche d'or du duel. */
+.nx-root[data-t="jeux"] .t-recap-box .t-go {
+  height: 52px;
+  padding: 0 30px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(22, 16, 9, 0.5), rgba(8, 6, 4, 0.72));
+  /* !important : l'écran de la finale (.t-recap--final) force une encre sombre. */
+  color: #f1dcab !important;
+  font: 400 12.5px "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(241, 220, 171, 0.6), inset 0 -1px 0 rgba(241, 220, 171, 0.6);
+  transition: background-color 0.3s ease, color 0.3s ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) {
+  .nx-root[data-t="jeux"] .t-recap-box .t-go:hover {
+    background: linear-gradient(180deg, #fbf0d2 0%, #e6c98e 55%, #b98d4c 100%);
+    color: #1a1208 !important;
+  }
+}
+.nx-root[data-t="jeux"] .t-recap-box .t-go:active {
+  transform: scale(0.97);
+}
+
+/* ── Champion du tournoi jeux (champion.tsx) ───────────────────────── */
+.t-champ--jeux .t-champ-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  animation: tc-drift 30s ease-in-out infinite alternate;
+}
+@keyframes tc-drift {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1.12) translate3d(-1.2%, -1%, 0);
+  }
+}
+.nx-root .t-champ--jeux .t-kept {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  font: 400 12px "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #f1dcab;
+  text-decoration: none;
+}
+.nx-root .t-champ--jeux .t-kept::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: #d2ad6e;
+  box-shadow: 0 0 12px rgba(210, 173, 110, 0.8);
+}
+.nx-root .t-champ--jeux .t-sub {
+  font: 400 12px "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--jg-accent);
+}
+.nx-root .t-champ--jeux .t-title {
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.55)) drop-shadow(0 14px 40px rgba(0, 0, 0, 0.6));
+}
+.nx-root .t-champ--jeux .t-ctrl :is(.t-btn--play, .t-choose) {
+  height: 50px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(22, 16, 9, 0.5), rgba(8, 6, 4, 0.72));
+  backdrop-filter: blur(8px);
+  color: #f1dcab !important;
+  font: 400 12px "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(241, 220, 171, 0.55), inset 0 -1px 0 rgba(241, 220, 171, 0.55);
+  transition: background-color 0.3s ease, color 0.3s ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) {
+  .nx-root .t-champ--jeux .t-ctrl :is(.t-btn--play, .t-choose):hover {
+    background: linear-gradient(180deg, #fbf0d2 0%, #e6c98e 55%, #b98d4c 100%);
+    color: #1a1208 !important;
+  }
+}
+.nx-root .t-champ--jeux .t-ctrl :is(.t-btn--play, .t-choose):active {
+  transform: scale(0.97);
+}
+.nx-root .t-champ--jeux .t-champ-sec h2 {
+  font-family: "trajan-pro-3", "Cinzel", Georgia, serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: #ead3a0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-champ--jeux .t-champ-bg {
+    animation: none;
+  }
+}
