@@ -467,7 +467,7 @@ export function DuelStage(props: Props) {
       <AnimatePresence>{intro ? <VersusIntro key="intro" left={left} right={right} id={id} roundLabel={roundLabel} blind={!!blind} reduce={reduce} onDone={() => setIntro(false)} /> : null}</AnimatePresence>
       <AnimatePresence>{burst ? <StreakBurst key="burst" n={burst} id={id} /> : null}</AnimatePresence>
       <ShortcutsPanel open={help} onClose={() => setHelp(false)} id={id} alternate />
-      {!narrow ? <StageCursor id={id} host={stage} /> : null}
+      {!narrow ? <StageCursor id={id} host={stage} tint={jeux && focus ? gameTheme((focus === "left" ? left : right).sub).accent : undefined} /> : null}
       {reveal ? <CommunityReveal pct={reveal.pct} total={reveal.total} ink={id.ink} mute={id.mute} accent={id.a} reduce={reduce} /> : null}
 
       {!picked ? (

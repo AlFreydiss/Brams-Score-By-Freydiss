@@ -133,11 +133,12 @@ export function ShortcutsPanel({ open, onClose, id, alternate }: { open: boolean
 // ── Curseur du tournoi ───────────────────────────────────────────────
 // Un anneau fin qui suit la souris avec un léger retard et s'ouvre au-dessus
 // de ce qui se clique. Le vrai curseur reste visible (accessibilité).
-export function StageCursor({ id, host }: { id: Identity; host: React.RefObject<HTMLElement | null> }) {
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  const sx = useSpring(x, { stiffness: 500, damping: 40, mass: 0.6 });
-  const sy = useSpring(y, { stiffness: 500, damping: 40, mass: 0.6 });
+export function StageCursor({ id, host, tint }: { id: Identity; host: React.RefObject<HTMLElement | null>; tint?: string }) {
+  const x = useMotionValue(-1000);
+  const y = useMotionValue(-1000);
+  // Ressort mou : la lueur traîne un peu derrière la souris, comme une lanterne qu'on porte.
+  const sx = useSpring(x, { stiffness: 120, damping: 22, mass: 0.8 });
+  const sy = useSpring(y, { stiffness: 120, damping: 22, mass: 0.8 });
   const [on, setOn] = useState(false);
   const [hot, setHot] = useState(false);
   useEffect(() => {
@@ -147,7 +148,7 @@ export function StageCursor({ id, host }: { id: Identity; host: React.RefObject<
       const r = el.getBoundingClientRect();
       x.set(e.clientX - r.left);
       y.set(e.clientY - r.top);
-      setHot(!!(e.target as HTMLElement | null)?.closest?.("button, a, [role=group]"));
+      setHot(!!(e.target as HTMLElement | null)?.closest?.("button, a"));
     };
     const enter = () => setOn(true);
     const leave = () => setOn(false);
@@ -160,15 +161,15 @@ export function StageCursor({ id, host }: { id: Identity; host: React.RefObject<
       el.removeEventListener("pointerleave", leave);
     };
   }, [host, x, y]);
+  const c = tint ?? id.a;
+  // Pas d'anneau sur le curseur : une lumière douce qui éclaire la scène là où on regarde.
   return (
     <motion.div
       aria-hidden
-      animate={{ opacity: on ? 1 : 0, scale: hot ? 1.6 : 1 }}
-      transition={{ duration: 0.25, ease: EASE }}
-      style={{ position: "absolute", left: 0, top: 0, x: sx, y: sy, width: 26, height: 26, marginLeft: -13, marginTop: -13, borderRadius: 999, boxShadow: `inset 0 0 0 1px ${id.a}aa`, pointerEvents: "none", zIndex: 70 }}
-    >
-      <span style={{ position: "absolute", left: "50%", top: "50%", width: 3, height: 3, marginLeft: -1.5, marginTop: -1.5, borderRadius: 999, background: id.a }} />
-    </motion.div>
+      animate={{ opacity: on ? (hot ? 0.55 : 1) : 0 }}
+      transition={{ duration: 0.5, ease: EASE }}
+      style={{ position: "absolute", left: 0, top: 0, x: sx, y: sy, width: 560, height: 560, marginLeft: -280, marginTop: -280, borderRadius: 999, background: `radial-gradient(circle, ${c}38 0%, ${c}14 32%, transparent 62%)`, mixBlendMode: "screen", pointerEvents: "none", zIndex: 11, transition: "background 0.6s ease" }}
+    />
   );
 }
 

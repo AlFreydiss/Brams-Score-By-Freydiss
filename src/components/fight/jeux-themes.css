@@ -146,20 +146,80 @@
   background: rgba(8, 9, 13, 0.14);
 }
 
-/* Clair Obscur, Assassin's Creed : plaque d'ivoire gravée. */
+/* Clair Obscur, Assassin's Creed : cartouche de menu. Verre sombre, filets
+   d'or qui débordent, touche dans un losange ; au survol, une feuille d'or
+   remplit le cartouche de gauche à droite. */
 .jg-btn.jg-btn--plate {
-  background: #f4f2ec;
-  color: #0b0b0d;
-  border-radius: 2px;
-  letter-spacing: 0.16em;
+  position: relative;
+  isolation: isolate;
+  padding: 0 18px 0 26px;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(22, 16, 9, 0.5), rgba(8, 6, 4, 0.72));
+  backdrop-filter: blur(8px);
+  color: #f1dcab;
+  font-weight: 400;
   font-size: 12.5px;
+  letter-spacing: 0.26em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    color 320ms ease;
+}
+/* Feuille d'or (cachée tant qu'on ne survole pas). */
+.jg-btn.jg-btn--plate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, #fbf0d2 0%, #e6c98e 55%, #b98d4c 100%);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* Filets haut et bas, qui débordent et s'effacent aux extrémités. */
+.jg-btn.jg-btn--plate::after {
+  content: "";
+  position: absolute;
+  inset: 0 -16px;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, #e6c98e 16%, #f6e6be 50%, #e6c98e 84%, transparent) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, #e6c98e 16%, #f6e6be 50%, #e6c98e 84%, transparent) bottom / 100% 1px no-repeat;
+  opacity: 0.75;
 }
 .jg-btn.jg-btn--plate .jg-key {
-  border-radius: 2px;
+  position: relative;
+  width: 26px;
+  height: 26px;
+  margin-left: 4px;
+  background: none;
+  font-family: var(--jg-font);
+  font-size: 11px;
+  font-weight: 400;
+  color: #f1dcab;
+  transition: color 320ms ease;
+}
+.jg-btn.jg-btn--plate .jg-key::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: -1;
+  transform: rotate(45deg);
+  box-shadow: inset 0 0 0 1px rgba(241, 220, 171, 0.7);
+  transition: box-shadow 320ms ease;
 }
 @media (hover: hover) {
   .jg-btn.jg-btn--plate:hover {
-    box-shadow: 0 0 0 1px var(--jg-accent), 0 10px 30px -8px var(--jg-accent);
+    color: #1a1208;
+    text-shadow: none;
+  }
+  .jg-btn.jg-btn--plate:hover::before {
+    clip-path: inset(0 0 0 0);
+  }
+  .jg-btn.jg-btn--plate:hover .jg-key {
+    color: #1a1208;
+  }
+  .jg-btn.jg-btn--plate:hover .jg-key::before {
+    box-shadow: inset 0 0 0 1px rgba(26, 18, 8, 0.75);
   }
 }
 
