@@ -48,10 +48,11 @@ const STEP = 0.62; // écart angulaire entre deux écrans
 const CAM_Z = FRONT + 4.9;
 const BG = "#08090d";
 const ROTATE_MS = 12000;
+const DIVE_MS = 1750;
 const FADE = "linear-gradient(to bottom, transparent 0%, #000 90px, #000 calc(100% - 240px), rgba(0,0,0,0.55) calc(100% - 110px), transparent 100%)";
 
 /** Couleur de la salle, partagée par la scène (lue à chaque image). */
-type Room = { color: THREE.Color; pulse: number; sound: boolean; analyser: AnalyserNode | null; lamp: number };
+type Room = { color: THREE.Color; pulse: number; sound: boolean; analyser: AnalyserNode | null; lamp: number; dive: number };
 
 // Lampe du projecteur au changement de bobine : noir, deux battements, puis plein feu.
 function lampAt(t: number) {
@@ -104,7 +105,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const drag = useRef<{ x: number; y: number; t: number } | null>(null);
   const dragOff = useRef({ x: 0, y: 0 });
   const dragged = useRef(false);
-  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a"), pulse: 0, sound: false, analyser: null, lamp: 1 }), [items]);
+  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a"), pulse: 0, sound: false, analyser: null, lamp: 1, dive: 0 }), [items]);
   const [sound, setSound] = useState(false);
   const toggleSound = () => {
     const on = !sound;
@@ -161,7 +162,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const enter = (item: ArenaItem) => {
     if (dive) return;
     setDive(item);
-    setTimeout(() => onPlay(item), 820);
+    setTimeout(() => onPlay(item), DIVE_MS);
   };
 
   const cur = items[active];
@@ -170,7 +171,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   return (
     <div
       ref={wrap}
-      className="ar3"
+      className={`ar3 ${dive ? "is-diving" : ""}`}
       onPointerEnter={() => setHold(true)}
       onPointerLeave={() => setHold(false)}
       onPointerDown={(e) => {
@@ -205,7 +206,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
     >
       <Canvas
         frameloop={visible ? "always" : "never"}
-        dpr={[1, 1.6]}
+        dpr={[1, 2]}
         camera={{ position: [0, 0.3, CAM_Z], fov: 40 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
         style={{ position: "absolute", inset: 0, maskImage: FADE, WebkitMaskImage: FADE }}
@@ -220,7 +221,8 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         <Floor />
         <FloorSpill room={room} />
         <Seats />
-        <CameraRig dive={!!dive} drag={dragOff} />
+        <Curtains room={room} />
+        <CameraRig dive={!!dive} drag={dragOff} room={room} />
         <EffectComposer>
           {/* Seuil haut : une image claire reste une image, pas une plaque blanche. */}
           <Bloom intensity={0.32} luminanceThreshold={0.82} luminanceSmoothing={0.2} mipmapBlur />
@@ -321,12 +323,14 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         ))}
       </div>
 
+      {/* Pendant la plongée, le reste de la page s'éteint autour de la salle. */}
+      {dive ? <div aria-hidden className="ar3-dim" /> : null}
       <AnimatePresence>
         {dive ? (
           <motion.div
             key="flash"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { delay: 0.45, duration: 0.35, ease: [0.7, 0, 0.84, 0] } }}
+            animate={{ opacity: 1, transition: { delay: DIVE_MS / 1000 - 0.32, duration: 0.3, ease: [0.7, 0, 0.84, 0] } }}
             style={{ position: "absolute", inset: 0, background: `radial-gradient(60% 60% at 50% 45%, ${cur.accent}66, #08090d 75%)`, pointerEvents: "none" }}
           />
         ) : null}
@@ -380,6 +384,7 @@ function loadImageTexture(src: string, done: (t: THREE.Texture) => void) {
   const loader = new THREE.TextureLoader().setCrossOrigin("anonymous");
   const ok = (t: THREE.Texture) => {
     t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
     done(t);
   };
   loader.load(src, ok, undefined, () => loader.load(`${src}${src.includes("?") ? "&" : "?"}gl=1`, ok));
@@ -483,6 +488,17 @@ function averageColor(src: CanvasImageSource, out: THREE.Color) {
   }
 }
 
+// Une image projetée : point chaud au centre, coins un peu plus sombres, comme une vraie toile.
+function projected(sh: { fragmentShader: string }) {
+  sh.fragmentShader = sh.fragmentShader.replace(
+    "#include <map_fragment>",
+    `#include <map_fragment>
+#ifdef USE_MAP
+{ vec2 q = (vMapUv - 0.5) * vec2(1.0, 1.35); diffuseColor.rgb *= mix(0.8, 1.05, smoothstep(0.85, 0.1, length(q))); }
+#endif`,
+  );
+}
+
 function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaItem; index: number; n: number; pos: React.MutableRefObject<number>; active: boolean; room: Room; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const mat = useRef<THREE.MeshBasicMaterial>(null);
@@ -518,7 +534,7 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
     const s = 0.8 + 0.2 * near + (active && hover ? 0.03 : 0);
     g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, s, 6, dt));
     // Au-delà d'un cran, l'écran s'efface dans le noir.
-    const show = THREE.MathUtils.clamp(1.8 - Math.abs(rel), 0, 1);
+    const show = THREE.MathUtils.clamp(1.8 - Math.abs(rel), 0, 1) * (active ? 1 : 1 - Math.min(1, room.dive * 2.5));
     vis.current = show;
     g.visible = show > 0.01;
     onT.current += dt;
@@ -586,7 +602,7 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
         }}
       >
         {/* Clé sur la texture : un matériau compilé sans map ne l'affiche jamais ensuite. */}
-        <meshBasicMaterial key={tex?.uuid ?? "none"} ref={mat} map={tex ?? null} color={tex ? "#ffffff" : "#111317"} transparent toneMapped={false} side={THREE.DoubleSide} />
+        <meshBasicMaterial key={tex?.uuid ?? "none"} ref={mat} map={tex ?? null} onBeforeCompile={projected} customProgramCacheKey={() => "projected"} color={tex ? "#ffffff" : "#111317"} transparent toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
       {/* Cache noir autour de la toile, comme dans une vraie salle. */}
       <mesh geometry={geo} scale={[1.035, 1.06, 1]} position={[0, 0, -0.012]} raycast={() => null}>
@@ -988,14 +1004,13 @@ function Seats() {
   const armMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#121014", roughness: 0.5, metalness: 0.3 }), []);
   const backs = useRef<THREE.InstancedMesh>(null);
   const arms = useRef<THREE.InstancedMesh>(null);
-  const { camera } = useThree();
   const tmp = useMemo(() => new THREE.Object3D(), []);
   useFrame(() => {
     const b = backs.current;
     const a = arms.current;
     if (!b || !a) return;
-    const d = Math.max(2, camera.position.z - FRONT);
-    const cy = camera.position.y;
+    const d = Math.max(2, rest.z - FRONT);
+    const cy = rest.y;
     let k = 0;
     ROWS.forEach((s, r) => {
       // Hauteur de la ligne œil → bas de l'écran, à cette distance.
@@ -1030,6 +1045,71 @@ function Seats() {
   );
 }
 
+// Rideaux de velours de part et d'autre de la toile, et lambrequin au-dessus.
+// Vrais plis en relief, éclairés par l'image (lumière rasante sur les plis
+// intérieurs) ; ils s'ouvrent quand on plonge dans l'écran.
+function folds(w: number, h: number, depth: number, segX: number) {
+  const g = new THREE.PlaneGeometry(w, h, segX, 12);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i);
+    const y = p.getY(i);
+    // Plis plus serrés en haut (tringle), qui s'évasent vers le bas.
+    const spread = 1 + (0.5 - y / h) * 0.35;
+    p.setZ(i, depth * (Math.sin((x * 26) / spread) * 0.7 + Math.sin((x * 57) / spread + 1.3) * 0.3));
+  }
+  g.computeVertexNormals();
+  return g;
+}
+const DRAPE_W = 1.35;
+function Curtains({ room }: { room: Room }) {
+  const side = useMemo(() => folds(DRAPE_W, 3.2, 0.055, 120), []);
+  const mat = useMemo(
+    () =>
+      new THREE.MeshPhysicalMaterial({
+        color: "#5a0d18",
+        roughness: 0.62,
+        sheen: 1,
+        sheenColor: new THREE.Color("#ff7d8c"),
+        sheenRoughness: 0.35,
+      }),
+    [],
+  );
+  const left = useRef<THREE.Mesh>(null);
+  const right = useRef<THREE.Mesh>(null);
+  const x0 = W / 2 + 0.1 + DRAPE_W / 2;
+  const spots = useMemo(
+    () =>
+      [-1, 1].map((sg) => {
+        const l = new THREE.SpotLight("#ffb48a", 6, 7, 0.5, 1, 1.6);
+        l.position.set(sg * (x0 - 0.4), 2.8, 1.8);
+        l.target.position.set(sg * x0, 0, 0);
+        return l;
+      }),
+    [x0],
+  );
+  useFrame(() => {
+    // Ouverture à la plongée.
+    const open = Math.pow(room.dive, 1.6) * 2.4;
+    if (left.current) left.current.position.x = -x0 - open;
+    if (right.current) right.current.position.x = x0 + open;
+  });
+  const y = -H / 2 - 0.35 + 1.6;
+  return (
+    <group position={[0, 0, FRONT + 0.32]}>
+      <mesh ref={left} geometry={side} material={mat} position={[-x0, y, 0]} raycast={() => null} />
+      <mesh ref={right} geometry={side} material={mat} position={[x0, y, 0]} raycast={() => null} />
+      {/* Deux projecteurs de scène chauds qui lèchent les rideaux. */}
+      {spots.map((l, i) => (
+        <group key={i}>
+          <primitive object={l} />
+          <primitive object={l.target} />
+        </group>
+      ))}
+    </group>
+  );
+}
+
 function Floor() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -H / 2 - 0.35, 0]}>
@@ -1052,15 +1132,25 @@ function Floor() {
 }
 
 // Caméra : cadrage adapté à l'écran (l'écran actif garde ~55 % de la hauteur,
-// même sur un écran très large et bas), léger balancement, plongée au clic.
-function CameraRig({ dive, drag }: { dive: boolean; drag: React.MutableRefObject<{ x: number; y: number }> }) {
+// même sur un écran très large et bas), léger balancement.
+// Au clic, plongée de jeu vidéo : la caméra décolle, tourne autour de l'écran
+// en s'inclinant, revient pile en face et fonce dans l'image.
+const DIVE_S = DIVE_MS / 1000;
+// Position de repos de la caméra (les fauteuils se calent dessus, même pendant la plongée).
+const rest = { y: 0.3, z: CAM_Z };
+const easeIO = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+function CameraRig({ dive, drag, room }: { dive: boolean; drag: React.MutableRefObject<{ x: number; y: number }>; room: Room }) {
   const { camera, pointer, size } = useThree();
   const t0 = useRef<number | null>(null);
+  const from = useRef({ pos: new THREE.Vector3(), look: new THREE.Vector3() });
+  const look = useRef(new THREE.Vector3(0, 0, FRONT - 1.5));
+  const tmpV = useMemo(() => new THREE.Vector3(), []);
+  const center = useMemo(() => new THREE.Vector3(0, 0, FRONT), []);
   useFrame((state, dt) => {
     const cam = camera as THREE.PerspectiveCamera;
     const aspect = size.width / Math.max(1, size.height);
     // Recul nécessaire pour que l'écran tienne en hauteur (55 %) et en largeur (62 %).
-    const tanH = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    const tanH = Math.tan(THREE.MathUtils.degToRad(20));
     // Portrait (téléphone) : l'écran prend presque toute la largeur, en haut.
     const portrait = aspect < 0.9;
     const dist = portrait ? W / (0.9 * 2 * tanH * aspect) : Math.max(H / (0.5 * 2 * tanH), W / (0.6 * 2 * tanH * aspect));
@@ -1070,22 +1160,52 @@ function CameraRig({ dive, drag }: { dive: boolean; drag: React.MutableRefObject
     const visW = 2 * tanH * dist * aspect;
     const pan = aspect > 1.1 ? -Math.max(0, Math.min(visW * 0.16, visW / 2 - W / 2 - 0.25)) : 0;
     if (dive) {
-      if (t0.current == null) t0.current = state.clock.elapsedTime;
-      const k = Math.min(1, (state.clock.elapsedTime - t0.current) / 0.8);
-      const e = k * k * k;
-      cam.position.z = THREE.MathUtils.lerp(baseZ, FRONT + 0.9, e);
-      cam.position.y = THREE.MathUtils.lerp(0.3, 0, e);
-      cam.fov = THREE.MathUtils.lerp(40, 76, e);
+      const now = state.clock.elapsedTime;
+      if (t0.current == null) {
+        t0.current = now;
+        from.current.pos.copy(cam.position);
+        from.current.look.copy(look.current);
+      }
+      const k = Math.min(1, (now - t0.current) / DIVE_S);
+      room.dive = k;
+      const r0 = from.current.pos.distanceTo(center);
+      // Orbite : jusqu'à ~70° sur le côté, puis retour de face pour l'entrée.
+      const swing = Math.sin(Math.PI * Math.min(1, k / 0.82));
+      const theta = -1.2 * swing;
+      // Le rayon fond d'abord doucement, puis la caméra plonge dans la toile.
+      const r = THREE.MathUtils.lerp(r0 * 0.92, r0 * 0.55, easeIO(Math.min(1, k / 0.75)));
+      const plunge = Math.pow(THREE.MathUtils.clamp((k - 0.72) / 0.28, 0, 1), 2.2);
+      const rr = THREE.MathUtils.lerp(r, 0.18, plunge);
+      const y = 1.15 * swing + THREE.MathUtils.lerp(from.current.pos.y, 0, Math.min(1, k * 1.4)) * (1 - swing);
+      tmpV.set(Math.sin(theta) * rr, y, FRONT + Math.cos(theta) * rr);
+      // Départ en douceur depuis la position où l'on était.
+      const blend = THREE.MathUtils.smoothstep(k, 0, 0.18);
+      cam.position.lerpVectors(from.current.pos, tmpV, blend);
+      look.current.lerpVectors(from.current.look, center, THREE.MathUtils.smoothstep(k, 0, 0.3));
+      // Inclinaison dans le virage, comme un plan de caméra de jeu.
+      cam.up.set(Math.sin(theta) * -0.22 * swing, 1, 0).normalize();
+      // Le champ se resserre dans le virage puis s'ouvre en grand à l'entrée (effet de vitesse).
+      cam.fov = 40 - 5 * swing + 52 * plunge;
       cam.updateProjectionMatrix();
-      cam.lookAt(0, 0, FRONT);
+      cam.lookAt(look.current);
       return;
+    }
+    t0.current = null;
+    room.dive = 0;
+    cam.up.set(0, 1, 0);
+    if (Math.abs(cam.fov - 40) > 0.01) {
+      cam.fov = 40;
+      cam.updateProjectionMatrix();
     }
     cam.position.z = THREE.MathUtils.damp(cam.position.z, baseZ, 3, dt);
     cam.position.x = THREE.MathUtils.damp(cam.position.x, pan + pointer.x * 0.45, 2.5, dt);
     // Glissé vertical : la caméra monte ou plonge autour de l'arc (bascule).
     const tilt = THREE.MathUtils.clamp(drag.current.y * 0.006, -1.2, 1.8);
     cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.3 + pointer.y * 0.16 + tilt, drag.current.y ? 7 : 2.5, dt);
-    cam.lookAt(pan, lookY, FRONT - 1.5);
+    rest.y = cam.position.y;
+    rest.z = cam.position.z;
+    look.current.set(pan, lookY, FRONT - 1.5);
+    cam.lookAt(look.current);
   });
   return null;
 }

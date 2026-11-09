@@ -317,3 +317,38 @@
     animation: none;
   }
 }
+
+/* Plongée dans l'écran : l'interface s'efface, la page autour s'éteint. */
+.ar3.is-diving {
+  z-index: 60;
+}
+.ar3-copy,
+.ar3-tabs {
+  transition:
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.45s ease;
+}
+.ar3.is-diving .ar3-copy,
+.ar3.is-diving .ar3-tabs {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(6px);
+  pointer-events: none;
+}
+.ar3-dim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: #050507;
+  pointer-events: none;
+  animation: ar3-dim 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes ar3-dim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.92;
+  }
+}

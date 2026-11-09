@@ -182,6 +182,12 @@ export function ArenaHero({
       <div className="jh-veil" aria-hidden />
       {u.embers ? <Embers active density={0.7} zIndex={0} tint={slug === "endings" ? "dust" : "gold"} /> : null}
       {slug === "openings" ? <div className="ah-scan" aria-hidden /> : null}
+      {slug === "endings" && !reduce ? <Credits list={participants} /> : null}
+      {/* Bandes cinéma qui s'ouvrent à l'arrivée, comme une séance qui commence. */}
+      <div className="ah-bars" aria-hidden>
+        <i />
+        <i />
+      </div>
       {slug === "openings" && cur ? (
         <p className="ah-osd" key={osd} aria-hidden>
           CH {String(i + 1).padStart(2, "0")}
@@ -238,5 +244,37 @@ export function ArenaHero({
         </div>
       ) : null}
     </section>
+  );
+}
+
+// Générique de fin : les endings du tournoi défilent comme les crédits d'un film.
+function Credits({ list }: { list: Participant[] }) {
+  const rows = useMemo(() => {
+    const a = list.filter((p) => p.title && p.sub);
+    for (let k = a.length - 1; k > 0; k--) {
+      const j = Math.floor(Math.random() * (k + 1));
+      [a[k], a[j]] = [a[j], a[k]];
+    }
+    return a.slice(0, 36);
+  }, [list]);
+  if (!rows.length) return null;
+  const block = (key: string) => (
+    <div className="ah-roll-block" key={key}>
+      <p className="ah-roll-head">Générique de fin</p>
+      {rows.map((p) => (
+        <p key={`${key}-${p.id}`} className="ah-roll-row">
+          <small>{p.sub}</small>
+          <span>{p.title}</span>
+        </p>
+      ))}
+    </div>
+  );
+  return (
+    <div className="ah-credits" aria-hidden>
+      <div className="ah-roll" style={{ animationDuration: `${rows.length * 2.6}s` }}>
+        {block("a")}
+        {block("b")}
+      </div>
+    </div>
   );
 }
