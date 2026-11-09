@@ -55,12 +55,12 @@ export const TRAILS = [
 
   { id: 'trail-corbeau', nom: 'Plumes du Corbeau', rarete: 'COMMUN', emoji: '🪶',
     // Genjutsu d'Itachi : plumes sombres qui tombent en tourbillonnant.
-    config: { colors: ['#3a3f55', '#1c1f2e', '#6a7090', '#11131f'], composite: 'source-over', gravity: 0.06, speed: 0.2, drift: 0.8, sizeBase: 2.8, sizeRand: 2.6, decay: 0.026, shadow: 5, alpha: 0.6 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-corbeau.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.05, petalSway: 0.7, petalScale: 3.4, flecks: ['#8f86c9', '#5d5a8a'], fleckRate: 0.07, colors: ['#3a3f55', '#1c1f2e', '#6a7090', '#11131f'], composite: 'source-over', maxParts: 160, maxEmit: 4, emitDivisor: 8, minDist: 6, gravity: 0.03, speed: 0.3, drift: 0.5, sizeBase: 5, sizeRand: 3, decay: 0.013, shadow: 5, alpha: 0.95 } },
 
   // ── RARE ──
   { id: 'trail-konoha', nom: 'Feuilles de Konoha', rarete: 'RARE', emoji: '🍃',
     // Tourbillon de feuilles vertes façon shunshin de ninja.
-    config: { colors: ['#7ad17a', '#3f9d4b', '#bfe8a8', '#1f5e2c'], composite: 'source-over', gravity: 0.03, speed: 0.34, drift: 0.85, sizeBase: 2.5, sizeRand: 2.4, decay: 0.032, shadow: 5, alpha: 0.72 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-konoha.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.16, petalSway: 0.5, colors: ['#7ad17a', '#3f9d4b', '#bfe8a8', '#1f5e2c'], composite: 'source-over', maxParts: 180, maxEmit: 4, emitDivisor: 7, minDist: 5, gravity: 0.035, speed: 0.6, drift: 0.7, sizeBase: 4.4, sizeRand: 2.8, decay: 0.015, shadow: 5, alpha: 0.97 } },
   { id: 'trail-lucioles', nom: "Lucioles d'Esprit", rarete: 'RARE', emoji: '🌿',
     // Forêt de Mononoké : lucioles pâles qui montent lentement, presque irréelles.
     config: { colors: ['#d8ffe8', '#9af2c0', '#f4fff8', '#5fd49a'], gravity: -0.045, speed: 0.18, drift: 0.4, sizeBase: 1.5, sizeRand: 1.8, decay: 0.024, shadow: 10, alpha: 0.85 } },
@@ -74,7 +74,7 @@ export const TRAILS = [
   { id: 'trail-haki', nom: 'Haki des Rois', rarete: 'EPIQUE', emoji: '⚡',
     config: { colors: ['#b06cff', '#7a2dff', '#d8b4ff', '#3b1f6e'], speed: 0.6, sizeBase: 1.6, sizeRand: 2.2, decay: 0.06, shadow: 12 } },
   { id: 'trail-sakura', nom: 'Pétales de Sakura', rarete: 'EPIQUE', emoji: '🌸',
-    config: { colors: ['#ffd3e6', '#ff9ec4', '#ffc1dd', '#ff7fb3'], composite: 'source-over', gravity: 0.05, speed: 0.28, drift: 0.45, sizeBase: 2.4, sizeRand: 2.2, decay: 0.03, shadow: 4, alpha: 0.7 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-sakura.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.12, petalSway: 0.45, flecks: ['#ffe3f0', '#fff6fb'], fleckRate: 0.15, colors: ['#ffd3e6', '#ff9ec4', '#ffc1dd', '#ff7fb3'], composite: 'source-over', maxParts: 200, maxEmit: 5, emitDivisor: 7, minDist: 5, gravity: 0.03, speed: 0.5, drift: 0.55, sizeBase: 3.6, sizeRand: 2.6, decay: 0.014, shadow: 4, alpha: 0.95 } },
 
   { id: 'trail-domaine', nom: 'Énergie Occulte', rarete: 'EPIQUE', emoji: '🩸',
     // Extension du domaine : énergie maudite cramoisie striée de noir.
@@ -129,7 +129,7 @@ export const TRAILS = [
     config: { colors: ['#ff8a5c', '#ff4d3d', '#ffd2a0', '#c9341f'], gravity: -0.06, speed: 0.5, drift: 0.3, sizeBase: 1.7, sizeRand: 2.3, decay: 0.05, shadow: 13, alpha: 0.92 } },
   { id: 'trail-abysse', nom: 'Or des Abysses', rarete: 'EPIQUE', emoji: '🪙',
     // Trésor englouti : pièces d'or qui scintillent et coulent lentement.
-    config: { colors: ['#ffe066', '#d4a017', '#fffaf0', '#9a7b1e'], gravity: 0.04, speed: 0.3, drift: 0.45, sizeBase: 1.4, sizeRand: 2.2, decay: 0.034, shadow: 12, alpha: 0.9 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-abysse.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.06, petalFlip: 0.9, petalSway: 0.15, petalScale: 2.4, flecks: ['#fff3c4', '#ffe066', '#fffaf0'], fleckRate: 0.35, colors: ['#ffe066', '#d4a017', '#fffaf0', '#9a7b1e'], maxParts: 160, maxEmit: 4, emitDivisor: 8, minDist: 6, gravity: 0.06, speed: 0.4, drift: 0.3, sizeBase: 4.2, sizeRand: 2.4, decay: 0.016, shadow: 10, alpha: 1 } },
 
   { id: 'trail-maelstrom', nom: 'Maelström Doré', rarete: 'MYTHIQUE', emoji: '🌀',
     // Tourbillon : éclats d'or rapides à fort drift, comme aspirés en spirale.
@@ -140,7 +140,7 @@ export const TRAILS = [
 
   // ════ NOUVEAUTÉS — pack premium (moteur HQ : cœur lumineux + halo doux) ════
   { id: 'trail-neige', nom: 'Première Neige', rarete: 'COMMUN', emoji: '❄️', nouveaute: true,
-    config: { colors: ['#ffffff', '#eaf4ff', '#cfe4ff', '#f7fbff'], composite: 'source-over', gravity: 0.05, speed: 0.16, drift: 0.55, sizeBase: 2.0, sizeRand: 2.4, decay: 0.022, shadow: 5, alpha: 0.55 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-neige.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.03, petalFlip: 0, petalSway: 0.4, petalScale: 2.6, flecks: ['#ffffff', '#dceeff'], fleckRate: 0.4, colors: ['#ffffff', '#eaf4ff', '#cfe4ff', '#f7fbff'], composite: 'source-over', maxParts: 180, maxEmit: 4, emitDivisor: 8, minDist: 6, gravity: 0.022, speed: 0.25, drift: 0.4, sizeBase: 3.2, sizeRand: 2.8, decay: 0.012, shadow: 5, alpha: 0.9 } },
   { id: 'trail-bourrasque', nom: 'Bourrasque', rarete: 'COMMUN', emoji: '🌬️', nouveaute: true,
     config: { colors: ['#eaf2f7', '#c6d6e0', '#ffffff', '#aebfcc'], composite: 'source-over', gravity: 0, speed: 0.9, drift: 0.2, sizeBase: 1.3, sizeRand: 1.6, decay: 0.05, shadow: 4, alpha: 0.5 } },
 
@@ -151,7 +151,7 @@ export const TRAILS = [
   { id: 'trail-or-rose', nom: 'Or Rose', rarete: 'RARE', emoji: '🌹', nouveaute: true,
     config: { colors: ['#ffd9c2', '#ff9eb0', '#ffe7a8', '#f4b6c0'], speed: 0.34, drift: 0.4, gravity: 0.01, sizeBase: 1.3, sizeRand: 1.9, decay: 0.04, shadow: 12, alpha: 0.92, twinkle: 1 } },
   { id: 'trail-onyx', nom: "Éclats d'Onyx", rarete: 'RARE', emoji: '⬛', nouveaute: true,
-    config: { colors: ['#d4a017', '#1a1a22', '#f6d98a', '#0c0c12'], speed: 0.46, drift: 0.3, gravity: 0.03, sizeBase: 1.4, sizeRand: 2.0, decay: 0.05, shadow: 10, alpha: 0.9 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-onyx.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.2, petalFlip: 0.3, petalSway: 0.1, petalScale: 3, flecks: ['#f6d98a', '#d4a017', '#fff6dc'], fleckRate: 0.22, colors: ['#d4a017', '#1a1a22', '#f6d98a', '#0c0c12'], maxParts: 180, maxEmit: 5, emitDivisor: 7, minDist: 5, speed: 0.9, drift: 0.5, gravity: 0.07, sizeBase: 4.6, sizeRand: 3, decay: 0.022, shadow: 10, alpha: 1 } },
 
   { id: 'trail-celeste', nom: 'Foudre Céleste', rarete: 'EPIQUE', emoji: '⚡', nouveaute: true,
     config: { colors: ['#ffffff', '#ffe98a', '#fff4cf', '#ffd24a'], speed: 0.85, drift: 0.2, gravity: 0, sizeBase: 1.3, sizeRand: 1.7, decay: 0.07, shadow: 15, alpha: 0.97 } },
