@@ -857,3 +857,35 @@
   color: var(--nx-mut);
   vertical-align: 0.35em;
 }
+
+/* Cartes : inclinaison 3D vers la souris et reflet holographique. */
+.nf-holo {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(115deg, transparent 18%, rgba(255, 60, 160, 0.28) 34%, rgba(255, 220, 80, 0.24) 44%, rgba(60, 255, 200, 0.24) 54%, rgba(90, 120, 255, 0.28) 64%, transparent 82%);
+  background-size: 260% 260%;
+  background-position: calc(50% + var(--mx, 0) * 90%) calc(50% + var(--my, 0) * 90%);
+  mix-blend-mode: color-dodge;
+  transition: opacity 0.35s ease;
+}
+@media (hover: hover) {
+  .nf .nf-card-art {
+    transition:
+      box-shadow 0.35s var(--nx-ease),
+      transform 0.25s ease-out;
+  }
+  .nf .nf-card:hover .nf-card-art {
+    transform: perspective(900px) rotateX(calc(var(--my, 0) * -8deg)) rotateY(calc(var(--mx, 0) * 10deg));
+  }
+  .nf .nf-card:hover .nf-holo {
+    opacity: 0.65;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf .nf-card:hover .nf-card-art {
+    transform: none;
+  }
+}

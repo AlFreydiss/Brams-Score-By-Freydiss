@@ -156,6 +156,21 @@ function useStatuses() {
 
 export default function HubPage() {
   const [ready, setReady] = useState(false);
+  // Cartes du hub : elles penchent vers la souris, reflet holo (comme les cartes du haut).
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || !window.matchMedia("(hover: hover)").matches) return;
+    const move = (e: PointerEvent) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>(".nf-card");
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", ((e.clientX - r.left) / r.width - 0.5).toFixed(3));
+      card.style.setProperty("--my", ((e.clientY - r.top) / r.height - 0.5).toFixed(3));
+    };
+    el.addEventListener("pointermove", move);
+    return () => el.removeEventListener("pointermove", move);
+  }, []);
   const [ost, setOst] = useState<Participant[]>([]);
   const [openings, setOpenings] = useState<Participant[]>([]);
   const [endings, setEndings] = useState<Participant[]>([]);
@@ -260,7 +275,7 @@ export default function HubPage() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`nx-root nf ${ready ? "is-ready" : ""}`}>
+      <div ref={rootRef} className={`nx-root nf ${ready ? "is-ready" : ""}`}>
         {selectItems ? (
           <SelectScreen Deck={three ? LazyDeck : undefined} items={selectItems} onGo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}/duel`)} onInfo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}`)} />
         ) : (
@@ -303,6 +318,7 @@ export default function HubPage() {
                   >
                     <span className="nf-card-art">
                       <img src={m.img} alt="" loading="lazy" decoding="async" />
+                      <i className="nf-holo" aria-hidden />
                       <ModeSign kind={m.sign} />
                       <span className="nf-card-body">
                         <b>{m.title}</b>
@@ -510,6 +526,7 @@ function TournamentCard({ meta, status, index, reel }: { meta: TournamentMeta; s
         style={{ "--acc": ACCENT[meta.slug] ?? "#f4f2ec" } as React.CSSProperties}
       >
         <span className="nf-card-art">
+          <i className="nf-holo" aria-hidden />
           {reel?.length ? <PosterReel items={reel} hot={hot} fallback={ART[meta.slug]} offset={index * 1400} /> : <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />}
           {running ? (
             <span className="nf-card-progress" aria-hidden>

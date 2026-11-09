@@ -227,7 +227,9 @@
   font: 600 10px/1 "Geist Mono", ui-monospace, monospace;
   letter-spacing: 0.04em;
   text-transform: none;
-  opacity: 0.9;
+  color: #0b0b0d;
+  background: rgba(11, 11, 13, 0.1);
+  opacity: 1;
 }
 .sel-more {
   padding: 0 26px;

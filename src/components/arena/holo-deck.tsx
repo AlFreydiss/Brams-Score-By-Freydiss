@@ -363,6 +363,16 @@ function Card({
   }, [sound, active]);
 
   const lastDraw = useRef(0);
+  // Distribution à l'arrivée : chaque carte part du paquet, de dos, et se retourne.
+  const born = useRef<number | null>(null);
+  // Carte qu'on tire : un tour complet en montant.
+  const pull = useRef<number | null>(null);
+  const pullPending = useRef(false);
+  const wasActive = useRef(active);
+  useEffect(() => {
+    if (active && !wasActive.current) pullPending.current = true;
+    wasActive.current = active;
+  }, [active]);
   const spin = useRef(0);
   const readyT = useRef<number | null>(null);
   const tq = useMemo(() => new THREE.Quaternion(), []);
@@ -383,6 +393,26 @@ function Card({
     }
     const L = layout.current;
     const pose = active ? L.hero : L.hand(handIndex, handCount, hover);
+    if (born.current == null) born.current = t + 0.2 + (active ? handCount * 0.08 + 0.15 : handIndex * 0.08);
+    if (t < born.current) {
+      // Encore dans le paquet, sous l'écran, face cachée.
+      g.position.set(L.hero.pos.x, L.hero.pos.y - 9, 1);
+      g.rotation.set(0, Math.PI, 0.3);
+      g.scale.setScalar(pose.scale);
+      return;
+    }
+    const life = t - born.current;
+    const flip = Math.PI * Math.pow(1 - THREE.MathUtils.smoothstep(life, 0, 0.8), 2);
+    if (pullPending.current) {
+      pullPending.current = false;
+      pull.current = t;
+    }
+    let pullSpin = 0;
+    if (pull.current != null) {
+      const p = Math.min(1, (t - pull.current) / 0.8);
+      pullSpin = Math.PI * 2 * (1 - (1 - Math.pow(1 - p, 3)));
+      if (p >= 1) pull.current = null;
+    }
     const k = 1 - Math.exp(-dt * (active ? 6 : 8));
     g.position.lerp(pose.pos, k);
     let rx = pose.rot.x;
@@ -403,8 +433,15 @@ function Card({
         extraZ = Math.pow(p, 2.4) * 4.5;
         s *= 1 + p * 0.15;
       }
-    } else readyT.current = null;
-    te.set(rx, ry + spin.current * (active ? 1 : 0), rz);
+    } else {
+      readyT.current = null;
+      // Carte survolée dans la main : elle penche vers la souris.
+      if (hover) {
+        rx += -pointer.y * 0.25;
+        ry += pointer.x * 0.35;
+      }
+    }
+    te.set(rx, ry + spin.current * (active ? 1 : 0) + flip + pullSpin, rz);
     tq.setFromEuler(te);
     g.quaternion.slerp(tq, active && ready ? 1 : k);
     g.position.z += (pose.pos.z + extraZ - g.position.z) * (ready && active ? 1 : 0);
