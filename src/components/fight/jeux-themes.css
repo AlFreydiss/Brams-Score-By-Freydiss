@@ -547,3 +547,9 @@
     animation: none;
   }
 }
+
+/* Clavier : le bouton Garder montre le focus dans la couleur du jeu. */
+.jg-btn.jg-btn:focus-visible {
+  outline: 2px solid var(--jg-accent);
+  outline-offset: 4px;
+}

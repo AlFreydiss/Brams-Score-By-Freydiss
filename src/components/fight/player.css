@@ -316,3 +316,9 @@
     display: inline;
   }
 }
+
+/* Clavier : contour net à la couleur du morceau. */
+.fp :is(.fp-btn, .fp-play, input):focus-visible {
+  outline: 2px solid var(--fp-acc);
+  outline-offset: 3px;
+}

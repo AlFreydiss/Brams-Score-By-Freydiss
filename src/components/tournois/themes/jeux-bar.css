@@ -78,7 +78,7 @@
   position: absolute;
   left: 10px;
   right: 10px;
-  bottom: -9px;
+  bottom: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--jb-gold-hi), transparent);
   box-shadow: 0 0 12px rgba(241, 220, 171, 0.8);
@@ -251,9 +251,6 @@
     font-size: 10.5px;
     letter-spacing: 0.12em;
   }
-  .nx-root[data-t="jeux"] .t-sub-ind {
-    bottom: -1px;
-  }
   .jx-tools {
     padding: 0;
     background: none;
@@ -395,4 +392,42 @@
   .t-champ--jeux .t-champ-bg {
     animation: none;
   }
+}
+
+/* ── Tous les autres tournois : même trait glissant, sobre, à leur couleur ── */
+.nx-root {
+  --t-hue: var(--nx-ink);
+}
+.nx-root[data-t="ost"] {
+  --t-hue: #d9a35a;
+}
+.nx-root[data-t="openings"] {
+  --t-hue: #ef4d5a;
+}
+.nx-root[data-t="endings"] {
+  --t-hue: #e9875f;
+}
+.nx-root:not([data-t="jeux"]) .t-subnav-links a.is-on {
+  background: none;
+}
+.nx-root:not([data-t="jeux"]) .t-sub-ind {
+  display: block;
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--t-hue);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--t-hue) 60%, transparent);
+}
+
+.nx-root[data-t="jeux"] :is(.t-subnav a, .t-go, .t-choose, .t-btn--play):focus-visible {
+  outline: 1px solid #f1dcab;
+  outline-offset: 4px;
+}
+
+/* Le trait glissant remplace la bordure basse de l'onglet actif (rognée sinon par le défilement). */
+.nx-root .t-subnav-links a.is-on {
+  border-bottom-color: transparent;
 }
