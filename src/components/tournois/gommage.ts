@@ -11,9 +11,10 @@
 //
 // WebGL brut (pas de three.js : ces pages ne doivent pas charger le chunk 3D).
 
-export type TransitionMode = "burn" | "tv" | "vinyl" | "dust";
-const MODE: Record<TransitionMode, number> = { burn: 0, tv: 1, vinyl: 2, dust: 3 };
-const DUR: Record<TransitionMode, number> = { burn: 2100, tv: 950, vinyl: 1500, dust: 2400 };
+//   pixel : jeux rétro, l'image se pixelise puis tombe bloc par bloc
+export type TransitionMode = "burn" | "tv" | "vinyl" | "dust" | "pixel";
+const MODE: Record<TransitionMode, number> = { burn: 0, tv: 1, vinyl: 2, dust: 3, pixel: 4 };
+const DUR: Record<TransitionMode, number> = { burn: 2100, tv: 950, vinyl: 1500, dust: 2400, pixel: 1400 };
 
 const VERT = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 
@@ -29,6 +30,7 @@ uniform vec3 xf;       // échelle, origine x, origine y de l'élément à l'éc
 uniform vec4 fit;      // ox, oy, largeur, hauteur de l'image dessinée (object-fit)
 uniform vec4 box;      // zone qui disparaît (x, y, l, h)
 uniform float dir;     // 1 : part de la droite, -1 : de la gauche
+uniform vec3 ec;       // couleur du bord (braise, givre, néon… selon le jeu)
 float h(vec2 q){return fract(sin(dot(q,vec2(127.1,311.7)))*43758.5453);}
 float n(vec2 q){vec2 i=floor(q),f=fract(q);f=f*f*(3.-2.*f);
   return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
@@ -52,8 +54,8 @@ void main(){
     float ember=1.-smoothstep(.0,.016,d);
     float scorch=1.-smoothstep(.0,.075,d);
     rgb=mix(col,col*vec3(.42,.3,.22),scorch*.85);
-    rgb=mix(rgb,vec3(.86,.34,.08),ember*.85);
-    rgb=mix(rgb,vec3(1.,.93,.72),hot);
+    rgb=mix(rgb,ec,ember*.85);
+    rgb=mix(rgb,mix(ec,vec3(1.,.95,.82),.75),hot);
     a=smoothstep(0.,.002,d);
   } else if(mode<1.5){
     // ── tv : neige, l'image s'écrase en ligne puis en point ──
@@ -89,7 +91,7 @@ void main(){
     rgb=col*(1.-.35*near*(.5+.5*sin(r*.9)));
     rgb=mix(rgb,vec3(1.,.82,.52),edge*.9);
     a=smoothstep(0.,.0015,d);
-  } else {
+  } else if(mode<3.5){
     // ── dust : dissolution douce, de haut en bas ──
     float m=.68*fbm(q*5.)+.32*u.y;
     m+=.02*(n(q*90.)-.5);
@@ -100,8 +102,17 @@ void main(){
     float near=1.-smoothstep(0.,.07,d);
     float edge=1.-smoothstep(0.,.018,d);
     rgb=mix(col,vec3(lum)*vec3(1.05,.97,.88),near*.7);
-    rgb=mix(rgb,vec3(1.,.9,.76),edge*.7);
+    rgb=mix(rgb,mix(ec,vec3(1.),.45),edge*.7);
     a=smoothstep(0.,.03,d);
+  } else {
+    // ── pixel : l'image se pixelise, puis les blocs tombent au hasard ──
+    float ps=max(1.,floor(mix(1.,22.,smoothstep(0.,.45,pr))));
+    vec2 lq=floor((P-box.xy)/ps)*ps+box.xy+ps*.5;
+    vec2 cell=floor((P-box.xy)/22.);
+    float d=h(cell)-(pr*1.25-.15);
+    if(d<0.){gl_FragColor=vec4(0.);return;}
+    rgb=texture2D(tex,texAt(lq)).rgb;
+    rgb=mix(rgb,ec,(1.-smoothstep(0.,.07,d))*.8);
   }
   gl_FragColor=vec4(rgb*a,a);
 }`;
@@ -128,14 +139,15 @@ const fbm = (x: number, y: number) => {
   return s;
 };
 
-// 0 pétale, 1 étincelle, 2 cendre, 3 poussière dorée (vinyl), 4 poussière pâle (dust)
-type Kind = 0 | 1 | 2 | 3 | 4;
+// 0 pétale, 1 étincelle, 2 cendre, 3 poussière dorée (vinyl), 4 poussière pâle (dust), 5 pixel
+type Kind = 0 | 1 | 2 | 3 | 4 | 5;
 type Part = { x: number; y: number; vx: number; vy: number; r: number; w: number; a: number; life: number; age: number; kind: Kind };
 const PETAL = ["#e0484c", "#c22f36", "#9d1f27"];
 
 const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
-export type StartOpts = { box?: { x: number; y: number; w: number; h: number }; dir?: 1 | -1; mode?: TransitionMode };
+/** edge : couleur du bord (rvb 0-1) ; parts : couleurs des particules (pétales, éclats, pixels…). */
+export type StartOpts = { box?: { x: number; y: number; w: number; h: number }; dir?: 1 | -1; mode?: TransitionMode; edge?: [number, number, number]; parts?: string[] };
 
 export class Gommage {
   private gl: WebGLRenderingContext | null = null;
@@ -146,6 +158,7 @@ export class Gommage {
   private u: Record<string, WebGLUniformLocation | null> = {};
   private raf = 0;
   private parts: Part[] = [];
+  private palette: string[] | null = null;
 
   constructor(private host: HTMLElement) {
     const mk = (z: number) => {
@@ -178,7 +191,7 @@ export class Gommage {
     const loc = gl.getAttribLocation(pr, "p");
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ["res", "dpr", "t", "pr", "tm", "mode", "xf", "fit", "box", "dir"]) this.u[k] = gl.getUniformLocation(pr, k);
+    for (const k of ["res", "dpr", "t", "pr", "tm", "mode", "xf", "fit", "box", "dir", "ec"]) this.u[k] = gl.getUniformLocation(pr, k);
     this.tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -246,6 +259,9 @@ export class Gommage {
     gl.uniform4f(this.u.fit, (EW - dw) * (isNaN(px) ? 0.5 : px), (EH - dh) * (isNaN(py) ? 0.5 : py), dw, dh);
     gl.uniform4f(this.u.box, box.x, box.y, box.w, box.h);
     gl.uniform1f(this.u.dir, dir);
+    const ec = opts.edge ?? [0.86, 0.34, 0.08];
+    gl.uniform3f(this.u.ec, ec[0], ec[1], ec[2]);
+    this.palette = opts.parts?.length ? opts.parts : null;
 
     const upload = () => {
       gl.bindTexture(gl.TEXTURE_2D, this.tex);
@@ -278,7 +294,7 @@ export class Gommage {
 
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      if (p < 0.97) this.spawn(mode, thr, box, aspect, dir, cx, cy, maxR);
+      if (p < 0.97) this.spawn(mode, mode === "pixel" ? p * 1.25 - 0.15 : thr, box, aspect, dir, cx, cy, maxR);
       this.draw(dt, now, dpr, W, H, dir);
 
       if (p < 1 || this.parts.length) this.raf = requestAnimationFrame(frame);
@@ -292,6 +308,15 @@ export class Gommage {
   // Particules nées sur le bord, selon l'univers.
   private spawn(mode: TransitionMode, thr: number, box: { x: number; y: number; w: number; h: number }, aspect: number, dir: number, cx: number, cy: number, maxR: number) {
     if (mode === "tv") return;
+    if (mode === "pixel") {
+      const p = thr; // seuil courant (même calcul que le shader : pr*1.25-.15)
+      for (let i = 0; i < 90 && this.parts.length < 360; i++) {
+        const cx_ = Math.floor(Math.random() * Math.ceil(box.w / 22)), cy_ = Math.floor(Math.random() * Math.ceil(box.h / 22));
+        if (Math.abs(hh(cx_, cy_) - p) > 0.015) continue;
+        this.parts.push({ x: box.x + cx_ * 22 + 11, y: box.y + cy_ * 22 + 11, vx: (Math.random() - 0.5) * 60, vy: -(20 + Math.random() * 80), r: 4 + Math.random() * 6, w: 0, a: 0, life: 0.9 + Math.random() * 0.8, age: 0, kind: 5 });
+      }
+      return;
+    }
     if (mode === "vinyl") {
       // Poussière dorée le long du bras qui balaie.
       const a = thr * Math.PI * 2;
@@ -336,6 +361,8 @@ export class Gommage {
       if (q.kind <= 2) {
         q.vx += (Math.sin(q.y * 0.012 + now * 0.002) * 60 + 25 * dir) * dt;
         q.vy -= 18 * dt;
+      } else if (q.kind === 5) {
+        q.vy += 260 * dt;
       } else if (q.kind === 4) {
         q.vx += Math.sin(q.y * 0.02 + now * 0.001) * 8 * dt;
         q.vy += 6 * dt;
@@ -346,9 +373,15 @@ export class Gommage {
       const f = 1 - q.age / q.life;
       if (f <= 0) continue;
       ctx.globalAlpha = Math.min(1, f * 1.6);
+      if (q.kind === 5) {
+        ctx.fillStyle = this.palette ? this.palette[Math.floor(q.r * 7) % this.palette.length] : "#ffffff";
+        const s = Math.round(q.r);
+        ctx.fillRect(Math.round(q.x - s / 2), Math.round(q.y - s / 2), s, s);
+        continue;
+      }
       if (q.kind === 1 || q.kind === 3) {
         // Étincelle / poussière dorée : point chaud avec une petite traînée.
-        ctx.strokeStyle = q.kind === 1 ? "#ffe2a0" : "#f3cf8e";
+        ctx.strokeStyle = q.kind === 1 ? (this.palette?.[1] ?? "#ffe2a0") : "#f3cf8e";
         ctx.lineWidth = q.r;
         ctx.lineCap = "round";
         ctx.beginPath();
@@ -358,7 +391,7 @@ export class Gommage {
         continue;
       }
       if (q.kind === 4) {
-        ctx.fillStyle = "#f1e4cf";
+        ctx.fillStyle = this.palette?.[0] ?? "#f1e4cf";
         ctx.globalAlpha *= 0.7;
         ctx.beginPath();
         ctx.arc(q.x, q.y, q.r, 0, 6.283);
@@ -373,7 +406,8 @@ export class Gommage {
       const r = q.r;
       ctx.beginPath();
       if (q.kind === 0) {
-        ctx.fillStyle = PETAL[Math.floor(q.r) % 3];
+        const pal = this.palette ?? PETAL;
+        ctx.fillStyle = pal[Math.floor(q.r) % pal.length];
         ctx.moveTo(-r, 0);
         ctx.quadraticCurveTo(-r * 0.2, -r * 0.75, r, -r * 0.08);
         ctx.quadraticCurveTo(r * 0.45, r * 0.12, r * 0.55, r * 0.02);

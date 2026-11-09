@@ -8,18 +8,21 @@ import type { RoundInfo, Side } from "../tournois/duel-screen";
 import { useTournament } from "../tournois/provider";
 import type { Player } from "../tournois/use-player";
 import { AudioReactiveLayer } from "./AudioReactiveLayer";
-import { impact, shatter as shatterSfx, whoosh } from "./audio/sfx";
+import { fadeVoice, impact, shatter as shatterSfx, voteVoice, whoosh } from "./audio/sfx";
+import { gameTheme, type GameTheme } from "./jeux-themes";
+import { GameAura } from "./GameAura";
 import { FloatingPlayer } from "./FloatingPlayer";
 import { EASE, FONT, IDENTITIES, LINE, LINE_2, PANEL, type FightSlug, type Identity } from "./identities";
 import { dominantColors } from "./palette";
 import { CommunityReveal, Confetti, Shatter, type Rect } from "./VoteShatter";
 import { VersusIntro } from "./VersusIntro";
 import { bumpStreak, Magnetic, ShortcutsPanel, StageCursor, StreakBurst, useAlternate, usePrediction } from "./FightExtras";
-import { jeuArt } from "./jeux-art";
+import { bgOf, jeuArt } from "./jeux-art";
 import { Gommage, type TransitionMode } from "../tournois/gommage";
 import { useAdobeKit } from "../tournois/adobe-kit";
 import { Embers } from "./Embers";
 import "./jeux-duel.css";
+import "./jeux-themes.css";
 
 // Tournoi des OST de jeux vidéo : l'univers du hero (art du jeu, Trajan doré),
 // et au vote le perdant se consume en pétales (le Gommage de Clair Obscur).
@@ -206,7 +209,10 @@ export function DuelStage(props: Props) {
         !!st && !!lr && !!media && !!gom.current?.start(media, {
           box: { x: lr.left - st.left, y: lr.top - st.top, w: lr.width, h: lr.height },
           dir: loser === "left" ? 1 : -1,
-          mode: VOTE_FX[meta.slug as FightSlug],
+          // Jeux : le perdant disparaît à la façon de SON jeu (pixels, givre, signal coupé…).
+          ...(jeux
+            ? { mode: gameTheme(lp.sub).fx, edge: gameTheme(lp.sub).fxEdge, parts: gameTheme(lp.sub).fxParts }
+            : { mode: VOTE_FX[meta.slug as FightSlug] }),
         });
       setPicked(side);
       if (burnt) {
@@ -219,10 +225,18 @@ export function DuelStage(props: Props) {
           colors: colors.current[side],
         });
       }
-      impact(1);
-      if (!reduce) {
-        if (burnt) whoosh(0.55);
-        else setTimeout(shatterSfx, 260);
+      if (jeux) {
+        // Le son du vote prend la voix du jeu gagnant ; le perdant s'efface dans la sienne.
+        const wt = gameTheme((side === "left" ? left : right).sub);
+        const lt = gameTheme(lp.sub);
+        voteVoice(wt.voice, wt.root);
+        if (!reduce) setTimeout(() => fadeVoice(lt.voice, lt.root), 180);
+      } else {
+        impact(1);
+        if (!reduce) {
+          if (burnt) whoosh(0.55);
+          else setTimeout(shatterSfx, 260);
+        }
       }
       // Verdict de la communauté (la base garde le vote, puis on lit la répartition).
       if (meta.statsId) {
@@ -327,7 +341,7 @@ export function DuelStage(props: Props) {
       ) : (
         <div style={{ display: "flex", gap: 7, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box" }}>
           {(["left", "right"] as const).map((side) => (
-            <PanelSlot key={side} side={side} first={side === "left"}>
+            <PanelSlot key={side} side={side} first={side === "left"} accents={jeux ? [gameTheme(left.sub).accent, gameTheme(right.sub).accent] : undefined}>
               <Panel
                 side={side}
                 p={side === "left" ? left : right}
@@ -352,7 +366,7 @@ export function DuelStage(props: Props) {
         </div>
       )}
 
-      {meta.slug !== "openings" ? <Embers active={!!audible} zIndex={2} tint={meta.slug === "endings" ? "dust" : "gold"} density={jeux ? 1 : 0.7} /> : null}
+      {meta.slug !== "openings" && !jeux ? <Embers active={!!audible} zIndex={2} tint={meta.slug === "endings" ? "dust" : "gold"} density={jeux ? 1 : 0.7} /> : null}
 
       {/* En-tête : étiquette du tournoi et du round, filet de progression. */}
       <motion.div
@@ -455,10 +469,10 @@ const EXIT_T = {
   fade: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
 } as const;
 
-function PanelSlot({ side, first, children }: { side: Side; first: boolean; children: React.ReactNode }) {
+function PanelSlot({ side, first, accents, children }: { side: Side; first: boolean; accents?: [string, string]; children: React.ReactNode }) {
   return (
     <>
-      {!first ? <Divider /> : null}
+      {!first ? <Divider accents={accents} /> : null}
       <div data-slot={side} style={{ display: "contents" }}>
         {children}
       </div>
@@ -467,9 +481,37 @@ function PanelSlot({ side, first, children }: { side: Side; first: boolean; chil
 }
 
 // Le VS vit dans la jointure : il suit la frontière quand un côté s'étend.
-function Divider() {
+// Jeux : le médaillon est coupé aux couleurs des deux jeux, chacun rayonne de son côté.
+function Divider({ accents }: { accents?: [string, string] }) {
   const { meta } = useTournament();
   const id = IDENTITIES[meta.slug as FightSlug];
+  if (accents) {
+    const [a, b] = accents;
+    return (
+      <div style={{ position: "relative", width: 0, zIndex: 12 }} aria-hidden>
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0, rotate: -90 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0, transition: { duration: 0.8, ease: EASE, delay: 0.3 } }}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: 0,
+            translate: "-50% -50%",
+            display: "grid",
+            placeItems: "center",
+            width: 52,
+            height: 52,
+            borderRadius: 999,
+            border: "1.5px solid transparent",
+            background: `linear-gradient(${PANEL}, ${PANEL}) padding-box, linear-gradient(90deg, ${a}, ${b}) border-box`,
+            boxShadow: `-10px 0 26px -8px ${a}, 10px 0 26px -8px ${b}, 0 10px 30px -10px rgba(0,0,0,0.8)`,
+          }}
+        >
+          <span style={{ fontFamily: TRAJAN, fontWeight: 600, fontSize: 12, letterSpacing: "0.14em", color: "transparent", background: `linear-gradient(90deg, ${a}, ${b})`, WebkitBackgroundClip: "text", backgroundClip: "text" }}>VS</span>
+        </motion.div>
+      </div>
+    );
+  }
   return (
     <div style={{ position: "relative", width: 0, zIndex: 12 }} aria-hidden>
       <motion.div
@@ -527,6 +569,9 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
   const lose = !!picked && !win;
   const grow = picked ? (win ? 100 : 0.0001) : focus ? (focus === side ? 62 : 38) : 50;
   const dim = !picked && focus && focus !== side;
+  // Jeux : l'univers du jeu (police, encre, bouton, particules).
+  const th = jeux ? gameTheme(p.sub) : null;
+  const vars = th ? ({ "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow, "--jg-mute": th.mute } as React.CSSProperties) : undefined;
 
   // Inclinaison 3D légère sur 3 couches (fond, voile, texte), au ressort.
   const mx = useMotionValue(0);
@@ -562,7 +607,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
         mx.set(((e.clientX - r.left) / r.width) * 2 - 1);
         my.set(((e.clientY - r.top) / r.height) * 2 - 1);
       }}
-      style={{ position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", borderRadius: 16, background: PANEL, boxShadow: `0 0 0 1px ${LINE}` }}
+      style={{ ...vars, position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", borderRadius: 16, background: PANEL, boxShadow: th && focus === side && !picked ? `0 0 0 1px ${th.accent}66, 0 0 60px -20px ${th.accent}` : `0 0 0 1px ${LINE}`, transition: "box-shadow 0.5s ease" }}
       onClick={() => !picked && onListen(side)}
       role="group"
       aria-label={`${id.sides[side === "left" ? 0 : 1]} : ${masked(p)}`}
@@ -587,10 +632,13 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
           style={{
             position: "absolute",
             inset: 0,
-            background: `linear-gradient(to top, ${id.bg} 0%, ${id.bg}cc 22%, transparent 58%), linear-gradient(to ${side === "left" ? "right" : "left"}, ${id.bg}99, transparent 40%)`,
+            background: th
+              ? `linear-gradient(to top, rgba(4,4,6,0.94) 0%, ${th.veil} 30%, transparent 62%), linear-gradient(to ${side === "left" ? "right" : "left"}, rgba(4,4,6,0.55), transparent 40%)`
+              : `linear-gradient(to top, ${id.bg} 0%, ${id.bg}cc 22%, transparent 58%), linear-gradient(to ${side === "left" ? "right" : "left"}, ${id.bg}99, transparent 40%)`,
           }}
         />
         <AudioReactiveLayer id={id} active={loaded} player={player} reduce={reduce} />
+        {th && !hidden ? <GameAura kind={th.aura} accent={th.accent} active={loaded} /> : null}
         {jeux && win && !reduce ? (
           <>
             {/* Sacre du gagnant : un reflet d'or traverse le panneau une fois, filet doré. */}
@@ -598,13 +646,13 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
               aria-hidden
               initial={{ x: "-120%" }}
               animate={{ x: "120%", transition: { duration: 1.3, ease: [0.4, 0, 0.2, 1], delay: 0.35 } }}
-              style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", background: "linear-gradient(105deg, transparent 30%, rgba(255,231,176,0) 38%, rgba(255,231,176,0.32) 50%, rgba(255,231,176,0) 62%, transparent 70%)", mixBlendMode: "screen" }}
+              style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", background: `linear-gradient(105deg, transparent 30%, ${th?.accent ?? "#ffe7b0"}00 38%, ${th?.accent ?? "#ffe7b0"}55 50%, ${th?.accent ?? "#ffe7b0"}00 62%, transparent 70%)`, mixBlendMode: "screen" }}
             />
             <motion.div
               aria-hidden
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, transition: { duration: 0.8, delay: 0.3 } }}
-              style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", borderRadius: 16, boxShadow: `inset 0 0 0 1px ${id.a}aa, inset 0 0 80px -20px ${id.a}66` }}
+              style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", borderRadius: 16, boxShadow: `inset 0 0 0 1px ${th?.accent ?? id.a}aa, inset 0 0 80px -20px ${th?.accent ?? id.a}66` }}
             />
           </>
         ) : null}
@@ -622,28 +670,25 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
             zIndex: 6,
           }}
         >
-          {jeux && !hidden ? (
-            <img src={p.thumb} alt="" draggable={false} style={{ width: 58, height: 58, objectFit: "cover", borderRadius: 2, boxShadow: `0 0 0 1px ${id.a}88, 0 12px 30px -8px rgba(0,0,0,0.9)`, marginBottom: 4 }} />
-          ) : null}
-          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontFamily: jeux ? TRAJAN : undefined, fontSize: jeux ? 12 : 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: jeux ? id.b : id.mute }}>
-            <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
+          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? th.accent : id.mute }}>
+            <span aria-hidden style={{ width: 18, height: th?.id === "pixel" ? 4 : 1, background: th ? th.accent : id.a }} />
             {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]}
             {playing ? <EqBars color={id.a} /> : null}
           </p>
           <h2
             style={
-              jeux
+              th
                 ? {
                     margin: 0,
-                    fontFamily: TRAJAN,
-                    fontWeight: 400,
-                    fontSize: p.title.length > 22 ? "clamp(22px, 2.2vw, 36px)" : "clamp(28px, 2.9vw, 50px)",
-                    lineHeight: 1.06,
-                    letterSpacing: "0.03em",
-                    textTransform: "uppercase",
+                    fontFamily: th.font,
+                    fontWeight: th.weight,
+                    fontSize: `calc(${p.title.length > 22 ? "clamp(22px, 2.2vw, 36px)" : "clamp(28px, 2.9vw, 50px)"} * ${th.scale})`,
+                    lineHeight: th.id === "pixel" ? 1.45 : 1.06,
+                    letterSpacing: `${th.track}em`,
+                    textTransform: th.upper ? "uppercase" : "none",
                     textWrap: "balance",
                     overflowWrap: "break-word",
-                    filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 10px 30px rgba(0,0,0,0.6))",
+                    filter: th.ink.startsWith("linear") ? "drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 10px 30px rgba(0,0,0,0.6))" : undefined,
                   }
                 : {
                     margin: 0,
@@ -658,23 +703,24 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
                   }
             }
           >
-            {jeux
+            {th
               ? masked(p)
                   .split(" ")
                   .map((w, k, all) => (
-                    <motion.span
+                    // Entrée propre à l'univers (machine à écrire, néon qui grésille, rebond…), puis l'encre.
+                    <span
                       key={`${p.id}-${k}`}
-                      className="jx-word"
-                      initial={reduce ? false : { opacity: 0, y: "0.5em", filter: "blur(6px)" }}
-                      animate={{ opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: EASE, delay: 0.25 + k * 0.07 + (side === "right" ? 0.12 : 0) } }}
-                      style={{ animationDelay: `${1.6 + k * 0.09}s`, marginRight: k < all.length - 1 ? "0.28em" : 0 }}
+                      className={`jg-e jg-in--${th.entry}`}
+                      style={{ animationDelay: `${0.2 + k * (th.entry === "type" ? 0.16 : 0.07) + (side === "right" ? 0.12 : 0)}s`, marginRight: k < all.length - 1 ? "0.28em" : 0 }}
                     >
-                      {w}
-                    </motion.span>
+                      <span className={`jg-w ${th.ink.startsWith("linear") ? "is-grad" : "is-solid"}`} style={{ animationDelay: `${1.8 + k * 0.09}s` }}>
+                        {w}
+                      </span>
+                    </span>
                   ))
               : masked(p)}
           </h2>
-          <p style={{ margin: 0, fontSize: jeux ? 13 : 14, fontFamily: jeux ? TRAJAN : undefined, letterSpacing: jeux ? "0.04em" : undefined, color: id.mute }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontFamily: th ? FONT.body : undefined, letterSpacing: th ? "0.02em" : undefined, color: th ? th.mute : id.mute }}>
             {hidden ? "Titre caché jusqu'à ton choix" : jeux ? [p.note, p.artist].filter(Boolean).join(" — ") : [p.sub, p.note, p.artist].filter(Boolean).join(" — ")}
           </p>
           {win ? (
@@ -714,6 +760,12 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
                 {loaded && player.loading ? <Spinner /> : playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
               </motion.button>
               <Magnetic>
+              {th ? (
+                <button type="button" className={`jg-btn jg-btn--${th.btn}`} onClick={() => onChoose(side)} aria-label={`Garder ${masked(p)}`}>
+                  Garder
+                  <span className="jg-key">{KEY[side]}</span>
+                </button>
+              ) : (
               <motion.button
                 type="button"
                 whileHover={{ y: -1 }}
@@ -741,6 +793,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
                 Garder
                 <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, borderRadius: jeux ? 2 : 999, background: "rgba(8,9,13,0.12)", fontSize: 11.5, fontWeight: 600, letterSpacing: 0 }}>{KEY[side]}</span>
               </motion.button>
+              )}
               </Magnetic>
             </div>
           ) : null}
@@ -785,19 +838,55 @@ function Media({ p, player, posterAt = 20 }: { p: Participant; player: Player; p
   );
 }
 
-// Fond d'un panneau jeux : l'art officiel du jeu ; à défaut, la pochette
-// agrandie et floutée, avec la pochette nette posée dessus.
+// Fond d'un panneau jeux. Chaque piste a le sien (p.bg) : art du jeu, capture
+// officielle en 4K (srcset : la 4K seulement sur les grands écrans) ou boucle
+// vidéo. Sans fond : une scène dans la couleur du jeu, pochette au centre.
+
 function JeuxBackdrop({ p, playing }: { p: Participant; playing: boolean }) {
-  const art = jeuArt(p.sub);
+  const bg = bgOf(p);
+  const th = gameTheme(p.sub);
   const [ready, setReady] = useState(false);
-  const fill: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" };
+  const fill: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease, filter 0.9s ease" };
   const cls = `jx-art ${playing ? "is-playing" : ""}`;
-  if (art) return <img className={cls} src={art.src} alt="" draggable={false} decoding="async" onLoad={() => setReady(true)} style={{ ...fill, objectPosition: art.pos, transition: "opacity 0.6s ease, filter 0.9s ease" }} />;
+  if (bg?.video)
+    return (
+      <video
+        key={bg.video}
+        className={`${cls} is-video`}
+        src={bg.video}
+        poster={bg.src}
+        crossOrigin="anonymous"
+        muted
+        loop
+        autoPlay
+        playsInline
+        preload="auto"
+        onLoadedData={() => setReady(true)}
+        style={{ ...fill, objectPosition: bg.pos }}
+      />
+    );
+  if (bg)
+    return (
+      <img
+        key={bg.src}
+        className={cls}
+        src={bg.src}
+        srcSet={bg.hi ? `${bg.src} 1920w, ${bg.hi} 3840w` : undefined}
+        sizes="(min-width: 1500px) 62vw, 100vw"
+        crossOrigin="anonymous"
+        alt=""
+        draggable={false}
+        decoding="async"
+        onLoad={() => setReady(true)}
+        onError={() => setReady(true)}
+        style={{ ...fill, objectPosition: bg.pos }}
+      />
+    );
   const src = imgOf(p);
   return (
     <>
-      <img src={src} alt="" draggable={false} decoding="async" onLoad={() => setReady(true)} style={{ ...fill, filter: "blur(36px) saturate(1.2) brightness(0.55)", transform: "scale(1.25)" }} />
-      <img src={src} alt="" draggable={false} style={{ position: "absolute", top: "12%", left: "50%", translate: "-50% 0", width: "min(44%, 340px)", aspectRatio: "1", objectFit: "cover", borderRadius: 3, boxShadow: "0 40px 80px -20px rgba(0,0,0,0.9)", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: `radial-gradient(70% 60% at 50% 32%, ${th.accent}2e, transparent 70%), radial-gradient(120% 90% at 50% 120%, ${th.accent}22, transparent 60%), #07070a` }} />
+      <img src={src} alt="" draggable={false} decoding="async" onLoad={() => setReady(true)} style={{ position: "absolute", top: "10%", left: "50%", translate: "-50% 0", width: "min(42%, 340px)", aspectRatio: "1", objectFit: "cover", borderRadius: 4, boxShadow: `0 40px 90px -24px rgba(0,0,0,0.95), 0 0 0 1px ${th.accent}44, 0 0 120px -30px ${th.accent}`, opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" }} />
     </>
   );
 }
@@ -834,6 +923,8 @@ function Deck({ left, right, id, player, picked, blind, masked, listen, choose, 
 }
 
 function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, jeux, onKeep, onPass, onListen }: { side: Side; p: Participant; id: Identity; player: Player; isTop: boolean; picked: Side | null; hidden: boolean; masked: (p: Participant) => string; reduce: boolean; jeux: boolean; onKeep: () => void; onPass: () => void; onListen: () => void }) {
+  const th = jeux ? gameTheme(p.sub) : null;
+  const vars = th ? ({ "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow, "--jg-mute": th.mute } as React.CSSProperties) : undefined;
   const x = useMotionValue(0);
   const rot = useTransform(x, (v) => v / 18);
   const keepGlow = useTransform(x, (v) => Math.max(0, Math.min(1, v / 140)));
@@ -873,34 +964,42 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
       {/* La couleur fuit sur le bord de sortie. */}
       <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: keepGlow, background: `linear-gradient(to left, ${id.a}cc, transparent 55%)` }} />
       <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: passGlow, background: `linear-gradient(to right, ${id.b}aa, transparent 55%)` }} />
-      <div style={{ position: "absolute", left: 20, right: 20, bottom: 20, display: "grid", gap: 8, zIndex: 6 }}>
-        {jeux && !hidden ? <img src={p.thumb} alt="" draggable={false} style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 2, boxShadow: `0 0 0 1px ${id.a}88, 0 10px 24px -8px rgba(0,0,0,0.9)` }} /> : null}
-        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: jeux ? TRAJAN : undefined, fontSize: jeux ? 11 : 12, fontWeight: 600, letterSpacing: jeux ? "0.2em" : "0.06em", textTransform: "uppercase", color: jeux ? id.b : id.a }}>
-          {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]} {playing ? (jeux ? <EqBars color={id.a} /> : "— en écoute") : ""}
+      {th && !hidden ? <GameAura kind={th.aura} accent={th.accent} active={player.id === p.id} zIndex={5} /> : null}
+      <div style={{ ...vars, position: "absolute", left: 20, right: 20, bottom: 20, display: "grid", gap: 8, zIndex: 6 } as React.CSSProperties}>
+        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(11 * Math.min(1, th.scale + 0.25)) : 12, fontWeight: th ? th.weight : 600, letterSpacing: th ? (th.id === "pixel" ? "0.04em" : "0.2em") : "0.06em", textTransform: "uppercase", color: th ? th.accent : id.a }}>
+          {th && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]} {playing ? (th ? <EqBars color={th.accent} /> : "— en écoute") : ""}
         </p>
-        {jeux ? (
-          <h2 style={{ margin: 0, fontFamily: TRAJAN, fontWeight: 400, fontSize: masked(p).length > 22 ? 23 : 30, lineHeight: 1.06, letterSpacing: "0.03em", textTransform: "uppercase", textWrap: "balance", overflowWrap: "break-word", filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 10px 30px rgba(0,0,0,0.6))" }}>
+        {th ? (
+          <h2 style={{ margin: 0, fontFamily: th.font, fontWeight: th.weight, fontSize: (masked(p).length > 22 ? 23 : 30) * th.scale, lineHeight: th.id === "pixel" ? 1.45 : 1.06, letterSpacing: `${th.track}em`, textTransform: th.upper ? "uppercase" : "none", textWrap: "balance", overflowWrap: "break-word", filter: th.ink.startsWith("linear") ? "drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 10px 30px rgba(0,0,0,0.6))" : undefined }}>
             {masked(p)
               .split(" ")
               .map((w, k, all) => (
-                <span key={`${p.id}-${k}`} className="jx-word" style={{ animationDelay: `${1.6 + k * 0.09}s`, marginRight: k < all.length - 1 ? "0.28em" : 0 }}>
-                  {w}
+                <span key={`${p.id}-${k}`} className={`jg-e jg-in--${th.entry}`} style={{ animationDelay: `${0.15 + k * (th.entry === "type" ? 0.16 : 0.07)}s`, marginRight: k < all.length - 1 ? "0.28em" : 0 }}>
+                  <span className={`jg-w ${th.ink.startsWith("linear") ? "is-grad" : "is-solid"}`} style={{ animationDelay: `${1.6 + k * 0.09}s` }}>
+                    {w}
+                  </span>
                 </span>
               ))}
           </h2>
         ) : (
           <h2 style={{ margin: 0, fontFamily: FONT.display, fontWeight: 800, fontSize: 36, lineHeight: 0.98, letterSpacing: "-0.04em", color: id.ink }}>{masked(p)}</h2>
         )}
-        <p style={{ margin: 0, fontSize: jeux ? 13 : 14, fontFamily: jeux ? TRAJAN : undefined, letterSpacing: jeux ? "0.04em" : undefined, color: jeux ? id.mute : id.ink, opacity: jeux ? 1 : 0.8 }}>{hidden ? "Titre caché" : jeux ? p.artist : [p.sub, p.artist].filter(Boolean).join(" — ")}</p>
+        <p style={{ margin: 0, fontSize: th ? 13 : 14, color: th ? th.mute : id.ink, opacity: th ? 1 : 0.8 }}>{hidden ? "Titre caché" : th ? p.artist : [p.sub, p.artist].filter(Boolean).join(" — ")}</p>
         {isTop && !picked ? (
-          <div style={{ display: "flex", gap: 10, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
-            <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onListen} aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${masked(p)}`} style={{ width: 50, height: 50, border: 0, borderRadius: 999, display: "grid", placeItems: "center", background: playing ? id.a : "rgba(255,255,255,0.16)", color: playing ? id.bg : id.ink }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 6, alignItems: "center" }} onClick={(e) => e.stopPropagation()}>
+            <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onListen} aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${masked(p)}`} style={{ flex: "none", width: 50, height: 50, border: 0, borderRadius: 999, display: "grid", placeItems: "center", background: playing ? (th?.accent ?? id.a) : "rgba(255,255,255,0.16)", color: playing ? id.bg : id.ink }}>
               {playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}
             </motion.button>
-            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: jeux ? 2 : 999, background: jeux ? "#f4f2ec" : id.a, color: id.bg, fontFamily: jeux ? TRAJAN : FONT.body, fontWeight: 600, fontSize: jeux ? 13 : 15, letterSpacing: jeux ? "0.16em" : undefined, textTransform: jeux ? "uppercase" : undefined }}>
-              Garder
-            </motion.button>
-            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ height: 50, padding: "0 18px", border: 0, borderRadius: jeux ? 2 : 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontFamily: jeux ? TRAJAN : undefined, fontWeight: 600, fontSize: jeux ? 12 : 14, letterSpacing: jeux ? "0.12em" : undefined, textTransform: jeux ? "uppercase" : undefined }}>
+            {th ? (
+              <button type="button" className={`jg-btn jg-btn--${th.btn}`} onClick={onKeep} style={{ flex: 1, justifyContent: "center", height: 50 }}>
+                Garder
+              </button>
+            ) : (
+              <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: 999, background: id.a, color: id.bg, fontFamily: FONT.body, fontWeight: 600, fontSize: 15 }}>
+                Garder
+              </motion.button>
+            )}
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ flex: "none", height: 50, padding: "0 16px", border: 0, borderRadius: th ? 2 : 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontFamily: th ? th.font : undefined, fontWeight: 600, fontSize: th ? 12 * Math.min(1, th.scale + 0.2) : 14, letterSpacing: th ? "0.08em" : undefined, textTransform: th ? "uppercase" : undefined }}>
               L'autre
             </motion.button>
           </div>

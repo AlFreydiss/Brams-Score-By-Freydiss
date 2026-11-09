@@ -94,3 +94,7 @@ export function jeuArt(game: string | undefined) {
   const a = game ? ART[game] : undefined;
   return a ? { src: `/tournoi/jeux-art/${a[0]}.webp`, pos: a[1] } : null;
 }
+
+/** Fond propre à une piste (data jeux.json : p.bg), sinon l'art du jeu. */
+export type Bg = { src: string; hi?: string; pos?: string; video?: string };
+export const bgOf = (p: { sub?: string; bg?: Bg }): Bg | null => p.bg ?? jeuArt(p.sub);

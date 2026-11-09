@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ArenaItem } from "../fight/arena/Arena3D";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
+import { Atmosphere, setAtmosphere } from "./atmosphere";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
 import { fontsReady } from "@/lib/tournois/fonts";
@@ -196,6 +197,8 @@ export default function HubPage() {
           <Billboard backdrops={backdrops} statuses={statuses} />
         )}
 
+        {/* Brume vivante derrière les rangées (sous l'arène, fixe à l'écran). */}
+        <Atmosphere />
         <div className="nf-body">
           <div className="nf-block">
             <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -8 }}>
@@ -403,6 +406,7 @@ function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status:
     <motion.div {...cardIn(index)}>
       <Link
         to={`/tournoi/${meta.path}${running ? "/duel" : ""}`}
+        onPointerEnter={() => setAtmosphere(ACCENT[meta.slug] ?? "#d9a35a")}
         className={`nf-card nf-card--poster nf-card--${meta.slug}`}
         style={{ "--acc": ACCENT[meta.slug] ?? "#f4f2ec" } as React.CSSProperties}
       >

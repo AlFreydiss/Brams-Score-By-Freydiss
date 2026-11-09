@@ -732,3 +732,15 @@
     transition: none;
   }
 }
+
+/* Brume vivante (atmosphere.tsx) : fixe à l'écran, sous l'arène et les rangées
+   (z-index -1 dans le contexte isolé de .nf : au-dessus de son fond, sous tout le reste). */
+.nf-atmo {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  display: block;
+}

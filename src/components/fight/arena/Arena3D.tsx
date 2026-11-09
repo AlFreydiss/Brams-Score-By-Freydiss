@@ -433,6 +433,8 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
         <planeGeometry args={[active ? W * 0.42 : W * 0.2, 0.012]} />
         <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={active ? 1 : 0.4} />
       </mesh>
+      <Rays accent={accent} active={active} />
+      <Sheen geo={geo} accent={accent} active={active} />
       <Frame accent={accent} active={active} />
       {/* Flaque de lumière au sol, dans la couleur du tournoi. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -H / 2 - 0.33, 0.55]}>
@@ -459,7 +461,7 @@ function onFrame(t: number, out: THREE.Vector3) {
   return out.set(-W / 2, -H / 2 + d, z(-W / 2));
 }
 
-// Liseré fin autour de l'écran + deux lumières qui courent dessus.
+// Liseré fin autour de l'écran (plus vif sur l'écran actif).
 function Frame({ accent, active }: { accent: THREE.Color; active: boolean }) {
   const line = useMemo(() => {
     const pts: THREE.Vector3[] = [];
@@ -467,33 +469,119 @@ function Frame({ accent, active }: { accent: THREE.Color; active: boolean }) {
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
     return new THREE.Line(geo, new THREE.LineBasicMaterial({ transparent: true, toneMapped: false }));
   }, []);
-  const runners = [useRef<THREE.Mesh>(null), useRef<THREE.Mesh>(null)];
-  const glow = useMemo(() => accent.clone().multiplyScalar(2.4), [accent]);
-  const t = useRef(Math.random());
-  const v = new THREE.Vector3();
   useFrame((_, dt) => {
     const m = line.material as THREE.LineBasicMaterial;
     m.color.copy(accent);
-    m.opacity = THREE.MathUtils.damp(m.opacity, active ? 0.75 : 0.18, 4, dt);
-    t.current += dt * (active ? 0.09 : 0.04);
-    runners.forEach((r, k) => {
-      if (!r.current) return;
-      onFrame(t.current + k * 0.5, v);
-      r.current.position.copy(v);
-      const s = THREE.MathUtils.damp(r.current.scale.x, active ? 1 : 0.45, 4, dt);
-      r.current.scale.setScalar(s);
+    m.opacity = THREE.MathUtils.damp(m.opacity, active ? 0.55 : 0.14, 4, dt);
+  });
+  return <primitive object={line} />;
+}
+
+// Reflet de verre : une bande de lumière oblique traverse l'écran actif toutes
+// les ~7 s, comme une vitre qui accroche la lumière. Rien sur les autres écrans.
+const SHEEN_VS = /* glsl */ `
+varying vec2 vUv;
+void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+`;
+const SHEEN_FS = /* glsl */ `
+uniform float uT;
+uniform float uOn;
+uniform vec3 uTint;
+varying vec2 vUv;
+void main() {
+  // Position de la bande : balaie de -0.4 à 1.4 en 1,6 s, puis repos.
+  float p = -0.4 + 1.8 * clamp(uT / 1.6, 0.0, 1.0);
+  float d = vUv.x + (vUv.y - 0.5) * 0.45 - p;
+  float band = exp(-d * d * 260.0) + 0.35 * exp(-d * d * 18.0);
+  // Bords de l'écran : un léger liseré de verre, toujours là.
+  vec2 e = min(vUv, 1.0 - vUv);
+  float rim = (1.0 - smoothstep(0.0, 0.02, min(e.x, e.y * 1.8))) * 0.12;
+  vec3 c = mix(vec3(1.0), uTint, 0.35);
+  gl_FragColor = vec4(c * (band * 0.22 + rim), 1.0) * uOn;
+}
+`;
+function Sheen({ geo, accent, active }: { geo: THREE.BufferGeometry; accent: THREE.Color; active: boolean }) {
+  const mat = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: SHEEN_VS,
+        fragmentShader: SHEEN_FS,
+        uniforms: { uT: { value: 99 }, uOn: { value: 0 }, uTint: { value: new THREE.Color() } },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    [],
+  );
+  const clock = useRef(2.5);
+  useFrame((_, dt) => {
+    clock.current += dt;
+    if (clock.current > 7) clock.current = 0;
+    mat.uniforms.uT.value = clock.current;
+    mat.uniforms.uOn.value = THREE.MathUtils.damp(mat.uniforms.uOn.value, active ? 1 : 0, 3, dt);
+    (mat.uniforms.uTint.value as THREE.Color).copy(accent);
+  });
+  return <mesh geometry={geo} material={mat} position={[0, 0, 0.004]} raycast={() => null} />;
+}
+
+// Rayons derrière l'écran actif : de longs faisceaux doux qui partent du haut
+// et respirent lentement, dans la couleur du tournoi (lumière d'église, brume).
+let rayTex: THREE.Texture | null = null;
+function ray() {
+  if (rayTex) return rayTex;
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 256;
+  const g = c.getContext("2d")!;
+  const h = g.createLinearGradient(0, 0, 64, 0);
+  h.addColorStop(0, "rgba(255,255,255,0)");
+  h.addColorStop(0.5, "rgba(255,255,255,1)");
+  h.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = h;
+  g.fillRect(0, 0, 64, 256);
+  // Fondu vers le bas : le faisceau se perd dans la brume.
+  g.globalCompositeOperation = "destination-in";
+  const v = g.createLinearGradient(0, 0, 0, 256);
+  v.addColorStop(0, "rgba(0,0,0,1)");
+  v.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = v;
+  g.fillRect(0, 0, 64, 256);
+  rayTex = new THREE.CanvasTexture(c);
+  return rayTex;
+}
+const RAYS = [
+  { x: -1.3, w: 0.55, a: 0.16, s: 0.7 },
+  { x: -0.45, w: 0.9, a: 0.07, s: 0.45 },
+  { x: 0.35, w: 0.4, a: -0.05, s: 0.9 },
+  { x: 1.1, w: 0.75, a: -0.14, s: 0.55 },
+  { x: 1.7, w: 0.3, a: -0.22, s: 1.1 },
+];
+function Rays({ accent, active }: { accent: THREE.Color; active: boolean }) {
+  const refs = useRef<(THREE.Mesh | null)[]>([]);
+  const on = useRef(0);
+  useFrame((state, dt) => {
+    on.current = THREE.MathUtils.damp(on.current, active ? 1 : 0, 2.2, dt);
+    const t = state.clock.elapsedTime;
+    refs.current.forEach((m, k) => {
+      if (!m) return;
+      const r = RAYS[k];
+      const mat = m.material as THREE.MeshBasicMaterial;
+      mat.color.copy(accent);
+      // Respiration lente et décalée de chaque faisceau.
+      mat.opacity = on.current * (0.1 + 0.08 * Math.sin(t * r.s + k * 1.7));
+      m.rotation.z = r.a + Math.sin(t * 0.13 + k) * 0.025;
     });
   });
   return (
-    <>
-      <primitive object={line} />
-      {runners.map((r, k) => (
-        <mesh key={k} ref={r}>
-          <sphereGeometry args={[0.028, 12, 12]} />
-          <meshBasicMaterial color={glow} toneMapped={false} />
+    <group position={[0, H / 2 + 0.4, -0.35]}>
+      {RAYS.map((r, k) => (
+        <mesh key={k} ref={(m) => (refs.current[k] = m)} position={[r.x, -2.1, 0]} raycast={() => null}>
+          <planeGeometry args={[r.w, 4.6]} />
+          <meshBasicMaterial map={ray()} transparent opacity={0} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
         </mesh>
       ))}
-    </>
+    </group>
   );
 }
 
