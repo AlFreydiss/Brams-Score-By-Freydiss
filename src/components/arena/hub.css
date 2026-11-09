@@ -848,3 +848,12 @@
   font: 600 10.5px/1 var(--nx-sans, system-ui);
   letter-spacing: 0.2em;
 }
+
+/* Titres de section numérotés (01 Musique, 02 Images…). */
+.nf-block-idx {
+  margin-right: 14px;
+  font: 500 12px var(--nx-mono, ui-monospace, monospace);
+  letter-spacing: 0.08em;
+  color: var(--nx-mut);
+  vertical-align: 0.35em;
+}

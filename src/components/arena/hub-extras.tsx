@@ -155,6 +155,31 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
             </div>
           );
         })}
+        {/* Filet de lumière sur la coupe : il suit le côté survolé (ou gagnant). */}
+        <svg className="dd-seam" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+          <defs>
+            <linearGradient id="dd-seam-g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor={jeux ? gameTheme(b.sub).accent : pool.accent} />
+              <stop offset="0.5" stopColor="#fff6e0" />
+              <stop offset="1" stopColor={jeux ? gameTheme(a.sub).accent : pool.accent} />
+            </linearGradient>
+          </defs>
+          {(() => {
+            const sp = lean === "l" || voted === a.id ? 60 : lean === "r" || voted === b.id ? 40 : 50;
+            return (
+              <motion.line
+                initial={false}
+                animate={{ x1: sp + 5, x2: sp - 5 }}
+                transition={{ duration: 0.9, ease: [0.77, 0, 0.175, 1] }}
+                y1={0}
+                y2={100}
+                stroke="url(#dd-seam-g)"
+                strokeWidth={1.25}
+                vectorEffect="non-scaling-stroke"
+              />
+            );
+          })()}
+        </svg>
         {/* Sceau au croisement des deux affiches. */}
         <div className="dd-seal" aria-hidden>
           <svg viewBox="0 0 100 100">

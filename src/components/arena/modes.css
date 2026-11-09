@@ -1,0 +1,198 @@
+/* ── « Autres modes » en affiches (hub-page.tsx) ────────────────────
+   Même grammaire que les cartes des tournois (titre sur l'image, filet de
+   couleur), en portrait. Chaque mode porte un petit signe en haut à gauche :
+   figé au repos, il ne s'anime qu'au survol (aucune boucle permanente). */
+.nf-card--mode .nf-card-art {
+  aspect-ratio: 4 / 5;
+}
+.nf-card--mode .nf-card-body b {
+  font-size: clamp(18px, 1.45vw, 23px);
+}
+.nf-card--mode .nf-card-body small {
+  white-space: normal;
+}
+
+.md-sign {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(8, 9, 13, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font: 600 10px/1 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  color: #f4f2ec;
+  pointer-events: none;
+}
+
+/* Doublage : VF / VOSTFR, la piste active bascule. */
+.md-dub {
+  position: absolute;
+  gap: 0;
+  padding: 0 3px;
+}
+.md-dub i {
+  position: relative;
+  z-index: 1;
+  padding: 0 8px;
+  font-style: normal;
+  line-height: 20px;
+  color: rgba(244, 242, 236, 0.55);
+  transition: color 0.4s ease;
+}
+.md-dub i:first-child {
+  color: #08090d;
+}
+.md-dub::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: 34px;
+  border-radius: 999px;
+  background: var(--acc);
+  transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1), width 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* Studio : voyant d'enregistrement. */
+.md-rec i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--acc);
+  box-shadow: 0 0 0 0 rgba(255, 90, 95, 0.6);
+}
+
+/* OST Anime : égaliseur, barres posées au repos. */
+.md-eq {
+  gap: 3px;
+  padding: 0 11px;
+}
+.md-eq i {
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--acc);
+  transform-origin: bottom;
+  transform: scaleY(0.35);
+}
+.md-eq i:nth-child(2) {
+  transform: scaleY(0.7);
+}
+.md-eq i:nth-child(3) {
+  transform: scaleY(0.5);
+}
+.md-eq i:nth-child(4) {
+  transform: scaleY(0.85);
+}
+
+/* Jouer à plusieurs : trois joueurs serrés qui s'écartent pour faire de la place. */
+.md-party {
+  gap: 0;
+  padding: 0 9px 0 6px;
+}
+.md-party i {
+  width: 14px;
+  height: 14px;
+  margin-right: -5px;
+  border-radius: 50%;
+  background: var(--acc);
+  box-shadow: 0 0 0 2px rgba(8, 9, 13, 0.9);
+  transition: margin 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.md-party i:nth-child(2) {
+  background: #f4f2ec;
+}
+.md-party i:nth-child(3) {
+  background: #e9875f;
+}
+.md-party b {
+  margin-left: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0.6;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .nf-card--mode:hover .md-dub::before {
+    width: 64px;
+    transform: translateX(32px);
+  }
+  .nf-card--mode:hover .md-dub i:first-child {
+    color: rgba(244, 242, 236, 0.55);
+  }
+  .nf-card--mode:hover .md-dub i:last-child {
+    color: #08090d;
+  }
+  .nf-card--mode:hover .md-rec i {
+    animation: md-rec 1.2s ease-out infinite;
+  }
+  .nf-card--mode:hover .md-eq i {
+    animation: md-eq 0.9s ease-in-out infinite alternate;
+  }
+  .nf-card--mode:hover .md-eq i:nth-child(2) {
+    animation-duration: 0.62s;
+    animation-delay: -0.2s;
+  }
+  .nf-card--mode:hover .md-eq i:nth-child(3) {
+    animation-duration: 0.78s;
+    animation-delay: -0.5s;
+  }
+  .nf-card--mode:hover .md-eq i:nth-child(4) {
+    animation-duration: 0.54s;
+    animation-delay: -0.1s;
+  }
+  .nf-card--mode:hover .md-eq i:nth-child(5) {
+    animation-duration: 0.7s;
+    animation-delay: -0.35s;
+  }
+  .nf-card--mode:hover .md-party i {
+    margin-right: 3px;
+  }
+  .nf-card--mode:hover .md-party b {
+    opacity: 1;
+    transform: rotate(90deg);
+  }
+}
+@keyframes md-rec {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 90, 95, 0.6);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(255, 90, 95, 0);
+    opacity: 1;
+  }
+}
+@keyframes md-eq {
+  from {
+    transform: scaleY(0.2);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (max-width: 1000px) {
+  .nf-card--mode .nf-card-art {
+    aspect-ratio: 4 / 3;
+  }
+}
+@media (max-width: 560px) {
+  .nf-card--mode .nf-card-art {
+    aspect-ratio: 16 / 9;
+  }
+}

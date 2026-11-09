@@ -6,6 +6,7 @@ import type { ArenaItem } from "../fight/arena/Arena3D";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
 import { Atmosphere, setAtmosphere } from "./atmosphere";
 import { portalTo } from "./portal";
+import "./modes.css";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
 import { fontsReady } from "@/lib/tournois/fonts";
@@ -47,11 +48,47 @@ const KIND: Record<TournamentSlug, string> = {
 };
 
 const MORE = [
-  { title: "Doublage", text: "VF ou VOSTFR, à l'aveugle.", to: "/tournoi/doublage", img: keyartSrc("violet-evergarden", 960) },
-  { title: "Studio", text: "Cette fois, c'est toi qui doubles.", to: "/tournoi/studio", img: keyartSrc("reze", 960) },
-  { title: "OST Anime", text: "Openings et OST cultes en duel.", to: "/tournoi/ost-anime", img: keyartSrc("bleach", 960) },
-  { title: "Jouer à plusieurs", text: "Un salon, des amis, un champion.", to: "/tournoi/salon", img: keyartSrc("jjk", 960) },
-];
+  { title: "Doublage", text: "VF ou VOSTFR, à l'aveugle.", to: "/tournoi/doublage", img: keyartSrc("violet-evergarden", 960), sign: "dub", acc: "#9fc4ff" },
+  { title: "Studio", text: "Cette fois, c'est toi qui doubles.", to: "/tournoi/studio", img: keyartSrc("reze", 960), sign: "rec", acc: "#ff5a5f" },
+  { title: "OST Anime", text: "Openings et OST cultes en duel.", to: "/tournoi/ost-anime", img: keyartSrc("bleach", 960), sign: "eq", acc: "#d9a35a" },
+  { title: "Jouer à plusieurs", text: "Un salon, des amis, un champion.", to: "/tournoi/salon", img: keyartSrc("jjk", 960), sign: "party", acc: "#b9f2c8" },
+] as const;
+
+// Petit signe propre à chaque mode : figé au repos, animé au survol (modes.css).
+function ModeSign({ kind }: { kind: (typeof MORE)[number]["sign"] }) {
+  if (kind === "dub")
+    return (
+      <span className="md-sign md-dub" aria-hidden>
+        <i>VF</i>
+        <i>VOSTFR</i>
+      </span>
+    );
+  if (kind === "rec")
+    return (
+      <span className="md-sign md-rec" aria-hidden>
+        <i />
+        REC
+      </span>
+    );
+  if (kind === "eq")
+    return (
+      <span className="md-sign md-eq" aria-hidden>
+        <i />
+        <i />
+        <i />
+        <i />
+        <i />
+      </span>
+    );
+  return (
+    <span className="md-sign md-party" aria-hidden>
+      <i />
+      <i />
+      <i />
+      <b>+</b>
+    </span>
+  );
+}
 const SOON = ["Personnages", "Arcs", "Pouvoirs", "Théories", "Wiki Battles", "Blind Test", "Sakuga"];
 const FEATURED: TournamentSlug[] = ["openings", "ost", "endings", "jeux"];
 // Couleur de chaque univers (mêmes que les écrans de duel, fight/identities.ts).
@@ -210,8 +247,8 @@ export default function HubPage() {
             </div>
             <DailyDuel pools={dailyPools} />
           </div>
-          {GROUPS.map((g) => (
-            <Block key={g.title} title={g.title} text={g.text}>
+          {GROUPS.map((g, gi) => (
+            <Block key={g.title} title={g.title} text={g.text} n={gi + 1}>
               <div className={`nf-grid nf-grid--${g.slugs.length > 3 ? "wide" : "tight"}`}>
                 {g.slugs.map((s, k) => (
                   <TournamentCard key={s} meta={bySlug(s)} status={statuses[s]} index={k} reel={reels[s]} />
@@ -220,17 +257,28 @@ export default function HubPage() {
             </Block>
           ))}
 
-          <Block title="Autres modes" text="Doublage, studio, salon entre amis.">
+          <Block title="Autres modes" text="Doublage, studio, salon entre amis." n={GROUPS.length + 1}>
             <div className="nf-grid nf-grid--modes">
               {MORE.map((m, k) => (
                 <motion.div key={m.to} {...cardIn(k)}>
-                  <Link to={m.to} className="nf-card">
+                  <Link
+                    to={m.to}
+                    onClick={(e) => {
+                      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                      e.preventDefault();
+                      const art = e.currentTarget.querySelector<HTMLElement>(".nf-card-art") ?? e.currentTarget;
+                      portalTo(art, m.img, m.acc, () => navigate(m.to));
+                    }}
+                    className={`nf-card nf-card--poster nf-card--mode md-${m.sign}-card`}
+                    style={{ "--acc": m.acc } as React.CSSProperties}
+                  >
                     <span className="nf-card-art">
                       <img src={m.img} alt="" loading="lazy" decoding="async" />
-                    </span>
-                    <span className="nf-card-body">
-                      <b>{m.title}</b>
-                      <small>{m.text}</small>
+                      <ModeSign kind={m.sign} />
+                      <span className="nf-card-body">
+                        <b>{m.title}</b>
+                        <small>{m.text}</small>
+                      </span>
                     </span>
                   </Link>
                 </motion.div>
@@ -238,7 +286,7 @@ export default function HubPage() {
             </div>
           </Block>
 
-          <Block title="Bientôt">
+          <Block title="Bientôt" n={GROUPS.length + 2}>
             <p className="nf-soon">
               {SOON.map((s) => (
                 <span key={s}>{s}</span>
@@ -265,11 +313,15 @@ const cardIn = (k: number) => ({
   transition: { type: "spring" as const, bounce: 0, duration: 0.8, delay: Math.min(k, 6) * 0.05 },
 });
 
-function Block({ title, text, children }: { title: string; text?: string; children: React.ReactNode }) {
+function Block({ title, text, n, children }: { title: string; text?: string; n?: number; children: React.ReactNode }) {
   return (
     <div className="nf-block">
       <div className="nf-block-head">
-        <h2 className="nf-row-title">{title}</h2>
+        <h2 className="nf-row-title">
+          {/* Numéro de section, façon sommaire. */}
+          {n ? <span className="nf-block-idx" aria-hidden>{String(n).padStart(2, "0")}</span> : null}
+          {title}
+        </h2>
         {text ? <p>{text}</p> : null}
       </div>
       {children}
