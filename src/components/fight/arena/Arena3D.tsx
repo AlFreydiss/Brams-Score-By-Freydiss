@@ -337,7 +337,7 @@ function mask() {
   return maskTex;
 }
 
-function useMediaTexture(media: ArenaItem["media"]) {
+function useMediaTexture(media: ArenaItem["media"], poster?: string) {
   const src = media.src;
   const start = media.k === "video" ? media.start : 0;
   const kind = media.k;
@@ -345,13 +345,14 @@ function useMediaTexture(media: ArenaItem["media"]) {
   useEffect(() => {
     let live = true;
     let video: HTMLVideoElement | null = null;
+    let fallback: ReturnType<typeof setTimeout> | undefined;
     if (kind === "video") {
       video = document.createElement("video");
       video.crossOrigin = "anonymous";
       video.muted = true;
       video.loop = true;
       video.playsInline = true;
-      video.preload = "auto";
+      video.preload = "metadata";
       video.src = `${src}#t=${start}`;
       video.addEventListener(
         "loadedmetadata",
@@ -360,15 +361,25 @@ function useMediaTexture(media: ArenaItem["media"]) {
         },
         { once: true },
       );
+      // L'image fixe d'abord, puis la vidéo dès sa première image (ou au bout de 4 s quoi qu'il arrive).
+      if (poster) loadImageTexture(poster, (t) => (live ? setTex((cur) => cur ?? t) : t.dispose()));
+      let swapped = false;
+      const swap = () => {
+        if (!live || !video || swapped) return;
+        swapped = true;
+        const t = new THREE.VideoTexture(video);
+        t.colorSpace = THREE.SRGBColorSpace;
+        setTex(t);
+      };
+      video.addEventListener("loadeddata", swap, { once: true });
+      fallback = setTimeout(swap, 4000);
       video.play().catch(() => {});
-      const t = new THREE.VideoTexture(video);
-      t.colorSpace = THREE.SRGBColorSpace;
-      setTex(t);
     } else {
       loadImageTexture(src, (t) => (live ? setTex(t) : t.dispose()));
     }
     return () => {
       live = false;
+      if (fallback) clearTimeout(fallback);
       if (video) {
         video.pause();
         video.removeAttribute("src");
@@ -376,7 +387,7 @@ function useMediaTexture(media: ArenaItem["media"]) {
       }
     };
   // La texture dépend de la source seule : un nouvel objet pour la même vidéo ne la recharge pas.
-  }, [kind, src, start]);
+  }, [kind, src, start, poster]);
   useEffect(() => () => tex?.dispose(), [tex]);
   return tex;
 }
@@ -385,7 +396,9 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
   const ref = useRef<THREE.Group>(null);
   const mat = useRef<THREE.MeshBasicMaterial>(null);
   const geo = useCurvedPlane();
-  const tex = useMediaTexture(item.media);
+  // Seul l'écran actif lit sa vidéo ; les autres montrent leur image fixe (un générique entier pèse ~50 Mo).
+  const media = useMemo<ArenaItem["media"]>(() => (active || item.media.k === "img" || !item.still ? item.media : { k: "img", src: item.still }), [active, item.media, item.still]);
+  const tex = useMediaTexture(media, item.still);
   const [hover, setHover] = useState(false);
   const accent = useMemo(() => new THREE.Color(item.accent), [item.accent]);
 
