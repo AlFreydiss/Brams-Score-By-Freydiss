@@ -843,3 +843,8 @@
     animation: none;
   }
 }
+/* Légende des affiches anime : capitales sans empattement (la Trajan reste aux jeux). */
+.nf-card:not(.nf-card--jeux) .nf-reel-name {
+  font: 600 10.5px/1 var(--nx-sans, system-ui);
+  letter-spacing: 0.2em;
+}

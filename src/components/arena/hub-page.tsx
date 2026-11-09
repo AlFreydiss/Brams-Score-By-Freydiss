@@ -14,7 +14,7 @@ import { useSaved } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
 import { keyartSrc } from "../animehub/keyart.js";
 import "../tournois/themes/noir.css";
-import { JeuxReel } from "./jeux-reel";
+import { JEUX_REEL, PosterReel, reelFrom, type ReelItem } from "./jeux-reel";
 import "./hub.css";
 
 // Hub des tournois façon plateforme de streaming : un grand panneau qui fait
@@ -183,6 +183,8 @@ export default function HubPage() {
     [openings, endings, jeux],
   );
   const radioList = useMemo(() => [...openings, ...endings], [openings, endings]);
+  // Affiches vivantes : les images de chaque tournoi musical défilent sur sa carte.
+  const reels = useMemo<Partial<Record<TournamentSlug, ReelItem[]>>>(() => ({ jeux: JEUX_REEL, openings: reelFrom(openings), endings: reelFrom(endings), ost: reelFrom(ost) }), [openings, endings, ost]);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -212,7 +214,7 @@ export default function HubPage() {
             <Block key={g.title} title={g.title} text={g.text}>
               <div className={`nf-grid nf-grid--${g.slugs.length > 3 ? "wide" : "tight"}`}>
                 {g.slugs.map((s, k) => (
-                  <TournamentCard key={s} meta={bySlug(s)} status={statuses[s]} index={k} />
+                  <TournamentCard key={s} meta={bySlug(s)} status={statuses[s]} index={k} reel={reels[s]} />
                 ))}
               </div>
             </Block>
@@ -402,12 +404,11 @@ function BackVideo({ src, start, muted, poster }: { src: string; start: number; 
 }
 
 // ── Carte de tournoi ─────────────────────────────────────────────────
-function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status: { label: string | null; progress: number | null }; index: number }) {
+function TournamentCard({ meta, status, index, reel }: { meta: TournamentMeta; status: { label: string | null; progress: number | null }; index: number; reel?: ReelItem[] }) {
   const running = status.progress != null;
   const navigate = useNavigate();
   const to = `/tournoi/${meta.path}${running ? "/duel" : ""}`;
   const [hot, setHot] = useState(false);
-  const reel = meta.slug === "jeux";
   return (
     <motion.div {...cardIn(index)}>
       <Link
@@ -428,7 +429,7 @@ function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status:
         style={{ "--acc": ACCENT[meta.slug] ?? "#f4f2ec" } as React.CSSProperties}
       >
         <span className="nf-card-art">
-          {reel ? <JeuxReel hot={hot} /> : <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />}
+          {reel?.length ? <PosterReel items={reel} hot={hot} fallback={ART[meta.slug]} offset={index * 1400} /> : <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />}
           {running ? (
             <span className="nf-card-progress" aria-hidden>
               <i style={{ width: `${Math.round((status.progress ?? 0) * 100)}%` }} />
