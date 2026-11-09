@@ -20,7 +20,17 @@ const PALETTE = [
 ]
 const SIZES = [3, 7, 14, 28, 48]
 const SHAPE_TOOLS = ['line', 'rect', 'ellipse']
-const STAMPS = ['💀', '⭐', '❤️', '⚡', '🔥', '👑', '🏴‍☠️', '🌊', '😂', '💩', '🍖', '⚓']
+// Tampons = stickers PEINTS (planche 8×2 de cases 192 px, Grok Imagine détouré,
+// public/freydiss-phone/stamps.webp), dans l'ordre de la planche. L'emoji sert de
+// repli tant que l'image n'est pas chargée.
+const STAMPS = ['💀', '⭐', '❤️', '⚡', '🔥', '👑', '🏴‍☠️', '🌊', '😂', '💩', '🍖', '⚓', '👒', '🍇', '💰', '🗡️']
+const STAMP_ATLAS = '/freydiss-phone/stamps.webp', STAMP_CELL = 192
+let stampImg = null
+const getStampAtlas = () => {
+  if (typeof Image === 'undefined') return null
+  if (!stampImg) { stampImg = new Image(); stampImg.decoding = 'async'; stampImg.src = STAMP_ATLAS }
+  return stampImg.complete && stampImg.naturalWidth ? stampImg : null
+}
 
 function hexToRgba(hex) {
   const n = parseInt(hex.replace('#', ''), 16)
@@ -80,6 +90,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
     ctx.lineCap = 'round'; ctx.lineJoin = 'round'
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H)
     ctxRef.current = ctx
+    getStampAtlas() // précharge les stickers peints
     if (canvasRef) canvasRef.current = cv
     snapshot()
     // Restaure un brouillon sauvegardé (reconnexion/refresh en pleine phase dessin).
@@ -284,6 +295,14 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
   const placeStamp = (p) => {
     const ctx = ctxRef.current
     const px = Math.max(40, sizeRef.current * 5)
+    // Sticker peint (repli emoji tant que la planche n'est pas chargée).
+    const atlas = getStampAtlas(), i = STAMPS.indexOf(stampRef.current)
+    if (atlas && i >= 0) {
+      const sx = (i % 8) * STAMP_CELL, sy = Math.floor(i / 8) * STAMP_CELL
+      ctx.drawImage(atlas, sx, sy, STAMP_CELL, STAMP_CELL, p.x - px / 2, p.y - px / 2, px, px)
+      if (symRef.current) ctx.drawImage(atlas, sx, sy, STAMP_CELL, STAMP_CELL, W - p.x - px / 2, p.y - px / 2, px, px)
+      return
+    }
     ctx.save()
     ctx.font = `${px}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
@@ -528,7 +547,7 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
           {toolBtn('rect', '▭', 'Rectangle (Maj = carré)')}
           {toolBtn('ellipse', '⬭', 'Ellipse (Maj = cercle)')}
           {toolBtn('spray', '💨', 'Aérographe')}
-          {toolBtn('stamp', '🌟', 'Tampon (emoji)')}
+          {toolBtn('stamp', '🌟', 'Tampon (sticker)')}
           {toolBtn('eraser', '🩹', 'Gomme')}
           {toolBtn('fill', '🪣', 'Pot de peinture')}
           {toolBtn('eyedropper', '💧', 'Pipette')}
@@ -579,12 +598,12 @@ export default function DrawCanvas({ canvasRef, disabled, draftKey }) {
       {tool === 'stamp' && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', padding: '4px 0' }}>
           <span style={{ ...type.small, color: C.textMut, marginRight: 4 }}>Tampon</span>
-          {STAMPS.map((s) => (
+          {STAMPS.map((s, i) => (
             <button key={s} onClick={() => setStamp(s)} title={`Tampon ${s}`} className="bpc-btn" style={{
               width: 38, height: 38, borderRadius: 10, cursor: 'pointer', fontSize: 20, display: 'grid', placeItems: 'center',
               border: `1px solid ${stamp === s ? alpha(C.gold, 0.6) : C.hairSoft}`,
               background: stamp === s ? alpha(C.gold, 0.2) : 'rgba(255,255,255,0.04)',
-            }}>{s}</button>
+            }}><span aria-hidden style={{ width: 30, height: 30, backgroundImage: `url(${STAMP_ATLAS})`, backgroundSize: '240px 60px', backgroundPosition: `${-(i % 8) * 30}px ${-Math.floor(i / 8) * 30}px` }} /></button>
           ))}
         </div>
       )}
