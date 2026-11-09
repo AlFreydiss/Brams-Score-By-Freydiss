@@ -364,9 +364,9 @@ export function DuelStage(props: Props) {
         <Deck {...{ left, right, id, player, picked, blind: !!blind, masked, listen, choose, reduce, jeux }} />
       ) : (
         // Jeux : une seule scène coupée en biais (pas deux cartes) ; le cadre arrondi est découpé sur la zone utile.
-        <div style={{ display: "flex", gap: jeux ? 0 : 7, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box", clipPath: jeux ? "inset(76px 24px 108px round 18px)" : undefined }}>
+        <div style={{ display: "flex", gap: 0, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box", clipPath: "inset(76px 24px 108px round 18px)" }}>
           {(["left", "right"] as const).map((side) => (
-            <PanelSlot key={side} side={side} first={side === "left"} accents={jeux ? [gameTheme(left.sub).accent, gameTheme(right.sub).accent] : undefined} gone={!!picked}>
+            <PanelSlot key={side} side={side} first={side === "left"} accents={jeux ? [gameTheme(left.sub).accent, gameTheme(right.sub).accent] : [id.a, id.b]} serif={jeux} gone={!!picked}>
               <Panel
                 side={side}
                 p={side === "left" ? left : right}
@@ -499,10 +499,10 @@ const EXIT_T = {
   fade: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
 } as const;
 
-function PanelSlot({ side, first, accents, gone, children }: { side: Side; first: boolean; accents?: [string, string]; gone?: boolean; children: React.ReactNode }) {
+function PanelSlot({ side, first, accents, serif, gone, children }: { side: Side; first: boolean; accents?: [string, string]; serif?: boolean; gone?: boolean; children: React.ReactNode }) {
   return (
     <>
-      {!first ? <Divider accents={accents} gone={gone} /> : null}
+      {!first ? <Divider accents={accents} serif={serif} gone={gone} /> : null}
       <div data-slot={side} style={{ display: "contents" }}>
         {children}
       </div>
@@ -512,7 +512,7 @@ function PanelSlot({ side, first, accents, gone, children }: { side: Side; first
 
 // Le VS vit dans la jointure : il suit la frontière quand un côté s'étend.
 // Jeux : le médaillon est coupé aux couleurs des deux jeux, chacun rayonne de son côté.
-function Divider({ accents, gone }: { accents?: [string, string]; gone?: boolean }) {
+function Divider({ accents, serif = true, gone }: { accents?: [string, string]; serif?: boolean; gone?: boolean }) {
   const { meta } = useTournament();
   const id = IDENTITIES[meta.slug as FightSlug];
   if (accents) {
@@ -535,7 +535,7 @@ function Divider({ accents, gone }: { accents?: [string, string]; gone?: boolean
         </svg>
         {/* Sceau en losange posé sur la coupe : moitié de chaque couleur, lettres gravées au centre. */}
         <motion.div
-          className="jx-vs"
+          className={`jx-vs ${serif ? "" : "jx-vs--sans"}`}
           initial={{ scale: 0.5, opacity: 0, rotate: -45 }}
           animate={{ scale: 1, opacity: 1, rotate: 0, transition: { type: "spring", bounce: 0.35, duration: 0.9, delay: 0.35 } }}
           style={{ "--vs-a": a, "--vs-b": b } as React.CSSProperties}
@@ -604,7 +604,9 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
   const lose = !!picked && !win;
   const grow = picked ? (win ? 100 : 0.0001) : focus ? (focus === side ? 62 : 38) : 50;
   const dim = !picked && focus && focus !== side;
-  const mirror = !!jeux && side === "right";
+  // Face-à-face en biais pour toutes les scènes ; l'univers (polices, fonds) reste propre aux jeux.
+  const split = true;
+  const mirror = split && side === "right";
   // Jeux : l'univers du jeu (police, encre, bouton, particules).
   const th = jeux ? gameTheme(p.sub) : null;
   const vars = th ? ({ "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow, "--jg-mute": th.mute } as React.CSSProperties) : undefined;
@@ -625,7 +627,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
     <motion.div
       ref={refEl}
       initial={reduce ? false : { y: 28, opacity: 0 }}
-      animate={{ y: 0, opacity: lose ? 0 : 1, flexGrow: grow, ...(jeux ? { clipPath: cut(side, win ? 0 : SLANT) } : {}) }}
+      animate={{ y: 0, opacity: lose ? 0 : 1, flexGrow: grow, ...(split ? { clipPath: cut(side, win ? 0 : SLANT) } : {}) }}
       transition={{
         y: { duration: 0.9, ease: EASE, delay: side === "left" ? 0.05 : 0.15 },
         opacity: lose ? { duration: 0.01 } : { duration: 0.6, ease: EASE },
@@ -645,7 +647,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
         my.set(((e.clientY - r.top) / r.height) * 2 - 1);
       }}
       style={
-        jeux
+        split
           ? // Les deux panneaux se chevauchent de SLANT px : la coupe en biais passe au milieu.
             { ...vars, position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", background: PANEL, [side === "left" ? "marginRight" : "marginLeft"]: -SLANT / 2 }
           : { ...vars, position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", borderRadius: 16, background: PANEL, boxShadow: `0 0 0 1px ${LINE}` }
@@ -654,8 +656,8 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
       role="group"
       aria-label={`${id.sides[side === "left" ? 0 : 1]} : ${masked(p)}`}
     >
-      {/* Jeux : pas d'inclinaison (la coupe en biais déborderait), seulement la parallaxe des couches. */}
-      <motion.div style={jeux ? { position: "absolute", inset: 0 } : { position: "absolute", inset: 0, rotateY: rotY, rotateX: rotX, transformStyle: "preserve-3d" }}>
+      {/* Pas d'inclinaison 3D (la coupe en biais déborderait) : seulement la parallaxe des couches. */}
+      <motion.div style={split ? { position: "absolute", inset: 0 } : { position: "absolute", inset: 0, rotateY: rotY, rotateX: rotX, transformStyle: "preserve-3d" }}>
         {/* Couche 1 : l'image ou la vidéo. */}
         <motion.div
           animate={{ filter: dim ? "grayscale(0.85) blur(2px) brightness(0.55)" : "grayscale(0) blur(0px) brightness(1)", scale: win ? 1.06 : 1.1 }}
@@ -704,8 +706,8 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
           style={{
             position: "absolute",
             // Jeux : on s'écarte de la coupe, et le côté droit est en miroir (face-à-face).
-            left: jeux && side === "right" ? `calc(clamp(22px, 2.6vw, 40px) + ${SLANT * 0.6}px)` : "clamp(22px, 2.6vw, 40px)",
-            right: jeux && side === "left" ? `calc(clamp(22px, 2.6vw, 40px) + ${SLANT}px)` : "clamp(22px, 2.6vw, 40px)",
+            left: split && side === "right" ? `calc(clamp(22px, 2.6vw, 40px) + ${SLANT * 0.6}px)` : "clamp(22px, 2.6vw, 40px)",
+            right: split && side === "left" ? `calc(clamp(22px, 2.6vw, 40px) + ${SLANT}px)` : "clamp(22px, 2.6vw, 40px)",
             bottom: "clamp(22px, 3.4vh, 36px)",
             display: "grid",
             justifyItems: mirror ? "end" : undefined,

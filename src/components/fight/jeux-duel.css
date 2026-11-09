@@ -163,3 +163,8 @@
     opacity: 0;
   }
 }
+/* Sceau des scènes anime (openings, endings, OST) : même losange, lettres sans empattement. */
+.jx-vs--sans span {
+  font: 700 13px/1 var(--nx-sans, "Geist", system-ui, sans-serif);
+  letter-spacing: 0.08em;
+}
