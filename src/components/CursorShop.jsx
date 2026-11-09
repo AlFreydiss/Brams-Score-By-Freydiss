@@ -63,6 +63,7 @@ const CURSEURS = [
   { id: 'cur-wanted',      nom: 'Avis de Recherche',  rarete: 'EPIQUE',   prix: 200000,   emoji: '📜', animated: false, stock: null, limite: false },
   { id: 'cur-sword',       nom: 'Sandai Kitetsu',     rarete: 'EPIQUE',   prix: 250000,   emoji: '⚔️', animated: false, stock: null, limite: false },
   // ── MYTHIQUE (animés) ──
+  { id: 'cur-clairobscur', nom: 'Pinceau de la Peintresse', rarete: 'MYTHIQUE', prix: 1000000, emoji: '🖌️', animated: true, stock: null, limite: false, nouveaute: true },
   { id: 'cur-mera',        nom: 'Mera Mera no Mi',    rarete: 'MYTHIQUE', prix: 800000,   emoji: '🔥', animated: true,  stock: null, limite: false },
   { id: 'cur-gomu',        nom: 'Gomu Gomu no Pistol',rarete: 'MYTHIQUE', prix: 1200000,  emoji: '🥊', animated: true,  stock: null, limite: false },
   { id: 'cur-yonko',       nom: 'Couronne de Yonko',  rarete: 'MYTHIQUE', prix: 1800000,  emoji: '👑', animated: true,  stock: 20,   limite: true  },

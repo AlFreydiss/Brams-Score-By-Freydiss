@@ -719,6 +719,7 @@ const CURSORS = [
   { id:'cur-sunny',       nom:'Thousand Sunny',     rarete:'EPIQUE',   emoji:'⛵',  animated:false },
   { id:'cur-wanted',      nom:'Avis de Recherche',  rarete:'EPIQUE',   emoji:'📜',  animated:false },
   { id:'cur-sword',       nom:'Sandai Kitetsu',     rarete:'EPIQUE',   emoji:'⚔️',  animated:false },
+  { id:'cur-clairobscur', nom:'Pinceau de la Peintresse', rarete:'MYTHIQUE', emoji:'🖌️', animated:true },
   { id:'cur-mera',        nom:'Mera Mera no Mi',    rarete:'MYTHIQUE', emoji:'🔥',  animated:true  },
   { id:'cur-gomu',        nom:'Gomu Gomu no Pistol',rarete:'MYTHIQUE', emoji:'🥊',  animated:true  },
   { id:'cur-yonko',       nom:'Couronne de Yonko',  rarete:'MYTHIQUE', emoji:'👑',  animated:true  },
@@ -751,6 +752,7 @@ async function ensureCursorShopItem(cur) {
 const TRAIL_PRICE_CENTS = { COMMUN: 50, RARE: 79, EPIQUE: 119, MYTHIQUE: 159, INTERDIT: 200 }
 const TRAILS = [
   { id:'trail-midas',   nom:"Toucher d'Or",       rarete:'INTERDIT', priceCents:999 },
+  { id:'trail-gommage', nom:'Gommage',            rarete:'MYTHIQUE' },
   { id:'trail-gold',    nom:"Poussière d'Or",     rarete:'COMMUN'   },
   { id:'trail-bubble',  nom:'Bulles de Saké',      rarete:'COMMUN'   },
   { id:'trail-corbeau', nom:'Plumes du Corbeau',   rarete:'COMMUN'   },

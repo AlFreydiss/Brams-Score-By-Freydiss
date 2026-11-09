@@ -65,6 +65,7 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       const C = cfgRef.current
       ctx.clearRect(0, 0, w, h)
       ctx.globalCompositeOperation = (C?.composite) || 'lighter'
+      const petals = C?.shape === 'petal'
 
       const tw = C?.twinkle || 0
       for (let i = parts.length - 1; i >= 0; i--) {
@@ -94,7 +95,30 @@ export default function CursorTrail({ skin, isGlobal = false }) {
         let a = p.life * p.alpha
         if (tw) { p.tw += 0.28; a *= 0.62 + 0.38 * Math.sin(p.tw) }
         ctx.globalAlpha = a < 0 ? 0 : a
-        ctx.drawImage(getSprite(p.color), p.x - r, p.y - r, r * 2, r * 2)
+        if (petals) ctx.globalCompositeOperation = p.petal ? 'source-over' : 'lighter'
+        if (p.petal) {
+          // Pétale : ellipse pleine qui tourne et se balance en tombant (Gommage).
+          p.rot += p.spin
+          p.x += Math.sin(p.tw += 0.08) * 0.35 * dpr
+          const pr = p.size * (0.55 + 0.45 * ease)
+          ctx.save()
+          ctx.translate(p.x, p.y)
+          ctx.rotate(p.rot)
+          ctx.scale(1, 0.55 + 0.45 * Math.abs(Math.cos(p.rot * 1.7)))
+          ctx.fillStyle = p.color
+          ctx.beginPath()
+          ctx.ellipse(0, 0, pr * 1.5, pr * 0.72, 0, 0, Math.PI * 2)
+          ctx.fill()
+          // Nervure claire : le pétale accroche la lumière.
+          ctx.globalAlpha = (a < 0 ? 0 : a) * 0.35
+          ctx.fillStyle = '#fff6ec'
+          ctx.beginPath()
+          ctx.ellipse(-pr * 0.35, -pr * 0.12, pr * 0.7, pr * 0.2, 0, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.restore()
+        } else {
+          ctx.drawImage(getSprite(p.color), p.x - r, p.y - r, r * 2, r * 2)
+        }
       }
 
       ctx.globalAlpha = 1
@@ -135,6 +159,18 @@ export default function CursorTrail({ skin, isGlobal = false }) {
               color: C.hueCycle ? `hsl(${Math.round(hue / 4) * 4}, 95%, 62%)` : C.colors[(Math.random() * C.colors.length) | 0],
               gravity: C.gravity, decay: C.decay, shadow: C.shadow, alpha: C.alpha,
               tw: Math.random() * 6.283,
+            }
+            // Forme « petal » : la plupart des particules sont des pétales (dessin
+            // plein), quelques-unes des paillettes lumineuses (couleurs flecks).
+            if (C.shape === 'petal') {
+              if (C.flecks && Math.random() < (C.fleckRate ?? 0.25)) {
+                part.color = C.flecks[(Math.random() * C.flecks.length) | 0]
+                part.size *= 0.45
+              } else {
+                part.petal = true
+                part.rot = Math.random() * 6.283
+                part.spin = (Math.random() - 0.5) * 0.12
+              }
             }
             // Mode « orbit » (traînée GALAXIE) : la particule spirale autour de son
             // point de naissance, qui dérive avec le curseur → vortex de fou.

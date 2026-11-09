@@ -32,6 +32,18 @@ export const TRAILS = [
       speed: 0.36, drift: 0.25, gravity: 0.03, sizeBase: 1.5, sizeRand: 2.1, decay: 0.05, shadow: 13, alpha: 0.92,
     } },
 
+  // ── Clair Obscur : Expedition 33 ──
+  { id: 'trail-gommage', nom: 'Gommage', rarete: 'MYTHIQUE', emoji: '🥀', nouveaute: true,
+    // Pétales rouges et blancs qui se détachent et tombent en tournoyant, quelques
+    // paillettes d'or : le Gommage de la Peintresse.
+    config: {
+      shape: 'petal', composite: 'source-over',
+      colors: ['#c22f36', '#e0484c', '#9d1f27', '#f4efe6', '#e9dfcf'],
+      flecks: ['#ffe3a3', '#f6c75a', '#fff6dc'], fleckRate: 0.2,
+      maxParts: 220, maxEmit: 5, emitDivisor: 7, minDist: 5,
+      speed: 0.55, drift: 0.6, gravity: 0.04, sizeBase: 5.2, sizeRand: 3.6, decay: 0.014, shadow: 6, alpha: 0.95,
+    } },
+
   // ── COMMUN ──
   { id: 'trail-gold', nom: 'Poussière d\'Or', rarete: 'COMMUN', emoji: '✨',
     config: { colors: ['#e8c878', '#d4a017', '#bfa46a', '#f6d98a'] } },

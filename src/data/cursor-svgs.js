@@ -8,6 +8,25 @@ const S = (inner) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" shape-rendering="geometricPrecision">${inner}</svg>`
 
 export const CURSOR_SVGS = {
+  // ── Clair Obscur : Expedition 33 ──────────────────────────────────────────
+  // Flèche « clair-obscur » : moitié ivoire, moitié encre, liseré d'or, un
+  // pétale rouge accroché à la pointe (le Gommage).
+  'cur-clairobscur': S(`
+    <defs>
+      <linearGradient id="co-l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#fbf5e8"/><stop offset="100%" stop-color="#e6dcc6"/></linearGradient>
+      <linearGradient id="co-d" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1a1714"/><stop offset="100%" stop-color="#0b0a09"/></linearGradient>
+      <linearGradient id="co-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbf3e0"/><stop offset="55%" stop-color="#d2ad6e"/><stop offset="100%" stop-color="#8f6a34"/></linearGradient>
+    </defs>
+    <path d="M5 3 L5 31 L12.5 24 L17.5 35.5 L19.75 34.5 Z" fill="url(#co-l)"/>
+    <path d="M5 3 L19.75 34.5 L22 33.5 L17 22.5 L27 22.5 Z" fill="url(#co-d)"/>
+    <path d="M5 3 L19.75 34.5" stroke="#d2ad6e" stroke-width="0.7" opacity=".8"/>
+    <path d="M5 3 L5 31 L12.5 24 L17.5 35.5 L22 33.5 L17 22.5 L27 22.5 Z" fill="none" stroke="url(#co-g)" stroke-width="1.6" stroke-linejoin="round"/>
+    <g transform="translate(27 5) rotate(52)">
+      <path d="M0 0 C 1.2 -2.6, 4.6 -3.2, 7.4 -1.6 C 9 -0.7, 10 0.6, 10.6 2 C 7.6 2.6, 3 2.2, 0 0 Z" fill="#c22f36"/>
+      <path d="M0.6 0.1 C 3.4 0.2, 6.8 0.6, 10.2 1.9" stroke="#7d151b" stroke-width="0.5" fill="none" opacity=".7"/>
+    </g>
+    <circle cx="34" cy="16" r="1" fill="#f1dcab"/>`),
+
   // ── COMMUN ─────────────────────────────────────────────────────────────────
   // Pièce de Berry : pièce d'or frappée ฿, tranche crantée, éclat.
   'cur-berry': S(`
