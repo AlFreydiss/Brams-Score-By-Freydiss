@@ -716,7 +716,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
             zIndex: 6,
           }}
         >
-          <p style={{ margin: 0, display: "flex", flexDirection: mirror ? "row-reverse" : undefined, gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? labelColor(th) : id.mute }}>
+          <p style={{ margin: 0, display: "flex", flexDirection: mirror ? "row-reverse" : undefined, gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? labelColor(th) : id.mute, textShadow: th ? "0 1px 2px rgba(0,0,0,0.7), 0 0 14px rgba(0,0,0,0.6)" : undefined }}>
             <span aria-hidden style={{ width: 18, height: th?.id === "pixel" ? 4 : 1, background: th ? th.accent : id.a }} />
             {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]}
             {playing ? <EqBars color={id.a} /> : null}
@@ -1069,7 +1069,7 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
       <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: passGlow, background: `linear-gradient(to right, ${id.b}aa, transparent 55%)` }} />
       {th && !hidden ? <GameAura kind={th.aura} accent={th.accent} active={player.id === p.id} zIndex={5} /> : null}
       <div style={{ ...vars, position: "absolute", left: 20, right: 20, bottom: 20, display: "grid", gap: 8, zIndex: 6 } as React.CSSProperties}>
-        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(11 * Math.min(1, th.scale + 0.25)) : 12, fontWeight: th ? th.weight : 600, letterSpacing: th ? (th.id === "pixel" ? "0.04em" : "0.2em") : "0.06em", textTransform: "uppercase", color: th ? labelColor(th) : id.a }}>
+        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(11 * Math.min(1, th.scale + 0.25)) : 12, fontWeight: th ? th.weight : 600, letterSpacing: th ? (th.id === "pixel" ? "0.04em" : "0.2em") : "0.06em", textTransform: "uppercase", color: th ? labelColor(th) : id.a, textShadow: th ? "0 1px 2px rgba(0,0,0,0.7), 0 0 14px rgba(0,0,0,0.6)" : undefined }}>
           {th && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]} {playing ? (th ? <EqBars color={th.accent} /> : "— en écoute") : ""}
         </p>
         {th ? (
