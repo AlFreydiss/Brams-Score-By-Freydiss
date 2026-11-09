@@ -17,6 +17,8 @@ import { SubNav } from "./subnav";
 import { RoadToFinal } from "../fight/bracket/RoadToFinal";
 import { isFight } from "../fight/identities";
 import "./themes/index.css";
+import "./pages.css";
+import { accentOf } from "./art";
 
 // Un tournoi en duels : /tournoi/<path> et ses pages (duel, tableau,
 // classement, historique, favoris, duel test, règles). DA noire commune
@@ -24,7 +26,7 @@ import "./themes/index.css";
 // Night » (src/components/fight).
 export default function TournamentSection({ slug }: { slug: TournamentSlug }) {
   return (
-    <div data-t={slug} className="t-root nx-root">
+    <div data-t={slug} className="t-root nx-root" style={{ "--pg-acc": accentOf(slug) } as React.CSSProperties}>
       <Suspense fallback={<SectionLoading />}>
         <Loaded slug={slug} />
       </Suspense>

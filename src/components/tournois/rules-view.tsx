@@ -1,10 +1,22 @@
 import { Link } from "react-router-dom";
 import { fill } from "@/lib/tournois/catalog";
 import { useTournament } from "./provider";
+import { PageHead } from "./page-head";
+import { isFight } from "../fight/identities";
+
+const TOC = [
+  { id: "principe", label: "Le principe" },
+  { id: "ecouter", label: "Écouter" },
+  { id: "voter", label: "Voter" },
+  { id: "donnees", label: "Tes données" },
+  { id: "sources", label: "Sources" },
+  { id: "clavier", label: "Clavier" },
+];
 
 export function RulesView() {
   const { meta, participants } = useTournament();
   const audio = meta.mode === "audio";
+  const fight = isFight(meta.slug);
   const SOURCES: Record<string, string> = {
     ost: "Chaque OST est lue en entier, jusqu'à la fin du morceau.",
     openings: "Le son vient des fichiers du site, les photos des séries de The Movie Database (TMDB). Quelques titres sans fichier passent par un extrait officiel de 30 secondes (Apple Music).",
@@ -17,11 +29,27 @@ export function RulesView() {
   const source = SOURCES[meta.slug];
 
   return (
-    <div className="t-page t-rules">
-      <h1 className="t-page-title">Règles</h1>
-      <p className="t-lead">{fill(meta.lead, participants)}</p>
+    <div className="t-page t-page--wide t-rules pg-rules">
+      <PageHead title="Règles" sub={fill(meta.lead, participants)} />
+      <div className="pg-rules-body">
+        <nav className="pg-rules-nav" aria-label="Sommaire des règles">
+          {TOC.filter((t) => audio || t.id !== "ecouter").map((t, k) => (
+            <a
+              key={t.id}
+              href={`#${t.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById(t.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              <span>{String(k + 1).padStart(2, "0")}</span>
+              {t.label}
+            </a>
+          ))}
+        </nav>
+        <div className="pg-rules-main">
 
-      <section>
+      <section id="principe">
         <h2>Le principe</h2>
         <ol>
           <li>
@@ -37,7 +65,7 @@ export function RulesView() {
       </section>
 
       {audio ? (
-        <section>
+        <section id="ecouter">
           <h2>Écouter</h2>
           <ul>
             <li>Une seule piste joue à la fois : en lancer une met l’autre en pause.</li>
@@ -48,17 +76,21 @@ export function RulesView() {
         </section>
       ) : null}
 
-      <section>
+      <section id="voter">
         <h2>Voter</h2>
         <ul>
-          <li>Le bouton « {meta.choose} » enregistre ton choix et affiche « Vote enregistré. L&apos;aventure continue. ». Un second clic est ignoré.</li>
+          {fight ? (
+            <li>Le bouton « Garder » (ou la touche A ou B) enregistre ton choix : le gagnant passe au tour suivant, l&apos;autre s&apos;efface. Un clic ou une touche passe tout de suite au duel suivant.</li>
+          ) : (
+            <li>Le bouton « {meta.choose} » enregistre ton choix et affiche « Vote enregistré. L&apos;aventure continue. ». Un second clic est ignoré.</li>
+          )}
           <li>Tu peux annuler ton dernier choix, une seule fois, tant que le duel suivant n&apos;est pas tranché.</li>
           <li>Il n&apos;y a pas d&apos;égalité possible : chaque duel est décidé par ton choix.</li>
           <li>Le cœur ajoute aux favoris. Il ne compte pas comme un vote.</li>
         </ul>
       </section>
 
-      <section>
+      <section id="donnees">
         <h2>Où sont tes données</h2>
         <p>
           Ta partie, ton historique, tes favoris et ton classement sont rangés dans ce navigateur uniquement. Ils disparaissent si tu effaces les données du site, et
@@ -69,12 +101,12 @@ export function RulesView() {
         </p>
       </section>
 
-      <section>
+      <section id="sources">
         <h2>Sources</h2>
         <p>{source}</p>
       </section>
 
-      <section>
+      <section id="clavier">
         <h2>Raccourcis clavier</h2>
         <ul className="t-keys-list">
           <li>
@@ -91,7 +123,15 @@ export function RulesView() {
             </>
           ) : null}
           <li>
-            <kbd>F</kbd> ajouter aux favoris, <kbd>T</kbd> ouvrir le tableau, <kbd>Retour arrière</kbd> annuler le dernier choix
+            {fight ? (
+              <>
+                <kbd>A</kbd> <kbd>B</kbd> garder, <kbd>H</kbd> ajouter aux favoris, <kbd>F</kbd> plein écran, <kbd>T</kbd> ouvrir le tableau, <kbd>Retour arrière</kbd> annuler le dernier choix
+              </>
+            ) : (
+              <>
+                <kbd>F</kbd> ajouter aux favoris, <kbd>T</kbd> ouvrir le tableau, <kbd>Retour arrière</kbd> annuler le dernier choix
+              </>
+            )}
           </li>
         </ul>
       </section>
@@ -99,6 +139,8 @@ export function RulesView() {
       <Link to={`/tournoi/${meta.path}/duel`} className="t-go">
         Participer au tournoi
       </Link>
+        </div>
+      </div>
     </div>
   );
 }

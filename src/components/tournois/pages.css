@@ -1,0 +1,739 @@
+/* Pages d'un tournoi : classement, historique, favoris, duel test, règles.
+   Même grammaire que les écrans de duel et le hub : noir, filets 1 px, l'art
+   en grand, une seule couleur (--pg-acc, celle du tournoi, posée sur
+   .t-root par section.tsx). */
+
+.nx-root {
+  --pg-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --pg-ink: #f4f2ec;
+  --pg-mute: rgba(244, 242, 236, 0.6);
+  --pg-line: rgba(244, 242, 236, 0.1);
+}
+
+/* ── En-tête ──────────────────────────────────────────────────────── */
+.pg-head {
+  animation: pg-rise 0.8s var(--pg-ease) both;
+}
+.pg-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font: 600 11px/1 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pg-mute);
+}
+.pg-kicker span {
+  width: 18px;
+  height: 1px;
+  background: var(--pg-acc);
+}
+.nx-root .pg-sub {
+  max-width: 62ch;
+}
+@keyframes pg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── État vide ────────────────────────────────────────────────────── */
+.pg-empty {
+  display: grid;
+  justify-items: start;
+  gap: 18px;
+  max-width: 560px;
+  padding: 28px 28px 30px;
+  border-radius: 14px;
+  background:
+    radial-gradient(80% 120% at 0% 0%, color-mix(in srgb, var(--pg-acc) 10%, transparent), transparent 60%),
+    rgba(244, 242, 236, 0.03);
+  box-shadow: inset 0 0 0 1px var(--pg-line);
+}
+.pg-empty p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--pg-mute);
+}
+.pg-empty-heart {
+  color: var(--pg-acc);
+}
+.nx-root :is(.pg-empty, .pg-practice, .pg-rules) .t-go {
+  background: var(--pg-acc);
+  border-color: var(--pg-acc);
+  color: #08090d;
+}
+
+/* ── Historique : chiffres ───────────────────────────────────────── */
+.pg-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 40vw), 1fr));
+  gap: 1px;
+  margin: 0 0 40px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--pg-line);
+  box-shadow: inset 0 0 0 1px var(--pg-line);
+  animation: pg-rise 0.8s var(--pg-ease) 0.08s both;
+}
+.pg-stats > div {
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  background: #0b0c10;
+}
+.pg-stats dt {
+  font: 600 10.5px/1.3 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pg-mute);
+}
+.pg-stats dd {
+  margin: 0;
+  font: 800 clamp(28px, 3vw, 40px) / 1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  color: var(--pg-ink);
+  font-variant-numeric: tabular-nums;
+}
+.pg-stats > div:first-child dd {
+  color: var(--pg-acc);
+}
+.pg-stats .pg-stats-txt {
+  font-size: clamp(18px, 1.7vw, 24px);
+  line-height: 1.15;
+}
+.pg-stats-txt small {
+  font: 600 13px "Inter", system-ui, sans-serif;
+  color: var(--pg-acc);
+}
+
+/* ── Historique : fil des duels ──────────────────────────────────── */
+.pg-part {
+  margin: 0 0 40px;
+}
+.pg-part-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-bottom: 12px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--pg-line);
+}
+.pg-part-head h2 {
+  margin: 0;
+  font: 700 clamp(19px, 1.6vw, 24px) / 1.1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--pg-ink);
+}
+.pg-part-head h2::first-letter {
+  text-transform: uppercase;
+}
+.pg-part-head small {
+  font-size: 12.5px;
+  color: var(--pg-mute);
+}
+.pg-feed {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pg-duel {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1.25fr) auto minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--pg-line);
+  animation: pg-rise 0.6s var(--pg-ease) calc(var(--i, 0) * 0.03s) both;
+}
+.pg-duel-when {
+  display: grid;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.pg-duel-when time {
+  font: 600 14px "Inter", system-ui, sans-serif;
+  color: var(--pg-ink);
+}
+.pg-duel-when small {
+  font-size: 11px;
+  color: var(--pg-mute);
+}
+/* Le gagnant : son art, éclairé, filet de couleur. */
+.pg-duel-win {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.pg-duel-win img {
+  flex: none;
+  width: 104px;
+  aspect-ratio: 16 / 9;
+  max-width: none;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--pg-acc) 60%, transparent),
+    0 10px 24px -14px var(--pg-acc);
+}
+.pg-duel-win > span,
+.pg-duel-lose > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.pg-duel-win small {
+  font: 600 10px/1.2 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pg-acc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-duel-win b {
+  font: 700 15.5px/1.2 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  color: var(--pg-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-duel-vs {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(244, 242, 236, 0.4);
+  white-space: nowrap;
+}
+/* Le perdant : petit, éteint, rayé d'un trait. */
+.pg-duel-lose {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  opacity: 0.55;
+}
+.pg-duel-lose .t-thumb {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  filter: grayscale(1);
+}
+.pg-duel-lose b {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--pg-ink);
+  text-decoration: line-through;
+  text-decoration-color: rgba(244, 242, 236, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-duel-lose small {
+  font-size: 11.5px;
+  color: var(--pg-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-duel-ms {
+  justify-self: end;
+  font: 500 12px "Inter", system-ui, sans-serif;
+  color: var(--pg-mute);
+  font-variant-numeric: tabular-nums;
+}
+@media (hover: hover) {
+  .pg-duel:hover .pg-duel-lose {
+    opacity: 0.8;
+  }
+}
+@media (max-width: 760px) {
+  .pg-duel {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+  }
+  .pg-duel-when {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+  }
+  .pg-duel-win {
+    grid-column: 1 / -1;
+  }
+  .pg-duel-vs {
+    display: none;
+  }
+  .pg-duel-win img {
+    width: 88px;
+  }
+}
+
+/* ── Favoris en affiches ──────────────────────────────────────────── */
+.pg-favs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: clamp(12px, 1.4vw, 20px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pg-fav {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: #101116;
+  box-shadow: 0 0 0 1px var(--pg-line);
+  animation: pg-rise 0.7s var(--pg-ease) calc(var(--i, 0) * 0.04s) both;
+  transition:
+    box-shadow 0.35s ease,
+    transform 0.45s var(--pg-ease);
+}
+.pg-fav > img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  filter: brightness(0.82);
+  transition:
+    transform 1.6s var(--pg-ease),
+    filter 0.5s ease;
+}
+.pg-fav::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(0deg, rgba(8, 9, 13, 0.95) 0%, rgba(8, 9, 13, 0.55) 40%, transparent 72%);
+}
+.pg-fav.is-playing {
+  box-shadow:
+    0 0 0 1px var(--pg-acc),
+    0 22px 50px -26px var(--pg-acc);
+}
+@media (hover: hover) {
+  .pg-fav:hover {
+    transform: translateY(-4px);
+  }
+  .pg-fav:hover > img {
+    transform: scale(1.05);
+    filter: brightness(0.95);
+  }
+}
+.pg-fav-txt {
+  position: absolute;
+  left: 16px;
+  right: 100px;
+  bottom: 14px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.pg-fav-txt small {
+  font: 600 10px/1.2 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pg-acc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-fav-txt b {
+  font: 700 18px/1.12 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  color: var(--pg-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pg-fav-txt span {
+  font-size: 12px;
+  color: var(--pg-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pg-fav-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  display: flex;
+  gap: 8px;
+}
+.pg-fav-actions button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(244, 242, 236, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(244, 242, 236, 0.2);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--pg-ink);
+  cursor: pointer;
+  transition:
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
+    background 0.25s ease,
+    color 0.25s ease;
+}
+.pg-fav-actions button:active {
+  transform: scale(0.94);
+}
+.pg-fav-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pg-fav-actions .pg-fav-heart {
+  color: var(--pg-acc);
+}
+.pg-fav.is-playing .pg-fav-play {
+  background: var(--pg-acc);
+  color: #08090d;
+  box-shadow: none;
+}
+@media (hover: hover) {
+  .pg-fav-play:not(:disabled):hover {
+    background: var(--pg-acc);
+    color: #08090d;
+  }
+  .pg-fav-heart:hover {
+    background: rgba(244, 242, 236, 0.22);
+  }
+}
+.pg-fav-actions button:focus-visible {
+  outline: 2px solid var(--pg-acc);
+  outline-offset: 3px;
+}
+
+/* ── Duel test : le duel tiré, en face-à-face ────────────────────── */
+.pg-practice {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+  min-height: min(640px, calc(100dvh - 200px));
+}
+.pg-practice-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.pg-reroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(244, 242, 236, 0.2);
+  color: var(--pg-ink);
+  font: 500 14px "Inter", system-ui, sans-serif;
+  cursor: pointer;
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) {
+  .pg-reroll:hover {
+    box-shadow: inset 0 0 0 1px var(--pg-acc);
+  }
+  .pg-reroll:hover svg {
+    transform: rotate(180deg);
+  }
+}
+.pg-reroll svg {
+  transition: transform 0.5s var(--pg-ease);
+}
+.pg-reroll:active {
+  transform: scale(0.97);
+}
+.pg-versus {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #101116;
+  box-shadow: 0 0 0 1px var(--pg-line), 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+}
+.pg-versus-side {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+}
+/* Coupe en biais, comme le face-à-face des duels. */
+.pg-versus-side--l {
+  clip-path: polygon(0 0, 56% 0, 44% 100%, 0 100%);
+  animation: pg-in-l 0.9s var(--pg-ease) both;
+}
+.pg-versus-side--r {
+  clip-path: polygon(56% 0, 100% 0, 100% 100%, 44% 100%);
+  animation: pg-in-r 0.9s var(--pg-ease) both;
+}
+@keyframes pg-in-l {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+@keyframes pg-in-r {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+.pg-versus-side img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  filter: brightness(0.78);
+}
+.pg-versus-side--l img {
+  object-position: 30% 40%;
+}
+.pg-versus-side--r img {
+  object-position: 70% 40%;
+}
+.pg-versus-side::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(8, 9, 13, 0.92), rgba(8, 9, 13, 0.1) 55%);
+}
+.pg-versus-side figcaption {
+  position: absolute;
+  bottom: 18px;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  max-width: 40%;
+}
+.pg-versus-side--l figcaption {
+  left: 20px;
+}
+.pg-versus-side--r figcaption {
+  right: 20px;
+  text-align: right;
+}
+.pg-versus-side figcaption small {
+  font: 600 10px/1.2 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pg-acc);
+}
+.pg-versus-side figcaption b {
+  font: 800 clamp(17px, 1.7vw, 26px) / 1.05 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  color: var(--pg-ink);
+}
+/* Jointure lumineuse + sceau VS en losange. */
+.pg-versus::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent calc(50% - 1px), rgba(255, 246, 224, 0.75) 50%, transparent calc(50% + 1px));
+  z-index: 1;
+  transform: skewX(-10.9deg);
+  filter: drop-shadow(0 0 6px var(--pg-acc));
+  pointer-events: none;
+}
+.pg-versus-seal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  transform: translate(-50%, -50%);
+  font: 800 15px/1 "Bricolage Grotesque", system-ui, sans-serif;
+  color: var(--pg-ink);
+  animation: pg-seal 0.8s var(--pg-ease) 0.3s both;
+}
+.pg-versus-seal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: rotate(45deg);
+  background: #0b0c10;
+  box-shadow: inset 0 0 0 1px var(--pg-acc), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+@keyframes pg-seal {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+}
+@media (max-width: 900px) {
+  .pg-practice {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+}
+
+/* ── Règles : sommaire collant + sections en cartes ──────────────── */
+.pg-rules-body {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 760px);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: start;
+}
+.pg-rules-nav {
+  position: sticky;
+  top: 140px;
+  display: grid;
+  gap: 2px;
+}
+.pg-rules-nav a {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--pg-line);
+  font-size: 14px;
+  color: var(--pg-mute);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.pg-rules-nav a span {
+  font: 500 11px ui-monospace, monospace;
+  color: rgba(244, 242, 236, 0.35);
+  transition: color 0.2s ease;
+}
+@media (hover: hover) {
+  .pg-rules-nav a:hover,
+  .pg-rules-nav a:hover span {
+    color: var(--pg-ink);
+  }
+  .pg-rules-nav a:hover span {
+    color: var(--pg-acc);
+  }
+}
+.pg-rules-main {
+  display: grid;
+  gap: 14px;
+}
+.nx-root .pg-rules section {
+  scroll-margin-top: 140px;
+  margin: 0;
+  padding: 22px 26px 24px;
+  border-radius: 14px;
+  background: rgba(244, 242, 236, 0.025);
+  box-shadow: inset 0 0 0 1px var(--pg-line);
+}
+.nx-root .pg-rules section h2 {
+  margin: 0 0 12px;
+  font: 700 20px/1.15 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  color: var(--pg-ink);
+}
+.nx-root .pg-rules section :is(p, li) {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: rgba(244, 242, 236, 0.75);
+}
+/* Le principe : étapes numérotées en grands chiffres de couleur. */
+.nx-root .pg-rules #principe ol {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: pg;
+}
+.nx-root .pg-rules #principe li {
+  position: relative;
+  padding-left: 48px;
+  counter-increment: pg;
+}
+.nx-root .pg-rules #principe li::before {
+  content: counter(pg);
+  position: absolute;
+  left: 0;
+  top: -4px;
+  font: 800 30px/1 "Bricolage Grotesque", system-ui, sans-serif;
+  color: var(--pg-acc);
+}
+.nx-root .pg-rules section ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+}
+.nx-root .pg-rules section ul li::marker {
+  color: var(--pg-acc);
+}
+.nx-root .pg-rules kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: rgba(244, 242, 236, 0.08);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(244, 242, 236, 0.18);
+  font: 600 12px "Inter", system-ui, sans-serif;
+  color: var(--pg-ink);
+}
+.nx-root .pg-rules .t-go {
+  justify-self: start;
+  margin-top: 8px;
+}
+@media (max-width: 900px) {
+  .pg-rules-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pg-rules-nav {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .pg-rules-nav a {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-head,
+  .pg-stats,
+  .pg-duel,
+  .pg-fav,
+  .pg-versus-side--l,
+  .pg-versus-side--r,
+  .pg-versus-seal {
+    animation: none;
+  }
+}

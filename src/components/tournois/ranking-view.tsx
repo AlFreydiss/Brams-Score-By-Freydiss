@@ -6,12 +6,11 @@ import { useTournament } from "./provider";
 import { Thumb } from "./visual";
 import { Pause, Play } from "lucide-react";
 import type { Participant } from "@/lib/tournois/types";
-import { IDENTITIES, isFight } from "../fight/identities";
-import { bgOf } from "../fight/jeux-art";
+import { accentOf, artOf as art, universeOf } from "./art";
 import "./ranking.css";
 
 type Row = ReturnType<typeof computeRows>[number];
-const artOf = (p: Participant, jeux: boolean) => (jeux ? (bgOf(p as Participant & { sub?: string })?.src ?? p.thumb) : p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
+const artOf = (p: Participant, jeux: boolean) => art(p, jeux ? "jeux" : "");
 
 // Podium : les trois premiers en affiches, le premier au centre et plus haut.
 function Podium({ rows, jeux, accent }: { rows: Row[]; jeux: boolean; accent: string }) {
@@ -84,11 +83,15 @@ export function RankingView() {
   const ranked = useMemo(() => new Map(sortRows(rows, source === "site" ? "rate" : "rank").map((r, i) => [r.p.id, i + 1])), [rows, source]);
   const siteDuels = siteRows.reduce((n, r) => n + r.wins, 0);
   const top = useMemo(() => sortRows(rows, source === "site" ? "rate" : "rank").slice(0, 3), [rows, source]);
-  const accent = isFight(meta.slug) ? IDENTITIES[meta.slug].a : "#f4f2ec";
+  const accent = accentOf(meta.slug);
 
   return (
     <div className="t-page t-page--wide">
-      <div className="t-page-head">
+      <div className="t-page-head pg-head">
+        <p className="pg-kicker">
+          <span aria-hidden />
+          {universeOf(meta.slug) ?? meta.title}
+        </p>
         <h1 className="t-page-title">Classement</h1>
         <div className="t-b-tabs t-source-tabs" role="tablist" aria-label="Source du classement">
           <button type="button" role="tab" aria-selected={source === "site"} className={source === "site" ? "is-on" : ""} onClick={() => setPick("site")}>

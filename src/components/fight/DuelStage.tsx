@@ -1,4 +1,5 @@
-import { Maximize2, Minimize2, Network, Pause, Play, RotateCcw } from "lucide-react";
+import { Heart, Maximize2, Minimize2, Network, Pause, Play, RotateCcw } from "lucide-react";
+import { actions } from "@/lib/tournois/store";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue, type PanInfo } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -320,12 +321,13 @@ export function DuelStage(props: Props) {
       } else if (k === "t" || k === "T") navigate(`/tournoi/${meta.path}/tableau`);
       else if ((k === "c" || k === "C") && !picked) setAb((v) => !v);
       else if (k === "f" || k === "F") toggleFull();
+      else if (k === "h" || k === "H") actions.toggleFavorite(meta.slug, (focus === "right" ? right : left).id);
       else if (k === "?") setHelp((v) => !v);
       else if (k === "Escape") setHelp(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choose, listen, focus, audible, canUndo, onUndo, picked, navigate, meta.path, toggleFull]);
+  }, [choose, listen, focus, audible, canUndo, onUndo, picked, navigate, meta.path, meta.slug, left, right, toggleFull]);
 
   useAlternate(ab && !picked && !intro, player, left, right, setKbd);
 
@@ -598,6 +600,42 @@ type PanelProps = {
   onChoose: (s: Side) => void;
 };
 
+// Cœur : ajoute aux favoris (ne compte pas comme un vote). Touche H.
+function FavHeart({ p, hidden, masked, size = 44 }: { p: Participant; hidden?: boolean; masked: (p: Participant) => string; size?: number }) {
+  const { meta, saved } = useTournament();
+  const on = saved.favorites.includes(p.id);
+  if (hidden) return null;
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.88 }}
+      onClick={() => actions.toggleFavorite(meta.slug, p.id)}
+      aria-pressed={on}
+      aria-label={`${on ? "Retirer des favoris" : "Ajouter aux favoris"} : ${masked(p)}`}
+      title={on ? "Retirer des favoris (H)" : "Ajouter aux favoris (H)"}
+      style={{
+        display: "grid",
+        placeItems: "center",
+        width: size,
+        height: size,
+        flex: "none",
+        border: 0,
+        borderRadius: 999,
+        background: "rgba(8,9,13,0.55)",
+        backdropFilter: "blur(12px)",
+        boxShadow: `inset 0 0 0 1px ${on ? "rgba(255,120,140,0.7)" : LINE_2}`,
+        color: on ? "#ff7a8c" : "#f4f2ec",
+        cursor: "pointer",
+        transition: "color 0.25s, box-shadow 0.25s",
+      }}
+    >
+      <motion.span key={on ? "on" : "off"} initial={on ? { scale: 0.4 } : false} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 520, damping: 14 }} style={{ display: "grid" }}>
+        <Heart size={16} fill={on ? "currentColor" : "none"} />
+      </motion.span>
+    </motion.button>
+  );
+}
+
 function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, refEl, posterAt, isFinal, championLabel, jeux, onHover, onListen, onChoose }: PanelProps) {
   const loaded = player.id === p.id;
   const playing = loaded && player.playing;
@@ -844,6 +882,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
               </motion.button>
               )}
               </Magnetic>
+              <FavHeart p={p} hidden={hidden} masked={masked} />
             </div>
           ) : null}
         </motion.div>
@@ -1127,6 +1166,7 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
             <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ flex: "none", height: 50, padding: "0 16px", border: 0, borderRadius: th ? 2 : 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontFamily: th ? th.font : undefined, fontWeight: 600, fontSize: th ? 12 * Math.min(1, th.scale + 0.2) : 14, letterSpacing: th ? "0.08em" : undefined, textTransform: th ? "uppercase" : undefined }}>
               L'autre
             </motion.button>
+            <FavHeart p={p} hidden={hidden} masked={masked} size={50} />
           </div>
         ) : null}
       </div>
