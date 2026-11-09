@@ -3,15 +3,19 @@ import { MeshReflectorMaterial } from "@react-three/drei";
 import { Bloom, EffectComposer, Noise, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Info, Play } from "lucide-react";
+import { Info, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { EASE, FONT, LINE_2 } from "../identities";
+import "./arena.css";
 
-// L'arène du hub : trois portails (OST, openings, endings) disposés en cercle
-// dans une scène 3D sobre — noir, brouillard, reflet discret au sol, léger
-// bloom. Le portail actif s'avance ; un clic fait plonger la caméra dedans.
-// Chargée à la demande (lazy) ; le hub garde un panneau 2D si WebGL manque.
+// L'arène du hub : une salle de projection. Les écrans des tournois phares
+// sont rangés en arc ; l'écran actif est au centre, ses voisins sur les côtés.
+// Derrière chaque écran, son image déborde sur le mur (ambilight), et toute
+// la salle (halo, sol, poussière) prend la couleur de ce qui passe à l'écran.
+// Un clic sur l'écran fait plonger la caméra dedans. Rotation automatique
+// toutes les 12 s, en pause au survol. Chargée à la demande (lazy) ; le hub
+// garde un panneau 2D si WebGL manque.
 
 export type ArenaItem = {
   slug: string;
@@ -22,8 +26,10 @@ export type ArenaItem = {
   accent: string;
   status: string | null;
   media: { k: "video"; src: string; start: number } | { k: "img"; src: string };
-  /** Image fixe du tournoi (panneaux du fond). */
+  /** Image fixe du tournoi (écrans voisins). */
   still?: string;
+  /** Ce qui passe à l'écran (titre, anime). */
+  caption?: { title: string; sub?: string };
 };
 
 type Props = {
@@ -32,26 +38,33 @@ type Props = {
   onInfo: (item: ArenaItem) => void;
 };
 
-const R = 4.2;
 const W = 3.4;
 const H = W * (9 / 16);
+const FRONT = 4.8; // z de l'écran actif
+const ARC = 6.4; // rayon de l'arc des écrans
+const STEP = 0.62; // écart angulaire entre deux écrans
+const CAM_Z = FRONT + 4.9;
 const BG = "#08090d";
-const FADE = "linear-gradient(to bottom, #000 0%, #000 calc(100% - 260px), rgba(0,0,0,0.55) calc(100% - 120px), transparent 100%)";
+const ROTATE_MS = 12000;
+const FADE = "linear-gradient(to bottom, transparent 0%, #000 90px, #000 calc(100% - 240px), rgba(0,0,0,0.55) calc(100% - 110px), transparent 100%)";
+
+/** Couleur de la salle, partagée par la scène (lue à chaque image). */
+type Room = { color: THREE.Color };
 
 export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const [active, setActive] = useState(0);
   const [dive, setDive] = useState<ArenaItem | null>(null);
   const [visible, setVisible] = useState(true);
+  const [hold, setHold] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; t: number } | null>(null);
-  // Décalage du glissé en cours (px), lu à chaque image par la scène.
   const dragOff = useRef({ x: 0, y: 0 });
-  // Un glissé ne doit pas se terminer en clic sur le portail (plongée involontaire).
   const dragged = useRef(false);
+  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a") }), [items]);
   const n = items.length;
   const go = (d: number) => setActive((a) => (a + d + n) % n);
+  const reduce = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
-  // Hors de l'écran (on a défilé plus bas), la scène s'arrête.
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
@@ -60,7 +73,22 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
     return () => io.disconnect();
   }, []);
 
-  // Flèches du clavier quand le hub est visible ; Entrée plonge.
+  // Rotation automatique : un tournoi toutes les 12 s, en pause au survol,
+  // pendant un glissé, hors écran ou onglet caché.
+  const [tabHidden, setTabHidden] = useState(false);
+  useEffect(() => {
+    const v = () => setTabHidden(document.hidden);
+    document.addEventListener("visibilitychange", v);
+    return () => document.removeEventListener("visibilitychange", v);
+  }, []);
+  const running = visible && !hold && !dive && !tabHidden && !reduce;
+  useEffect(() => {
+    if (!running) return;
+    const t = setTimeout(() => go(1), ROTATE_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, running, n]);
+
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
@@ -77,25 +105,26 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const enter = (item: ArenaItem) => {
     if (dive) return;
     setDive(item);
-    // La caméra plonge, le flash couvre la fin du trajet, puis on arrive sur le tournoi.
     setTimeout(() => onPlay(item), 820);
   };
 
   const cur = items[active];
+  const resume = cur.status && cur.status !== "Partie terminée" && !/champion/.test(cur.status);
 
   return (
     <div
       ref={wrap}
-      style={{ position: "relative", height: "min(88dvh, 880px)", minHeight: 540, overflow: "hidden", touchAction: "pan-y", userSelect: "none" }}
+      className="ar3"
+      onPointerEnter={() => setHold(true)}
+      onPointerLeave={() => setHold(false)}
       onPointerDown={(e) => {
-        if ((e.target as HTMLElement).closest("button")) return;
+        if ((e.target as HTMLElement).closest("button, a")) return;
         drag.current = { x: e.clientX, y: e.clientY, t: performance.now() };
         dragged.current = false;
       }}
       onPointerMove={(e) => {
         const d = drag.current;
         if (!d) return;
-        // La scène suit le doigt : l'anneau tourne, la caméra bascule.
         dragOff.current = { x: e.clientX - d.x, y: e.clientY - d.y };
         if (Math.hypot(dragOff.current.x, dragOff.current.y) > 10) dragged.current = true;
       }}
@@ -106,9 +135,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         if (!d) return;
         const dx = e.clientX - d.x;
         const dy = e.clientY - d.y;
-        // Horizontal : gauche / droite. Vertical : vers le haut = suivant.
         if (Math.abs(dx) > 50 && Math.abs(dx) >= Math.abs(dy)) go(dx < 0 ? 1 : -1);
-        else if (Math.abs(dy) > 60) go(dy < 0 ? 1 : -1);
       }}
       onPointerCancel={() => {
         drag.current = null;
@@ -121,109 +148,111 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
       <Canvas
         frameloop={visible ? "always" : "never"}
         dpr={[1, 1.6]}
-        camera={{ position: [0, 0.35, R + 5.2], fov: 42 }}
+        camera={{ position: [0, 0.3, CAM_Z], fov: 40 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        // Le bas de la scène se dissout dans la brume du hub : pas de bord net entre l'arène et la suite.
         style={{ position: "absolute", inset: 0, maskImage: FADE, WebkitMaskImage: FADE }}
       >
         <color attach="background" args={[BG]} />
-        <fog attach="fog" args={[BG, 6.5, 15]} />
-        <ambientLight intensity={0.6} />
-        <Glow accent={cur.accent} />
-        <Orbit items={items} active={active} drag={dragOff} />
-        <Dust accent={cur.accent} />
-        <Ring items={items} active={active} drag={dragOff} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
+        <fog attach="fog" args={[BG, 7, 17]} />
+        <Glow room={room} />
+        <Dust room={room} />
+        <Arc items={items} active={active} drag={dragOff} room={room} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
         <Floor />
+        <FloorSpill room={room} />
         <CameraRig dive={!!dive} drag={dragOff} />
         <EffectComposer>
-          <Bloom intensity={0.45} luminanceThreshold={0.5} luminanceSmoothing={0.3} mipmapBlur />
-          {/* Grain de pellicule très léger : la scène a la matière d'une projection. */}
-          <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.1} />
-          <Vignette eskil={false} offset={0.2} darkness={0.75} />
+          {/* Seuil haut : une image claire reste une image, pas une plaque blanche. */}
+          <Bloom intensity={0.32} luminanceThreshold={0.82} luminanceSmoothing={0.2} mipmapBlur />
+          <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.09} />
+          <Vignette eskil={false} offset={0.22} darkness={0.7} />
         </EffectComposer>
       </Canvas>
 
-      {/* Sur l'écran central, le doigt pilote la scène dans les deux sens
-          (ailleurs, glisser verticalement fait défiler la page). Un appui plonge. */}
-      <div
-        aria-hidden
-        onClick={() => (dragged.current ? undefined : enter(cur))}
-        style={{ position: "absolute", left: "27%", right: "27%", top: "22%", bottom: "30%", touchAction: "none", cursor: "pointer" }}
-      />
+      {/* Zone de l'écran central : clic = plonger dedans. */}
+      <div aria-hidden className="ar3-hit" onClick={() => (dragged.current ? undefined : enter(cur))} />
 
-      {/* Texte du portail actif, en bas à gauche. */}
-      <div style={{ position: "absolute", left: "clamp(20px, 4vw, 64px)", bottom: "clamp(36px, 8vh, 84px)", width: "min(520px, calc(100% - 40px))", pointerEvents: "none" }}>
+      {/* Texte du tournoi actif. */}
+      <div className="ar3-copy">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={cur.slug}
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } }}
-            exit={{ opacity: 0, y: -8, transition: { duration: 0.25 } }}
+            exit={{ opacity: 0, y: -8, transition: { duration: 0.22 } }}
           >
-            <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#8b8a85" }}>
-              <span aria-hidden style={{ width: 18, height: 1, background: cur.accent }} />
+            <p className="ar3-kicker">
+              <span aria-hidden style={{ background: cur.accent }} />
               {cur.kind}
-              {cur.status ? (
-                <>
-                  <span aria-hidden style={{ width: 3, height: 3, borderRadius: 999, background: "#8b8a85" }} />
-                  <span style={{ color: "#f4f2ec" }}>{cur.status}</span>
-                </>
-              ) : null}
+              {cur.status ? <b>{cur.status}</b> : null}
             </p>
-            <h1 style={{ margin: "14px 0 0", fontFamily: FONT.display, fontWeight: 700, fontSize: "clamp(38px, 4.6vw, 72px)", lineHeight: 0.98, letterSpacing: "-0.035em", color: "#f4f2ec" }}>{cur.title}</h1>
-            <p style={{ margin: "14px 0 0", maxWidth: "44ch", fontFamily: FONT.body, fontSize: 16, lineHeight: 1.5, color: "#b9b7b1" }}>{cur.tagline}</p>
+            <h1 className="ar3-title">
+              {cur.title.split(" ").map((w, k, all) => (
+                <motion.span
+                  key={k}
+                  initial={{ opacity: 0, y: "0.4em", filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: EASE, delay: 0.06 + k * 0.07 } }}
+                  style={{ display: "inline-block", marginRight: k < all.length - 1 ? "0.24em" : 0 }}
+                >
+                  {w}
+                </motion.span>
+              ))}
+            </h1>
+            <p className="ar3-tagline">{cur.tagline}</p>
+            {cur.caption ? (
+              <p className="ar3-now">
+                <i aria-hidden className="ar3-eq" style={{ color: cur.accent }}>
+                  <span />
+                  <span />
+                  <span />
+                </i>
+                <span>
+                  À l’écran : <b>{cur.caption.title}</b>
+                  {cur.caption.sub ? `, ${cur.caption.sub}` : ""}
+                </span>
+              </p>
+            ) : null}
           </motion.div>
         </AnimatePresence>
-        <div style={{ display: "flex", gap: 10, marginTop: 24, pointerEvents: "auto" }}>
-          <motion.button
-            type="button"
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => enter(cur)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 10, height: 48, padding: "0 24px 0 20px", border: 0, borderRadius: 999, background: cur.accent, color: BG, fontFamily: FONT.body, fontWeight: 600, fontSize: 15, cursor: "pointer", transition: "background-color 0.4s" }}
-          >
+        <div className="ar3-ctas">
+          <motion.button type="button" whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }} onClick={() => enter(cur)} className="ar3-play" style={{ background: cur.accent }}>
             <Play size={17} fill="currentColor" />
-            {cur.status && cur.status !== "Partie terminée" && !/champion/.test(cur.status) ? "Reprendre" : "Jouer"}
+            {resume ? "Reprendre" : "Jouer"}
           </motion.button>
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.96 }}
-            onClick={() => onInfo(cur)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 10, height: 48, padding: "0 22px 0 18px", border: 0, borderRadius: 999, background: "rgba(8,9,13,0.5)", backdropFilter: "blur(12px)", boxShadow: `inset 0 0 0 1px ${LINE_2}`, color: "#f4f2ec", fontFamily: FONT.body, fontWeight: 500, fontSize: 15, cursor: "pointer" }}
-          >
+          <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={() => onInfo(cur)} className="ar3-more" style={{ boxShadow: `inset 0 0 0 1px ${LINE_2}` }}>
             <Info size={17} />
-            Plus d'infos
+            Plus d’infos
           </motion.button>
         </div>
       </div>
 
-      {/* Navigation : flèches et index, en bas à droite. */}
-      <div style={{ position: "absolute", right: "clamp(20px, 4vw, 64px)", bottom: "clamp(36px, 8vh, 84px)", display: "flex", alignItems: "center", gap: 14 }}>
-        <span style={{ fontFamily: FONT.body, fontSize: 12, letterSpacing: "0.18em", color: "#8b8a85" }}>
-          <span style={{ color: "#f4f2ec" }}>{String(active + 1).padStart(2, "0")}</span> / {String(n).padStart(2, "0")}
-        </span>
-        {[-1, 1].map((d) => (
-          <motion.button
-            key={d}
+      {/* Onglets des tournois, avec le temps qui reste avant le suivant. */}
+      <div className="ar3-tabs" role="tablist" aria-label="Tournois à la une">
+        {items.map((it, k) => (
+          <button
+            key={it.slug}
             type="button"
-            whileTap={{ scale: 0.9 }}
-            onClick={() => go(d)}
-            aria-label={d < 0 ? "Tournoi précédent" : "Tournoi suivant"}
-            style={{ display: "grid", placeItems: "center", width: 42, height: 42, border: 0, borderRadius: 999, background: "rgba(8,9,13,0.5)", backdropFilter: "blur(12px)", boxShadow: `inset 0 0 0 1px ${LINE_2}`, color: "#f4f2ec", cursor: "pointer" }}
+            role="tab"
+            aria-selected={k === active}
+            className={k === active ? "is-on" : ""}
+            onClick={() => setActive(k)}
+            style={{ "--acc": it.accent } as React.CSSProperties}
           >
-            {d < 0 ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-          </motion.button>
+            <small>{String(k + 1).padStart(2, "0")}</small>
+            <span>{it.title.replace(/^Tournoi (des |d'|d’)/i, "").replace(/^OST de /, "")}</span>
+            <i aria-hidden>
+              <em key={`${it.slug}-${active}`} style={{ animationDuration: `${ROTATE_MS}ms`, animationPlayState: running ? "running" : "paused" }} />
+            </i>
+          </button>
         ))}
       </div>
 
-      {/* Flash de fin de plongée. */}
       <AnimatePresence>
         {dive ? (
           <motion.div
             key="flash"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { delay: 0.45, duration: 0.35, ease: [0.7, 0, 0.84, 0] } }}
-            style={{ position: "absolute", inset: 0, background: `radial-gradient(60% 60% at 50% 50%, ${cur.accent}66, #08090d 75%)`, pointerEvents: "none" }}
+            style={{ position: "absolute", inset: 0, background: `radial-gradient(60% 60% at 50% 45%, ${cur.accent}66, #08090d 75%)`, pointerEvents: "none" }}
           />
         ) : null}
       </AnimatePresence>
@@ -233,29 +262,23 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
 
 // ── Scène ────────────────────────────────────────────────────────────
 
-function Ring({ items, active, drag, onPick }: { items: ArenaItem[]; active: number; drag: React.MutableRefObject<{ x: number; y: number }>; onPick: (i: number) => void }) {
-  const group = useRef<THREE.Group>(null);
+// Position continue de l'arc : on glisse vers le tournoi visé par le chemin le
+// plus court ; chaque écran calcule sa place relative (−2 … 2) à partir d'elle.
+function Arc({ items, active, drag, room, onPick }: { items: ArenaItem[]; active: number; drag: React.MutableRefObject<{ x: number; y: number }>; room: Room; onPick: (i: number) => void }) {
   const n = items.length;
-  const step = (Math.PI * 2) / n;
-  const target = useRef(0);
-  // Rotation continue : depuis l'angle actuel, on prend le chemin le plus
-  // court vers le portail visé (du dernier au premier = un seul cran).
+  const target = useRef(active);
+  const pos = useRef(active);
   useEffect(() => {
-    const want = -active * step;
-    const TAU = Math.PI * 2;
-    const cur = target.current;
-    const d = ((((want - cur + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
-    target.current = cur + d;
-  }, [active, step]);
+    const d = ((((active - target.current) % n) + n + n / 2) % n) - n / 2;
+    target.current += d;
+  }, [active, n]);
   useFrame((_, dt) => {
-    const g = group.current;
-    if (!g) return;
-    g.rotation.y = THREE.MathUtils.damp(g.rotation.y, target.current + drag.current.x * 0.005, 4.2, dt);
+    pos.current = THREE.MathUtils.damp(pos.current, target.current - drag.current.x * 0.004, 4, dt);
   });
   return (
-    <group ref={group}>
+    <group>
       {items.map((it, i) => (
-        <Portal key={it.slug} item={it} angle={i * step} active={i === active} onClick={() => onPick(i)} />
+        <Screen key={it.slug} item={it} index={i} n={n} pos={pos} active={i === active} room={room} onClick={() => onPick(i)} />
       ))}
     </group>
   );
@@ -265,19 +288,19 @@ function Ring({ items, active, drag, onPick }: { items: ArenaItem[]; active: num
 function useCurvedPlane() {
   return useMemo(() => {
     const g = new THREE.PlaneGeometry(W, H, 48, 1);
-    const pos = g.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      pos.setZ(i, (x * x) * 0.07);
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i);
+      p.setZ(i, x * x * 0.07);
     }
-    pos.needsUpdate = true;
+    p.needsUpdate = true;
     g.computeVertexNormals();
     return g;
   }, []);
 }
 
-// Image → texture WebGL. Une image déjà affichée ailleurs (balise <img> sans
-// CORS) reste en cache sans en-tête CORS : WebGL la refuse. Deuxième essai hors cache.
+// Image → texture WebGL. Une image déjà en cache sans en-tête CORS est refusée
+// par WebGL : deuxième essai hors cache.
 function loadImageTexture(src: string, done: (t: THREE.Texture) => void) {
   const loader = new THREE.TextureLoader().setCrossOrigin("anonymous");
   const ok = (t: THREE.Texture) => {
@@ -287,24 +310,7 @@ function loadImageTexture(src: string, done: (t: THREE.Texture) => void) {
   loader.load(src, ok, undefined, () => loader.load(`${src}${src.includes("?") ? "&" : "?"}gl=1`, ok));
 }
 
-function useStill(src: string | undefined) {
-  const [tex, setTex] = useState<THREE.Texture | null>(null);
-  useEffect(() => {
-    if (!src) return;
-    let live = true;
-    loadImageTexture(src, (t) => (live ? setTex(t) : t.dispose()));
-    return () => {
-      live = false;
-    };
-  }, [src]);
-  useEffect(() => () => tex?.dispose(), [tex]);
-  return tex;
-}
-
-// Textures de dégradé dessinées une fois : halo rond, et masque doux pour
-// fondre les grands panneaux du fond dans le noir.
 let haloTex: THREE.Texture | null = null;
-let maskTex: THREE.Texture | null = null;
 function halo() {
   if (haloTex) return haloTex;
   const c = document.createElement("canvas");
@@ -318,23 +324,6 @@ function halo() {
   g.fillRect(0, 0, 256, 256);
   haloTex = new THREE.CanvasTexture(c);
   return haloTex;
-}
-function mask() {
-  if (maskTex) return maskTex;
-  const c = document.createElement("canvas");
-  c.width = 512;
-  c.height = 288;
-  const g = c.getContext("2d")!;
-  g.fillStyle = "#000";
-  g.fillRect(0, 0, 512, 288);
-  // Ellipse floue : plein au centre, rien sur les bords.
-  g.filter = "blur(38px)";
-  g.fillStyle = "#fff";
-  g.beginPath();
-  g.ellipse(256, 144, 190, 92, 0, 0, Math.PI * 2);
-  g.fill();
-  maskTex = new THREE.CanvasTexture(c);
-  return maskTex;
 }
 
 function useMediaTexture(media: ArenaItem["media"], poster?: string) {
@@ -361,7 +350,6 @@ function useMediaTexture(media: ArenaItem["media"], poster?: string) {
         },
         { once: true },
       );
-      // L'image fixe d'abord, puis la vidéo dès sa première image (ou au bout de 4 s quoi qu'il arrive).
       if (poster) loadImageTexture(poster, (t) => (live ? setTex((cur) => cur ?? t) : t.dispose()));
       let swapped = false;
       const swap = () => {
@@ -386,46 +374,87 @@ function useMediaTexture(media: ArenaItem["media"], poster?: string) {
         video.load();
       }
     };
-  // La texture dépend de la source seule : un nouvel objet pour la même vidéo ne la recharge pas.
   }, [kind, src, start, poster]);
   useEffect(() => () => tex?.dispose(), [tex]);
   return tex;
 }
 
-function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: number; active: boolean; onClick: () => void }) {
+// Couleur moyenne de l'image affichée (8×8 px), saturée un peu : la lumière de la salle.
+const probe = typeof document !== "undefined" ? document.createElement("canvas") : null;
+function averageColor(src: CanvasImageSource, out: THREE.Color) {
+  if (!probe) return false;
+  probe.width = 8;
+  probe.height = 8;
+  const g = probe.getContext("2d", { willReadFrequently: true });
+  if (!g) return false;
+  try {
+    g.drawImage(src, 0, 0, 8, 8);
+    const d = g.getImageData(0, 0, 8, 8).data;
+    let r = 0;
+    let gg = 0;
+    let b = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      r += d[i];
+      gg += d[i + 1];
+      b += d[i + 2];
+    }
+    out.setRGB(r / 64 / 255, gg / 64 / 255, b / 64 / 255, THREE.SRGBColorSpace);
+    const hsl = { h: 0, s: 0, l: 0 };
+    out.getHSL(hsl);
+    out.setHSL(hsl.h, Math.min(1, hsl.s * 1.5 + 0.12), THREE.MathUtils.clamp(hsl.l, 0.35, 0.6));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaItem; index: number; n: number; pos: React.MutableRefObject<number>; active: boolean; room: Room; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const mat = useRef<THREE.MeshBasicMaterial>(null);
   const geo = useCurvedPlane();
-  // Seul l'écran actif lit sa vidéo ; les autres montrent leur image fixe (un générique entier pèse ~50 Mo).
+  // Seul l'écran actif lit sa vidéo ; les autres montrent leur image fixe.
   const media = useMemo<ArenaItem["media"]>(() => (active || item.media.k === "img" || !item.still ? item.media : { k: "img", src: item.still }), [active, item.media, item.still]);
   const tex = useMediaTexture(media, item.still);
   const [hover, setHover] = useState(false);
   const accent = useMemo(() => new THREE.Color(item.accent), [item.accent]);
+  const sampled = useMemo(() => new THREE.Color(), []);
+  const lastProbe = useRef(0);
+  const vis = useRef(0);
 
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     const g = ref.current;
     if (!g) return;
-    // Le portail actif s'avance et grandit ; les autres reculent dans le brouillard.
-    const s = active ? (hover ? 1.04 : 1) : 0.8;
-    g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, s, 5, dt));
-    const r = active ? R + 0.6 : R;
-    const x = Math.sin(angle) * r;
-    const z = Math.cos(angle) * r;
-    g.position.x = THREE.MathUtils.damp(g.position.x, x, 5, dt);
-    g.position.z = THREE.MathUtils.damp(g.position.z, z, 5, dt);
-    // Les portails des côtés pivotent à moitié vers la caméra : jamais vus de tranche.
-    const ring = g.parent?.rotation.y ?? 0;
-    const net = Math.atan2(Math.sin(angle + ring), Math.cos(angle + ring));
-    g.rotation.y = angle - net * 0.45;
+    // Place relative dans l'arc, ramenée dans [−n/2, n/2).
+    let rel = index - pos.current;
+    rel = ((((rel + n / 2) % n) + n) % n) - n / 2;
+    const a = rel * STEP;
+    g.position.set(Math.sin(a) * ARC, 0, FRONT - ARC + Math.cos(a) * ARC);
+    g.rotation.y = -a * 0.9;
+    const near = Math.max(0, 1 - Math.abs(rel));
+    const s = 0.8 + 0.2 * near + (active && hover ? 0.03 : 0);
+    g.scale.setScalar(THREE.MathUtils.damp(g.scale.x, s, 6, dt));
+    // Au-delà d'un cran, l'écran s'efface dans le noir.
+    const show = THREE.MathUtils.clamp(1.8 - Math.abs(rel), 0, 1);
+    vis.current = show;
+    g.visible = show > 0.01;
     if (mat.current) {
-      // Sans texture, l'écran reste sombre (jamais une plaque blanche).
-      const c = !tex ? 0.07 : active ? 1 : 0.45;
-      mat.current.color.setScalar(THREE.MathUtils.damp(mat.current.color.r, c, 4, dt));
+      const c = !tex ? 0.07 : 0.22 + 0.7 * near;
+      mat.current.color.setScalar(c);
+      mat.current.opacity = show;
     }
+    // L'écran actif éclaire la salle de sa couleur (mesurée 3 fois par seconde).
+    if (active && tex && state.clock.elapsedTime - lastProbe.current > 0.33) {
+      lastProbe.current = state.clock.elapsedTime;
+      const img = tex.image as CanvasImageSource | undefined;
+      const ready = img && (!(img instanceof HTMLVideoElement) || img.readyState >= 2);
+      if (ready && averageColor(img, sampled)) sampled.lerp(accent, 0.3);
+    }
+    if (active) room.color.lerp(sampled.r + sampled.g + sampled.b > 0 ? sampled : accent, 1 - Math.exp(-dt * 1.6));
   });
 
   return (
-    <group ref={ref} position={[Math.sin(angle) * R, 0, Math.cos(angle) * R]} rotation={[0, angle, 0]}>
+    <group ref={ref}>
+      <Ambilight tex={tex} vis={vis} active={active} />
       <mesh
         geometry={geo}
         onClick={(e) => {
@@ -442,30 +471,91 @@ function Portal({ item, angle, active, onClick }: { item: ArenaItem; angle: numb
           document.body.style.cursor = "";
         }}
       >
-        {/* Clé sur la texture : un matériau compilé sans map ne l'affiche jamais
-            ensuite (shader sans USE_MAP), d'où les écrans blancs. */}
-        <meshBasicMaterial key={tex?.uuid ?? "none"} ref={mat} map={tex ?? null} color={tex ? "#ffffff" : "#111317"} toneMapped={false} side={THREE.DoubleSide} />
+        {/* Clé sur la texture : un matériau compilé sans map ne l'affiche jamais ensuite. */}
+        <meshBasicMaterial key={tex?.uuid ?? "none"} ref={mat} map={tex ?? null} color={tex ? "#ffffff" : "#111317"} transparent toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
-      {/* Un filet de couleur sous l'écran, la seule touche de l'univers. */}
-      <mesh position={[0, -H / 2 - 0.09, 0.18]}>
+      <mesh position={[0, -H / 2 - 0.09, 0.18]} raycast={() => null}>
         <planeGeometry args={[active ? W * 0.42 : W * 0.2, 0.012]} />
-        <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={active ? 1 : 0.4} />
+        <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={active ? 1 : 0.35} />
       </mesh>
-      <Rays accent={accent} active={active} />
       <Sheen geo={geo} accent={accent} active={active} />
-      <Frame accent={accent} active={active} />
-      {/* Flaque de lumière au sol, dans la couleur du tournoi. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -H / 2 - 0.33, 0.55]}>
-        <planeGeometry args={[W * 1.1, 0.9]} />
-        <meshBasicMaterial map={halo()} color={accent} transparent opacity={active ? 0.3 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
-      </mesh>
+      <Frame accent={accent} active={active} vis={vis} />
     </group>
+  );
+}
+
+// ── Ambilight ────────────────────────────────────────────────────────
+// Un grand plan derrière l'écran, qui reprend SON image : flou large, couleurs
+// des bords prolongées vers l'extérieur, fondu en ovale. Le mur s'éclaire de
+// ce qui passe, image par image.
+const AMBI_VS = /* glsl */ `
+varying vec2 vUv;
+void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+`;
+const AMBI_FS = /* glsl */ `
+uniform sampler2D map;
+uniform float uOn;
+uniform vec2 uScale;
+varying vec2 vUv;
+void main() {
+  vec2 s = (vUv - 0.5) * uScale + 0.5;
+  vec2 c = clamp(s, 0.02, 0.98);
+  vec3 acc = vec3(0.0);
+  float tot = 0.0;
+  for (int i = 0; i < 12; i++) {
+    float a = float(i) * 0.5236;
+    for (int j = 1; j <= 2; j++) {
+      vec2 o = vec2(cos(a), sin(a) * 1.6) * 0.07 * float(j);
+      acc += texture2D(map, clamp(c + o, 0.0, 1.0)).rgb;
+      tot += 1.0;
+    }
+  }
+  vec3 col = acc / tot;
+  // Distance hors du cadre de l'écran : la lumière décroît en s'éloignant.
+  vec2 q = max(abs(s - 0.5) - 0.5, 0.0);
+  float d = length(q * vec2(1.0, 1.4));
+  float fall = exp(-d * 3.2);
+  // Fondu jusqu'à zéro sur les bords du plan : jamais de rectangle visible.
+  vec2 e = min(vUv, 1.0 - vUv);
+  float edge = smoothstep(0.0, 0.32, e.x) * smoothstep(0.0, 0.3, e.y);
+  // Une image très claire n'éclaire pas le mur en gris : on garde surtout la couleur.
+  float l = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(l), col, 1.6) * (1.0 - 0.45 * smoothstep(0.55, 0.95, l));
+  gl_FragColor = vec4(max(col, 0.0) * fall * edge * 0.85, 1.0) * uOn;
+}
+`;
+function Ambilight({ tex, vis, active }: { tex: THREE.Texture | null; vis: React.MutableRefObject<number>; active: boolean }) {
+  const SX = 2.3;
+  const SY = 2.6;
+  const mat = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: AMBI_VS,
+        fragmentShader: AMBI_FS,
+        uniforms: { map: { value: null }, uOn: { value: 0 }, uScale: { value: new THREE.Vector2(SX, SY) } },
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    [],
+  );
+  useEffect(() => {
+    mat.uniforms.map.value = tex;
+  }, [tex, mat]);
+  useFrame((_, dt) => {
+    const want = tex ? (active ? 0.62 : 0.2) * vis.current : 0;
+    mat.uniforms.uOn.value = THREE.MathUtils.damp(mat.uniforms.uOn.value, want, 3, dt);
+  });
+  return (
+    <mesh position={[0, 0.05, -0.5]} material={mat} raycast={() => null}>
+      <planeGeometry args={[W * SX, H * SY]} />
+    </mesh>
   );
 }
 
 // ── Détails ──────────────────────────────────────────────────────────
 
-// Point du contour de l'écran courbe, t ∈ [0, 1) (haut, droite, bas, gauche).
 const PERIM = 2 * (W + H);
 function onFrame(t: number, out: THREE.Vector3) {
   let d = (((t % 1) + 1) % 1) * PERIM;
@@ -479,8 +569,7 @@ function onFrame(t: number, out: THREE.Vector3) {
   return out.set(-W / 2, -H / 2 + d, z(-W / 2));
 }
 
-// Liseré fin autour de l'écran (plus vif sur l'écran actif).
-function Frame({ accent, active }: { accent: THREE.Color; active: boolean }) {
+function Frame({ accent, active, vis }: { accent: THREE.Color; active: boolean; vis: React.MutableRefObject<number> }) {
   const line = useMemo(() => {
     const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= 160; i++) pts.push(onFrame(i / 160, new THREE.Vector3()));
@@ -490,32 +579,26 @@ function Frame({ accent, active }: { accent: THREE.Color; active: boolean }) {
   useFrame((_, dt) => {
     const m = line.material as THREE.LineBasicMaterial;
     m.color.copy(accent);
-    m.opacity = THREE.MathUtils.damp(m.opacity, active ? 0.55 : 0.14, 4, dt);
+    m.opacity = THREE.MathUtils.damp(m.opacity, (active ? 0.5 : 0.12) * vis.current, 4, dt);
   });
   return <primitive object={line} />;
 }
 
-// Reflet de verre : une bande de lumière oblique traverse l'écran actif toutes
-// les ~7 s, comme une vitre qui accroche la lumière. Rien sur les autres écrans.
-const SHEEN_VS = /* glsl */ `
-varying vec2 vUv;
-void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
-`;
+// Reflet de verre : une bande de lumière oblique traverse l'écran actif toutes les ~7 s.
+const SHEEN_VS = AMBI_VS;
 const SHEEN_FS = /* glsl */ `
 uniform float uT;
 uniform float uOn;
 uniform vec3 uTint;
 varying vec2 vUv;
 void main() {
-  // Position de la bande : balaie de -0.4 à 1.4 en 1,6 s, puis repos.
   float p = -0.4 + 1.8 * clamp(uT / 1.6, 0.0, 1.0);
   float d = vUv.x + (vUv.y - 0.5) * 0.45 - p;
   float band = exp(-d * d * 260.0) + 0.35 * exp(-d * d * 18.0);
-  // Bords de l'écran : un léger liseré de verre, toujours là.
   vec2 e = min(vUv, 1.0 - vUv);
   float rim = (1.0 - smoothstep(0.0, 0.02, min(e.x, e.y * 1.8))) * 0.12;
   vec3 c = mix(vec3(1.0), uTint, 0.35);
-  gl_FragColor = vec4(c * (band * 0.22 + rim), 1.0) * uOn;
+  gl_FragColor = vec4(c * (band * 0.18 + rim), 1.0) * uOn;
 }
 `;
 function Sheen({ geo, accent, active }: { geo: THREE.BufferGeometry; accent: THREE.Color; active: boolean }) {
@@ -533,7 +616,6 @@ function Sheen({ geo, accent, active }: { geo: THREE.BufferGeometry; accent: THR
     [],
   );
   const clock = useRef(2.5);
-  // Le portail qui devient actif accroche la lumière tout de suite.
   const was = useRef(active);
   useEffect(() => {
     if (active && !was.current) clock.current = 0;
@@ -549,149 +631,45 @@ function Sheen({ geo, accent, active }: { geo: THREE.BufferGeometry; accent: THR
   return <mesh geometry={geo} material={mat} position={[0, 0, 0.004]} raycast={() => null} />;
 }
 
-// Rayons derrière l'écran actif : de longs faisceaux doux qui partent du haut
-// et respirent lentement, dans la couleur du tournoi (lumière d'église, brume).
-let rayTex: THREE.Texture | null = null;
-function ray() {
-  if (rayTex) return rayTex;
-  const c = document.createElement("canvas");
-  c.width = 64;
-  c.height = 256;
-  const g = c.getContext("2d")!;
-  const h = g.createLinearGradient(0, 0, 64, 0);
-  h.addColorStop(0, "rgba(255,255,255,0)");
-  h.addColorStop(0.5, "rgba(255,255,255,1)");
-  h.addColorStop(1, "rgba(255,255,255,0)");
-  g.fillStyle = h;
-  g.fillRect(0, 0, 64, 256);
-  // Fondu vers le bas : le faisceau se perd dans la brume.
-  g.globalCompositeOperation = "destination-in";
-  const v = g.createLinearGradient(0, 0, 0, 256);
-  v.addColorStop(0, "rgba(0,0,0,1)");
-  v.addColorStop(1, "rgba(0,0,0,0)");
-  g.fillStyle = v;
-  g.fillRect(0, 0, 64, 256);
-  rayTex = new THREE.CanvasTexture(c);
-  return rayTex;
-}
-const RAYS = [
-  { x: -1.3, w: 0.55, a: 0.16, s: 0.7 },
-  { x: -0.45, w: 0.9, a: 0.07, s: 0.45 },
-  { x: 0.35, w: 0.4, a: -0.05, s: 0.9 },
-  { x: 1.1, w: 0.75, a: -0.14, s: 0.55 },
-  { x: 1.7, w: 0.3, a: -0.22, s: 1.1 },
-];
-function Rays({ accent, active }: { accent: THREE.Color; active: boolean }) {
-  const refs = useRef<(THREE.Mesh | null)[]>([]);
-  const on = useRef(0);
-  useFrame((state, dt) => {
-    on.current = THREE.MathUtils.damp(on.current, active ? 1 : 0, 2.2, dt);
-    const t = state.clock.elapsedTime;
-    refs.current.forEach((m, k) => {
-      if (!m) return;
-      const r = RAYS[k];
-      const mat = m.material as THREE.MeshBasicMaterial;
-      mat.color.copy(accent);
-      // Respiration lente et décalée de chaque faisceau.
-      mat.opacity = on.current * (0.1 + 0.08 * Math.sin(t * r.s + k * 1.7));
-      m.rotation.z = r.a + Math.sin(t * 0.13 + k) * 0.025;
-    });
-  });
-  return (
-    <group position={[0, H / 2 + 0.4, -0.35]}>
-      {RAYS.map((r, k) => (
-        <mesh key={k} ref={(m) => (refs.current[k] = m)} position={[r.x, -2.1, 0]} raycast={() => null}>
-          <planeGeometry args={[r.w, 4.6]} />
-          <meshBasicMaterial map={ray()} transparent opacity={0} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-// Deux grands panneaux au fond, à gauche et à droite : les tournois voisins
-// de l'écran actif, fondus dans le noir, pris dans le reflet du sol.
-// Second anneau, plus grand, derrière les écrans : une grande image fondue par
-// tournoi, placée entre deux portails. Il tourne avec l'anneau mais en retard
-// (profondeur), et chaque image s'efface quand elle passe devant la caméra.
-const R2 = 8.6;
-function Orbit({ items, active, drag }: { items: ArenaItem[]; active: number; drag: React.MutableRefObject<{ x: number; y: number }> }) {
-  const group = useRef<THREE.Group>(null);
-  const n = items.length;
-  const step = (Math.PI * 2) / n;
-  const target = useRef(0);
-  useEffect(() => {
-    const want = -active * step;
-    const TAU = Math.PI * 2;
-    const d = ((((want - target.current + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
-    target.current += d;
-  }, [active, step]);
-  useFrame((_, dt) => {
-    const g = group.current;
-    if (g) g.rotation.y = THREE.MathUtils.damp(g.rotation.y, target.current + drag.current.x * 0.0035, 2.2, dt);
-  });
-  return (
-    <group ref={group}>
-      {items.map((it, i) => (
-        <Pane key={it.slug} src={it.still} angle={i * step + step / 2} />
-      ))}
-    </group>
-  );
-}
-
-function Pane({ src, angle }: { src?: string; angle: number }) {
-  const tex = useStill(src);
+// Halo de la salle derrière l'arc : la couleur de l'image à l'écran.
+function Glow({ room }: { room: Room }) {
   const mat = useRef<THREE.MeshBasicMaterial>(null);
-  const ref = useRef<THREE.Mesh>(null);
-  const w = useMemo(() => new THREE.Vector3(), []);
-  useFrame((state, dt) => {
-    const m = ref.current;
-    if (!m || !mat.current) return;
-    // Visible au fond, effacée en passant vers la caméra.
-    m.getWorldPosition(w);
-    const back = 1 - THREE.MathUtils.smoothstep(w.z, -2.5, 3);
-    mat.current.opacity = THREE.MathUtils.damp(mat.current.opacity, tex ? 0.6 * back : 0, 3, dt);
-    m.visible = mat.current.opacity > 0.01;
-    // Dérive lente, comme une affiche qui respire.
-    m.position.y = 1.1 + Math.sin(state.clock.elapsedTime * 0.25 + angle) * 0.08;
-  });
-  if (!tex) return null;
-  return (
-    <mesh ref={ref} position={[Math.sin(angle) * R2, 1.1, Math.cos(angle) * R2]} rotation={[0, angle + Math.PI, 0]}>
-      <planeGeometry args={[8.4, 8.4 * (9 / 16)]} />
-      <meshBasicMaterial ref={mat} map={tex} alphaMap={mask()} color="#8d8d8d" transparent opacity={0} depthWrite={false} fog={false} toneMapped={false} side={THREE.DoubleSide} />
-    </mesh>
-  );
-}
-
-// Halo coloré derrière l'anneau : la couleur du tournoi actif.
-function Glow({ accent }: { accent: string }) {
-  const mat = useRef<THREE.MeshBasicMaterial>(null);
-  const target = useMemo(() => new THREE.Color(accent), [accent]);
-  useFrame((state, dt) => {
+  useFrame((state) => {
     const m = mat.current;
     if (!m) return;
-    m.color.lerp(target, 1 - Math.exp(-dt * 2));
-    m.opacity = 0.15 + Math.sin(state.clock.elapsedTime * 0.6) * 0.03;
+    m.color.copy(room.color);
+    m.opacity = 0.12 + Math.sin(state.clock.elapsedTime * 0.6) * 0.02;
   });
   return (
-    <mesh position={[0, 1.2, -5.5]}>
-      <planeGeometry args={[18, 9]} />
-      <meshBasicMaterial ref={mat} map={halo()} transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} fog={false} toneMapped={false} />
+    <mesh position={[0, 0.1, -3]}>
+      <planeGeometry args={[22, 7]} />
+      <meshBasicMaterial ref={mat} map={halo()} transparent opacity={0.16} blending={THREE.AdditiveBlending} depthWrite={false} fog={false} toneMapped={false} />
     </mesh>
   );
 }
 
-// Poussière lumineuse qui monte doucement, teintée par le tournoi actif.
-function Dust({ accent }: { accent: string }) {
-  const COUNT = 420;
+// Lumière de l'écran sur le sol, devant lui.
+function FloorSpill({ room }: { room: Room }) {
+  const mat = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame(() => mat.current?.color.copy(room.color));
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -H / 2 - 0.33, FRONT + 0.7]}>
+      <planeGeometry args={[W * 1.6, 1.6]} />
+      <meshBasicMaterial ref={mat} map={halo()} transparent opacity={0.32} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// Poussière lumineuse dans le faisceau, teintée par l'écran.
+function Dust({ room }: { room: Room }) {
+  const COUNT = 380;
   const { geo, speed } = useMemo(() => {
     const p = new Float32Array(COUNT * 3);
     const s = new Float32Array(COUNT);
     for (let i = 0; i < COUNT; i++) {
-      p[i * 3] = (Math.random() - 0.5) * 20;
+      p[i * 3] = (Math.random() - 0.5) * 22;
       p[i * 3 + 1] = -1.5 + Math.random() * 6;
-      p[i * 3 + 2] = -6 + Math.random() * 13;
+      p[i * 3 + 2] = -4 + Math.random() * 12;
       s[i] = 0.04 + Math.random() * 0.12;
     }
     const g = new THREE.BufferGeometry();
@@ -699,7 +677,7 @@ function Dust({ accent }: { accent: string }) {
     return { geo: g, speed: s };
   }, []);
   const mat = useRef<THREE.PointsMaterial>(null);
-  const target = useMemo(() => new THREE.Color(accent).lerp(new THREE.Color("#ffffff"), 0.45), [accent]);
+  const white = useMemo(() => new THREE.Color("#ffffff"), []);
   useFrame((state, dt) => {
     const a = geo.attributes.position as THREE.BufferAttribute;
     const arr = a.array as Float32Array;
@@ -710,11 +688,11 @@ function Dust({ accent }: { accent: string }) {
       if (arr[i * 3 + 1] > 4.5) arr[i * 3 + 1] = -1.5;
     }
     a.needsUpdate = true;
-    mat.current?.color.lerp(target, 1 - Math.exp(-dt * 2));
+    mat.current?.color.copy(room.color).lerp(white, 0.4);
   });
   return (
     <points geometry={geo}>
-      <pointsMaterial ref={mat} size={0.035} sizeAttenuation transparent opacity={0.7} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+      <pointsMaterial ref={mat} size={0.034} sizeAttenuation transparent opacity={0.65} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
     </points>
   );
 }
@@ -727,42 +705,52 @@ function Floor() {
         blur={[400, 120]}
         resolution={512}
         mixBlur={1}
-        mixStrength={1.4}
+        mixStrength={1.6}
         roughness={1}
         depthScale={1}
         minDepthThreshold={0.4}
         maxDepthThreshold={1.4}
         color="#0a0b0f"
         metalness={0.5}
-        mirror={0.4}
+        mirror={0.45}
       />
     </mesh>
   );
 }
 
-// Caméra : léger balancement au repos, plongée vers le portail au clic
-// (avance + champ qui s'élargit, effet « dolly zoom »).
+// Caméra : cadrage adapté à l'écran (l'écran actif garde ~55 % de la hauteur,
+// même sur un écran très large et bas), léger balancement, plongée au clic.
 function CameraRig({ dive, drag }: { dive: boolean; drag: React.MutableRefObject<{ x: number; y: number }> }) {
-  const { camera, pointer } = useThree();
+  const { camera, pointer, size } = useThree();
   const t0 = useRef<number | null>(null);
   useFrame((state, dt) => {
     const cam = camera as THREE.PerspectiveCamera;
+    const aspect = size.width / Math.max(1, size.height);
+    // Recul nécessaire pour que l'écran tienne en hauteur (55 %) et en largeur (62 %).
+    const tanH = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    // Portrait (téléphone) : l'écran prend presque toute la largeur, en haut.
+    const portrait = aspect < 0.9;
+    const dist = portrait ? W / (0.9 * 2 * tanH * aspect) : Math.max(H / (0.5 * 2 * tanH), W / (0.6 * 2 * tanH * aspect));
+    const lookY = portrait ? -dist * tanH * 0.42 : -0.05;
+    const baseZ = FRONT + dist;
+    // Paysage : l'écran actif glisse à droite pour laisser la colonne de texte à gauche.
+    const visW = 2 * tanH * dist * aspect;
+    const pan = aspect > 1.1 ? -Math.max(0, Math.min(visW * 0.16, visW / 2 - W / 2 - 0.25)) : 0;
     if (dive) {
       if (t0.current == null) t0.current = state.clock.elapsedTime;
       const k = Math.min(1, (state.clock.elapsedTime - t0.current) / 0.8);
       const e = k * k * k;
-      cam.position.z = THREE.MathUtils.lerp(R + 5.2, R + 1.1, e);
-      cam.position.y = THREE.MathUtils.lerp(0.35, 0, e);
-      cam.fov = THREE.MathUtils.lerp(42, 78, e);
+      cam.position.z = THREE.MathUtils.lerp(baseZ, FRONT + 0.9, e);
+      cam.position.y = THREE.MathUtils.lerp(0.3, 0, e);
+      cam.fov = THREE.MathUtils.lerp(40, 76, e);
       cam.updateProjectionMatrix();
-      cam.lookAt(0, 0, R);
+      cam.lookAt(0, 0, FRONT);
       return;
     }
-    cam.position.x = THREE.MathUtils.damp(cam.position.x, pointer.x * 0.5, 2.5, dt);
-    // Glissé vertical : la caméra monte ou descend autour de l'anneau (bascule 3D).
-    const tilt = THREE.MathUtils.clamp(drag.current.y * 0.008, -1.4, 2.2);
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.35 + pointer.y * 0.18 + tilt, drag.current.y ? 6 : 2.5, dt);
-    cam.lookAt(0, 0, R * 0.55);
+    cam.position.z = THREE.MathUtils.damp(cam.position.z, baseZ, 3, dt);
+    cam.position.x = THREE.MathUtils.damp(cam.position.x, pan + pointer.x * 0.45, 2.5, dt);
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.3 + pointer.y * 0.16, 2.5, dt);
+    cam.lookAt(pan, lookY, FRONT - 1.5);
   });
   return null;
 }

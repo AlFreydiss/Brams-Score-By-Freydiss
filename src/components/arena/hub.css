@@ -413,7 +413,7 @@
   position: relative;
   z-index: 2;
   max-width: 1440px;
-  margin: -110px auto 0;
+  margin: -36px auto 0;
   /* Remonte dans le fondu de l'arène : seuls les blocs captent les clics. */
   pointer-events: none;
   padding: 0 var(--nf-side) 112px;

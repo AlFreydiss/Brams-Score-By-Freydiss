@@ -205,6 +205,7 @@ export default function HubPage() {
         media,
         // Image fixe pour les panneaux du fond : celle de l'écran, ou la vignette en grand d'une vidéo.
         still: media.k === "img" ? media.src : back?.thumb ? back.thumb.replace("/t/p/w300/", "/t/p/w1280/") : ART[slug],
+        caption: back ? { title: back.title, sub: back.sub ?? back.group } : undefined,
       };
     });
   }, [backdrops, statuses]);

@@ -1,0 +1,279 @@
+/* Interface de l'arène 3D du hub (Arena3D.tsx). */
+.ar3 {
+  position: relative;
+  height: min(88dvh, 880px);
+  min-height: 540px;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  font-family: "Inter", system-ui, sans-serif;
+  color: #f4f2ec;
+}
+.ar3-hit {
+  position: absolute;
+  left: 44%;
+  right: 12%;
+  top: 20%;
+  bottom: 34%;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* ── Texte ────────────────────────────────────────────────────────── */
+.ar3-copy {
+  position: absolute;
+  left: clamp(20px, 4vw, 64px);
+  bottom: clamp(40px, 9vh, 92px);
+  width: min(560px, calc(100% - 40px));
+  pointer-events: none;
+  /* Lisibilité sur l'écran voisin sans voile visible. */
+  text-shadow: 0 2px 24px rgba(8, 9, 13, 0.85);
+}
+.ar3-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a6a49e;
+}
+.ar3-kicker > span {
+  width: 22px;
+  height: 1px;
+}
+.ar3-kicker b {
+  font-weight: 600;
+  color: #f4f2ec;
+}
+.ar3-kicker b::before {
+  content: "·";
+  margin-right: 10px;
+  color: #8b8a85;
+}
+.nx-root .ar3-title {
+  margin: 14px 0 0;
+  font: 800 clamp(44px, 5.6vw, 96px) / 0.94 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  color: #f4f2ec;
+  text-wrap: balance;
+}
+.ar3-tagline {
+  margin: 16px 0 0;
+  max-width: 44ch;
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.5;
+  color: #c9c7c1;
+}
+.ar3-now {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  max-width: 52ch;
+  font-size: 13px;
+  color: #a6a49e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ar3-now > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ar3-now b {
+  font-weight: 600;
+  color: #f4f2ec;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Petit égaliseur : ce qui passe est vivant. */
+.ar3-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+  flex: none;
+}
+.ar3-eq span {
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: ar3-eq 0.9s ease-in-out infinite alternate;
+}
+.ar3-eq span:nth-child(2) {
+  animation-duration: 0.6s;
+  animation-delay: -0.3s;
+}
+.ar3-eq span:nth-child(3) {
+  animation-duration: 0.75s;
+  animation-delay: -0.15s;
+}
+@keyframes ar3-eq {
+  from {
+    transform: scaleY(0.25);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.ar3-ctas {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+  pointer-events: auto;
+}
+.ar3-play,
+.ar3-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  border: 0;
+  border-radius: 999px;
+  font: 600 15px "Inter", system-ui, sans-serif;
+  cursor: pointer;
+}
+.ar3-play {
+  padding: 0 26px 0 20px;
+  color: #08090d;
+  transition: background-color 0.5s ease, box-shadow 0.3s ease;
+  box-shadow: 0 16px 40px -18px currentColor;
+}
+.ar3-more {
+  padding: 0 22px 0 18px;
+  background: rgba(8, 9, 13, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f4f2ec;
+  font-weight: 500;
+}
+
+/* ── Onglets ──────────────────────────────────────────────────────── */
+.ar3-tabs {
+  position: absolute;
+  right: clamp(20px, 4vw, 64px);
+  bottom: clamp(40px, 9vh, 92px);
+  display: flex;
+  gap: 4px;
+}
+.ar3-tabs button {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-width: 112px;
+  padding: 10px 14px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #8b8a85;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.3s ease, background 0.3s ease;
+}
+.ar3-tabs small {
+  font: 500 10.5px ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+.ar3-tabs span {
+  font: 700 14.5px/1.1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.ar3-tabs span::first-letter {
+  text-transform: uppercase;
+}
+.ar3-tabs i {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(244, 242, 236, 0.12);
+  overflow: hidden;
+}
+.ar3-tabs em {
+  display: block;
+  height: 100%;
+  background: var(--acc);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.ar3-tabs button.is-on {
+  color: #f4f2ec;
+  background: rgba(8, 9, 13, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.ar3-tabs button.is-on em {
+  animation: ar3-fill linear forwards;
+}
+@keyframes ar3-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (hover: hover) {
+  .ar3-tabs button:not(.is-on):hover {
+    color: #d8d6d0;
+  }
+}
+.ar3-tabs button:focus-visible,
+.ar3-play:focus-visible,
+.ar3-more:focus-visible {
+  outline: 2px solid #f4f2ec;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1100px) {
+  .ar3-tabs button {
+    min-width: 0;
+  }
+  .ar3-tabs small {
+    display: none;
+  }
+}
+@media (max-width: 860px) {
+  .ar3-hit {
+    left: 12%;
+    right: 12%;
+    top: 14%;
+    bottom: 46%;
+  }
+  .ar3-copy {
+    bottom: 92px;
+  }
+  .ar3-tabs {
+    left: 16px;
+    right: 16px;
+    bottom: 28px;
+  }
+  .ar3-tabs button {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 8px 12px;
+  }
+  .ar3-tabs i {
+    left: 8px;
+    right: 8px;
+  }
+  .ar3-tabs span {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ar3-now {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ar3-eq span {
+    animation: none;
+  }
+}
