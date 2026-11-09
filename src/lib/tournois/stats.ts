@@ -68,7 +68,7 @@ export function sortRows(rows: Row[], by: SortKey): Row[] {
   const statusWeight = (s: Status) => (s.kind === "champion" ? 3 : s.kind === "alive" ? 2 : s.kind === "out" ? 1 : 0);
   if (by === "rank") out.sort((a, b) => b.wins - a.wins || (b.rate ?? -1) - (a.rate ?? -1) || statusWeight(b.status) - statusWeight(a.status) || a.losses - b.losses);
   // Sur le site : le pourcentage d'abord, les participants sans assez de duels à la fin.
-  if (by === "rate") out.sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1) || b.duels - a.duels);
+  if (by === "rate") out.sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1) || b.wins - a.wins || a.losses - b.losses || b.duels - a.duels);
   if (by === "wins") out.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
   if (by === "duels") out.sort((a, b) => b.duels - a.duels || b.wins - a.wins);
   if (by === "title") out.sort((a, b) => a.p.title.localeCompare(b.p.title, "fr"));

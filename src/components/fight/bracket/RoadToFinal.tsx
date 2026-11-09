@@ -59,8 +59,13 @@ export function RoadToFinal() {
     if (!el) return;
     const target = cur ? layout.pos.get(cur.match.id) : rounds.length ? layout.pos.get(rounds[rounds.length - 1].matches[0].id) : null;
     if (!target) return;
-    const tx = el.clientWidth / 2 - (target.x + CARD_W / 2);
-    const ty = el.clientHeight / 2 - (target.y + CARD_H / 2);
+    // Centré sur le duel, mais jamais de vide au bord : un tableau qui tient en
+    // largeur est centré en entier ; sinon on borne pour que le bord gauche (1er
+    // tour) ou droit (finale) reste collé à la marge.
+    const PAD = 36;
+    const fit = (want: number, view: number, size: number) => (size + 2 * PAD <= view ? (view - size) / 2 : Math.min(PAD, Math.max(view - size - PAD, want)));
+    const tx = fit(el.clientWidth / 2 - (target.x + CARD_W / 2), el.clientWidth, layout.width);
+    const ty = fit(el.clientHeight / 2 - (target.y + CARD_H / 2), el.clientHeight, layout.height);
     if (reduce) {
       x.set(tx);
       y.set(ty);
@@ -373,7 +378,7 @@ function Head({ id, title, text, action }: { id: (typeof IDENTITIES)[FightSlug];
           <span aria-hidden style={{ width: 18, height: 1, background: id.a }} />
           {id.name}
         </p>
-        <h1 style={{ margin: "12px 0 0", fontFamily: FONT.display, fontWeight: 700, fontSize: "clamp(30px, 3.4vw, 48px)", letterSpacing: "-0.03em", lineHeight: 1 }}>{title}</h1>
+        <h1 className="rtf-title" style={{ margin: "12px 0 0", fontFamily: FONT.display, fontWeight: 700, fontSize: "clamp(30px, 3.4vw, 48px)", letterSpacing: "-0.03em", lineHeight: 1 }}>{title}</h1>
         <p style={{ margin: "10px 0 0", fontSize: 14.5, color: id.mute }}>{text}</p>
       </div>
       {action}

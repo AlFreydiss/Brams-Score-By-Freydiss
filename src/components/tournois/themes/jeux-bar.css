@@ -133,3 +133,99 @@
   backdrop-filter: blur(14px);
   box-shadow: inset 0 0 0 1px rgba(210, 173, 110, 0.22), 0 12px 30px -16px rgba(0, 0, 0, 0.9);
 }
+
+/* ── Pages du tournoi jeux (classement, tableau, historique, favoris…) ── */
+.nx-root[data-t="jeux"] :is(.t-page-title, .rtf-title) {
+  font: 400 clamp(40px, 4.4vw, 68px) / 1 "trajan-pro-3", "Cinzel", Georgia, serif !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase;
+  color: transparent !important;
+  background: linear-gradient(180deg, #fbf3e0 0%, #e9cf98 48%, #a77c3c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
+}
+.nx-root[data-t="jeux"] .t-page-head {
+  position: relative;
+}
+/* Onglets (Sur le site / Tes duels) : capitales, filet d'or sur l'actif. */
+.nx-root[data-t="jeux"] .t-b-tabs button {
+  border-radius: 0;
+  font-family: "trajan-pro-3", "Cinzel", Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.nx-root[data-t="jeux"] .t-b-tabs button.is-on {
+  box-shadow: inset 0 0 0 1px rgba(241, 220, 171, 0.7);
+  color: #fff3d6;
+}
+.nx-root[data-t="jeux"] .t-filters label,
+.nx-root[data-t="jeux"] .t-filters :is(span, p) {
+  font-family: "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.12em;
+}
+.nx-root[data-t="jeux"] .t-filters select {
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(210, 173, 110, 0.3);
+}
+
+/* Tableau du classement : en-têtes gravés, filets d'or, podium. */
+.nx-root[data-t="jeux"] .t-table th {
+  font: 400 10.5px "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #a2967d;
+}
+.nx-root[data-t="jeux"] .t-table :is(td, th) {
+  border-color: rgba(210, 173, 110, 0.12);
+}
+.nx-root[data-t="jeux"] .t-table tbody tr {
+  transition: background-color 0.25s ease;
+}
+@media (hover: hover) {
+  .nx-root[data-t="jeux"] .t-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(210, 173, 110, 0.08), transparent 70%);
+  }
+}
+.nx-root[data-t="jeux"] .t-table-rank {
+  font: 400 20px "trajan-pro-3", "Cinzel", Georgia, serif;
+  color: #8f8573;
+}
+.nx-root[data-t="jeux"] .t-table tbody tr:nth-child(-n + 3) .t-table-rank {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-size: 24px;
+}
+.nx-root[data-t="jeux"] .t-table tbody tr:nth-child(1) .t-table-rank {
+  background-image: linear-gradient(180deg, #fff4d6, #d2ad6e 60%, #8f6a34);
+}
+.nx-root[data-t="jeux"] .t-table tbody tr:nth-child(2) .t-table-rank {
+  background-image: linear-gradient(180deg, #ffffff, #c9ccd3 60%, #7d828c);
+}
+.nx-root[data-t="jeux"] .t-table tbody tr:nth-child(3) .t-table-rank {
+  background-image: linear-gradient(180deg, #ffe0c4, #c58a5a 60%, #7a4c2c);
+}
+.nx-root[data-t="jeux"] .t-table tbody tr:nth-child(1) {
+  background: linear-gradient(90deg, rgba(210, 173, 110, 0.1), transparent 60%);
+}
+
+/* Sous-titres et cartes des pages (historique, règles, favoris). */
+.nx-root[data-t="jeux"] .t-page :is(h2, h3) {
+  font-family: "trajan-pro-3", "Cinzel", Georgia, serif !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase;
+  color: #ead3a0;
+}
+.nx-root[data-t="jeux"] .t-page :is(.t-panel, section[class*="t-hist"], .t-history-run) {
+  box-shadow: inset 0 0 0 1px rgba(210, 173, 110, 0.18);
+}
+.nx-root[data-t="jeux"] .t-page ol li::marker {
+  font-family: "trajan-pro-3", "Cinzel", Georgia, serif;
+  color: #d2ad6e;
+}
+.nx-root[data-t="jeux"] .t-page ul li::marker {
+  color: #d2ad6e;
+}
