@@ -568,3 +568,99 @@
     padding-top: calc(76px + 66vw);
   }
 }
+
+/* Grain de pellicule et vignette par-dessus la salle 3D. */
+.orb-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 63% 42%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: auto, 160px 160px;
+  mix-blend-mode: overlay;
+  opacity: 0.5;
+  animation: orb-grain 0.9s steps(6) infinite;
+}
+@keyframes orb-grain {
+  0% { background-position: 0 0, 0 0; }
+  20% { background-position: 0 0, -40px 20px; }
+  40% { background-position: 0 0, 30px -50px; }
+  60% { background-position: 0 0, -60px -10px; }
+  80% { background-position: 0 0, 50px 40px; }
+  100% { background-position: 0 0, 0 0; }
+}
+
+/* Cadran des tournois, qui tourne avec l'anneau. */
+.orb-dial {
+  position: absolute;
+  right: clamp(16px, 3vw, 44px);
+  bottom: clamp(20px, 5vh, 56px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #f4f2ec;
+  z-index: 2;
+}
+.orb-dial svg {
+  width: 84px;
+  height: 84px;
+  overflow: visible;
+}
+.orb-dial circle {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s, r 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.orb-dial circle:hover,
+.orb-dial circle.is-on {
+  opacity: 1;
+}
+.orb-dial circle.is-on {
+  filter: drop-shadow(0 0 6px var(--acc));
+}
+.orb-dial .orb-dial-track {
+  fill: none;
+  stroke: rgba(244, 242, 236, 0.14);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  cursor: default;
+  opacity: 1;
+}
+.orb-dial-mark {
+  fill: var(--acc);
+  transition: fill 0.6s;
+}
+.orb-dial p {
+  margin: 0;
+  display: grid;
+  font: 600 12px/1.1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.08em;
+}
+.orb-dial p b {
+  font: 800 34px/1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  color: var(--acc);
+  transition: color 0.6s;
+}
+.orb-dial p span {
+  opacity: 0.5;
+}
+@media (max-width: 860px) {
+  .orb-dial {
+    top: calc(76px + 58vw);
+    bottom: auto;
+  }
+  .orb-dial svg {
+    width: 56px;
+    height: 56px;
+  }
+  .orb-dial p b {
+    font-size: 24px;
+  }
+  .orb-grain {
+    background:
+      radial-gradient(120% 70% at 50% 25%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+}
