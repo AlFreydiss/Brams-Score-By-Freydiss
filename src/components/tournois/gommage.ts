@@ -144,10 +144,20 @@ type Kind = 0 | 1 | 2 | 3 | 4 | 5;
 type Part = { x: number; y: number; vx: number; vy: number; r: number; w: number; a: number; life: number; age: number; kind: Kind };
 const PETAL = ["#e0484c", "#c22f36", "#9d1f27"];
 
+// Pétales PEINTS (planche 8×2 de cases 128 px, Grok Imagine détouré) : utilisés
+// pour le Gommage par défaut (sans palette imposée). Chargés une fois, au besoin.
+const PETAL_CELL = 128;
+let petalAtlas: HTMLImageElement | null = null;
+const getPetalAtlas = () => {
+  if (typeof Image === "undefined") return null;
+  if (!petalAtlas) { petalAtlas = new Image(); petalAtlas.decoding = "async"; petalAtlas.src = "/trails/gommage-petals.webp"; }
+  return petalAtlas.complete && petalAtlas.naturalWidth ? petalAtlas : null;
+};
+
 const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 
 /** edge : couleur du bord (rvb 0-1) ; parts : couleurs des particules (pétales, éclats, pixels…). */
-export type StartOpts = { box?: { x: number; y: number; w: number; h: number }; dir?: 1 | -1; mode?: TransitionMode; edge?: [number, number, number]; parts?: string[] };
+export type StartOpts = { box?: { x: number; y: number; w: number; h: number }; dir?: 1 | -1; mode?: TransitionMode; edge?: [number, number, number]; parts?: string[]; painted?: boolean };
 
 export class Gommage {
   private gl: WebGLRenderingContext | null = null;
@@ -159,6 +169,7 @@ export class Gommage {
   private raf = 0;
   private parts: Part[] = [];
   private palette: string[] | null = null;
+  private painted = true; // pétales peints (Clair Obscur) au lieu des formes vectorielles colorées
 
   constructor(private host: HTMLElement) {
     const mk = (z: number) => {
@@ -171,6 +182,7 @@ export class Gommage {
     this.glc = mk(3);
     this.pc = mk(4);
     this.ctx = this.pc.getContext("2d");
+    getPetalAtlas();
     const gl = this.glc.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false });
     if (!gl) return;
     const sh = (type: number, src: string) => {
@@ -262,6 +274,7 @@ export class Gommage {
     const ec = opts.edge ?? [0.86, 0.34, 0.08];
     gl.uniform3f(this.u.ec, ec[0], ec[1], ec[2]);
     this.palette = opts.parts?.length ? opts.parts : null;
+    this.painted = opts.painted ?? !this.palette;
 
     const upload = () => {
       gl.bindTexture(gl.TEXTURE_2D, this.tex);
@@ -397,6 +410,20 @@ export class Gommage {
         ctx.arc(q.x, q.y, q.r, 0, 6.283);
         ctx.fill();
         continue;
+      }
+      if (q.kind === 0 && this.painted) {
+        const atlas = getPetalAtlas();
+        if (atlas) {
+          // Pétale peint : bascule 3D (largeur qui respire) + rotation, en une matrice.
+          const k = (q.r * 2.6) / PETAL_CELL;
+          const sy = k * (0.35 + 0.65 * Math.abs(Math.sin(q.w * 0.8 + q.r)));
+          const cs = Math.cos(q.w), sn = Math.sin(q.w);
+          ctx.setTransform(dpr * cs * k, dpr * sn * k, -dpr * sn * sy, dpr * cs * sy, dpr * q.x, dpr * q.y);
+          const fr = Math.floor(q.r * 37) % 16;
+          ctx.drawImage(atlas, (fr % 8) * PETAL_CELL, ((fr / 8) | 0) * PETAL_CELL, PETAL_CELL, PETAL_CELL, -PETAL_CELL / 2, -PETAL_CELL / 2, PETAL_CELL, PETAL_CELL);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          continue;
+        }
       }
       ctx.save();
       ctx.translate(q.x, q.y);

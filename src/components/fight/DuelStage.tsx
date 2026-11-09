@@ -238,7 +238,7 @@ export function DuelStage(props: Props) {
           dir: loser === "left" ? 1 : -1,
           // Jeux : le perdant disparaît à la façon de SON jeu (pixels, givre, signal coupé…).
           ...(jeux
-            ? { mode: gameTheme(lp.sub).fx, edge: gameTheme(lp.sub).fxEdge, parts: gameTheme(lp.sub).fxParts }
+            ? { mode: gameTheme(lp.sub).fx, edge: gameTheme(lp.sub).fxEdge, parts: gameTheme(lp.sub).fxParts, painted: gameTheme(lp.sub).id === "eclat" }
             : { mode: VOTE_FX[meta.slug as FightSlug] }),
         });
       setPicked(side);
