@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Info, Play, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
+import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { EASE, FONT, LINE_2 } from "../identities";
 import "./arena.css";
 
@@ -49,7 +51,20 @@ const ROTATE_MS = 12000;
 const FADE = "linear-gradient(to bottom, transparent 0%, #000 90px, #000 calc(100% - 240px), rgba(0,0,0,0.55) calc(100% - 110px), transparent 100%)";
 
 /** Couleur de la salle, partagée par la scène (lue à chaque image). */
-type Room = { color: THREE.Color; pulse: number; sound: boolean; analyser: AnalyserNode | null };
+type Room = { color: THREE.Color; pulse: number; sound: boolean; analyser: AnalyserNode | null; lamp: number };
+
+// Lampe du projecteur au changement de bobine : noir, deux battements, puis plein feu.
+function lampAt(t: number) {
+  if (t < 0.06) return 0;
+  if (t < 0.11) return 0.85;
+  if (t < 0.17) return 0.12;
+  if (t < 0.25) return 1.05;
+  if (t < 0.3) return 0.45;
+  return Math.min(1, 0.7 + (t - 0.3) * 1.5);
+}
+
+// Le projecteur, derrière et au-dessus du public : son faisceau vise l'écran actif.
+const LAMP = new THREE.Vector3(-1.2, 3.6, FRONT + 10);
 
 // Son de l'écran actif : un seul contexte audio, créé au premier clic sur le
 // bouton son (geste requis). Chaque vidéo est branchée une fois sur l'analyseur.
@@ -89,7 +104,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const drag = useRef<{ x: number; y: number; t: number } | null>(null);
   const dragOff = useRef({ x: 0, y: 0 });
   const dragged = useRef(false);
-  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a"), pulse: 0, sound: false, analyser: null }), [items]);
+  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a"), pulse: 0, sound: false, analyser: null, lamp: 1 }), [items]);
   const [sound, setSound] = useState(false);
   const toggleSound = () => {
     const on = !sound;
@@ -198,10 +213,13 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         <color attach="background" args={[BG]} />
         <fog attach="fog" args={[BG, 7, 17]} />
         <Glow room={room} />
-        <Dust room={room} />
+        <Beam room={room} />
+        <BeamDust room={room} />
+        <ScreenLight room={room} />
         <Arc items={items} active={active} drag={dragOff} room={room} onPick={(i) => (dragged.current ? undefined : i === active ? enter(items[i]) : setActive(i))} />
         <Floor />
         <FloorSpill room={room} />
+        <Seats />
         <CameraRig dive={!!dive} drag={dragOff} />
         <EffectComposer>
           {/* Seuil haut : une image claire reste une image, pas une plaque blanche. */}
@@ -478,6 +496,7 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
   const lastProbe = useRef(0);
   const vis = useRef(0);
   const scr = useRef<THREE.Mesh>(null);
+  const matte = useRef<THREE.MeshBasicMaterial>(null);
   // Allumage : quand l'écran devient actif, il s'ouvre comme une télé qu'on allume.
   const onT = useRef(9);
   const first = useRef(true);
@@ -503,16 +522,17 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
     vis.current = show;
     g.visible = show > 0.01;
     onT.current += dt;
-    const k = Math.min(1, onT.current / 0.55);
-    const open = 1 - Math.pow(1 - k, 4);
-    if (scr.current) scr.current.scale.y = active ? 0.02 + 0.98 * open : 1;
+    // Changement de bobine : la lampe bat deux fois avant de rester allumée.
+    const lamp = lampAt(onT.current);
+    if (active) room.lamp = lamp;
     if (mat.current) {
-      // Éclat blanc à l'allumage, puis l'image ; légère respiration sur les basses.
-      const flash = active ? (1 - open) * 1.4 : 0;
-      const c = !tex ? 0.07 : 0.22 + 0.7 * near + flash + (active ? room.pulse * 0.06 : 0);
+      // L'écran n'a de lumière que celle du projecteur ; les voisins restent dans l'ombre.
+      const lit = active ? 0.12 + 0.8 * lamp : 0.16 + 0.5 * near;
+      const c = !tex ? 0.07 : lit + (active ? room.pulse * 0.06 : 0);
       mat.current.color.setScalar(c);
       mat.current.opacity = show;
     }
+    if (matte.current) matte.current.opacity = show;
     // Son : seul l'écran actif parle, et la salle bat sur ses basses.
     const vid = tex?.image instanceof HTMLVideoElement ? tex.image : null;
     if (vid) {
@@ -568,9 +588,9 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
         {/* Clé sur la texture : un matériau compilé sans map ne l'affiche jamais ensuite. */}
         <meshBasicMaterial key={tex?.uuid ?? "none"} ref={mat} map={tex ?? null} color={tex ? "#ffffff" : "#111317"} transparent toneMapped={false} side={THREE.DoubleSide} />
       </mesh>
-      <mesh position={[0, -H / 2 - 0.09, 0.18]} raycast={() => null}>
-        <planeGeometry args={[active ? W * 0.42 : W * 0.2, 0.012]} />
-        <meshBasicMaterial color={accent} toneMapped={false} transparent opacity={active ? 1 : 0.35} />
+      {/* Cache noir autour de la toile, comme dans une vraie salle. */}
+      <mesh geometry={geo} scale={[1.035, 1.06, 1]} position={[0, 0, -0.012]} raycast={() => null}>
+        <meshBasicMaterial ref={matte} color="#030304" transparent toneMapped={false} />
       </mesh>
       <Sheen geo={geo} accent={accent} active={active} />
       <Frame accent={accent} active={active} vis={vis} />
@@ -674,7 +694,7 @@ function Frame({ accent, active, vis }: { accent: THREE.Color; active: boolean; 
   useFrame((_, dt) => {
     const m = line.material as THREE.LineBasicMaterial;
     m.color.copy(accent);
-    m.opacity = THREE.MathUtils.damp(m.opacity, (active ? 0.5 : 0.12) * vis.current, 4, dt);
+    m.opacity = THREE.MathUtils.damp(m.opacity, (active ? 0.16 : 0.05) * vis.current, 4, dt);
   });
   return <primitive object={line} />;
 }
@@ -759,44 +779,254 @@ function FloorSpill({ room }: { room: Room }) {
   );
 }
 
-// Poussière lumineuse dans le faisceau, teintée par l'écran.
-function Dust({ room }: { room: Room }) {
-  const COUNT = 380;
-  const { geo, speed } = useMemo(() => {
+// ── Salle de cinéma ──────────────────────────────────────────────────
+// Le faisceau du projecteur : une pyramide qui part de la cabine et s'ouvre
+// sur l'écran actif. Fumée qui dérive, rayons, bords doux ; il bat avec la
+// lampe au changement de bobine et prend la couleur de l'image.
+const BEAM_VS = /* glsl */ `
+attribute float aV;
+attribute float aUV;
+varying float vV;
+varying float vUV;
+varying vec3 vPos;
+varying vec3 vN;
+varying vec3 vView;
+void main() {
+  vV = aV;
+  vUV = aUV;
+  vec4 w = modelMatrix * vec4(position, 1.0);
+  vPos = w.xyz;
+  vN = normalize(mat3(modelMatrix) * normal);
+  vView = cameraPosition - w.xyz;
+  gl_Position = projectionMatrix * viewMatrix * w;
+}
+`;
+const BEAM_FS = /* glsl */ `
+uniform float uT;
+uniform float uOn;
+uniform vec3 uColor;
+varying float vV;
+varying float vUV;
+varying vec3 vPos;
+varying vec3 vN;
+varying vec3 vView;
+float h(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float n3(vec3 p) {
+  vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(h(i), h(i + vec3(1,0,0)), f.x), mix(h(i + vec3(0,1,0)), h(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(h(i + vec3(0,0,1)), h(i + vec3(1,0,1)), f.x), mix(h(i + vec3(0,1,1)), h(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+void main() {
+  float v = vV;
+  float u = vUV / max(v, 1e-4);
+  // Bords du faisceau très doux : on ne voit jamais l'arête de la pyramide.
+  float side = smoothstep(0.0, 0.3, u) * smoothstep(1.0, 0.7, u);
+  // Plus dense près de la toile, s'efface vers la cabine (hors champ).
+  float along = smoothstep(0.05, 0.4, v) * (1.0 - smoothstep(0.42, 0.88, v)) * 1.7;
+  // Fumée qui monte doucement dans la lumière.
+  vec3 p = vPos * 0.7 + vec3(0.0, -uT * 0.06, uT * 0.03);
+  float smoke = n3(p) * 0.6 + n3(p * 2.3) * 0.3 + n3(p * 5.1) * 0.1;
+  smoke = 0.35 + 1.2 * smoothstep(0.25, 0.8, smoke);
+  // Rayons : stries fines qui partent de l'objectif.
+  float rays = 0.72 + 0.28 * n3(vec3(u * 22.0, 0.0, uT * 0.15));
+  // Une face vue par la tranche traverse plus de lumière.
+  float thick = 1.0 - abs(dot(normalize(vN), normalize(vView)));
+  float a = side * along * smoke * rays * (0.3 + 0.7 * thick);
+  gl_FragColor = vec4(uColor * a * uOn, 1.0);
+}
+`;
+function beamGeometry() {
+  const c = [
+    new THREE.Vector3(-W / 2, H / 2, FRONT),
+    new THREE.Vector3(W / 2, H / 2, FRONT),
+    new THREE.Vector3(W / 2, -H / 2, FRONT),
+    new THREE.Vector3(-W / 2, -H / 2, FRONT),
+  ];
+  // Chaque face : de l'objectif (v=0) jusqu'à la toile (v=1), u en travers.
+  const pos: number[] = [];
+  const aV: number[] = [];
+  const aUV: number[] = [];
+  const SEG = 24;
+  for (let f = 0; f < 4; f++) {
+    const a = c[f];
+    const b = c[(f + 1) % 4];
+    for (let s = 0; s < SEG; s++) {
+      const u0 = s / SEG;
+      const u1 = (s + 1) / SEG;
+      const p0 = a.clone().lerp(b, u0);
+      const p1 = a.clone().lerp(b, u1);
+      // Triangle lampe → deux points de la toile (u porté multiplié par v).
+      pos.push(LAMP.x, LAMP.y, LAMP.z, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z);
+      aV.push(0, 1, 1);
+      aUV.push(0, u0, u1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("aV", new THREE.Float32BufferAttribute(aV, 1));
+  g.setAttribute("aUV", new THREE.Float32BufferAttribute(aUV, 1));
+  g.computeVertexNormals();
+  return g;
+}
+function Beam({ room }: { room: Room }) {
+  const geo = useMemo(beamGeometry, []);
+  const white = useMemo(() => new THREE.Color("#fff6e8"), []);
+  const mat = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        vertexShader: BEAM_VS,
+        fragmentShader: BEAM_FS,
+        uniforms: { uT: { value: 0 }, uOn: { value: 0 }, uColor: { value: new THREE.Color() } },
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    [],
+  );
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    mat.uniforms.uT.value = t;
+    // Léger papillonnement de lampe à arc, plus les basses quand on écoute.
+    const flick = 1 + Math.sin(t * 31) * 0.015 + Math.sin(t * 7.3) * 0.02;
+    mat.uniforms.uOn.value = (0.42 + room.pulse * 0.18) * room.lamp * flick;
+    (mat.uniforms.uColor.value as THREE.Color).copy(white).lerp(room.color, 0.5);
+  });
+  return <mesh geometry={geo} material={mat} raycast={() => null} frustumCulled={false} />;
+}
+
+// Poussière : seulement dans le faisceau, là où la lumière la révèle.
+function BeamDust({ room }: { room: Room }) {
+  const COUNT = 360;
+  const { geo, seed } = useMemo(() => {
     const p = new Float32Array(COUNT * 3);
-    const s = new Float32Array(COUNT);
+    // t (le long du faisceau), u, v (en travers), vitesse.
+    const sd = new Float32Array(COUNT * 4);
     for (let i = 0; i < COUNT; i++) {
-      p[i * 3] = (Math.random() - 0.5) * 22;
-      p[i * 3 + 1] = -1.5 + Math.random() * 6;
-      p[i * 3 + 2] = -4 + Math.random() * 12;
-      s[i] = 0.04 + Math.random() * 0.12;
+      sd[i * 4] = 0.3 + Math.random() * 0.55;
+      sd[i * 4 + 1] = Math.random();
+      sd[i * 4 + 2] = Math.random();
+      sd[i * 4 + 3] = 0.004 + Math.random() * 0.012;
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(p, 3));
-    return { geo: g, speed: s };
+    return { geo: g, seed: sd };
   }, []);
   const mat = useRef<THREE.PointsMaterial>(null);
   const white = useMemo(() => new THREE.Color("#ffffff"), []);
   useFrame((state, dt) => {
-    const a = geo.attributes.position as THREE.BufferAttribute;
-    const arr = a.array as Float32Array;
+    const arr = (geo.attributes.position as THREE.BufferAttribute).array as Float32Array;
     const tt = state.clock.elapsedTime;
     for (let i = 0; i < COUNT; i++) {
-      arr[i * 3 + 1] += speed[i] * dt;
-      arr[i * 3] += Math.sin(tt * 0.3 + i) * 0.0015;
-      if (arr[i * 3 + 1] > 4.5) arr[i * 3 + 1] = -1.5;
+      const k = i * 4;
+      // Dérive lente vers le haut, petit tourbillon.
+      seed[k + 2] += seed[k + 3] * dt * 2.2;
+      seed[k + 1] += Math.sin(tt * 0.4 + i) * 0.0006;
+      if (seed[k + 2] > 1) {
+        seed[k + 2] = 0;
+        seed[k + 1] = Math.random();
+        seed[k] = 0.3 + Math.random() * 0.55;
+      }
+      const t = seed[k];
+      const x = (seed[k + 1] - 0.5) * W * 0.96;
+      const y = (seed[k + 2] - 0.5) * H * 0.96;
+      arr[i * 3] = LAMP.x + (x - LAMP.x) * t;
+      arr[i * 3 + 1] = LAMP.y + (y - LAMP.y) * t;
+      arr[i * 3 + 2] = LAMP.z + (FRONT - LAMP.z) * t;
     }
-    a.needsUpdate = true;
+    geo.attributes.position.needsUpdate = true;
     if (mat.current) {
-      mat.current.color.copy(room.color).lerp(white, 0.4);
-      mat.current.opacity = 0.65 + room.pulse * 0.35;
-      mat.current.size = 0.034 * (1 + room.pulse * 0.6);
+      mat.current.color.copy(room.color).lerp(white, 0.55);
+      mat.current.opacity = (0.4 + room.pulse * 0.4) * room.lamp;
     }
   });
   return (
-    <points geometry={geo}>
-      <pointsMaterial ref={mat} size={0.034} sizeAttenuation transparent opacity={0.65} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+    <points geometry={geo} frustumCulled={false}>
+      <pointsMaterial ref={mat} map={halo()} size={0.028} sizeAttenuation transparent opacity={0.55} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
     </points>
+  );
+}
+
+// La toile éclaire la salle : une lumière rectangulaire à sa place, de la
+// couleur de l'image (les dossiers des fauteuils et le sol la reçoivent).
+let rectReady = false;
+function ScreenLight({ room }: { room: Room }) {
+  const light = useRef<THREE.RectAreaLight>(null);
+  if (!rectReady) {
+    RectAreaLightUniformsLib.init();
+    rectReady = true;
+  }
+  useEffect(() => {
+    light.current?.lookAt(0, -0.4, FRONT + 6);
+  }, []);
+  useFrame(() => {
+    const l = light.current;
+    if (!l) return;
+    l.color.copy(room.color);
+    l.intensity = (5 + room.pulse * 5) * room.lamp;
+  });
+  return (
+    <>
+      <rectAreaLight ref={light} position={[0, 0, FRONT + 0.05]} width={W} height={H} intensity={5} />
+      {/* Ce qui retombe du faisceau sur le haut des dossiers. */}
+      <directionalLight position={[LAMP.x, LAMP.y, LAMP.z]} intensity={0.05} color="#ffe9cf" />
+      <ambientLight intensity={0.02} />
+    </>
+  );
+}
+
+// Les rangées de fauteuils, vues de dos. Gradins : chaque rangée se cale
+// sous la ligne de regard vers le bas de l'écran, quel que soit le cadrage.
+const ROWS = [1.3, 1.85, 2.4, 2.95, 3.5];
+const SEAT_GAP = 0.4;
+const SEATS_PER_ROW = 27;
+function Seats() {
+  const geo = useMemo(() => new RoundedBoxGeometry(0.34, 0.44, 0.13, 4, 0.06), []);
+  const arm = useMemo(() => new RoundedBoxGeometry(0.05, 0.22, 0.32, 2, 0.02), []);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1c0d11", roughness: 0.72, metalness: 0.05 }), []);
+  const armMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#121014", roughness: 0.5, metalness: 0.3 }), []);
+  const backs = useRef<THREE.InstancedMesh>(null);
+  const arms = useRef<THREE.InstancedMesh>(null);
+  const { camera } = useThree();
+  const tmp = useMemo(() => new THREE.Object3D(), []);
+  useFrame(() => {
+    const b = backs.current;
+    const a = arms.current;
+    if (!b || !a) return;
+    const d = Math.max(2, camera.position.z - FRONT);
+    const cy = camera.position.y;
+    let k = 0;
+    ROWS.forEach((s, r) => {
+      // Hauteur de la ligne œil → bas de l'écran, à cette distance.
+      const line = -H / 2 + (cy + H / 2) * (s / d);
+      const top = Math.min(line - 0.06, -0.5 + r * 0.14);
+      const y = top - 0.22;
+      const off = r % 2 ? SEAT_GAP / 2 : 0;
+      for (let i = 0; i < SEATS_PER_ROW; i++) {
+        const x = (i - (SEATS_PER_ROW - 1) / 2) * SEAT_GAP + off;
+        // Rangées légèrement incurvées vers l'écran.
+        const z = FRONT + s + x * x * 0.018;
+        tmp.position.set(x, y, z);
+        tmp.rotation.set(-0.12, -x * 0.04, 0);
+        tmp.updateMatrix();
+        b.setMatrixAt(k, tmp.matrix);
+        tmp.position.set(x + SEAT_GAP / 2, y - 0.18, z - 0.13);
+        tmp.rotation.set(0, 0, 0);
+        tmp.updateMatrix();
+        a.setMatrixAt(k, tmp.matrix);
+        k++;
+      }
+    });
+    b.instanceMatrix.needsUpdate = true;
+    a.instanceMatrix.needsUpdate = true;
+  });
+  const total = ROWS.length * SEATS_PER_ROW;
+  return (
+    <>
+      <instancedMesh ref={backs} args={[geo, mat, total]} raycast={() => null} frustumCulled={false} />
+      <instancedMesh ref={arms} args={[arm, armMat, total]} raycast={() => null} frustumCulled={false} />
+    </>
   );
 }
 
