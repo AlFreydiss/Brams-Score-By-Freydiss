@@ -4,6 +4,7 @@ import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useTournament } from "./provider";
 import type { Participant } from "@/lib/tournois/types";
+import { isPillarbox } from "@/lib/tournois/pillarbox";
 import { SetupWall } from "./setup-wall";
 import { IDENTITIES, isFight } from "../fight/identities";
 import { Embers } from "../fight/Embers";
@@ -21,39 +22,11 @@ const ARENA_TITLE: Record<ArenaSlug, [string, string]> = {
   endings: ["Tournoi des", "endings"],
 };
 
-// Vieux génériques en 4:3 : bandes noires incrustées dans une vidéo 16:9.
-// On lit une image en tout petit ; bords noirs + centre éclairé = on agrandit
-// pour sortir les bandes du cadre.
 function pillarbox(v: HTMLVideoElement) {
   if (v.dataset.pb) return;
   v.dataset.pb = "1";
   window.setTimeout(() => {
-    try {
-      const W = 64;
-      const H = 36;
-      const c = document.createElement("canvas");
-      c.width = W;
-      c.height = H;
-      const ctx = c.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return;
-      ctx.drawImage(v, 0, 0, W, H);
-      const d = ctx.getImageData(0, 0, W, H).data;
-      const lum = (x0: number, x1: number) => {
-        let t = 0;
-        let n = 0;
-        for (let y = 0; y < H; y++)
-          for (let x = x0; x < x1; x++) {
-            const i = (y * W + x) * 4;
-            t += d[i] + d[i + 1] + d[i + 2];
-            n++;
-          }
-        return t / n / 3;
-      };
-      const edge = Math.max(lum(0, 5), lum(W - 5, W));
-      if (v.videoWidth / v.videoHeight > 1.5 && edge < 6 && lum(16, W - 16) > 18) v.classList.add("is-pillar");
-    } catch {
-      /* CORS ou image pas prête : on garde le cadrage normal. */
-    }
+    if (isPillarbox(v)) v.classList.add("is-pillar");
   }, 400);
 }
 

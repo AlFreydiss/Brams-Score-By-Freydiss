@@ -22,6 +22,7 @@ import { Gommage, type TransitionMode } from "../tournois/gommage";
 import { useAdobeKit } from "../tournois/adobe-kit";
 import { Embers } from "./Embers";
 import "./jeux-duel.css";
+import { isPillarbox, PILLAR_SCALE } from "@/lib/tournois/pillarbox";
 import "./jeux-themes.css";
 
 // Tournoi des OST de jeux vidéo : l'univers du hero (art du jeu, Trajan doré),
@@ -869,9 +870,28 @@ function Media({ p, player, posterAt = 20 }: { p: Participant; player: Player; p
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [p.id, register, release],
   );
+  const [pillar, setPillar] = useState(false);
   const fill: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease" };
   if (p.visual.k === "video" && !player.failed.has(p.id)) {
-    return <video ref={videoRef} crossOrigin="anonymous" src={`${p.visual.src}#t=${p.sound?.k === "video" ? (p.sound.hook ?? posterAt) : posterAt}`} muted playsInline preload="metadata" onLoadedData={() => setReady(true)} onCanPlay={() => setReady(true)} onSeeked={() => setReady(true)} style={fill} />;
+    // Génériques 4:3 à bandes noires incrustées : agrandis pour remplir le cadre.
+    const onData = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      setReady(true);
+      if (!pillar && isPillarbox(e.currentTarget)) setPillar(true);
+    };
+    return (
+      <video
+        ref={videoRef}
+        crossOrigin="anonymous"
+        src={`${p.visual.src}#t=${p.sound?.k === "video" ? (p.sound.hook ?? posterAt) : posterAt}`}
+        muted
+        playsInline
+        preload="metadata"
+        onLoadedData={onData}
+        onCanPlay={() => setReady(true)}
+        onSeeked={onData}
+        style={pillar ? { ...fill, transform: `scale(${PILLAR_SCALE})` } : fill}
+      />
+    );
   }
   return (
     <img
