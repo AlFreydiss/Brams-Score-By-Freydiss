@@ -109,7 +109,7 @@ export const TRAILS = [
   // ════ BRAMS · Grand Line (DA or champagne / braise-corail / sarcelle) ════
   { id: 'trail-embruns', nom: 'Embruns Salés', rarete: 'COMMUN', emoji: '💧',
     // Gouttes d'eau de mer qui retombent — fines, fraîches, source-over.
-    config: { colors: ['#cfeeff', '#9cc8f0', '#eaf7ff', '#7fb6e6'], composite: 'source-over', gravity: 0.12, speed: 0.3, drift: 0.5, sizeBase: 1.6, sizeRand: 2.0, decay: 0.04, shadow: 3, alpha: 0.6 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-embruns.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.02, petalFlip: 0, petalSway: 0.1, petalScale: 2.6, flecks: ['#eaf7ff', '#cfeeff'], fleckRate: 0.12, colors: ['#cfeeff', '#9cc8f0', '#eaf7ff', '#7fb6e6'], composite: 'source-over', maxParts: 160, maxEmit: 4, emitDivisor: 8, minDist: 6, gravity: 0.1, speed: 0.4, drift: 0.4, sizeBase: 3.8, sizeRand: 2.6, decay: 0.02, shadow: 3, alpha: 0.95 } },
   { id: 'trail-phare', nom: 'Brume du Phare', rarete: 'COMMUN', emoji: '🕯️',
     // Halo ambré doux et brumeux qui s'étale — chaleureux, lent.
     config: { colors: ['#ffe9bf', '#f3d27a', '#fff4dd', '#e0b25e'], composite: 'source-over', gravity: -0.02, speed: 0.18, drift: 0.4, sizeBase: 3.0, sizeRand: 3.2, decay: 0.026, shadow: 7, alpha: 0.4 } },
@@ -122,7 +122,7 @@ export const TRAILS = [
     config: { colors: ['#5fe6d4', '#1f8f86', '#bafff5', '#39c7b8'], gravity: -0.05, speed: 0.2, drift: 0.4, sizeBase: 1.5, sizeRand: 1.9, decay: 0.026, shadow: 13, alpha: 0.85 } },
   { id: 'trail-soufre', nom: 'Cendres de Soufre', rarete: 'RARE', emoji: '🌋',
     // Archipel volcanique : cendres sombres + braises qui retombent.
-    config: { colors: ['#ff7a3d', '#7a2410', '#ffae3b', '#2a1410'], composite: 'source-over', gravity: 0.09, speed: 0.36, drift: 0.7, sizeBase: 2.2, sizeRand: 2.4, decay: 0.03, shadow: 6, alpha: 0.66 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-soufre.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.08, petalFlip: 0.35, petalSway: 0.3, petalScale: 2.6, flecks: ['#ffae3b', '#ff7a3d', '#ffd27a'], fleckRate: 0.2, colors: ['#ff7a3d', '#7a2410', '#ffae3b', '#2a1410'], composite: 'source-over', maxParts: 170, maxEmit: 4, emitDivisor: 7, minDist: 5, gravity: 0.05, speed: 0.4, drift: 0.6, sizeBase: 4.8, sizeRand: 3, decay: 0.016, shadow: 4, alpha: 1 } },
 
   { id: 'trail-corail', nom: 'Braises de Corail', rarete: 'EPIQUE', emoji: '🪼',
     // Braise-corail signature Brams : tisons chauds qui s'élèvent en glow.
@@ -149,7 +149,7 @@ export const TRAILS = [
   { id: 'trail-toxic', nom: 'Brume Toxique', rarete: 'RARE', emoji: '☠️', nouveaute: true,
     config: { colors: ['#9bff6a', '#3fae2e', '#c8a6ff', '#1f6e12'], composite: 'source-over', gravity: -0.02, speed: 0.26, drift: 0.55, sizeBase: 2.4, sizeRand: 2.6, decay: 0.03, shadow: 9, alpha: 0.55 } },
   { id: 'trail-or-rose', nom: 'Or Rose', rarete: 'RARE', emoji: '🌹', nouveaute: true,
-    config: { colors: ['#ffd9c2', '#ff9eb0', '#ffe7a8', '#f4b6c0'], speed: 0.34, drift: 0.4, gravity: 0.01, sizeBase: 1.3, sizeRand: 1.9, decay: 0.04, shadow: 12, alpha: 0.92, twinkle: 1 } },
+    config: { shape: 'petal', petalAtlas: '/trails/trail-orrose.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.11, petalSway: 0.45, flecks: ['#ffe7a8', '#ffd9c2', '#fff4dc'], fleckRate: 0.14, colors: ['#ffd9c2', '#ff9eb0', '#ffe7a8', '#f4b6c0'], composite: 'source-over', maxParts: 190, maxEmit: 5, emitDivisor: 7, minDist: 5, speed: 0.45, drift: 0.5, gravity: 0.025, sizeBase: 4.6, sizeRand: 3, decay: 0.015, shadow: 4, alpha: 0.95 } },
   { id: 'trail-onyx', nom: "Éclats d'Onyx", rarete: 'RARE', emoji: '⬛', nouveaute: true,
     config: { shape: 'petal', petalAtlas: '/trails/trail-onyx.webp', petalCols: 8, petalRows: 1, petalCell: 128, petalSpin: 0.2, petalFlip: 0.3, petalSway: 0.1, petalScale: 3, flecks: ['#f6d98a', '#d4a017', '#fff6dc'], fleckRate: 0.22, colors: ['#d4a017', '#1a1a22', '#f6d98a', '#0c0c12'], maxParts: 180, maxEmit: 5, emitDivisor: 7, minDist: 5, speed: 0.9, drift: 0.5, gravity: 0.07, sizeBase: 4.6, sizeRand: 3, decay: 0.022, shadow: 10, alpha: 1 } },
 
