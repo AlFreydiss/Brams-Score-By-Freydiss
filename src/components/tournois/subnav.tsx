@@ -1,6 +1,8 @@
 import { Crown } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { motion } from "framer-motion";
+import "./themes/jeux-bar.css";
 import { useTournament } from "./provider";
 
 const LINKS = [
@@ -40,6 +42,8 @@ export function SubNav() {
           return (
             <Link key={l.seg} to={href} aria-current={active ? "page" : undefined} className={active ? "is-on" : ""}>
               {l.label}
+              {/* Trait de l'onglet actif : glisse d'un onglet à l'autre (affiché par les thèmes qui le veulent). */}
+              {active ? <motion.span layoutId="t-sub-ind" className="t-sub-ind" aria-hidden transition={{ type: "spring", bounce: 0.2, duration: 0.5 }} /> : null}
               {count ? <span className="t-count">{count}</span> : null}
             </Link>
           );

@@ -423,7 +423,7 @@ export function DuelStage(props: Props) {
       </motion.div>
 
       {/* Raccourcis visibles, en haut à droite. */}
-      <div style={{ position: "absolute", top: 16, right: 18, zIndex: 24, display: "flex", alignItems: "center", gap: 6 }}>
+      <div className={jeux ? "jx-tools" : undefined} style={{ position: "absolute", top: 16, right: 18, zIndex: 24, display: "flex", alignItems: "center", gap: 6 }}>
         {!narrow ? (
           <span style={{ display: "flex", gap: 10, marginRight: 8, fontSize: 12.5, color: id.mute }}>
             <span>
@@ -479,6 +479,8 @@ export function DuelStage(props: Props) {
           readyKey={focus ? KEY[focus] : null}
           masked={masked}
           onPlayReady={() => listen(focus ?? "left")}
+          accentOf={jeux ? (p) => gameTheme(p.sub).accent : undefined}
+          hideArt={!!blind}
         />
       ) : null}
     </motion.div>
@@ -531,25 +533,16 @@ function Divider({ accents, gone }: { accents?: [string, string]; gone?: boolean
           <line className="jx-seam-run" x1={SLANT} y1="0" x2="0" y2="100" pathLength={100} stroke="#fffaf0" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           <line className="jx-seam-run jx-seam-run--2" x1={SLANT} y1="0" x2="0" y2="100" pathLength={100} stroke="#fffaf0" strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </svg>
+        {/* Sceau en losange posé sur la coupe : moitié de chaque couleur, lettres gravées au centre. */}
         <motion.div
-          initial={{ scale: 0.6, opacity: 0, rotate: -90 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0, transition: { duration: 0.8, ease: EASE, delay: 0.3 } }}
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: 0,
-            translate: "-50% -50%",
-            display: "grid",
-            placeItems: "center",
-            width: 52,
-            height: 52,
-            borderRadius: 999,
-            border: "1.5px solid transparent",
-            background: `linear-gradient(${PANEL}, ${PANEL}) padding-box, linear-gradient(90deg, ${a}, ${b}) border-box`,
-            boxShadow: `-10px 0 26px -8px ${a}, 10px 0 26px -8px ${b}, 0 10px 30px -10px rgba(0,0,0,0.8)`,
-          }}
+          className="jx-vs"
+          initial={{ scale: 0.5, opacity: 0, rotate: -45 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0, transition: { type: "spring", bounce: 0.35, duration: 0.9, delay: 0.35 } }}
+          style={{ "--vs-a": a, "--vs-b": b } as React.CSSProperties}
         >
-          <span style={{ fontFamily: TRAJAN, fontWeight: 600, fontSize: 12, letterSpacing: "0.14em", color: "transparent", background: `linear-gradient(90deg, ${a}, ${b})`, WebkitBackgroundClip: "text", backgroundClip: "text" }}>VS</span>
+          <i className="jx-vs-ring" />
+          <i className="jx-vs-gem" />
+          <span>VS</span>
         </motion.div>
       </div>
     );
@@ -661,7 +654,8 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
       role="group"
       aria-label={`${id.sides[side === "left" ? 0 : 1]} : ${masked(p)}`}
     >
-      <motion.div style={{ position: "absolute", inset: 0, rotateY: rotY, rotateX: rotX, transformStyle: "preserve-3d" }}>
+      {/* Jeux : pas d'inclinaison (la coupe en biais déborderait), seulement la parallaxe des couches. */}
+      <motion.div style={jeux ? { position: "absolute", inset: 0 } : { position: "absolute", inset: 0, rotateY: rotY, rotateX: rotX, transformStyle: "preserve-3d" }}>
         {/* Couche 1 : l'image ou la vidéo. */}
         <motion.div
           animate={{ filter: dim ? "grayscale(0.85) blur(2px) brightness(0.55)" : "grayscale(0) blur(0px) brightness(1)", scale: win ? 1.06 : 1.1 }}

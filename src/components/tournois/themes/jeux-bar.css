@@ -1,0 +1,135 @@
+/* Barre du tournoi des OST de jeux vidéo : menu de jeu gravé à l'or.
+   Les autres tournois masquent le trait glissant (.t-sub-ind). */
+
+.t-sub-ind {
+  display: none;
+}
+
+.nx-root[data-t="jeux"] .t-subnav {
+  --jb-gold: #d2ad6e;
+  --jb-gold-hi: #f1dcab;
+  position: relative;
+  height: 56px;
+  background: linear-gradient(180deg, rgba(12, 10, 8, 0.96), rgba(10, 8, 6, 0.86));
+  backdrop-filter: blur(14px);
+  border-bottom: 0;
+  font-family: "trajan-pro-3", "Cinzel", Georgia, serif;
+}
+/* Filet d'or : vif au centre, qui s'efface vers les bords. */
+.nx-root[data-t="jeux"] .t-subnav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(210, 173, 110, 0.15) 12%, rgba(241, 220, 171, 0.55) 50%, rgba(210, 173, 110, 0.15) 88%, transparent);
+  pointer-events: none;
+}
+
+.nx-root[data-t="jeux"] .t-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font: 400 14px/1 "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: transparent;
+  background: linear-gradient(180deg, #fbf3e0 0%, #e9cf98 50%, #b98d4c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+/* Losange devant le nom (dessiné, le texte en dégradé ne le colorerait pas). */
+.nx-root[data-t="jeux"] .t-brand::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: var(--jb-gold);
+  box-shadow: 0 0 10px rgba(210, 173, 110, 0.7);
+}
+
+.nx-root[data-t="jeux"] .t-subnav-links {
+  gap: 4px;
+}
+.nx-root[data-t="jeux"] .t-subnav-links a {
+  padding: 8px 13px;
+  border-radius: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9a917f;
+  transition: color 0.25s ease;
+}
+.nx-root[data-t="jeux"] .t-subnav-links a:hover {
+  background: none;
+  color: var(--jb-gold-hi);
+}
+.nx-root[data-t="jeux"] .t-subnav-links a.is-on {
+  background: none;
+  color: #fff3d6;
+  text-shadow: 0 0 18px rgba(241, 220, 171, 0.45);
+}
+/* Trait doré sous l'onglet actif, un losange en son milieu ; il glisse (layoutId). */
+.nx-root[data-t="jeux"] .t-sub-ind {
+  display: block;
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -9px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--jb-gold-hi), transparent);
+  box-shadow: 0 0 12px rgba(241, 220, 171, 0.8);
+}
+.nx-root[data-t="jeux"] .t-sub-ind::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  background: var(--jb-gold-hi);
+}
+.nx-root[data-t="jeux"] .t-count {
+  margin-left: 6px;
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0;
+  color: var(--jb-gold);
+}
+.nx-root[data-t="jeux"] .t-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #9a917f;
+  transition: color 0.25s ease;
+}
+.nx-root[data-t="jeux"] .t-all::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+  transition: width 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.nx-root[data-t="jeux"] .t-all:hover {
+  color: var(--jb-gold-hi);
+}
+.nx-root[data-t="jeux"] .t-all:hover::before {
+  width: 34px;
+}
+
+/* Outils du duel (raccourcis + boutons) réunis dans une capsule de verre. */
+.jx-tools {
+  padding: 5px 5px 5px 16px;
+  border-radius: 999px;
+  background: rgba(12, 10, 8, 0.6);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 0 1px rgba(210, 173, 110, 0.22), 0 12px 30px -16px rgba(0, 0, 0, 0.9);
+}

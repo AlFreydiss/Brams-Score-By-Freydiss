@@ -108,3 +108,58 @@
     animation: none;
   }
 }
+
+/* Sceau VS en losange sur la coupe (Divider jeux). */
+.jx-vs {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+}
+.jx-vs-gem,
+.jx-vs-ring {
+  position: absolute;
+  inset: 12px;
+  transform: rotate(45deg);
+}
+.jx-vs-gem {
+  border: 1.5px solid transparent;
+  border-radius: 3px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--vs-a) 26%, #0c0b0f) 50%, color-mix(in srgb, var(--vs-b) 26%, #0c0b0f) 50%) padding-box,
+    linear-gradient(135deg, var(--vs-a), #fff6e0 50%, var(--vs-b)) border-box;
+  box-shadow: -12px 0 28px -10px var(--vs-a), 12px 0 28px -10px var(--vs-b), 0 12px 30px -10px rgba(0, 0, 0, 0.9);
+}
+/* Onde qui part du sceau, lente : le duel « respire ». */
+.jx-vs-ring {
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255, 246, 224, 0.5);
+  animation: jx-vs-pulse 2.8s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+@keyframes jx-vs-pulse {
+  from {
+    transform: rotate(45deg) scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: rotate(45deg) scale(1.7);
+    opacity: 0;
+  }
+}
+.jx-vs span {
+  position: relative;
+  font: 600 15px/1 "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.04em;
+  color: #fff6e0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8), 0 0 14px rgba(255, 240, 210, 0.35);
+}
+@media (prefers-reduced-motion: reduce) {
+  .jx-vs-ring {
+    animation: none;
+    opacity: 0;
+  }
+}
