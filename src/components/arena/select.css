@@ -546,3 +546,10 @@
 .sel--deck {
   margin-bottom: 48px;
 }
+
+/* La règle .nx-root kbd (thème noir) gagne sinon : touche lisible sur le bouton. */
+.nx-root .sel-go kbd {
+  color: #0b0b0d;
+  border-color: rgba(11, 11, 13, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+}
