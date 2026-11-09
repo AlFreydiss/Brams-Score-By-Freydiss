@@ -1,6 +1,6 @@
 import { ListMusic, Pause, Play, Square } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { champion, ranking, roundName } from "@/lib/tournois/bracket";
 import { actions } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
@@ -10,6 +10,17 @@ import { shareChampionCard } from "../fight/shareCard";
 import { bgOf, type Bg } from "../fight/jeux-art";
 import { gameTheme } from "../fight/jeux-themes";
 import "../fight/jeux-themes.css";
+
+// Carte légendaire du champion (3D, chargée à la demande).
+const ChampionCardReveal = lazy(() => import("./champion-card"));
+function canWebGL() {
+  try {
+    const c = document.createElement("canvas");
+    return !!(c.getContext("webgl2") || c.getContext("webgl"));
+  } catch {
+    return false;
+  }
+}
 
 // Couleur de chaque univers sur la carte partagée (mêmes que fight/identities.ts).
 const ACCENTS: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#8fb2ff" };
@@ -43,6 +54,23 @@ export function Champion() {
   }, [run, champ, saved.votes]);
   const [copied, setCopied] = useState(false);
   const [card, setCard] = useState<null | "busy" | "shared" | "downloaded" | "failed">(null);
+  // La carte du champion sort une fois par partie (on peut la revoir ensuite).
+  const cardKey = run && champ ? `bc_champcard:${meta.slug}:${run.startedAt}` : "";
+  const [reveal, setReveal] = useState(false);
+  useEffect(() => {
+    if (!cardKey) return;
+    let seen = false;
+    try {
+      seen = !!localStorage.getItem(cardKey);
+    } catch {}
+    if (!seen && canWebGL()) setReveal(true);
+  }, [cardKey]);
+  const closeReveal = useCallback(() => {
+    setReveal(false);
+    try {
+      localStorage.setItem(cardKey, "1");
+    } catch {}
+  }, [cardKey]);
   // Compte à rebours : ton top joué du dernier au champion, extrait après extrait.
   const countdown = useMemo(() => [...top].reverse().map((r) => r.p), [top]);
   const [step, setStep] = useState<number | null>(null);
@@ -85,6 +113,21 @@ export function Champion() {
 
   return (
     <div className={`t-champ ${jeux ? "t-champ--jeux" : ""}`} style={th ? ({ "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow } as React.CSSProperties) : undefined}>
+      {reveal ? (
+        <Suspense fallback={null}>
+          <ChampionCardReveal
+            onClose={closeReveal}
+            data={{
+              title: champ.title,
+              sub: champ.sub ?? champ.group ?? "",
+              art: bg?.src ?? (champ.visual.k === "img" ? ((champ.visual as { hi?: string }).hi ?? champ.visual.src) : champ.thumb.replace("/t/p/w300/", "/t/p/w1280/")),
+              label: meta.championLabel,
+              tournament: meta.title,
+              size: run.size,
+            }}
+          />
+        </Suspense>
+      ) : null}
       <div className="t-champ-hero">
         <div className="t-champ-media">
           {bg && !bg.video ? (
@@ -117,6 +160,9 @@ export function Champion() {
                 <span>{playing ? "Pause" : "Réécouter"}</span>
               </button>
             ) : null}
+            <button type="button" className="t-choose" onClick={() => setReveal(true)}>
+              Ta carte
+            </button>
             <button type="button" className="t-choose" onClick={() => actions.quit(meta.slug)}>
               Nouvelle partie
             </button>

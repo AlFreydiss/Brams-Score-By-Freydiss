@@ -8,14 +8,14 @@ import type { DeckProps, SelectItem } from "./select-screen";
 // suit la souris, son reflet arc-en-ciel change avec l'angle. Validation : la
 // carte fait un tour sur elle-même et fonce vers toi.
 
-const CW = 2.2;
-const CH = (CW * 88) / 63;
+export const CW = 2.2;
+export const CH = (CW * 88) / 63;
 const DEPTH = 0.03;
-const TW = 768;
-const TH = Math.round((TW * 88) / 63);
+export const TW = 768;
+export const TH = Math.round((TW * 88) / 63);
 
 // ── Géométrie : carte épaisse à coins arrondis ───────────────────────
-function cardGeometry() {
+export function cardGeometry() {
   const r = 0.13;
   const w = CW;
   const h = CH;
@@ -39,11 +39,11 @@ function cardGeometry() {
 }
 
 // ── Faces dessinées (canvas 2D) ──────────────────────────────────────
-function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+export function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   g.beginPath();
   g.roundRect(x, y, w, h, r);
 }
-function cover(g: CanvasRenderingContext2D, src: CanvasImageSource, sw: number, sh: number, x: number, y: number, w: number, h: number) {
+export function cover(g: CanvasRenderingContext2D, src: CanvasImageSource, sw: number, sh: number, x: number, y: number, w: number, h: number) {
   if (!sw || !sh) return;
   const k = Math.max(w / sw, h / sh);
   const dw = sw * k;
@@ -134,7 +134,7 @@ function drawArt(g: CanvasRenderingContext2D, it: SelectItem, src: CanvasImageSo
   g.strokeStyle = it.accent;
   g.stroke();
 }
-function drawBack(g: CanvasRenderingContext2D, it: SelectItem) {
+export function drawBack(g: CanvasRenderingContext2D, it: Pick<SelectItem, "accent">) {
   const bg = g.createLinearGradient(0, 0, TW, TH);
   bg.addColorStop(0, "#14151c");
   bg.addColorStop(1, "#07080b");
@@ -175,7 +175,7 @@ function drawBack(g: CanvasRenderingContext2D, it: SelectItem) {
 }
 
 // Une image déjà en cache sans en-tête CORS est refusée : second essai hors cache.
-function loadImage(src: string, retry = true): Promise<HTMLImageElement | null> {
+export function loadImage(src: string, retry = true): Promise<HTMLImageElement | null> {
   return new Promise((res) => {
     const im = new Image();
     im.crossOrigin = "anonymous";
@@ -187,7 +187,7 @@ function loadImage(src: string, retry = true): Promise<HTMLImageElement | null> 
 }
 
 // ── Matériau holographique ───────────────────────────────────────────
-const VS = /* glsl */ `
+export const CARD_VS = /* glsl */ `
 varying vec2 vUv;
 varying vec3 vObjN;
 varying vec3 vN;
@@ -201,7 +201,7 @@ void main() {
   gl_Position = projectionMatrix * mv;
 }
 `;
-const FS = /* glsl */ `
+export const CARD_FS = /* glsl */ `
 uniform sampler2D uFront;
 uniform sampler2D uBack;
 uniform float uT;
@@ -291,8 +291,8 @@ function Card({
   const mat = useMemo(
     () =>
       new THREE.ShaderMaterial({
-        vertexShader: VS,
-        fragmentShader: FS,
+        vertexShader: CARD_VS,
+        fragmentShader: CARD_FS,
         uniforms: { uFront: { value: tex }, uBack: { value: back.t }, uT: { value: 0 }, uHolo: { value: 0.6 }, uDim: { value: 1 } },
       }),
     [tex, back.t],
@@ -476,7 +476,7 @@ function Card({
 
 // Halo de la couleur du tournoi derrière la carte en grand.
 let haloTex: THREE.Texture | null = null;
-function halo() {
+export function halo() {
   if (haloTex) return haloTex;
   const c = document.createElement("canvas");
   c.width = c.height = 256;
