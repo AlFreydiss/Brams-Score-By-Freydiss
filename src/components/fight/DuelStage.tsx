@@ -9,7 +9,6 @@ import type { RoundInfo, Side } from "../tournois/duel-screen";
 import { useTournament } from "../tournois/provider";
 import type { Player } from "../tournois/use-player";
 import { AudioReactiveLayer } from "./AudioReactiveLayer";
-import { fadeVoice, impact, shatter as shatterSfx, voteVoice, whoosh } from "./audio/sfx";
 import { gameTheme, labelColor } from "./jeux-themes";
 import { GameAura } from "./GameAura";
 import { FloatingPlayer } from "./FloatingPlayer";
@@ -23,6 +22,7 @@ import { Gommage, type TransitionMode } from "../tournois/gommage";
 import { useAdobeKit } from "../tournois/adobe-kit";
 import { Embers } from "./Embers";
 import "./jeux-duel.css";
+import "./blind.css";
 import { isPillarbox, PILLAR_SCALE } from "@/lib/tournois/pillarbox";
 import "./jeux-themes.css";
 
@@ -49,7 +49,9 @@ type Props = {
   onDone: () => void;
 };
 
-const KEY: Record<Side, string> = { left: "A", right: "B" };
+const KEY: Record<Side, string> = { left: "W", right: "X" };
+// Lettres des pistes à l'aveugle (indépendantes des touches).
+const LETTER: Record<Side, string> = { left: "A", right: "B" };
 // Jeux : largeur (px) de la coupe en biais entre les deux panneaux.
 const SLANT = 72;
 // Même gabarit de points à chaque état : framer interpole la découpe sans sauter.
@@ -250,19 +252,7 @@ export function DuelStage(props: Props) {
           colors: colors.current[side],
         });
       }
-      if (jeux) {
-        // Le son du vote prend la voix du jeu gagnant ; le perdant s'efface dans la sienne.
-        const wt = gameTheme((side === "left" ? left : right).sub);
-        const lt = gameTheme(lp.sub);
-        voteVoice(wt.voice, wt.root);
-        if (!reduce) setTimeout(() => fadeVoice(lt.voice, lt.root), 180);
-      } else {
-        impact(1);
-        if (!reduce) {
-          if (burnt) whoosh(0.55);
-          else setTimeout(shatterSfx, 260);
-        }
-      }
+      // Pas de bruitage au vote (demandé) : seule la musique reste.
       // Verdict de la communauté (la base garde le vote, puis on lit la répartition).
       if (meta.statsId) {
         const statsId = meta.statsId;
@@ -283,7 +273,6 @@ export function DuelStage(props: Props) {
         gone = true;
         advance.current = null;
         setLeaving(true);
-        if (!reduce) whoosh(0.4);
         setTimeout(() => alive.current && onDone(), reduce ? 200 : id.exit === "fade" ? 500 : 400);
       };
       advance.current = go;
@@ -305,8 +294,8 @@ export function DuelStage(props: Props) {
         advance.current();
         return;
       }
-      if (k === "a" || k === "A") choose("left");
-      else if (k === "b" || k === "B") choose("right");
+      if (k === "w" || k === "W" || k === "a" || k === "A") choose("left");
+      else if (k === "x" || k === "X" || k === "b" || k === "B") choose("right");
       else if (k === "ArrowLeft" || k === "ArrowRight") {
         e.preventDefault();
         const side: Side = k === "ArrowLeft" ? "left" : "right";
@@ -430,7 +419,7 @@ export function DuelStage(props: Props) {
         {!narrow ? (
           <span style={{ display: "flex", gap: 10, marginRight: 8, fontSize: 12.5, color: id.mute }}>
             <span>
-              <Kbd id={id}>A</Kbd> <Kbd id={id}>B</Kbd> garder
+              <Kbd id={id}>W</Kbd> <Kbd id={id}>X</Kbd> garder
             </span>
             <span>
               <Kbd id={id}>Espace</Kbd> écouter
@@ -513,6 +502,18 @@ function PanelSlot({ side, first, accents, serif, gone, children }: { side: Side
   );
 }
 
+// Face d'une piste à l'aveugle : écran « sans signal » (grain qui bouge, lignes
+// pour l'Antenne, halo de la couleur du tournoi), lettre en contour qui se
+// remplit quand la piste joue.
+function BlindFace({ letter, id, on, side }: { letter: string; id: Identity; on: boolean; side: Side }) {
+  return (
+    <div className={`fx-blind ${on ? "is-on" : ""} fx-blind--${id.react}`} style={{ "--fx-a": id.a, "--fx-b": id.b, "--fx-bg": id.bg } as React.CSSProperties} data-side={side}>
+      <i className="fx-blind-noise" aria-hidden />
+      <span className="fx-blind-letter">{letter}</span>
+    </div>
+  );
+}
+
 // Le VS vit dans la jointure : il suit la frontière quand un côté s'étend.
 // Jeux : le médaillon est coupé aux couleurs des deux jeux, chacun rayonne de son côté.
 function Divider({ accents, serif = true, gone }: { accents?: [string, string]; serif?: boolean; gone?: boolean }) {
@@ -539,7 +540,7 @@ function Divider({ accents, serif = true, gone }: { accents?: [string, string]; 
         {/* Sceau en losange posé sur la coupe : moitié de chaque couleur, lettres gravées au centre. */}
         <motion.div
           className={`jx-vs ${serif ? "" : "jx-vs--sans"}`}
-          initial={{ scale: 0.5, opacity: 0, rotate: -45 }}
+          initial={{ scale: 1.5, opacity: 0, rotate: 0 }}
           animate={{ scale: 1, opacity: 1, rotate: 0, transition: { type: "spring", bounce: 0.35, duration: 0.9, delay: 0.35 } }}
           style={{ "--vs-a": a, "--vs-b": b } as React.CSSProperties}
         >
@@ -706,9 +707,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
           {jeux ? <JeuxBackdrop p={p} playing={playing} /> : <Media p={p} player={player} posterAt={posterAt} />}
         </motion.div>
         {hidden ? (
-          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: "clamp(140px, 20vw, 320px)", color: id.a, letterSpacing: "-0.06em" }}>
-            {KEY[side]}
-          </div>
+          <BlindFace letter={LETTER[side]} id={id} on={loaded} side={side} />
         ) : null}
         {/* Couche 2 : voiles et calque réactif au son. */}
         <div
@@ -1122,7 +1121,7 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
         {/* Jeux : même fond que sur grand écran (art du jeu recadré sur son sujet). */}
         {jeux ? <JeuxBackdrop p={p} playing={playing} /> : <Media p={p} player={player} />}
       </div>
-      {hidden ? <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: 160, color: id.a }}>{KEY[side]}</div> : null}
+      {hidden ? <BlindFace letter={LETTER[side]} id={id} on={player.id === p.id} side={side} /> : null}
       <div aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${id.bg} 0%, ${id.bg}aa 30%, transparent 60%)` }} />
       <AudioReactiveLayer id={id} active={player.id === p.id} player={player} reduce={reduce} />
       {/* La couleur fuit sur le bord de sortie. */}

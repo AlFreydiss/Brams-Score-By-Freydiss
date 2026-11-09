@@ -136,7 +136,8 @@ export function FloatingPlayer({ id, player, playing, ready, readyKey, masked, o
             />
           ) : (
             <motion.span key="empty" className="fp-art-empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {readyKey ?? "♪"}
+              {/* Pastille : la lettre de la piste (A / B), pas la touche. */}
+              {readyKey ? ({ W: "A", X: "B" } as Record<string, string>)[readyKey] ?? readyKey : "♪"}
             </motion.span>
           )}
         </AnimatePresence>
@@ -163,7 +164,7 @@ export function FloatingPlayer({ id, player, playing, ready, readyKey, masked, o
                         <kbd>Espace</kbd> écouter · <kbd>{readyKey}</kbd> garder
                       </>
                     : <>
-                        <kbd>A</kbd> ou <kbd>B</kbd> pour garder
+                        <kbd>W</kbd> ou <kbd>X</kbd> pour garder
                       </>}
               </em>
             </motion.span>

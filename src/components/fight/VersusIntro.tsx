@@ -2,7 +2,12 @@ import { motion, useAnimate } from "framer-motion";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { Participant } from "@/lib/tournois/types";
 import { impact, whoosh } from "./audio/sfx";
-import { EASE, FONT, LINE_2, type Identity } from "./identities";
+import { EASE, FONT, IDENTITIES, LINE_2, type Identity } from "./identities";
+import { gameTheme } from "./jeux-themes";
+import { bgOf } from "./jeux-art";
+
+const TRAJAN = '"trajan-pro-3", "Cinzel", Georgia, serif';
+const GOLD = "linear-gradient(180deg, #fbf3e0 0%, #efdcb2 34%, #d2ad6e 62%, #8f6a34 100%)";
 
 // « Versus screen » : 2,5 s avant chaque duel, passable au clic ou à n'importe
 // quelle touche. Écran coupé en diagonale, les deux visuels claquent depuis
@@ -72,6 +77,7 @@ export const VersusIntro = memo(function VersusIntro({ left, right, id, roundLab
     return () => window.removeEventListener("keydown", skip, { capture: true });
   }, []);
 
+  const jeux = id.name === IDENTITIES.jeux.name;
   const sparks = useMemo(
     () =>
       Array.from({ length: 10 }, (_, k) => {
@@ -134,7 +140,7 @@ export const VersusIntro = memo(function VersusIntro({ left, right, id, roundLab
                 <div style={{ position: "absolute", inset: 0, background: side === "l" ? `${id.a}22` : `${id.b}22` }} />
               ) : (
                 <motion.img
-                  src={imgOf(p)}
+                  src={jeux ? (bgOf(p as Participant & { sub?: string })?.src ?? imgOf(p)) : imgOf(p)}
                   alt=""
                   initial={{ scale: 1.35 }}
                   animate={{ scale: 1.08 }}
@@ -195,12 +201,17 @@ export const VersusIntro = memo(function VersusIntro({ left, right, id, roundLab
               left: 0,
               top: 0,
               translate: "-50% -50%",
-              fontWeight: 700,
+              fontFamily: jeux ? TRAJAN : FONT.display,
+              fontWeight: jeux ? 400 : 800,
+              fontStyle: jeux ? "normal" : "italic",
               fontSize: "clamp(64px, 8vw, 128px)",
-              lineHeight: 0.8,
-              letterSpacing: "-0.06em",
-              color: id.ink,
-              textShadow: `0 0 60px ${id.a}55`,
+              lineHeight: 0.9,
+              letterSpacing: jeux ? "0.06em" : "-0.05em",
+              color: jeux ? "transparent" : id.ink,
+              background: jeux ? GOLD : undefined,
+              WebkitBackgroundClip: jeux ? "text" : undefined,
+              backgroundClip: jeux ? "text" : undefined,
+              filter: `drop-shadow(0 4px 2px rgba(0,0,0,0.7)) drop-shadow(0 0 40px ${id.a}55)`,
               whiteSpace: "nowrap",
             }}
           >
@@ -209,8 +220,8 @@ export const VersusIntro = memo(function VersusIntro({ left, right, id, roundLab
         </div>
 
         {/* Titres en cascade, en diagonale : A en bas à gauche, B en haut à droite. */}
-        <Title p={left} hidden={blind} label={id.sides[0]} id={id} align="left" out={out} />
-        <Title p={right} hidden={blind} label={id.sides[1]} id={id} align="right" out={out} />
+        <Title p={left} hidden={blind} label={jeux && !blind && left.sub ? left.sub : id.sides[0]} id={id} align="left" out={out} jeux={jeux} />
+        <Title p={right} hidden={blind} label={jeux && !blind && right.sub ? right.sub : id.sides[1]} id={id} align="right" out={out} jeux={jeux} />
 
       </div>
 
@@ -262,7 +273,9 @@ function RoundStrip({ label, id, out }: { label: string; id: Identity; out: bool
   );
 }
 
-function Title({ p, hidden, label, id, align, out }: { p: Participant; hidden: boolean; label: string; id: Identity; align: "left" | "right"; out: boolean }) {
+function Title({ p, hidden, label, id, align, out, jeux }: { p: Participant; hidden: boolean; label: string; id: Identity; align: "left" | "right"; out: boolean; jeux: boolean }) {
+  // Jeux : la police et l'encre de l'univers du jeu (comme l'écran de duel).
+  const th = jeux && !hidden ? gameTheme(p.sub) : null;
   const text = hidden ? `Piste ${align === "left" ? "A" : "B"}` : p.title;
   const words = text.split(" ");
   const base = align === "left" ? 0.72 : 0.86;
@@ -271,9 +284,10 @@ function Title({ p, hidden, label, id, align, out }: { p: Participant; hidden: b
     <div
       style={{
         position: "absolute",
-        [align === "left" ? "left" : "right"]: "clamp(32px, 5vw, 80px)",
-        [align === "left" ? "bottom" : "top"]: "clamp(70px, 14vh, 140px)",
-        maxWidth: "46%",
+        // Le cadre déborde de 24 px (secousse) : marges comptées en plus.
+        [align === "left" ? "left" : "right"]: "calc(24px + clamp(28px, 4.5vw, 80px))",
+        [align === "left" ? "bottom" : "top"]: "calc(24px + clamp(70px, 14vh, 140px))",
+        maxWidth: "40%",
         textAlign: align,
         color: id.ink,
       }}
@@ -282,13 +296,28 @@ function Title({ p, hidden, label, id, align, out }: { p: Participant; hidden: b
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: out ? 0 : 1, y: 0 }}
         transition={{ delay: out ? 0 : base - 0.08, duration: 0.3 }}
-        style={{ margin: "0 0 12px", display: "inline-flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: id.ink, opacity: 0.75 }}
+        style={{ margin: "0 0 12px", display: "inline-flex", alignItems: "center", gap: 10, fontFamily: jeux ? TRAJAN : FONT.body, fontSize: jeux ? 12 : 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: th ? th.accent : id.ink, opacity: jeux ? 1 : 0.75 }}
       >
+        <span aria-hidden style={{ width: 18, height: 1, background: th ? th.accent : id.a }} />
         {label}
       </motion.p>
-      <h2 aria-label={text} style={{ margin: 0, fontWeight: 700, fontSize: text.length > 22 ? "clamp(30px, 3.2vw, 52px)" : "clamp(38px, 4.4vw, 72px)", lineHeight: 1, letterSpacing: "-0.035em", textShadow: "0 6px 30px rgba(0,0,0,0.6)" }}>
+      <h2
+        aria-label={text}
+        style={{
+          margin: 0,
+          fontFamily: th ? th.font : FONT.display,
+          fontWeight: th ? th.weight : 800,
+          fontSize: `calc(${text.length > 22 ? "clamp(28px, 3vw, 50px)" : "clamp(36px, 4.2vw, 70px)"} * ${th ? th.scale : 1})`,
+          lineHeight: 1.05,
+          letterSpacing: th ? `${th.track}em` : "-0.035em",
+          textTransform: th?.upper ? "uppercase" : "none",
+          color: th && !th.ink.startsWith("linear") ? th.ink : id.ink,
+          filter: "drop-shadow(0 4px 18px rgba(0,0,0,0.75))",
+          textWrap: "balance",
+        }}
+      >
         {words.map((w, wi) => (
-          <span key={wi} aria-hidden style={{ display: "inline-block", whiteSpace: "nowrap", marginRight: "0.22em", overflow: "hidden", paddingBottom: "0.06em" }}>
+          <span key={wi} aria-hidden style={{ display: "inline-block", whiteSpace: "nowrap", marginRight: "0.22em", overflow: "hidden", padding: "0.1em 0 0.2em", margin: "-0.1em 0.22em -0.2em 0", verticalAlign: "top" }}>
             {[...w].map((ch, ci) => {
               const k = n++;
               return (

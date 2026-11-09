@@ -18,6 +18,9 @@ type Props = {
 
 type Mote = { x: number; y: number; vx: number; vy: number; r: number; life: number; max: number };
 
+// Disque vinyle de l’OST retiré (9 nov, « j’aime pas ») ; le reste de la couche réagit toujours.
+const SHOW_VINYL = false;
+
 export function AudioReactiveLayer({ id, active, player, reduce }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const glow = useRef<HTMLDivElement>(null);
@@ -61,7 +64,7 @@ export function AudioReactiveLayer({ id, active, player, reduce }: Props) {
       // Bords qui respirent : un halo intérieur à la couleur du tournoi.
       if (glow.current) glow.current.style.opacity = reduce ? (on ? "0.35" : "0") : String(Math.min(1, (on ? 0.25 : 0) + bass * 0.75 + kickFlash * 0.3));
 
-      if (id.react === "vinyl") {
+      if (id.react === "vinyl" && SHOW_VINYL) {
         // Vinyle dans le coin bas-droit : tourne à 33 tours pendant la lecture,
         // le sillon lu avance avec la position du morceau.
         if (on && player.playing && !reduce) angle += (dt / 1000) * ((33.3 / 60) * Math.PI * 2);
@@ -114,15 +117,25 @@ export function AudioReactiveLayer({ id, active, player, reduce }: Props) {
         const n = 64;
         const bw = W / n;
         const base = H;
+        // Fines tiges (pas des blocs) : couleur du tournoi, fondu vers le haut ;
+        // le décalage cyan n'apparaît que sur les coups de grosse caisse.
+        const tw = Math.max(1.5, bw * 0.22);
         for (let i = 0; i < n; i++) {
           const v = on ? p.bands[Math.floor((i / n) * 48)] : 0;
-          const h = v * H * 0.1;
+          const h = v * H * 0.07;
           if (h < 1) continue;
-          g.globalAlpha = 0.38;
-          g.fillStyle = id.a;
-          g.fillRect(i * bw + 1 - kickFlash * 3, base - h, Math.max(1, bw - 3), h);
-          g.fillStyle = id.b;
-          g.fillRect(i * bw + 1 + kickFlash * 3, base - h * 0.94, Math.max(1, bw - 3), h * 0.94);
+          const x = i * bw + (bw - tw) / 2;
+          const grad = g.createLinearGradient(0, base - h, 0, base);
+          grad.addColorStop(0, "rgba(0,0,0,0)");
+          grad.addColorStop(1, id.a);
+          g.globalAlpha = 0.55;
+          g.fillStyle = grad;
+          g.fillRect(x, base - h, tw, h);
+          if (kickFlash > 0.3) {
+            g.globalAlpha = 0.35 * kickFlash;
+            g.fillStyle = id.b;
+            g.fillRect(x + 3, base - h * 0.8, tw, h * 0.8);
+          }
         }
         g.globalAlpha = 1;
         if (rgb.current) {

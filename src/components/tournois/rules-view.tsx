@@ -80,7 +80,7 @@ export function RulesView() {
         <h2>Voter</h2>
         <ul>
           {fight ? (
-            <li>Le bouton « Garder » (ou la touche A ou B) enregistre ton choix : le gagnant passe au tour suivant, l&apos;autre s&apos;efface. Un clic ou une touche passe tout de suite au duel suivant.</li>
+            <li>Le bouton « Garder » (ou la touche W ou X) enregistre ton choix : le gagnant passe au tour suivant, l&apos;autre s&apos;efface. Un clic ou une touche passe tout de suite au duel suivant.</li>
           ) : (
             <li>Le bouton « {meta.choose} » enregistre ton choix et affiche « Vote enregistré. L&apos;aventure continue. ». Un second clic est ignoré.</li>
           )}
@@ -125,7 +125,7 @@ export function RulesView() {
           <li>
             {fight ? (
               <>
-                <kbd>A</kbd> <kbd>B</kbd> garder, <kbd>H</kbd> ajouter aux favoris, <kbd>F</kbd> plein écran, <kbd>T</kbd> ouvrir le tableau, <kbd>Retour arrière</kbd> annuler le dernier choix
+                <kbd>W</kbd> <kbd>X</kbd> garder, <kbd>H</kbd> ajouter aux favoris, <kbd>F</kbd> plein écran, <kbd>T</kbd> ouvrir le tableau, <kbd>Retour arrière</kbd> annuler le dernier choix
               </>
             ) : (
               <>

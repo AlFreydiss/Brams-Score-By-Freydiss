@@ -168,3 +168,25 @@
   font: 700 13px/1 var(--nx-sans, "Geist", system-ui, sans-serif);
   letter-spacing: 0.08em;
 }
+
+/* VS sans médaillon (9 nov, losange refusé) : deux lettres posées sur la coupe,
+   chacune à la couleur de son côté, la coupe passe entre elles. */
+.jx-vs-gem,
+.jx-vs-ring {
+  display: none;
+}
+.jx-vs span {
+  font: 400 clamp(30px, 2.6vw, 42px) / 1 "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.08em;
+  color: transparent;
+  background: linear-gradient(90deg, var(--vs-a) 0%, #fff6e0 50%, var(--vs-b) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 18px rgba(0, 0, 0, 0.6));
+}
+.jx-vs--sans span {
+  font: 800 italic clamp(30px, 2.6vw, 42px) / 1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  padding-right: 0.08em;
+}

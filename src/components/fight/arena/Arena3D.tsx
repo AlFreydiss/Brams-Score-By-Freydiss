@@ -3,7 +3,7 @@ import { MeshReflectorMaterial } from "@react-three/drei";
 import { Bloom, EffectComposer, Noise, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import { AnimatePresence, motion } from "framer-motion";
-import { Info, Play } from "lucide-react";
+import { Info, Play, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { EASE, FONT, LINE_2 } from "../identities";
@@ -49,7 +49,36 @@ const ROTATE_MS = 12000;
 const FADE = "linear-gradient(to bottom, transparent 0%, #000 90px, #000 calc(100% - 240px), rgba(0,0,0,0.55) calc(100% - 110px), transparent 100%)";
 
 /** Couleur de la salle, partagée par la scène (lue à chaque image). */
-type Room = { color: THREE.Color };
+type Room = { color: THREE.Color; pulse: number; sound: boolean; analyser: AnalyserNode | null };
+
+// Son de l'écran actif : un seul contexte audio, créé au premier clic sur le
+// bouton son (geste requis). Chaque vidéo est branchée une fois sur l'analyseur.
+let audioCtx: AudioContext | null = null;
+const wired = new WeakSet<HTMLVideoElement>();
+function ensureAudio(room: Room) {
+  if (!audioCtx) {
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    audioCtx = new AC();
+  }
+  if (!room.analyser) {
+    const an = audioCtx.createAnalyser();
+    an.fftSize = 256;
+    an.smoothingTimeConstant = 0.6;
+    an.connect(audioCtx.destination);
+    room.analyser = an;
+  }
+  audioCtx.resume().catch(() => {});
+}
+function wire(video: HTMLVideoElement, room: Room) {
+  if (!audioCtx || !room.analyser || wired.has(video)) return;
+  try {
+    audioCtx.createMediaElementSource(video).connect(room.analyser);
+    wired.add(video);
+  } catch {
+    /* déjà branchée ou refusée : le son passe quand même par la balise. */
+  }
+}
+const bins = new Uint8Array(128);
 
 export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const [active, setActive] = useState(0);
@@ -60,7 +89,14 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const drag = useRef<{ x: number; y: number; t: number } | null>(null);
   const dragOff = useRef({ x: 0, y: 0 });
   const dragged = useRef(false);
-  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a") }), [items]);
+  const room = useMemo<Room>(() => ({ color: new THREE.Color(items[0]?.accent ?? "#d9a35a"), pulse: 0, sound: false, analyser: null }), [items]);
+  const [sound, setSound] = useState(false);
+  const toggleSound = () => {
+    const on = !sound;
+    if (on) ensureAudio(room);
+    room.sound = on;
+    setSound(on);
+  };
   const n = items.length;
   const go = (d: number) => setActive((a) => (a + d + n) % n);
   const reduce = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
@@ -81,7 +117,12 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
     document.addEventListener("visibilitychange", v);
     return () => document.removeEventListener("visibilitychange", v);
   }, []);
-  const running = visible && !hold && !dive && !tabHidden && !reduce;
+  // Pas de rotation pendant qu'on écoute : on laisse le refrain jouer.
+  const running = visible && !hold && !dive && !tabHidden && !reduce && !sound;
+  // Hors écran ou onglet caché : silence.
+  useEffect(() => {
+    room.sound = sound && visible && !tabHidden;
+  }, [visible, tabHidden, sound, room]);
   useEffect(() => {
     if (!running) return;
     const t = setTimeout(() => go(1), ROTATE_MS);
@@ -136,6 +177,8 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         const dx = e.clientX - d.x;
         const dy = e.clientY - d.y;
         if (Math.abs(dx) > 50 && Math.abs(dx) >= Math.abs(dy)) go(dx < 0 ? 1 : -1);
+        // Vertical : vers le haut = suivant, vers le bas = précédent.
+        else if (Math.abs(dy) > 60) go(dy < 0 ? 1 : -1);
       }}
       onPointerCancel={() => {
         drag.current = null;
@@ -222,6 +265,20 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
             <Info size={17} />
             Plus d’infos
           </motion.button>
+          {cur.media.k === "video" ? (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.92 }}
+              onClick={toggleSound}
+              aria-pressed={sound}
+              aria-label={sound ? "Couper le son du générique" : "Écouter le générique à l’écran"}
+              title={sound ? "Couper le son" : "Écouter le refrain"}
+              className={`ar3-sound ${sound ? "is-on" : ""}`}
+              style={{ boxShadow: `inset 0 0 0 1px ${sound ? cur.accent : LINE_2}`, color: sound ? cur.accent : "#f4f2ec" }}
+            >
+              {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </motion.button>
+          ) : null}
         </div>
       </div>
 
@@ -420,6 +477,14 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
   const sampled = useMemo(() => new THREE.Color(), []);
   const lastProbe = useRef(0);
   const vis = useRef(0);
+  const scr = useRef<THREE.Mesh>(null);
+  // Allumage : quand l'écran devient actif, il s'ouvre comme une télé qu'on allume.
+  const onT = useRef(9);
+  const first = useRef(true);
+  useEffect(() => {
+    if (active && !first.current) onT.current = 0;
+    first.current = false;
+  }, [active]);
 
   useFrame((state, dt) => {
     const g = ref.current;
@@ -437,10 +502,38 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
     const show = THREE.MathUtils.clamp(1.8 - Math.abs(rel), 0, 1);
     vis.current = show;
     g.visible = show > 0.01;
+    onT.current += dt;
+    const k = Math.min(1, onT.current / 0.55);
+    const open = 1 - Math.pow(1 - k, 4);
+    if (scr.current) scr.current.scale.y = active ? 0.02 + 0.98 * open : 1;
     if (mat.current) {
-      const c = !tex ? 0.07 : 0.22 + 0.7 * near;
+      // Éclat blanc à l'allumage, puis l'image ; légère respiration sur les basses.
+      const flash = active ? (1 - open) * 1.4 : 0;
+      const c = !tex ? 0.07 : 0.22 + 0.7 * near + flash + (active ? room.pulse * 0.06 : 0);
       mat.current.color.setScalar(c);
       mat.current.opacity = show;
+    }
+    // Son : seul l'écran actif parle, et la salle bat sur ses basses.
+    const vid = tex?.image instanceof HTMLVideoElement ? tex.image : null;
+    if (vid) {
+      const speak = active && room.sound;
+      if (speak && vid.muted) {
+        wire(vid, room);
+        vid.muted = false;
+        vid.volume = 0.7;
+        vid.play().catch(() => {});
+      } else if (!speak && !vid.muted) vid.muted = true;
+    }
+    if (active) {
+      let target = 0;
+      if (room.sound && room.analyser && vid && !vid.paused) {
+        room.analyser.getByteFrequencyData(bins);
+        let b = 0;
+        for (let i = 1; i < 7; i++) b += bins[i];
+        target = Math.max(0, (b / 6 / 255 - 0.42) / 0.5);
+      }
+      // Attaque rapide, retombée douce.
+      room.pulse = target > room.pulse ? THREE.MathUtils.lerp(room.pulse, target, 0.5) : THREE.MathUtils.damp(room.pulse, target, 5, dt);
     }
     // L'écran actif éclaire la salle de sa couleur (mesurée 3 fois par seconde).
     if (active && tex && state.clock.elapsedTime - lastProbe.current > 0.33) {
@@ -454,8 +547,9 @@ function Screen({ item, index, n, pos, active, room, onClick }: { item: ArenaIte
 
   return (
     <group ref={ref}>
-      <Ambilight tex={tex} vis={vis} active={active} />
+      <Ambilight tex={tex} vis={vis} active={active} room={room} />
       <mesh
+        ref={scr}
         geometry={geo}
         onClick={(e) => {
           e.stopPropagation();
@@ -524,7 +618,7 @@ void main() {
   gl_FragColor = vec4(max(col, 0.0) * fall * edge * 0.85, 1.0) * uOn;
 }
 `;
-function Ambilight({ tex, vis, active }: { tex: THREE.Texture | null; vis: React.MutableRefObject<number>; active: boolean }) {
+function Ambilight({ tex, vis, active, room }: { tex: THREE.Texture | null; vis: React.MutableRefObject<number>; active: boolean; room: Room }) {
   const SX = 2.3;
   const SY = 2.6;
   const mat = useMemo(
@@ -544,8 +638,9 @@ function Ambilight({ tex, vis, active }: { tex: THREE.Texture | null; vis: React
     mat.uniforms.map.value = tex;
   }, [tex, mat]);
   useFrame((_, dt) => {
-    const want = tex ? (active ? 0.62 : 0.2) * vis.current : 0;
-    mat.uniforms.uOn.value = THREE.MathUtils.damp(mat.uniforms.uOn.value, want, 3, dt);
+    const base = tex ? (active ? 0.62 : 0.2) * vis.current : 0;
+    const want = active ? base * (1 + room.pulse * 0.9) + room.pulse * 0.2 : base;
+    mat.uniforms.uOn.value = THREE.MathUtils.damp(mat.uniforms.uOn.value, want, room.pulse > 0.05 ? 14 : 3, dt);
   });
   return (
     <mesh position={[0, 0.05, -0.5]} material={mat} raycast={() => null}>
@@ -638,7 +733,7 @@ function Glow({ room }: { room: Room }) {
     const m = mat.current;
     if (!m) return;
     m.color.copy(room.color);
-    m.opacity = 0.12 + Math.sin(state.clock.elapsedTime * 0.6) * 0.02;
+    m.opacity = 0.12 + Math.sin(state.clock.elapsedTime * 0.6) * 0.02 + room.pulse * 0.12;
   });
   return (
     <mesh position={[0, 0.1, -3]}>
@@ -651,7 +746,11 @@ function Glow({ room }: { room: Room }) {
 // Lumière de l'écran sur le sol, devant lui.
 function FloorSpill({ room }: { room: Room }) {
   const mat = useRef<THREE.MeshBasicMaterial>(null);
-  useFrame(() => mat.current?.color.copy(room.color));
+  useFrame(() => {
+    if (!mat.current) return;
+    mat.current.color.copy(room.color);
+    mat.current.opacity = 0.32 + room.pulse * 0.3;
+  });
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -H / 2 - 0.33, FRONT + 0.7]}>
       <planeGeometry args={[W * 1.6, 1.6]} />
@@ -688,7 +787,11 @@ function Dust({ room }: { room: Room }) {
       if (arr[i * 3 + 1] > 4.5) arr[i * 3 + 1] = -1.5;
     }
     a.needsUpdate = true;
-    mat.current?.color.copy(room.color).lerp(white, 0.4);
+    if (mat.current) {
+      mat.current.color.copy(room.color).lerp(white, 0.4);
+      mat.current.opacity = 0.65 + room.pulse * 0.35;
+      mat.current.size = 0.034 * (1 + room.pulse * 0.6);
+    }
   });
   return (
     <points geometry={geo}>
@@ -749,7 +852,9 @@ function CameraRig({ dive, drag }: { dive: boolean; drag: React.MutableRefObject
     }
     cam.position.z = THREE.MathUtils.damp(cam.position.z, baseZ, 3, dt);
     cam.position.x = THREE.MathUtils.damp(cam.position.x, pan + pointer.x * 0.45, 2.5, dt);
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.3 + pointer.y * 0.16, 2.5, dt);
+    // Glissé vertical : la caméra monte ou plonge autour de l'arc (bascule).
+    const tilt = THREE.MathUtils.clamp(drag.current.y * 0.006, -1.2, 1.8);
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, 0.3 + pointer.y * 0.16 + tilt, drag.current.y ? 7 : 2.5, dt);
     cam.lookAt(pan, lookY, FRONT - 1.5);
   });
   return null;

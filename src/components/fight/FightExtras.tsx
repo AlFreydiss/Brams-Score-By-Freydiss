@@ -89,7 +89,7 @@ export function StreakBurst({ n, id }: { n: number; id: Identity }) {
 // ── Panneau des raccourcis (touche ?) ────────────────────────────────
 export function ShortcutsPanel({ open, onClose, id, alternate }: { open: boolean; onClose: () => void; id: Identity; alternate: boolean }) {
   const rows: [string, string][] = [
-    ["A / B", "Garder la piste A ou B"],
+    ["W / X", "Garder la piste de gauche ou de droite (A / B marchent aussi)"],
     ["Espace", "Écouter ou mettre en pause"],
     ["← / →", "Choisir un côté (l'écoute suit)"],
     ...(alternate ? ([["C", "Écoute alternée A puis B, 7 s chacun"]] as [string, string][]) : []),

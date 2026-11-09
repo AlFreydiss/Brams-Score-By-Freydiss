@@ -42,7 +42,7 @@ type Props = {
 // couvre tout le morceau. Sur un extrait court, elle reste dans les 28 premières secondes.
 const AB_SEG = 7;
 const AB_LOOP = 28;
-const KEY: Record<Side, string> = { left: "A", right: "B" };
+const KEY: Record<Side, string> = { left: "W", right: "X" };
 
 // Duel « Phosphore violet » : deux cartes côte à côte (l'une sous l'autre sur
 // mobile). Chaque visuel est dessiné en caractères violets et devient photo
@@ -205,8 +205,8 @@ export function DuelScreen({ left, right, round, isFinal, practice, blind, canUn
       if (t?.closest("input, textarea, select, [role=dialog]") || e.metaKey || e.ctrlKey || e.altKey) return;
       if (zoom || settings) return;
       const k = e.key;
-      if (k === "a" || k === "A") choose("left");
-      else if (k === "b" || k === "B") choose("right");
+      if (k === "w" || k === "W" || k === "a" || k === "A") choose("left");
+      else if (k === "x" || k === "X" || k === "b" || k === "B") choose("right");
       else if (k === "ArrowLeft" || k === "ArrowRight") {
         e.preventDefault();
         const side: Side = k === "ArrowLeft" ? "left" : "right";
@@ -386,7 +386,7 @@ export function DuelScreen({ left, right, round, isFinal, practice, blind, canUn
             </button>
           ) : null}
         </div>
-        {audio ? <Transport left={left} right={right} masked={!!blind && !picked} /> : <p className="nx-hint">Clique une image ou appuie sur A ou B pour garder.</p>}
+        {audio ? <Transport left={left} right={right} masked={!!blind && !picked} /> : <p className="nx-hint">Clique une image ou appuie sur W ou X pour garder.</p>}
         <div className="nx-dock-tools">
           {audio ? (
             <button type="button" onClick={() => setSettings((v) => !v)} aria-expanded={settings} title="Paramètres">
@@ -409,7 +409,7 @@ export function DuelScreen({ left, right, round, isFinal, practice, blind, canUn
               </span>
             </label>
             <p className="nx-keys">
-              <kbd>A</kbd> <kbd>B</kbd> garder, <kbd>←</kbd> <kbd>→</kbd> écouter, {abOk ? <><kbd>C</kbd> alternance, </> : null}<kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
+              <kbd>W</kbd> <kbd>X</kbd> garder, <kbd>←</kbd> <kbd>→</kbd> écouter, {abOk ? <><kbd>C</kbd> alternance, </> : null}<kbd>Espace</kbd> pause, <kbd>F</kbd> favori, <kbd>T</kbd> tableau
             </p>
             <button type="button" className="nx-close" onClick={() => setSettings(false)} aria-label="Fermer les paramètres">
               <X size={15} />
