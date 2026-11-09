@@ -191,7 +191,7 @@ function Glow() {
   );
 }
 
-export default function ChampionCardReveal({ data, onClose }: { data: ChampCardData; onClose: () => void }) {
+export default function ChampionCardReveal({ data, onClose, kicker = "Nouvelle carte légendaire" }: { data: ChampCardData; onClose: () => void; kicker?: string }) {
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === "Enter") onClose();
@@ -213,7 +213,7 @@ export default function ChampionCardReveal({ data, onClose }: { data: ChampCardD
         <Card data={data} />
       </Canvas>
       <div className="cc-ui">
-        <p className="cc-kicker">Nouvelle carte légendaire</p>
+        <p className="cc-kicker">{kicker}</p>
         <button type="button" className="cc-go" onClick={onClose} autoFocus>
           Continuer
         </button>

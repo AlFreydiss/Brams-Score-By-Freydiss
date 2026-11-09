@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ArenaItem } from "../fight/arena/Arena3D";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
+import { Collection } from "./collection";
 import { SelectScreen, type DeckProps, type SelectItem } from "./select-screen";
 import { Atmosphere, setAtmosphere } from "./atmosphere";
 import { portalTo } from "./portal";
@@ -290,6 +291,9 @@ export default function HubPage() {
               <RefrainRadio list={radioList} />
             </div>
             <DailyDuel pools={dailyPools} />
+          </div>
+          <div className="nf-block">
+            <Collection />
           </div>
           {GROUPS.map((g, gi) => (
             <Block key={g.title} title={g.title} text={g.text} n={gi + 1}>
