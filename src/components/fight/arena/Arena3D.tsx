@@ -36,6 +36,7 @@ const R = 4.2;
 const W = 3.4;
 const H = W * (9 / 16);
 const BG = "#08090d";
+const FADE = "linear-gradient(to bottom, #000 0%, #000 calc(100% - 260px), rgba(0,0,0,0.55) calc(100% - 120px), transparent 100%)";
 
 export default function Arena3D({ items, onPlay, onInfo }: Props) {
   const [active, setActive] = useState(0);
@@ -85,7 +86,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
   return (
     <div
       ref={wrap}
-      style={{ position: "relative", height: "min(88dvh, 880px)", minHeight: 540, background: BG, overflow: "hidden", touchAction: "pan-y", userSelect: "none" }}
+      style={{ position: "relative", height: "min(88dvh, 880px)", minHeight: 540, overflow: "hidden", touchAction: "pan-y", userSelect: "none" }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest("button")) return;
         drag.current = { x: e.clientX, y: e.clientY, t: performance.now() };
@@ -122,7 +123,8 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         dpr={[1, 1.6]}
         camera={{ position: [0, 0.35, R + 5.2], fov: 42 }}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        style={{ position: "absolute", inset: 0 }}
+        // Le bas de la scène se dissout dans la brume du hub : pas de bord net entre l'arène et la suite.
+        style={{ position: "absolute", inset: 0, maskImage: FADE, WebkitMaskImage: FADE }}
       >
         <color attach="background" args={[BG]} />
         <fog attach="fog" args={[BG, 6.5, 15]} />
