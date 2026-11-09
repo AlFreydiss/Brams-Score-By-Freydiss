@@ -3,11 +3,97 @@ import { ChevronDown } from "lucide-react";
 import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useTournament } from "./provider";
+import type { Participant } from "@/lib/tournois/types";
 import { SetupWall } from "./setup-wall";
 import { IDENTITIES, isFight } from "../fight/identities";
 import { Embers } from "../fight/Embers";
 import { useAdobeKit } from "./adobe-kit";
 import "./setup-jeux.css";
+import "./setup-arena.css";
+
+// OST, openings, endings : le départ reprend l'univers de leur accueil
+// (arena-hero) — un vrai générique du pool au refrain, la matière du tournoi.
+type ArenaSlug = "ost" | "openings" | "endings";
+const isArena = (s: string): s is ArenaSlug => s === "ost" || s === "openings" || s === "endings";
+const ARENA_TITLE: Record<ArenaSlug, [string, string]> = {
+  ost: ["Tournoi des", "OST"],
+  openings: ["Tournoi des", "openings"],
+  endings: ["Tournoi des", "endings"],
+};
+
+// Vieux génériques en 4:3 : bandes noires incrustées dans une vidéo 16:9.
+// On lit une image en tout petit ; bords noirs + centre éclairé = on agrandit
+// pour sortir les bandes du cadre.
+function pillarbox(v: HTMLVideoElement) {
+  if (v.dataset.pb) return;
+  v.dataset.pb = "1";
+  window.setTimeout(() => {
+    try {
+      const W = 64;
+      const H = 36;
+      const c = document.createElement("canvas");
+      c.width = W;
+      c.height = H;
+      const ctx = c.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(v, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H).data;
+      const lum = (x0: number, x1: number) => {
+        let t = 0;
+        let n = 0;
+        for (let y = 0; y < H; y++)
+          for (let x = x0; x < x1; x++) {
+            const i = (y * W + x) * 4;
+            t += d[i] + d[i + 1] + d[i + 2];
+            n++;
+          }
+        return t / n / 3;
+      };
+      const edge = Math.max(lum(0, 5), lum(W - 5, W));
+      if (v.videoWidth / v.videoHeight > 1.5 && edge < 6 && lum(16, W - 16) > 18) v.classList.add("is-pillar");
+    } catch {
+      /* CORS ou image pas prête : on garde le cadrage normal. */
+    }
+  }, 400);
+}
+
+function ArenaBackdrop({ slug, pool }: { slug: ArenaSlug; pool: Participant[] }) {
+  // Tiré une fois à l'arrivée : le fond ne change pas à chaque clic de format.
+  const [pick] = useState(() => {
+    const vids = pool.filter((p) => p.visual.k === "video");
+    const from = slug === "ost" || !vids.length ? pool : vids;
+    return from[Math.floor(Math.random() * from.length)];
+  });
+  const reduce = useMemo(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  if (!pick) return null;
+  const still = pick.visual.k === "img" ? pick.visual.src : pick.thumb.replace("/t/p/w300/", "/t/p/w1280/");
+  const hook = pick.sound?.k === "video" ? (pick.sound.hook ?? 20) : 20;
+  return (
+    <div className={`sa-bg sa-bg--${slug}`} aria-hidden>
+      {pick.visual.k === "video" && !reduce ? (
+        <video
+          src={`${pick.visual.src}#t=${hook}`}
+          poster={still}
+          crossOrigin="anonymous"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          onPlaying={(e) => pillarbox(e.currentTarget)}
+        />
+      ) : (
+        <img src={still} alt="" decoding="async" />
+      )}
+      <div className="sa-fog" />
+      {slug === "openings" ? <div className="sa-scan" /> : <Embers active density={0.6} zIndex={2} tint={slug === "endings" ? "dust" : "gold"} />}
+      <p className="sa-caption">
+        <b>{pick.group}</b>
+        <span>{pick.title}</span>
+      </p>
+    </div>
+  );
+}
 
 // Jeux : formats en chiffres romains, comme les cartes d'un jeu de tarot.
 const ROMAN: Record<number, string> = { 8: "VIII", 16: "XVI", 32: "XXXII", 64: "LXIV", 128: "CXXVIII", 256: "CCLVI" };
@@ -20,6 +106,7 @@ const ALL = -1;
 export function Setup() {
   const { meta, participants } = useTournament();
   const jeux = meta.slug === "jeux";
+  const arena = isArena(meta.slug) ? meta.slug : null;
   useAdobeKit(jeux);
   const groups = useMemo(() => {
     const m = new Map<string, number>();
@@ -71,7 +158,7 @@ export function Setup() {
     });
 
   return (
-    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""}`}>
+    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""} ${arena ? `nx-setup--arena nx-setup--${arena}` : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
       {jeux ? (
         // Univers Clair Obscur / Elden Ring : boucle vidéo du jeu, brume, braises.
         <div className="sj-bg" aria-hidden>
@@ -80,8 +167,18 @@ export function Setup() {
           <Embers active density={0.7} zIndex={2} />
         </div>
       ) : null}
+      {arena ? <ArenaBackdrop slug={arena} pool={participants} /> : null}
       <div className="nx-setup-box">
         {jeux ? <p className="sj-kicker">Tournoi · {participants.length} musiques</p> : null}
+        {arena ? (
+          <p className="sa-kicker">
+            <span>{IDENTITIES[arena].name}</span>
+            <span>
+              {participants.length} {meta.unit}
+            </span>
+            <span>{groups.length} animes</span>
+          </p>
+        ) : null}
         <h1 className="nx-title">
           {jeux
             ? meta.title.split(" ").map((w, k, all) => (
@@ -89,7 +186,13 @@ export function Setup() {
                   {w}
                 </span>
               ))
-            : meta.title}
+            : arena
+              ? (
+                  <>
+                    {ARENA_TITLE[arena][0]} <em>{ARENA_TITLE[arena][1]}</em>
+                  </>
+                )
+              : meta.title}
         </h1>
         <p className="nx-lede">{fill(meta.lead, participants)}</p>
 
