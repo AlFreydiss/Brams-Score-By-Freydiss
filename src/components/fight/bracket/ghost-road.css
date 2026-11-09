@@ -1,0 +1,14 @@
+/* Tableau vide (RoadToFinal) : texte à gauche, tableau fantôme à droite. */
+.rtf-empty {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: center;
+  min-height: min(620px, calc(100dvh - 220px));
+}
+@media (max-width: 900px) {
+  .rtf-empty {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+}

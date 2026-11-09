@@ -4,6 +4,45 @@ import { computeRows, MIN_DUELS_FOR_RATE, MIN_SITE_DUELS, rowsFromSite, sortRows
 import { fetchStats } from "@/lib/versusStats.js";
 import { useTournament } from "./provider";
 import { Thumb } from "./visual";
+import { Pause, Play } from "lucide-react";
+import type { Participant } from "@/lib/tournois/types";
+import { IDENTITIES, isFight } from "../fight/identities";
+import { bgOf } from "../fight/jeux-art";
+import "./ranking.css";
+
+type Row = ReturnType<typeof computeRows>[number];
+const artOf = (p: Participant, jeux: boolean) => (jeux ? (bgOf(p as Participant & { sub?: string })?.src ?? p.thumb) : p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
+
+// Podium : les trois premiers en affiches, le premier au centre et plus haut.
+function Podium({ rows, jeux, accent }: { rows: Row[]; jeux: boolean; accent: string }) {
+  const { player, listen } = useTournament();
+  const order = [rows[1], rows[0], rows[2]].filter(Boolean);
+  return (
+    <ol className={`rk-podium ${jeux ? "rk-podium--jeux" : ""}`} style={{ "--rk-acc": accent } as React.CSSProperties} aria-label="Podium">
+      {order.map((r) => {
+        const rank = rows.indexOf(r) + 1;
+        const on = player.id === r.p.id && player.playing;
+        return (
+          <li key={r.p.id} className={`rk-step rk-step--${rank}`} style={{ "--d": `${rank === 1 ? 0 : rank === 2 ? 0.12 : 0.2}s` } as React.CSSProperties}>
+            <img className="rk-art" src={artOf(r.p, jeux)} alt="" loading="lazy" decoding="async" />
+            <span className="rk-rank" aria-label={`Rang ${rank}`}>{rank}</span>
+            <div className="rk-copy">
+              <small>{r.p.group}</small>
+              <b>{r.p.title}</b>
+              <span className="rk-stat">
+                {r.rate != null ? <>{r.rate} %<em> de victoires</em></> : <>{r.wins}<em> victoire{r.wins > 1 ? "s" : ""}</em></>}
+                <i>{r.duels} vote{r.duels > 1 ? "s" : ""}</i>
+              </span>
+            </div>
+            <button type="button" className="rk-play" onClick={() => listen(r.p)} aria-label={`${on ? "Pause" : "Écouter"} ${r.p.title}`}>
+              {on ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 const SORTS: { k: SortKey; label: string }[] = [
   { k: "rank", label: "Rang" },
@@ -44,6 +83,8 @@ export function RankingView() {
   const shown = useMemo(() => sortRows(rows, by).filter((r) => (!group || r.p.group === group) && (!status || r.status.kind === status)), [rows, by, group, status]);
   const ranked = useMemo(() => new Map(sortRows(rows, source === "site" ? "rate" : "rank").map((r, i) => [r.p.id, i + 1])), [rows, source]);
   const siteDuels = siteRows.reduce((n, r) => n + r.wins, 0);
+  const top = useMemo(() => sortRows(rows, source === "site" ? "rate" : "rank").slice(0, 3), [rows, source]);
+  const accent = isFight(meta.slug) ? IDENTITIES[meta.slug].a : "#f4f2ec";
 
   return (
     <div className="t-page t-page--wide">
@@ -77,6 +118,7 @@ export function RankingView() {
         </div>
       ) : (
         <>
+          {top.length >= 3 ? <Podium rows={top} jeux={meta.slug === "jeux"} accent={accent} /> : null}
           <div className="t-filters">
             <label>
               <span>Trier par</span>

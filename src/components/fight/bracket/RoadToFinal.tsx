@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { champion, currentMatch, roundName } from "@/lib/tournois/bracket";
 import type { Match, Participant } from "@/lib/tournois/types";
 import { useTournament } from "../../tournois/provider";
+import { GhostRoad } from "./GhostRoad";
+import "./ghost-road.css";
 import { EASE, FONT, IDENTITIES, LINE, LINE_2, PANEL, type FightSlug } from "../identities";
 
 // « La route vers la finale » : le tableau entier en légère perspective. On le
@@ -19,7 +21,7 @@ const ROW = 84;
 const SHORT: Record<number, string> = { 2: "Finale", 4: "Demies", 8: "Quarts", 16: "Huitièmes", 32: "Seizièmes", 64: "32es", 128: "64es", 256: "128es" };
 
 export function RoadToFinal() {
-  const { meta, saved, player, listen } = useTournament();
+  const { meta, saved, player, listen, participants } = useTournament();
   const id = IDENTITIES[(meta.slug as FightSlug) in IDENTITIES ? (meta.slug as FightSlug) : "ost"];
   const reduce = !!useReducedMotion();
   const run = saved.run;
@@ -146,10 +148,15 @@ export function RoadToFinal() {
   if (!run) {
     return (
       <Shell id={id}>
-        <Head id={id} title="La route vers la finale" text="Aucune partie en cours : le tableau apparaît dès que tu lances un tournoi." />
-        <Link to={`/tournoi/${meta.path}/duel`} style={pill(id.a, id.bg)}>
-          Lancer un tournoi
-        </Link>
+        <div className="rtf-empty">
+          <div style={{ display: "grid", gap: 22, alignContent: "center" }}>
+            <Head id={id} title="La route vers la finale" text="Aucune partie en cours. Lance un tournoi : ton tableau se trace ici, duel après duel, jusqu'au champion." />
+            <Link to={`/tournoi/${meta.path}/duel`} style={pill(id.a, id.bg)}>
+              Lancer un tournoi
+            </Link>
+          </div>
+          <GhostRoad id={id} participants={participants} />
+        </div>
       </Shell>
     );
   }
