@@ -18,10 +18,10 @@ const SLIDES: Slide[] = [
   { id: "clair-obscur", game: "Clair Obscur: Expedition 33", pos: "54% 42%", w: 2560, video: "/tournoi/jeux-hero/clair-obscur.mp4" },
   { id: "elden-ring", game: "Elden Ring", pos: "50% 46%", w: 3840, video: "/tournoi/jeux-hero/elden-ring.mp4" },
   { id: "ghost-of-tsushima", game: "Ghost of Tsushima", pos: "60% 50%", w: 3840 },
-  { id: "journey", game: "Journey", pos: "50% 45%", w: 3840 },
+  { id: "journey", game: "Journey", pos: "50% 45%", w: 3840, video: "/tournoi/jeux-hero/journey.mp4" },
   { id: "god-of-war", game: "God of War", pos: "45% 40%", w: 3840 },
-  { id: "nier-automata", game: "NieR:Automata", pos: "60% 55%", w: 3840 },
-  { id: "ori", game: "Ori and the Blind Forest", pos: "50% 50%", w: 3840 },
+  { id: "nier-automata", game: "NieR:Automata", pos: "60% 55%", w: 3840, video: "/tournoi/jeux-hero/nier-automata.mp4" },
+  { id: "ori", game: "Ori and the Blind Forest", pos: "50% 50%", w: 3840, video: "/tournoi/jeux-hero/ori.mp4" },
   { id: "last-of-us", game: "The Last of Us", pos: "62% 55%", w: 3840 },
   { id: "ff7", game: "Final Fantasy VII", pos: "40% 22%", w: 3840 },
 ];
