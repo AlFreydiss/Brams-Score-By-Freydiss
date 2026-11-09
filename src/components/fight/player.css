@@ -322,3 +322,18 @@
   outline: 2px solid var(--fp-acc);
   outline-offset: 3px;
 }
+
+/* Résultat de la communauté après un vote (VoteShatter.tsx, CommunityReveal). */
+.cr-reveal {
+  right: clamp(24px, 4vw, 64px);
+  bottom: clamp(120px, 18vh, 170px);
+}
+@media (max-width: 760px) {
+  .cr-reveal {
+    right: auto;
+    left: 50%;
+    bottom: auto;
+    top: 96px;
+    translate: -50% 0;
+  }
+}

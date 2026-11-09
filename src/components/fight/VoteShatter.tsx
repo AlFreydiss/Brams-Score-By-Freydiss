@@ -207,13 +207,12 @@ export function CommunityReveal({ pct, total, ink, mute, accent, reduce }: { pct
   return (
     <motion.div
       role="status"
+      // En bas à droite : le titre du gagnant occupe le bas à gauche (en haut au centre sur mobile, cf. player.css).
+      className="cr-reveal"
       initial={{ opacity: 0, y: 24, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0.25, duration: 0.6 } }}
       style={{
         position: "absolute",
-        left: "50%",
-        bottom: "clamp(96px, 16vh, 150px)",
-        translate: "-50% 0",
         zIndex: 40,
         display: "grid",
         justifyItems: "center",
