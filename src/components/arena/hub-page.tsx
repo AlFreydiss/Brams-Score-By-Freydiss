@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ArenaItem } from "../fight/arena/Arena3D";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
+import { SelectScreen, type SelectItem } from "./select-screen";
 import { Atmosphere, setAtmosphere } from "./atmosphere";
 import { portalTo } from "./portal";
 import "./modes.css";
@@ -94,9 +95,10 @@ const FEATURED: TournamentSlug[] = ["openings", "ost", "endings", "jeux"];
 // Couleur de chaque univers (mêmes que les écrans de duel, fight/identities.ts).
 const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", endings: "#e9875f", jeux: "#d2ad6e", rap: "#f4f2ec", rapvsost: "#f4f2ec", bankai: "#9fc4ff", panels: "#f4f2ec" };
 
-// La scène 3D n'est chargée qu'à l'ouverture du hub, et seulement si WebGL répond.
-const Arena3D = lazy(() => import("../fight/arena/Arena3D"));
-function useWebGL() {
+// Écran de sélection : ordre des cases et nom court de chaque tournoi.
+const ORDER: TournamentSlug[] = ["openings", "ost", "endings", "jeux", "rap", "rapvsost", "bankai", "panels"];
+const SHORT: Record<TournamentSlug, string> = { openings: "Openings", ost: "OST", endings: "Endings", jeux: "Jeux vidéo", rap: "Rap FR", rapvsost: "Rap vs OST", bankai: "Bankai", panels: "Panels" };
+export function useWebGL() {
   const [ok] = useState(() => {
     if (typeof window === "undefined") return false;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
@@ -209,7 +211,29 @@ export default function HubPage() {
       };
     });
   }, [backdrops, statuses]);
-  const three = useWebGL();
+  // Toutes les cases de l'écran de sélection (les tournois phares avec leur vidéo).
+  const selectItems = useMemo((): SelectItem[] | null => {
+    if (!arenaItems) return null;
+    return ORDER.map((slug) => {
+      const a = arenaItems.find((x) => x.slug === slug);
+      const meta = bySlug(slug);
+      const st = statuses[slug];
+      const media: SelectItem["media"] = slug === "jeux" ? { k: "video", src: "/tournoi/jeux-hero/clair-obscur.mp4", start: 0 } : (a?.media ?? { k: "img", src: ART[slug] });
+      return {
+        slug,
+        title: meta.title,
+        short: SHORT[slug],
+        tagline: meta.tagline,
+        kind: KIND[slug],
+        accent: ACCENT[slug],
+        status: st.progress != null ? `En cours, ${(st.label ?? "").toLowerCase()}` : st.label,
+        progress: st.progress,
+        media,
+        still: a?.still ?? ART[slug],
+        caption: a?.caption ? `${a.caption.title}${a.caption.sub ? `, ${a.caption.sub}` : ""}` : undefined,
+      };
+    });
+  }, [arenaItems, statuses]);
 
   // Duel du jour : tiré parmi les génériques et les musiques de jeux (sons lisibles par le site).
   const dailyPools = useMemo(
@@ -227,16 +251,10 @@ export default function HubPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div className={`nx-root nf ${ready ? "is-ready" : ""}`}>
-        {three && arenaItems ? (
-          <Suspense fallback={<div style={{ height: "min(88dvh, 880px)", minHeight: 540, background: "#08090d" }} aria-busy="true" />}>
-            <Arena3D
-              items={arenaItems}
-              onPlay={(it) => navigate(`/tournoi/${it.path}/duel`)}
-              onInfo={(it) => navigate(`/tournoi/${it.path}`)}
-            />
-          </Suspense>
+        {selectItems ? (
+          <SelectScreen items={selectItems} onGo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}/duel`)} onInfo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}`)} />
         ) : (
-          <Billboard backdrops={backdrops} statuses={statuses} />
+          <div style={{ height: "min(92dvh, 920px)", minHeight: 600, background: "#07080b" }} aria-busy="true" />
         )}
 
         {/* Brume vivante derrière les rangées (sous l'arène, fixe à l'écran). */}

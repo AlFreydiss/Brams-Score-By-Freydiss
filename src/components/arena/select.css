@@ -1,0 +1,489 @@
+/* Écran de sélection des tournois (select-screen.tsx). */
+.sel {
+  --ink: #f4f2ec;
+  --mute: rgba(244, 242, 236, 0.62);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  isolation: isolate;
+  height: min(92dvh, 920px);
+  min-height: 600px;
+  overflow: hidden;
+  background: #07080b;
+  color: var(--ink);
+  font-family: "Inter", system-ui, sans-serif;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/* ── Grande image ─────────────────────────────────────────────────── */
+.sel-stage {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.sel-splash {
+  position: absolute;
+  inset: 0;
+  will-change: clip-path, transform;
+}
+.sel-splash img,
+.sel-splash video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 60% 35%;
+}
+.sel-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 8, 11, 0.94) 0%, rgba(7, 8, 11, 0.7) 30%, rgba(7, 8, 11, 0.08) 62%, rgba(7, 8, 11, 0) 100%),
+    linear-gradient(0deg, #07080b 0%, rgba(7, 8, 11, 0.85) 16%, rgba(7, 8, 11, 0) 46%),
+    linear-gradient(180deg, rgba(7, 8, 11, 0.6) 0%, rgba(7, 8, 11, 0) 20%);
+}
+.sel-sweep {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 18%;
+  background: linear-gradient(90deg, transparent, var(--acc), transparent);
+  transform: skewX(-18deg);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ── Fiche du tournoi ─────────────────────────────────────────────── */
+.sel-card {
+  position: absolute;
+  left: clamp(20px, 5vw, 80px);
+  bottom: calc(clamp(64px, 9vh, 88px) + clamp(86px, 12vh, 124px) + 40px);
+  width: min(640px, calc(100% - 40px));
+}
+.sel-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.sel-kicker b {
+  display: inline-grid;
+  place-items: center;
+  height: 22px;
+  padding: 0 8px;
+  background: var(--acc);
+  color: #0b0b0d;
+  font: 800 12px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  transform: skewX(-12deg);
+  transition: background-color 0.4s ease;
+}
+.sel-kicker em {
+  font-style: normal;
+  color: var(--ink);
+}
+.sel-kicker em::before {
+  content: "·";
+  margin-right: 12px;
+  color: var(--mute);
+}
+.nx-root .sel-title {
+  margin: 16px 0 0;
+  font: 800 clamp(46px, 6vw, 104px) / 0.92 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 4px 40px rgba(7, 8, 11, 0.6);
+}
+.sel-title span {
+  display: inline-block;
+  margin-right: 0.22em;
+}
+.sel-title span:last-child {
+  margin-right: 0;
+}
+.sel-tag {
+  margin: 16px 0 0;
+  max-width: 46ch;
+  font-size: clamp(15px, 1.1vw, 17px);
+  line-height: 1.5;
+  color: #cfccc5;
+}
+.sel-now {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sel-now i {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+  color: var(--acc);
+}
+.sel-now i span {
+  width: 2px;
+  height: 100%;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: sel-eq 0.8s ease-in-out infinite alternate;
+}
+.sel-now i span:nth-child(2) {
+  animation-duration: 0.55s;
+}
+.sel-now i span:nth-child(3) {
+  animation-duration: 0.7s;
+  animation-delay: -0.2s;
+}
+@keyframes sel-eq {
+  from {
+    transform: scaleY(0.25);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Jauge de ta partie, comme une barre de vie. */
+.sel-gauge {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 240px) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.sel-gauge i {
+  height: 8px;
+  background: rgba(244, 242, 236, 0.12);
+  transform: skewX(-20deg);
+  overflow: hidden;
+}
+.sel-gauge em {
+  display: block;
+  height: 100%;
+  background: var(--acc);
+  transform-origin: left;
+  box-shadow: 0 0 16px var(--acc);
+}
+.sel-gauge b {
+  font: 700 13px/1 "Geist Mono", ui-monospace, monospace;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.sel-ctas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 26px;
+}
+.sel-go,
+.sel-more,
+.sel-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  border: 0;
+  cursor: pointer;
+  font: 700 14px/1 "Inter", system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  transition:
+    background-color 0.4s ease,
+    color 0.25s ease,
+    transform 0.2s var(--ease);
+}
+.sel-go {
+  padding: 0 30px 0 26px;
+  background: var(--acc);
+  color: #0b0b0d;
+}
+.sel-go kbd {
+  margin-left: 6px;
+  padding: 3px 6px;
+  border: 1px solid rgba(11, 11, 13, 0.5);
+  border-radius: 3px;
+  font: 600 10px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  opacity: 0.9;
+}
+.sel-more {
+  padding: 0 26px;
+  background: rgba(244, 242, 236, 0.1);
+  color: var(--ink);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.sel-sound {
+  justify-content: center;
+  width: 58px;
+  padding: 0;
+  background: rgba(244, 242, 236, 0.1);
+  color: var(--ink);
+}
+.sel-sound.is-on {
+  background: var(--acc);
+  color: #0b0b0d;
+}
+.sel-go:active,
+.sel-more:active,
+.sel-sound:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) {
+  .sel-more:hover,
+  .sel-sound:not(.is-on):hover {
+    background: rgba(244, 242, 236, 0.18);
+  }
+  .sel-go:hover {
+    filter: brightness(1.08);
+  }
+}
+.sel-go:focus-visible,
+.sel-more:focus-visible,
+.sel-sound:focus-visible,
+.sel-tile:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ── Rangée des tournois ──────────────────────────────────────────── */
+.sel-roster {
+  position: absolute;
+  left: clamp(20px, 5vw, 80px);
+  right: clamp(20px, 5vw, 80px);
+  bottom: clamp(64px, 9vh, 88px);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 10px;
+  height: clamp(86px, 12vh, 124px);
+}
+.sel-tile {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: #121318;
+  color: var(--ink);
+  cursor: pointer;
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  transition:
+    transform 0.35s var(--ease),
+    filter 0.35s ease;
+  filter: saturate(0.55) brightness(0.62);
+}
+.sel-tile-art {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.sel-tile-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.06);
+  transition: transform 0.6s var(--ease);
+}
+.sel-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(7, 8, 11, 0.92) 0%, rgba(7, 8, 11, 0.2) 60%, rgba(7, 8, 11, 0) 100%);
+}
+.sel-tile-name {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 10px;
+  z-index: 1;
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  font: 800 clamp(12px, 1vw, 15px) / 1.05 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sel-tile-name small {
+  font: 600 10px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+/* Case choisie : en couleur, soulevée, liseré de la couleur du tournoi. */
+.sel-tile.is-on {
+  filter: none;
+  transform: translateY(-8px);
+}
+.sel-tile.is-on .sel-tile-art img {
+  transform: scale(1.14);
+}
+.sel-tile.is-on::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--tc), var(--tc)) top / 100% 3px no-repeat,
+    linear-gradient(var(--tc), var(--tc)) bottom / 100% 3px no-repeat;
+}
+.sel-p1 {
+  position: absolute;
+  top: 8px;
+  right: 18px;
+  z-index: 3;
+  padding: 4px 7px 3px;
+  background: var(--tc);
+  color: #0b0b0d;
+  font: 800 11px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.06em;
+  transform: skewX(-12deg);
+}
+/* Validation : la case clignote comme dans un vrai écran de sélection. */
+.sel-tile.is-picked {
+  animation: sel-blink 0.12s steps(1) 5;
+}
+@keyframes sel-blink {
+  50% {
+    filter: brightness(2.2) saturate(0);
+  }
+}
+@media (hover: hover) {
+  .sel-tile:not(.is-on):hover {
+    filter: saturate(0.85) brightness(0.85);
+  }
+}
+
+/* ── Validation ───────────────────────────────────────────────────── */
+.sel-ready {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.sel-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--acc);
+  mix-blend-mode: screen;
+}
+.sel-ready-word {
+  position: relative;
+  margin: 0;
+  padding: 0.08em 0.4em 0.12em;
+  background: var(--acc);
+  color: #0b0b0d;
+  font: 800 clamp(48px, 9vw, 150px) / 1 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 30px 80px -30px var(--acc);
+}
+.sel-ready small {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-shadow: 0 2px 16px #000;
+}
+.sel-out {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: #07080b;
+  transform-origin: left;
+}
+.sel.is-ready .sel-card,
+.sel.is-ready .sel-roster {
+  transition: opacity 0.3s ease 0.15s;
+  opacity: 0.25;
+}
+
+@media (max-width: 860px) {
+  .sel {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    padding-bottom: 200px;
+  }
+  .sel-stage {
+    bottom: 120px;
+  }
+  .sel-veil {
+    background:
+      linear-gradient(0deg, #07080b 0%, rgba(7, 8, 11, 0.9) 38%, rgba(7, 8, 11, 0.1) 70%),
+      linear-gradient(180deg, rgba(7, 8, 11, 0.6) 0%, rgba(7, 8, 11, 0) 20%);
+  }
+  .sel-card {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: auto;
+    margin: 0 16px;
+    padding-top: 48vw;
+  }
+  .nx-root h1.sel-title {
+    font-size: clamp(40px, 12vw, 64px) !important;
+    line-height: 0.92 !important;
+  }
+  .sel-now,
+  .sel-go kbd {
+    display: none;
+  }
+  .sel-ctas {
+    flex-wrap: wrap;
+  }
+  .sel-roster {
+    left: 0;
+    right: 0;
+    bottom: 64px;
+    height: 96px;
+    padding: 10px 16px 0;
+    grid-auto-columns: 132px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .sel-roster::-webkit-scrollbar {
+    display: none;
+  }
+  .sel-tile {
+    scroll-snap-align: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sel-now i span,
+  .sel-tile.is-picked {
+    animation: none;
+  }
+}
