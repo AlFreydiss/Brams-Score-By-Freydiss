@@ -73,6 +73,30 @@ export function GlobalTrailLayer() {
 function TrailSwatch({ trail, size = 56 }) {
   const r = RARITY[trail.rarete]
   const cols = (trail.config.colors && trail.config.colors.length) ? trail.config.colors : ['#e8c878', '#d4a017']
+  const c = trail.config
+  if (c.petalAtlas) {
+    // Traînée en sprites peints : trois vrais sprites de la planche, en éventail.
+    const s = Math.round(size * 0.5), nc = c.petalCols || 8, nr = c.petalRows || 1
+    const spr = (frame, x, y, rot, sc) => (
+      <span key={frame} style={{
+        position: 'absolute', left: x, top: y, width: s, height: s, transform: `rotate(${rot}deg) scale(${sc})`,
+        backgroundImage: `url(${c.petalAtlas})`, backgroundSize: `${nc * s}px ${nr * s}px`,
+        backgroundPosition: `${-(frame % nc) * s}px ${-Math.floor(frame / nc) * s}px`,
+        filter: 'drop-shadow(0 3px 5px rgba(0,0,0,.55))',
+      }} />
+    )
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: 14, position: 'relative', overflow: 'hidden', flexShrink: 0,
+        background: `radial-gradient(circle at 50% 40%, ${cols[0]}33, rgba(10,9,8,0.92) 72%)`,
+        border: `1px solid ${r.color}55`, boxShadow: `inset 0 0 18px ${r.glow}`,
+      }}>
+        {spr(2, size * 0.04, size * 0.4, -28, 0.78)}
+        {spr(5, size * 0.46, size * 0.06, 34, 0.72)}
+        {spr(0, size * 0.25, size * 0.22, 8, 1)}
+      </div>
+    )
+  }
   return (
     <div style={{
       width: size, height: size, display: 'grid', placeItems: 'center', borderRadius: 14, position: 'relative', overflow: 'hidden',
