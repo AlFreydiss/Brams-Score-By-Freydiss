@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { advance, champion, currentMatch, generateBracket, shuffle } from "./bracket";
+import { spreadPairs, varied } from "./draw";
 import type { Participant, Round, Run } from "./types";
 import { recordDuel } from "@/lib/versusStats.js";
 
@@ -145,7 +146,7 @@ export function reconcile(slug: string, byId: Map<string, Participant>) {
  * de rap à une OST, chacun d'un côté tiré au hasard.
  */
 export function draw(pool: Participant[], size: number, balanced = false): Participant[] {
-  if (!balanced) return shuffle(pool).slice(0, size);
+  if (!balanced) return spreadPairs(varied(pool, size));
   const a = shuffle(pool.filter((p) => p.camp === "rap"));
   const b = shuffle(pool.filter((p) => p.camp !== "rap"));
   const half = Math.min(size / 2, a.length, b.length);
