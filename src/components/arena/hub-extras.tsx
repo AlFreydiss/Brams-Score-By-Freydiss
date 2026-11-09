@@ -4,6 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchPair, recordDuel } from "@/lib/versusStats.js";
 import type { Participant } from "@/lib/tournois/types";
 import { EASE, FONT, LINE, LINE_2, PANEL } from "../fight/identities";
+import { bgOf, type Bg } from "../fight/jeux-art";
+import { gameTheme } from "../fight/jeux-themes";
+import "../fight/jeux-themes.css";
+import "./daily.css";
 
 // Deux nouveautés du hub : le Duel du jour (le même pour tout le monde, un vote
 // par jour, puis la réponse de la communauté) et la Radio des refrains (des
@@ -52,6 +56,7 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
   });
   const [split, setSplit] = useState<{ a: number; b: number } | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
+  const [lean, setLean] = useState<"l" | "r" | null>(null);
   const media = useRef<HTMLMediaElement | null>(null);
 
   useEffect(() => {
@@ -92,63 +97,105 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
 
   const total = split ? split.a + split.b : 0;
   const pct = (p: Participant) => (split && total ? Math.round(((p.id === a.id ? split.a : split.b) / total) * 100) : null);
+  const jeux = pool.slug === "jeux";
+  const art = (p: Participant) => (jeux ? (bgOf(p as Participant & { bg?: Bg })?.src ?? p.thumb) : p.visual.k === "img" ? ((p.visual as { hi?: string }).hi ?? p.visual.src) : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
 
   return (
-    <div style={{ display: "grid", gap: 18 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 20, flexWrap: "wrap" }}>
+    <div className="dd" style={{ "--dd-a": pool.accent } as React.CSSProperties}>
+      <div className="dd-head">
         <div>
           <p style={eyebrow(pool.accent)}>
             <span aria-hidden style={{ width: 18, height: 1, background: pool.accent }} />
             Duel du jour, {pool.title}
           </p>
-          <h2 style={{ margin: "10px 0 0", fontFamily: FONT.display, fontWeight: 700, fontSize: "clamp(24px, 2.2vw, 32px)", letterSpacing: "-0.03em", color: INK }}>Le même duel pour tout le monde, aujourd'hui.</h2>
+          <h2 className="dd-title">Le même duel pour tout le monde, aujourd'hui.</h2>
         </div>
-        <p style={{ margin: 0, fontFamily: FONT.body, fontSize: 13.5, color: MUTE }}>{voted ? "Ton vote est compté. Nouveau duel demain." : "Un vote par jour."}</p>
+        <Countdown voted={!!voted} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: 14 }}>
+
+      <div className={`dd-stage ${voted ? "is-voted" : ""}`} onPointerLeave={() => setLean(null)}>
         {[a, b].map((p, k) => {
+          const side = k === 0 ? "l" : "r";
           const other = k === 0 ? b : a;
           const mine = voted === p.id;
+          const lost = !!voted && !mine;
           const v = pct(p);
+          const th = jeux ? gameTheme(p.sub) : null;
+          const vars = { "--dd-c": th?.accent ?? pool.accent, ...(th ? { "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow } : {}) } as React.CSSProperties;
           return (
-            <motion.div
+            <div
               key={p.id}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: EASE, delay: k * 0.08 }}
-              style={{ position: "relative", borderRadius: 14, overflow: "hidden", background: PANEL, boxShadow: `0 0 0 1px ${mine ? pool.accent : LINE}` }}
+              className={`dd-side dd-side--${side} ${lean === side ? "is-lean" : lean ? "is-back" : ""} ${mine ? "is-mine" : ""} ${lost ? "is-lost" : ""}`}
+              style={vars}
+              onPointerEnter={(e) => e.pointerType === "mouse" && setLean(side)}
             >
-              <div style={{ position: "relative", aspectRatio: "16 / 8" }}>
-                <img src={p.thumb.replace("/t/p/w300/", "/t/p/w780/")} alt="" loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: voted && !mine ? 0.35 : 1, transition: "opacity 0.6s" }} />
-                <div aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${PANEL}, transparent 60%)` }} />
-              </div>
-              <div style={{ display: "grid", gap: 6, padding: "4px 18px 18px" }}>
-                <p style={{ margin: 0, fontFamily: FONT.display, fontWeight: 700, fontSize: 20, letterSpacing: "-0.02em", color: INK }}>{p.title}</p>
-                <p style={{ margin: 0, fontFamily: FONT.body, fontSize: 13.5, color: MUTE }}>{[p.sub, p.artist].filter(Boolean).join(" — ")}</p>
+              <img className="dd-art" src={art(p)} alt="" loading="lazy" decoding="async" crossOrigin={jeux ? "anonymous" : undefined} />
+              <div className="dd-shade" aria-hidden />
+              <div className="dd-copy">
+                <span className="dd-game">{p.sub}</span>
+                <b className="dd-name" style={th ? { fontFamily: th.font, fontWeight: th.weight, textTransform: th.upper ? "uppercase" : "none", letterSpacing: `${th.track}em`, fontSize: `calc(clamp(24px, 2.6vw, 42px) * ${th.scale})` } : undefined}>
+                  <span className={th ? `jg-w ${th.ink.startsWith("linear") ? "is-grad" : "is-solid"}` : undefined}>{p.title}</span>
+                </b>
+                <small className="dd-artist">{p.artist}</small>
                 {voted ? (
-                  <div style={{ display: "grid", gap: 6, marginTop: 8 }}>
-                    <span style={{ display: "block", height: 2, background: LINE_2, overflow: "hidden" }}>
-                      <motion.i initial={{ width: 0 }} animate={{ width: `${v ?? 0}%` }} transition={{ duration: 1.1, ease: EASE }} style={{ display: "block", height: "100%", background: mine ? pool.accent : MUTE }} />
-                    </span>
-                    <span style={{ fontFamily: FONT.body, fontSize: 12.5, color: mine ? INK : MUTE }}>{v == null ? (mine ? "Ton choix" : "") : `${v} % de la communauté${mine ? ", dont toi" : ""}`}</span>
-                  </div>
+                  <motion.span className="dd-pct" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE, delay: 0.2 + k * 0.1 } }}>
+                    {v == null ? (mine ? "Ton choix" : "") : <><b>{v}</b>% {mine ? "· ton choix" : ""}</>}
+                  </motion.span>
                 ) : (
-                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <div className="dd-actions">
                     <button type="button" onClick={() => listen(p)} aria-label={`${playing === p.id ? "Mettre en pause" : "Écouter"} ${p.title}`} style={roundBtn(playing === p.id)}>
                       {playing === p.id ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
                     </button>
-                    <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={() => vote(p, other)} style={{ height: 42, padding: "0 20px", border: 0, borderRadius: 999, background: pool.accent, color: BG, fontFamily: FONT.body, fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                    <button type="button" className={th ? `jg-btn jg-btn--${th.btn}` : "dd-keep"} onClick={() => vote(p, other)}>
                       Garder
-                    </motion.button>
+                    </button>
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
+        {/* Sceau au croisement des deux affiches. */}
+        <div className="dd-seal" aria-hidden>
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <path id="dd-ring" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+            </defs>
+            <text>
+              <textPath href="#dd-ring">DUEL DU JOUR · UN VOTE · DUEL DU JOUR · UN VOTE ·</textPath>
+            </text>
+          </svg>
+          <span>VS</span>
+        </div>
+        {voted && total ? (
+          <div className="dd-bar" aria-label="Répartition des votes">
+            <motion.i initial={{ width: "50%" }} animate={{ width: `${pct(a) ?? 50}%` }} transition={{ duration: 1.2, ease: EASE, delay: 0.3 }} />
+          </div>
+        ) : null}
       </div>
     </div>
+  );
+}
+
+// Temps restant avant le prochain duel (minuit UTC : la date du tirage est en UTC).
+function Countdown({ voted }: { voted: boolean }) {
+  const left = () => {
+    const now = new Date();
+    const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+    const ms = Math.max(0, next - now.getTime());
+    const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), sec = Math.floor((ms % 60000) / 1000);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+  const [t, setT] = useState(left);
+  useEffect(() => {
+    const i = setInterval(() => setT(left()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  return (
+    <p className="dd-clock">
+      <span>{voted ? "Vote compté · prochain duel dans" : "Un vote par jour · fin dans"}</span>
+      <b>{t}</b>
+    </p>
   );
 }
 

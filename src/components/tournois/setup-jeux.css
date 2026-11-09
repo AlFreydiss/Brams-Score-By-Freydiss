@@ -1,0 +1,263 @@
+/* Écran de départ du tournoi des OST de jeux vidéo : univers Clair Obscur /
+   Elden Ring. Boucle vidéo du jeu en fond, brume, braises ; titre gravé à
+   l'or (Trajan) ; formats en cartes de tarot à chiffres romains ; mur de
+   jaquettes cerclées d'or ; bouton plaque d'ivoire. */
+
+.nx-setup--jeux {
+  --sj-gold: #d2ad6e;
+  --sj-gold-hi: #f1dcab;
+  --sj-ivory: #f4f2ec;
+  --sj-trajan: "trajan-pro-3", "Cinzel", Georgia, serif;
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100dvh - 120px);
+}
+
+/* ── Fond ─────────────────────────────────────────────────────────── */
+.sj-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: #070605;
+  pointer-events: none;
+}
+.sj-bg video {
+  position: absolute;
+  inset: -3%;
+  width: 106%;
+  height: 106%;
+  object-fit: cover;
+  object-position: 70% 40%;
+  opacity: 0.55;
+  filter: saturate(0.9) brightness(0.8);
+  animation: sj-breathe 30s ease-in-out infinite alternate;
+}
+@keyframes sj-breathe {
+  to {
+    transform: scale(1.06) translate3d(-1%, -1%, 0);
+  }
+}
+/* Brume et lecture : noir à gauche (le texte), l'image respire à droite. */
+.sj-fog {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 6, 5, 0.97) 0%, rgba(7, 6, 5, 0.86) 34%, rgba(7, 6, 5, 0.35) 62%, rgba(7, 6, 5, 0.55) 100%),
+    linear-gradient(to top, rgba(7, 6, 5, 0.95), transparent 40%),
+    radial-gradient(60% 50% at 75% 30%, rgba(210, 173, 110, 0.14), transparent 70%);
+}
+
+/* ── Texte ────────────────────────────────────────────────────────── */
+.sj-kicker {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 600 12px var(--sj-trajan);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--sj-gold);
+}
+.sj-kicker::before {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--sj-gold);
+}
+.nx-root .nx-setup--jeux .nx-title {
+  font: 400 clamp(40px, 4.6vw, 76px) / 1.02 var(--sj-trajan) !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase;
+  text-wrap: balance;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.6)) drop-shadow(0 18px 40px rgba(0, 0, 0, 0.7));
+}
+.nx-root .nx-setup--jeux .nx-lede {
+  font-family: var(--sj-trajan);
+  font-size: 15px;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  color: #c9bfa9;
+}
+
+/* ── Formats : cartes de tarot ────────────────────────────────────── */
+.nx-root .nx-setup--jeux .t-field legend,
+.nx-root .nx-setup--jeux .t-filter summary {
+  font: 600 11px var(--sj-trajan);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--sj-gold);
+}
+.nx-root .nx-setup--jeux .t-formats {
+  gap: 10px;
+}
+.nx-root .nx-setup--jeux .t-formats button {
+  position: relative;
+  display: grid;
+  align-content: space-between;
+  justify-items: center;
+  width: 104px;
+  min-width: 0;
+  height: 132px;
+  padding: 14px 8px 12px;
+  border: 0;
+  border-radius: 6px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(30, 24, 16, 0.85), rgba(12, 10, 8, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(210, 173, 110, 0.35), inset 0 0 0 5px rgba(12, 10, 8, 0.9), inset 0 0 0 6px rgba(210, 173, 110, 0.18);
+  backdrop-filter: blur(6px);
+  transition:
+    transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.35s ease;
+}
+/* Ornement : un losange en haut et en bas de chaque carte. */
+.nx-root .nx-setup--jeux .t-formats button::before,
+.nx-root .nx-setup--jeux .t-formats button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: rgba(210, 173, 110, 0.6);
+  transform: translateX(-50%) rotate(45deg);
+}
+.nx-root .nx-setup--jeux .t-formats button::before {
+  top: 9px;
+}
+.nx-root .nx-setup--jeux .t-formats button::after {
+  bottom: 9px;
+}
+.nx-root .nx-setup--jeux .t-formats b {
+  margin-top: 18px;
+  font: 400 19px/1 var(--sj-trajan);
+  letter-spacing: 0;
+  color: transparent;
+  background: linear-gradient(180deg, #fbf3e0 0%, #efdcb2 40%, #d2ad6e 70%, #8f6a34 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.nx-root .nx-setup--jeux .t-formats small {
+  margin: 0 0 12px;
+  font: 500 10px var(--sj-trajan);
+  letter-spacing: 0.08em;
+  color: #9d9380;
+}
+@media (hover: hover) {
+  .nx-root .nx-setup--jeux .t-formats button:not(:disabled):hover {
+    transform: translateY(-6px) rotate(-1.5deg);
+    box-shadow: inset 0 0 0 1px rgba(241, 220, 171, 0.7), inset 0 0 0 5px rgba(12, 10, 8, 0.9), inset 0 0 0 6px rgba(210, 173, 110, 0.35), 0 18px 40px -16px rgba(210, 173, 110, 0.5);
+  }
+}
+.nx-root .nx-setup--jeux .t-formats button.is-on {
+  transform: translateY(-8px);
+  background: linear-gradient(180deg, rgba(64, 48, 26, 0.9), rgba(20, 15, 9, 0.95));
+  box-shadow: inset 0 0 0 1px var(--sj-gold-hi), inset 0 0 0 5px rgba(20, 15, 9, 0.9), inset 0 0 0 6px rgba(241, 220, 171, 0.5), 0 0 40px -8px rgba(210, 173, 110, 0.6);
+}
+.nx-root .nx-setup--jeux .t-formats button.is-on small {
+  color: #e6dcc4;
+}
+.nx-root .nx-setup--jeux .t-formats button:disabled {
+  opacity: 0.3;
+}
+
+/* ── Filtre et interrupteur ───────────────────────────────────────── */
+.nx-root .nx-setup--jeux .t-filter {
+  border-top: 1px solid rgba(210, 173, 110, 0.2);
+  border-bottom: 1px solid rgba(210, 173, 110, 0.2);
+  padding: 4px 0;
+}
+.nx-root .nx-setup--jeux .t-chips button {
+  border-radius: 2px;
+  font-family: var(--sj-trajan);
+  letter-spacing: 0.04em;
+}
+.nx-root .nx-setup--jeux .t-chips button.is-on {
+  box-shadow: inset 0 0 0 1px rgba(210, 173, 110, 0.6);
+  color: var(--sj-gold-hi);
+}
+.nx-root .nx-setup--jeux .t-switch b {
+  font: 600 13px var(--sj-trajan);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sj-ivory);
+}
+
+/* ── Lancer : plaque d'ivoire ─────────────────────────────────────── */
+.nx-root .nx-setup--jeux .t-go {
+  justify-self: start;
+  height: 54px;
+  padding: 0 34px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--sj-ivory);
+  color: #0b0b0d;
+  font: 600 13px var(--sj-trajan);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 1px rgba(210, 173, 110, 0.6), 0 0 0 5px rgba(7, 6, 5, 0.6), 0 0 0 6px rgba(210, 173, 110, 0.3), 0 20px 50px -20px rgba(210, 173, 110, 0.6);
+  transition:
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.3s ease;
+}
+@media (hover: hover) {
+  .nx-root .nx-setup--jeux .t-go:not(:disabled):hover {
+    box-shadow: 0 0 0 1px var(--sj-gold-hi), 0 0 0 5px rgba(7, 6, 5, 0.6), 0 0 0 6px rgba(241, 220, 171, 0.55), 0 24px 60px -16px rgba(210, 173, 110, 0.8);
+  }
+}
+.nx-root .nx-setup--jeux .t-go:active {
+  transform: scale(0.97);
+}
+.nx-root .nx-setup--jeux .t-note {
+  font-family: var(--sj-trajan);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #8a8170;
+}
+
+/* ── Mur des jaquettes : cadres d'or, léger relief ────────────────── */
+.nx-setup--jeux .sw-head b {
+  font: 400 clamp(56px, 6.4vw, 104px) / 0.86 var(--sj-trajan);
+  color: transparent;
+  background: linear-gradient(180deg, #fbf3e0 0%, #e9cf98 45%, #b98d4c 80%, #6e4f2a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
+}
+.nx-setup--jeux .sw-head span {
+  font-family: var(--sj-trajan);
+  letter-spacing: 0.06em;
+}
+.nx-setup--jeux .sw-grid {
+  gap: 6px;
+  perspective: 1200px;
+}
+.nx-setup--jeux .sw-tile {
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(210, 173, 110, 0.45), 0 10px 22px -10px rgba(0, 0, 0, 0.9);
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+}
+@media (hover: hover) {
+  .nx-setup--jeux .sw-tile:hover {
+    transform: translateY(-4px) scale(1.06);
+    z-index: 2;
+    box-shadow: 0 0 0 1px #f1dcab, 0 16px 30px -10px rgba(210, 173, 110, 0.6);
+  }
+}
+
+@media (max-width: 760px) {
+  .nx-root .nx-setup--jeux .t-formats button {
+    width: 64px;
+    height: 100px;
+  }
+  .nx-root .nx-setup--jeux .t-formats b {
+    font-size: 13px;
+  }
+  .nx-root .nx-setup--jeux .t-formats small {
+    font-size: 8.5px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sj-bg video {
+    animation: none;
+  }
+}

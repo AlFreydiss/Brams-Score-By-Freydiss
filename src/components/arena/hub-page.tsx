@@ -5,6 +5,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ArenaItem } from "../fight/arena/Arena3D";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
 import { Atmosphere, setAtmosphere } from "./atmosphere";
+import { portalTo } from "./portal";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
 import { fontsReady } from "@/lib/tournois/fonts";
@@ -402,11 +403,20 @@ function BackVideo({ src, start, muted, poster }: { src: string; start: number; 
 // ── Carte de tournoi ─────────────────────────────────────────────────
 function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status: { label: string | null; progress: number | null }; index: number }) {
   const running = status.progress != null;
+  const navigate = useNavigate();
+  const to = `/tournoi/${meta.path}${running ? "/duel" : ""}`;
   return (
     <motion.div {...cardIn(index)}>
       <Link
-        to={`/tournoi/${meta.path}${running ? "/duel" : ""}`}
+        to={to}
         onPointerEnter={() => setAtmosphere(ACCENT[meta.slug] ?? "#d9a35a")}
+        onClick={(e) => {
+          // Clic simple : l'affiche s'ouvre en plein écran avant d'arriver sur le tournoi.
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          const art = e.currentTarget.querySelector<HTMLElement>(".nf-card-art") ?? e.currentTarget;
+          portalTo(art, ART[meta.slug], ACCENT[meta.slug] ?? "#f4f2ec", () => navigate(to));
+        }}
         className={`nf-card nf-card--poster nf-card--${meta.slug}`}
         style={{ "--acc": ACCENT[meta.slug] ?? "#f4f2ec" } as React.CSSProperties}
       >

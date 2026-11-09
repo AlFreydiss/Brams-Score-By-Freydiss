@@ -1,0 +1,297 @@
+/* Duel du jour (hub) : deux affiches coupées en biais, un sceau au croisement. */
+.dd {
+  display: grid;
+  gap: 20px;
+}
+.dd-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.nf .dd-title {
+  margin: 10px 0 0;
+  font-family: var(--nx-sans);
+  font-weight: 700;
+  font-size: clamp(24px, 2.2vw, 32px) !important;
+  letter-spacing: -0.03em;
+  color: #f4f2ec;
+}
+.dd-clock {
+  margin: 0;
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #8b8a85;
+}
+.dd-clock b {
+  font-family: ui-monospace, "Geist Mono", monospace;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #f4f2ec;
+  font-variant-numeric: tabular-nums;
+}
+
+.dd-stage {
+  --split: 50%;
+  position: relative;
+  height: clamp(380px, 46vw, 560px);
+  border-radius: 18px;
+  overflow: hidden;
+  isolation: isolate;
+  background: #07070a;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 40px 80px -40px rgba(0, 0, 0, 0.9);
+}
+.dd-stage:has(.dd-side--l.is-lean),
+.dd-stage:has(.dd-side--l.is-mine) {
+  --split: 60%;
+}
+.dd-stage:has(.dd-side--r.is-lean),
+.dd-stage:has(.dd-side--r.is-mine) {
+  --split: 40%;
+}
+.dd-side {
+  position: absolute;
+  inset: 0;
+  transition:
+    clip-path 0.9s cubic-bezier(0.77, 0, 0.175, 1),
+    filter 0.6s ease;
+}
+.dd-side--l {
+  clip-path: polygon(0 0, calc(var(--split) + 5%) 0, calc(var(--split) - 5%) 100%, 0 100%);
+}
+.dd-side--r {
+  clip-path: polygon(calc(var(--split) + 5%) 0, 100% 0, 100% 100%, calc(var(--split) - 5%) 100%);
+}
+/* La transition de clip-path ne suit pas une variable : on la fixe par état. */
+.dd-stage:has(.dd-side--l.is-lean) .dd-side--l,
+.dd-stage:has(.dd-side--l.is-mine) .dd-side--l {
+  clip-path: polygon(0 0, 65% 0, 55% 100%, 0 100%);
+}
+.dd-stage:has(.dd-side--l.is-lean) .dd-side--r,
+.dd-stage:has(.dd-side--l.is-mine) .dd-side--r {
+  clip-path: polygon(65% 0, 100% 0, 100% 100%, 55% 100%);
+}
+.dd-stage:has(.dd-side--r.is-lean) .dd-side--l,
+.dd-stage:has(.dd-side--r.is-mine) .dd-side--l {
+  clip-path: polygon(0 0, 45% 0, 35% 100%, 0 100%);
+}
+.dd-stage:has(.dd-side--r.is-lean) .dd-side--r,
+.dd-stage:has(.dd-side--r.is-mine) .dd-side--r {
+  clip-path: polygon(45% 0, 100% 0, 100% 100%, 35% 100%);
+}
+.dd-side.is-back,
+.dd-side.is-lost {
+  filter: grayscale(0.85) brightness(0.55);
+}
+.dd-art {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  max-width: none;
+  object-fit: cover;
+  animation: dd-drift 24s ease-in-out infinite alternate;
+}
+.dd-side--r .dd-art {
+  animation-direction: alternate-reverse;
+}
+@keyframes dd-drift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.08) translate3d(-1.5%, -1%, 0);
+  }
+}
+.dd-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(5, 5, 8, 0.95) 0%, rgba(5, 5, 8, 0.5) 32%, transparent 62%),
+    radial-gradient(60% 80% at var(--dd-x, 20%) 100%, color-mix(in srgb, var(--dd-c) 30%, transparent), transparent 70%);
+}
+.dd-side--r .dd-shade {
+  --dd-x: 80%;
+}
+.dd-copy {
+  position: absolute;
+  bottom: clamp(20px, 3vw, 36px);
+  display: grid;
+  gap: 6px;
+  max-width: 40%;
+}
+.dd-side--l .dd-copy {
+  left: clamp(20px, 3vw, 40px);
+}
+.dd-side--r .dd-copy {
+  right: clamp(20px, 3vw, 40px);
+  justify-items: end;
+  text-align: right;
+}
+.dd-game {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dd-c);
+}
+.dd-name {
+  font-family: var(--nx-sans);
+  font-weight: 700;
+  font-size: clamp(24px, 2.6vw, 42px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  color: #f4f2ec;
+  text-wrap: balance;
+}
+.dd-artist {
+  font-size: 13.5px;
+  color: #b9b7b1;
+}
+.dd-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.dd-side--r .dd-actions {
+  flex-direction: row-reverse;
+}
+.nf .dd-keep {
+  height: 46px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--dd-c);
+  color: #08090d;
+  font: 600 14px var(--nx-sans);
+  cursor: pointer;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.nf .dd-keep:active {
+  transform: scale(0.97);
+}
+.dd-pct {
+  margin-top: 8px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: #b9b7b1;
+}
+.dd-pct b {
+  font-family: var(--nx-sans);
+  font-size: clamp(34px, 3.4vw, 54px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #f4f2ec;
+}
+.dd-side.is-mine .dd-pct b {
+  color: var(--dd-c);
+}
+
+/* Sceau : anneau de texte qui tourne, VS au centre, posé sur la coupe. */
+.dd-seal {
+  position: absolute;
+  left: var(--split);
+  top: 50%;
+  width: 118px;
+  height: 118px;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+  pointer-events: none;
+  transition: left 0.9s cubic-bezier(0.77, 0, 0.175, 1);
+}
+.dd-seal svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  animation: dd-spin 22s linear infinite;
+}
+.dd-seal text {
+  font: 600 7.2px var(--nx-sans);
+  letter-spacing: 0.32em;
+  fill: rgba(244, 242, 236, 0.75);
+}
+.dd-seal span {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: rgba(8, 9, 13, 0.82);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 0 1px var(--dd-a), 0 0 40px -6px var(--dd-a);
+  font: 700 15px var(--nx-sans);
+  letter-spacing: 0.08em;
+  color: #f4f2ec;
+}
+@keyframes dd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.dd-stage.is-voted .dd-seal {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Répartition : une barre unique qui part du milieu. */
+.dd-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  z-index: 4;
+  background: rgba(244, 242, 236, 0.18);
+}
+.dd-bar i {
+  display: block;
+  height: 100%;
+  background: var(--dd-a);
+  box-shadow: 0 0 18px var(--dd-a);
+}
+
+@media (max-width: 760px) {
+  .dd-stage {
+    height: auto;
+    display: grid;
+  }
+  .dd-side {
+    position: relative;
+    height: 300px;
+    clip-path: none !important;
+  }
+  .dd-copy {
+    max-width: none;
+    left: 18px !important;
+    right: 18px !important;
+    justify-items: start !important;
+    text-align: left !important;
+  }
+  .dd-side--r .dd-actions {
+    flex-direction: row;
+  }
+  .dd-seal {
+    left: 50%;
+    top: 300px;
+    width: 92px;
+    height: 92px;
+  }
+  .dd-clock {
+    justify-items: start;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dd-art,
+  .dd-seal svg {
+    animation: none;
+  }
+}

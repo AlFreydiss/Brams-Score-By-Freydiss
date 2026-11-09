@@ -218,7 +218,7 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
             key="flash"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { delay: 0.45, duration: 0.35, ease: [0.7, 0, 0.84, 0] } }}
-            style={{ position: "absolute", inset: 0, background: "#f4f2ec", pointerEvents: "none" }}
+            style={{ position: "absolute", inset: 0, background: `radial-gradient(60% 60% at 50% 50%, ${cur.accent}66, #08090d 75%)`, pointerEvents: "none" }}
           />
         ) : null}
       </AnimatePresence>

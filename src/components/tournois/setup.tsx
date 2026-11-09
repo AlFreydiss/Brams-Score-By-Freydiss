@@ -5,6 +5,12 @@ import { actions, draw } from "@/lib/tournois/store";
 import { useTournament } from "./provider";
 import { SetupWall } from "./setup-wall";
 import { IDENTITIES, isFight } from "../fight/identities";
+import { Embers } from "../fight/Embers";
+import { useAdobeKit } from "./adobe-kit";
+import "./setup-jeux.css";
+
+// Jeux : formats en chiffres romains, comme les cartes d'un jeu de tarot.
+const ROMAN: Record<number, string> = { 8: "VIII", 16: "XVI", 32: "XXXII", 64: "LXIV", 128: "CXXVIII", 256: "CCLVI" };
 
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
 // duel : deux participants tirés au hasard, coupés dans le style du tournoi.
@@ -13,6 +19,8 @@ const ALL = -1;
 
 export function Setup() {
   const { meta, participants } = useTournament();
+  const jeux = meta.slug === "jeux";
+  useAdobeKit(jeux);
   const groups = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of participants) m.set(p.group, (m.get(p.group) ?? 0) + 1);
@@ -63,9 +71,26 @@ export function Setup() {
     });
 
   return (
-    <div className="nx-setup">
+    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""}`}>
+      {jeux ? (
+        // Univers Clair Obscur / Elden Ring : boucle vidéo du jeu, brume, braises.
+        <div className="sj-bg" aria-hidden>
+          <video src="/tournoi/jeux-hero/clair-obscur.mp4" poster="/tournoi/jeux-hero/clair-obscur.webp" autoPlay muted loop playsInline preload="auto" />
+          <div className="sj-fog" />
+          <Embers active density={0.7} zIndex={2} />
+        </div>
+      ) : null}
       <div className="nx-setup-box">
-        <h1 className="nx-title">{meta.title}</h1>
+        {jeux ? <p className="sj-kicker">Tournoi · {participants.length} musiques</p> : null}
+        <h1 className="nx-title">
+          {jeux
+            ? meta.title.split(" ").map((w, k, all) => (
+                <span key={k} className="jx-word" style={{ animationDelay: `${1.4 + k * 0.08}s`, marginRight: k < all.length - 1 ? "0.26em" : 0 }}>
+                  {w}
+                </span>
+              ))
+            : meta.title}
+        </h1>
         <p className="nx-lede">{fill(meta.lead, participants)}</p>
 
         <fieldset className="t-field">
@@ -73,14 +98,14 @@ export function Setup() {
           <div className="t-formats">
             {meta.formats.map((f) => (
               <button key={f} type="button" disabled={f > capacity} className={effective === f ? "is-on" : ""} aria-pressed={effective === f} onClick={() => setSize(f)}>
-                <b>{f}</b>
-                <small>{f - 1} duels</small>
+                <b>{jeux ? ROMAN[f] ?? f : f}</b>
+                <small>{jeux ? `${f} · ${f - 1} duels` : `${f - 1} duels`}</small>
               </button>
             ))}
             {all ? (
               <button type="button" className={effective === all ? "is-on" : ""} aria-pressed={effective === all} onClick={() => setSize(ALL)} title={`Les ${all} ${meta.unit} dans un seul tableau`}>
-                <b>Tout · {all}</b>
-                <small>{all - 1} duels</small>
+                <b>{jeux ? "Tout" : `Tout · ${all}`}</b>
+                <small>{jeux ? `${all} · ${all - 1} duels` : `${all - 1} duels`}</small>
               </button>
             ) : null}
           </div>
