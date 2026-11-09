@@ -99,8 +99,8 @@ const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", en
 // Écran de sélection : ordre des cases et nom court de chaque tournoi.
 const ORDER: TournamentSlug[] = ["openings", "ost", "endings", "jeux", "rap", "rapvsost", "bankai", "panels"];
 const SHORT: Record<TournamentSlug, string> = { openings: "Openings", ost: "OST", endings: "Endings", jeux: "Jeux vidéo", rap: "Rap FR", rapvsost: "Rap vs OST", bankai: "Bankai", panels: "Panels" };
-// Cartes holo en 3D (chargées à la demande, seulement si WebGL répond).
-const HoloDeck = lazy(() => import("./holo-deck"));
+// Anneau d'écrans en 3D (chargé à la demande, seulement si WebGL répond).
+const HoloDeck = lazy(() => import("./orbit-deck"));
 function LazyDeck(p: DeckProps) {
   return (
     <Suspense fallback={null}>

@@ -553,3 +553,18 @@
   border-color: rgba(11, 11, 13, 0.45);
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ── Anneau d'écrans 3D ───────────────────────────────────────────── */
+.sel-deck--orbit {
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+.sel-deck--orbit:active {
+  cursor: grabbing;
+}
+@media (max-width: 860px) {
+  .sel--deck:has(.sel-deck--orbit) .sel-card {
+    padding-top: calc(76px + 66vw);
+  }
+}
