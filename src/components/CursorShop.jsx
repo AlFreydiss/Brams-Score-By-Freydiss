@@ -95,7 +95,16 @@ function emojiCursorURI(emoji, size = 40) {
 }
 // Curseur natif : SVG vectoriel dessiné main (cursor-svgs.js) en priorité,
 // fallback emoji si un id n'a pas encore son design.
-function cursorCss(cur) { return `url("${cursorSvgURI(cur.id, 32) || emojiCursorURI(cur.emoji)}") 5 3, auto` }
+// Curseurs en forme de FLÈCHE : toujours en curseur natif (zéro retard, point de
+// clic exact sur la pointe), même s'ils sont « animés ». Valeur = pointe en px
+// dans le SVG rendu à 32 px (pointe à (5,3) sur 40 → (4,2.4) sur 32).
+const ARROW_TIPS = { 'cur-clairobscur': [4, 2] }
+const isArrowCursor = (id) => !!ARROW_TIPS[id]
+function nativeCursor(id, emoji) {
+  const [hx, hy] = ARROW_TIPS[id] || [5, 3]
+  return `url("${cursorSvgURI(id, 32) || emojiCursorURI(emoji)}") ${hx} ${hy}, auto`
+}
+function cursorCss(cur) { return nativeCursor(cur.id, cur.emoji) }
 
 // Persiste le curseur équipé en localStorage + prévient le GlobalCursorLayer.
 // (La persistance serveur passe par equip_shop_item ; ceci = apply instantané.)
@@ -170,12 +179,13 @@ function CustomCursorOverlay({ id, emoji, glow }) {
     if (!el) return
     // Déplacement via transform (compositor GPU) : zéro layout/paint par frame,
     // contrairement à left/top. translate3d isole la couche composite.
-    let raf = 0, x = _lastPX, y = _lastPY
-    const apply = () => { raf = 0; if (el) el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%,-50%)` }
-    const onMove = (e) => { x = e.clientX; y = e.clientY; if (!raf) raf = requestAnimationFrame(apply) }
-    apply() // peint immédiatement à la dernière position connue → jamais invisible au repos
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => { window.removeEventListener('mousemove', onMove); if (raf) cancelAnimationFrame(raf) }
+    // Écriture directe dans le handler (pas de rAF) : une simple écriture de style
+    // ne force aucun layout, et on gagne la frame de retard qu'ajoutait le rAF.
+    const apply = (x, y) => { el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%,-50%)` }
+    const onMove = (e) => apply(e.clientX, e.clientY)
+    apply(_lastPX, _lastPY) // peint immédiatement à la dernière position connue → jamais invisible au repos
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => window.removeEventListener('pointermove', onMove)
   }, [])
   return (
     <div ref={ref} aria-hidden style={{
@@ -225,8 +235,8 @@ export function GlobalCursorLayer() {
       setEquipped(payload)
       // Curseur natif (non animé) appliqué via le body ; animé → body none + overlay.
       if (!payload) document.body.style.cursor = ''
-      else if (payload.animated) document.body.style.cursor = 'none'
-      else document.body.style.cursor = `url("${cursorSvgURI(payload.id, 32) || emojiCursorURI(payload.emoji)}") 5 3, auto`
+      else if (payload.animated && !isArrowCursor(payload.id)) document.body.style.cursor = 'none'
+      else document.body.style.cursor = nativeCursor(payload.id, payload.emoji)
     }
     read()
     window.addEventListener(CURSOR_EVENT, read)
@@ -235,7 +245,7 @@ export function GlobalCursorLayer() {
     window.addEventListener('storage', read) // sync entre onglets
     return () => { window.removeEventListener(CURSOR_EVENT, read); window.removeEventListener('bp-draw-toggle', read); window.removeEventListener('tournoi-flame', read); window.removeEventListener('storage', read) }
   }, [])
-  if (drawOpen || tournoiFlame || !equipped || !equipped.animated) return null
+  if (drawOpen || tournoiFlame || !equipped || !equipped.animated || isArrowCursor(equipped.id)) return null
   return <CustomCursorOverlay id={equipped.id} emoji={equipped.emoji} glow={equipped.glow} />
 }
 
@@ -517,7 +527,7 @@ export default function CursorShop() {
 
 const KEYFRAMES = `
 @keyframes crc-float { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-4px) } }
-@keyframes crc-pulse { 0%,100%{ transform:translate(-50%,-50%) scale(1) } 50%{ transform:translate(-50%,-50%) scale(1.18) } }
+@keyframes crc-pulse { 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.18) } }
 @keyframes crc-shimmer { 0%{ background-position:200% 0 } 100%{ background-position:-200% 0 } }
 @keyframes crc-flash { 0%{ opacity:0 } 25%{ opacity:1 } 100%{ opacity:0 } }
 @keyframes crc-plus { 0%{ opacity:0; transform:translateX(-50%) translateY(8px) scale(.6) } 30%{ opacity:1 } 100%{ opacity:0; transform:translateX(-50%) translateY(-26px) scale(1.1) } }

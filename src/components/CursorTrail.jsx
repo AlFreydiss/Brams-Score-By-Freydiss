@@ -61,11 +61,35 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       return c
     }
 
+    // Sprite de PÉTALE pré-rendu une fois par couleur (ellipse pleine + nervure
+    // claire). Au tick : un setTransform + un drawImage, au lieu de
+    // save/translate/rotate/scale/restore + 2 ellipses remplies par pétale.
+    // Unité : PU px de sprite = 1 « pr » (rayon moteur) → ellipse 1.5pr × 0.72pr.
+    const PU = 30, PW = Math.ceil(PU * 3.1), PH = Math.ceil(PU * 1.5)
+    const petalCache = new Map()
+    const getPetal = (color) => {
+      let c = petalCache.get(color)
+      if (c) return c
+      c = document.createElement('canvas'); c.width = PW; c.height = PH
+      const g = c.getContext('2d')
+      g.translate(PW / 2, PH / 2)
+      g.fillStyle = color
+      g.beginPath(); g.ellipse(0, 0, PU * 1.5, PU * 0.72, 0, 0, Math.PI * 2); g.fill()
+      g.globalAlpha = 0.35; g.fillStyle = '#fff6ec'
+      g.beginPath(); g.ellipse(-PU * 0.35, -PU * 0.12, PU * 0.7, PU * 0.2, 0, 0, Math.PI * 2); g.fill()
+      petalCache.set(color, c)
+      return c
+    }
+    const flecks = [] // paillettes à dessiner en 2e passe (additif), réutilisé
+
     const tick = () => {
       const C = cfgRef.current
       ctx.clearRect(0, 0, w, h)
-      ctx.globalCompositeOperation = (C?.composite) || 'lighter'
       const petals = C?.shape === 'petal'
+      // Pétales : 1re passe en source-over, paillettes ensuite en 'lighter' →
+      // un seul changement de composite par frame au lieu d'un par particule.
+      ctx.globalCompositeOperation = petals ? 'source-over' : ((C?.composite) || 'lighter')
+      flecks.length = 0
 
       const tw = C?.twinkle || 0
       for (let i = parts.length - 1; i >= 0; i--) {
@@ -94,33 +118,36 @@ export default function CursorTrail({ skin, isGlobal = false }) {
         // Scintillement optionnel (étoiles/cosmos) : modulation d'alpha par particule.
         let a = p.life * p.alpha
         if (tw) { p.tw += 0.28; a *= 0.62 + 0.38 * Math.sin(p.tw) }
-        ctx.globalAlpha = a < 0 ? 0 : a
-        if (petals) ctx.globalCompositeOperation = p.petal ? 'source-over' : 'lighter'
+        if (a <= 0) continue
         if (p.petal) {
-          // Pétale : ellipse pleine qui tourne et se balance en tombant (Gommage).
+          // Pétale : tourne et se balance en tombant (Gommage). Matrice
+          // rotation × échelle (k, k·sy) posée d'un coup, puis le sprite.
           p.rot += p.spin
           p.x += Math.sin(p.tw += 0.08) * 0.35 * dpr
-          const pr = p.size * (0.55 + 0.45 * ease)
-          ctx.save()
-          ctx.translate(p.x, p.y)
-          ctx.rotate(p.rot)
-          ctx.scale(1, 0.55 + 0.45 * Math.abs(Math.cos(p.rot * 1.7)))
-          ctx.fillStyle = p.color
-          ctx.beginPath()
-          ctx.ellipse(0, 0, pr * 1.5, pr * 0.72, 0, 0, Math.PI * 2)
-          ctx.fill()
-          // Nervure claire : le pétale accroche la lumière.
-          ctx.globalAlpha = (a < 0 ? 0 : a) * 0.35
-          ctx.fillStyle = '#fff6ec'
-          ctx.beginPath()
-          ctx.ellipse(-pr * 0.35, -pr * 0.12, pr * 0.7, pr * 0.2, 0, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.restore()
+          const k = (p.size * (0.55 + 0.45 * ease)) / PU
+          const sy = k * (0.55 + 0.45 * Math.abs(Math.cos(p.rot * 1.7)))
+          const cs = Math.cos(p.rot), sn = Math.sin(p.rot)
+          ctx.globalAlpha = a
+          ctx.setTransform(cs * k, sn * k, -sn * sy, cs * sy, p.x, p.y)
+          ctx.drawImage(getPetal(p.color), -PW / 2, -PH / 2)
+        } else if (petals) {
+          p.r = r; p.a = a; flecks.push(p)
         } else {
+          ctx.globalAlpha = a
           ctx.drawImage(getSprite(p.color), p.x - r, p.y - r, r * 2, r * 2)
         }
       }
 
+      if (petals) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
+        if (flecks.length) {
+          ctx.globalCompositeOperation = 'lighter'
+          for (const f of flecks) {
+            ctx.globalAlpha = f.a
+            ctx.drawImage(getSprite(f.color), f.x - f.r, f.y - f.r, f.r * 2, f.r * 2)
+          }
+        }
+      }
       ctx.globalAlpha = 1
       ctx.globalCompositeOperation = 'source-over'
       raf = parts.length ? requestAnimationFrame(tick) : 0
