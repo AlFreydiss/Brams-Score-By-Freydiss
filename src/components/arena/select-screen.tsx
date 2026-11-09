@@ -23,16 +23,27 @@ export type SelectItem = {
   caption?: string;
 };
 
+/** Scène 3D facultative qui remplace la grande image et la rangée de cases. */
+export type DeckProps = {
+  items: SelectItem[];
+  active: number;
+  ready: SelectItem | null;
+  sound: boolean;
+  onPick: (k: number) => void;
+  onGo: (item: SelectItem) => void;
+};
+
 type Props = {
   items: SelectItem[];
   onGo: (item: SelectItem) => void;
   onInfo: (item: SelectItem) => void;
+  Deck?: React.ComponentType<DeckProps>;
 };
 
 const IDLE_MS = 9000;
 const READY_MS = 1050;
 
-export function SelectScreen({ items, onGo, onInfo }: Props) {
+export function SelectScreen({ items, onGo, onInfo, Deck }: Props) {
   const [i, setI] = useState(0);
   const [touched, setTouched] = useState(false);
   const [ready, setReady] = useState<SelectItem | null>(null);
@@ -110,7 +121,7 @@ export function SelectScreen({ items, onGo, onInfo }: Props) {
   return (
     <section
       ref={wrap}
-      className={`sel ${ready ? "is-ready" : ""}`}
+      className={`sel ${ready ? "is-ready" : ""} ${Deck ? "sel--deck" : ""}`}
       style={{ "--acc": cur.accent } as React.CSSProperties}
       aria-label="Choisis ton tournoi"
       onPointerDown={(e) => {
@@ -126,8 +137,20 @@ export function SelectScreen({ items, onGo, onInfo }: Props) {
       }}
       onPointerCancel={() => (drag.current = null)}
     >
+      {Deck ? (
+        <>
+          {/* Fond : l'art de la carte choisie, très flou, pour la couleur de la pièce. */}
+          <div className="sel-stage" aria-hidden>
+            <AnimatePresence initial={false}>
+              <motion.img key={cur.slug} className="sel-blur" src={cur.still} alt="" crossOrigin="anonymous" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.8 } }} exit={{ opacity: 0, transition: { duration: 0.8 } }} />
+            </AnimatePresence>
+            <div className="sel-veil" />
+          </div>
+          <Deck items={items} active={i} ready={ready} sound={sound && visible && !hidden} onPick={(k) => pick(k)} onGo={go} />
+        </>
+      ) : null}
       {/* Grande image : la nouvelle entre en biais par-dessus l'ancienne. */}
-      <div className="sel-stage" aria-hidden>
+      {Deck ? null : <div className="sel-stage" aria-hidden>
         <AnimatePresence initial={false} custom={dir.current}>
           <motion.div
             key={cur.slug}
@@ -148,7 +171,7 @@ export function SelectScreen({ items, onGo, onInfo }: Props) {
         <div className="sel-veil" />
         {/* Trait de couleur qui balaie l'écran à chaque changement. */}
         <motion.i key={`sweep-${cur.slug}`} className="sel-sweep" initial={{ x: "-30%", opacity: 0.9 }} animate={{ x: "130%", opacity: 0, transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1] } }} />
-      </div>
+      </div>}
 
       {/* Fiche du tournoi, comme la fiche d'un combattant. */}
       <div className="sel-card">
@@ -221,8 +244,8 @@ export function SelectScreen({ items, onGo, onInfo }: Props) {
         </div>
       </div>
 
-      {/* La rangée des tournois et le curseur P1. */}
-      <div className="sel-roster" role="listbox" aria-label="Tournois">
+      {/* La rangée des tournois et le curseur P1 (cachée visuellement en 3D, gardée pour le clavier). */}
+      <div className={`sel-roster ${Deck ? "sel-roster--sr" : ""}`} role="listbox" aria-label="Tournois">
         {items.map((it, k) => (
           <button
             key={it.slug}

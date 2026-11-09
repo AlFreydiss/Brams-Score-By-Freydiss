@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { ArenaItem } from "../fight/arena/Arena3D";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
-import { SelectScreen, type SelectItem } from "./select-screen";
+import { SelectScreen, type DeckProps, type SelectItem } from "./select-screen";
 import { Atmosphere, setAtmosphere } from "./atmosphere";
 import { portalTo } from "./portal";
 import "./modes.css";
@@ -98,6 +98,15 @@ const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", en
 // Écran de sélection : ordre des cases et nom court de chaque tournoi.
 const ORDER: TournamentSlug[] = ["openings", "ost", "endings", "jeux", "rap", "rapvsost", "bankai", "panels"];
 const SHORT: Record<TournamentSlug, string> = { openings: "Openings", ost: "OST", endings: "Endings", jeux: "Jeux vidéo", rap: "Rap FR", rapvsost: "Rap vs OST", bankai: "Bankai", panels: "Panels" };
+// Cartes holo en 3D (chargées à la demande, seulement si WebGL répond).
+const HoloDeck = lazy(() => import("./holo-deck"));
+function LazyDeck(p: DeckProps) {
+  return (
+    <Suspense fallback={null}>
+      <HoloDeck {...p} />
+    </Suspense>
+  );
+}
 export function useWebGL() {
   const [ok] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -211,6 +220,7 @@ export default function HubPage() {
       };
     });
   }, [backdrops, statuses]);
+  const three = useWebGL();
   // Toutes les cases de l'écran de sélection (les tournois phares avec leur vidéo).
   const selectItems = useMemo((): SelectItem[] | null => {
     if (!arenaItems) return null;
@@ -252,7 +262,7 @@ export default function HubPage() {
     <MotionConfig reducedMotion="user">
       <div className={`nx-root nf ${ready ? "is-ready" : ""}`}>
         {selectItems ? (
-          <SelectScreen items={selectItems} onGo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}/duel`)} onInfo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}`)} />
+          <SelectScreen Deck={three ? LazyDeck : undefined} items={selectItems} onGo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}/duel`)} onInfo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}`)} />
         ) : (
           <div style={{ height: "min(92dvh, 920px)", minHeight: 600, background: "#07080b" }} aria-busy="true" />
         )}
