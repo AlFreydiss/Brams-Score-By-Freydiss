@@ -18,9 +18,29 @@ const nextPow2 = (n: number) => {
   return s;
 };
 
+/**
+ * Places du premier tour. Les places vides (exempts) sont réparties dans tout
+ * le tableau, une seule par duel : 407 pistes dans 512 places donnent 105
+ * qualifiés d'office et 151 vrais duels, puis 256 au tour suivant. Sans ça, les
+ * vides s'entassaient en fin de tableau et certains passaient plusieurs tours sans jouer.
+ */
+export function spreadByes<T>(participants: readonly T[], first: number): (T | null)[] {
+  const byes = first - participants.length;
+  const pairs = first / 2;
+  const out: (T | null)[] = [];
+  let k = 0;
+  for (let m = 0; m < pairs; m++) {
+    // Duel m exempt si on franchit un multiple de pairs/byes : répartition régulière.
+    const bye = byes > 0 && Math.floor(((m + 1) * byes) / pairs) > Math.floor((m * byes) / pairs);
+    out.push(participants[k++] ?? null);
+    out.push(bye ? null : participants[k++] ?? null);
+  }
+  return out;
+}
+
 export function generateBracket(participants: Participant[]): Round[] {
   const first = nextPow2(participants.length);
-  const slots: (Participant | null)[] = [...participants, ...Array(first - participants.length).fill(null)];
+  const slots = spreadByes(participants, first);
   const rounds: Round[] = [];
   for (let size = first; size >= 2; size /= 2) {
     const isFirst = size === first;

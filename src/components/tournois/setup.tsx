@@ -8,6 +8,9 @@ import { IDENTITIES, isFight } from "../fight/identities";
 
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
 // duel : deux participants tirés au hasard, coupés dans le style du tournoi.
+// Valeur de format qui veut dire « tout le pool » (suit le filtre).
+const ALL = -1;
+
 export function Setup() {
   const { meta, participants } = useTournament();
   const groups = useMemo(() => {
@@ -23,7 +26,10 @@ export function Setup() {
   const pool = participants.filter((p) => !off.has(p.group));
   const capacity = meta.balanced ? 2 * Math.min(pool.filter((p) => p.camp === "rap").length, pool.filter((p) => p.camp !== "rap").length) : pool.length;
   const fits = meta.formats.filter((f) => f <= capacity);
-  const effective = fits.includes(size) ? size : fits[fits.length - 1];
+  // « Tout » : tout le pool dans un seul tableau, quand il dépasse le plus grand format
+  // (les places en trop deviennent des qualifiés d'office, voir spreadByes).
+  const all = !meta.balanced && capacity > meta.formats[meta.formats.length - 1] ? capacity : 0;
+  const effective = size === ALL && all ? all : fits.includes(size) ? size : fits[fits.length - 1];
   // Rap contre OST tire autant dans chaque camp : pas de filtre par camp.
   const showGroups = !meta.balanced && groups.length > 1;
   // Beaucoup d'animes : une recherche pour retrouver le sien dans la liste.
@@ -71,6 +77,12 @@ export function Setup() {
                 <small>{f - 1} duels</small>
               </button>
             ))}
+            {all ? (
+              <button type="button" className={effective === all ? "is-on" : ""} aria-pressed={effective === all} onClick={() => setSize(ALL)} title={`Les ${all} ${meta.unit} dans un seul tableau`}>
+                <b>Tout · {all}</b>
+                <small>{all - 1} duels</small>
+              </button>
+            ) : null}
           </div>
         </fieldset>
 

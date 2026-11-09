@@ -27,6 +27,9 @@ export function RulesView() {
           <li>
             Tu choisis un format, de {meta.formats[0]} à {meta.formats[meta.formats.length - 1]} {meta.unit}. Ils sont tirés au hasard parmi les {participants.length} du
             catalogue{meta.balanced ? ", moitié rap, moitié OST" : ""}.
+            {!meta.balanced && participants.length > meta.formats[meta.formats.length - 1]
+              ? ` Le format « Tout » met les ${participants.length} dans un seul tableau : quand le nombre ne tombe pas juste, certains passent directement au tour suivant pour retomber sur un tableau complet.`
+              : null}
           </li>
           <li>Chaque duel oppose deux {meta.unit}. {audio ? "Tu écoutes les deux, puis tu" : "Tu"} choisis : le gagnant passe au tour suivant, l’autre est éliminé.</li>
           <li>Les tours s’enchaînent jusqu’à la finale. Le dernier debout devient ton champion.</li>

@@ -34,7 +34,7 @@ export function SetupWall({ pool, size, launching, accent }: { pool: Participant
         <span>
           dans le tirage
           <small>
-            {size - 1} duels · {Math.log2(size)} tours
+            {size - 1} duels · {Math.ceil(Math.log2(size))} tours
           </small>
         </span>
       </div>

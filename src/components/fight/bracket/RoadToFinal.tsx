@@ -46,6 +46,13 @@ export function RoadToFinal() {
     return { pos, width: (rounds.length + 1) * COL, height: Math.max(1, first) * ROW };
   }, [rounds]);
 
+  // Axe de l'inclinaison : le duel en cours (ou la finale). Autour du centre du plan,
+  // un grand tableau (256, « Tout ») de 10 000 à 20 000 px de haut partait hors champ.
+  const pivot = (() => {
+    const t = cur ? layout.pos.get(cur.match.id) : rounds.length ? layout.pos.get(rounds[rounds.length - 1].matches[0].id) : null;
+    return t ? `${t.x + CARD_W / 2}px ${t.y + CARD_H / 2}px` : "50% 50%";
+  })();
+
   // Au montage : la vue se cale sur le duel en cours (ou la finale).
   useEffect(() => {
     const el = view.current;
@@ -182,7 +189,7 @@ export function RoadToFinal() {
       >
         {/* Le plan du tableau, légèrement incliné : une vue en surplomb. */}
         <motion.div style={{ position: "absolute", left: 0, top: 0, x, y, scale: zoom, transformOrigin: "0 0", width: layout.width, height: layout.height }}>
-          <div style={{ position: "absolute", inset: 0, transform: reduce ? undefined : "rotateX(14deg)", transformOrigin: "50% 50%", transformStyle: "preserve-3d" }}>
+          <div style={{ position: "absolute", inset: 0, transform: reduce ? undefined : "rotateX(14deg)", transformOrigin: pivot, transformStyle: "preserve-3d" }}>
             {/* Têtes de colonnes. */}
             {rounds.map((r, i) => (
               <p key={r.id} style={{ position: "absolute", left: i * COL, top: -46, margin: 0, display: "flex", alignItems: "center", gap: 10, fontFamily: FONT.body, fontSize: 11, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: cur?.round.size === r.size ? id.ink : id.mute }}>

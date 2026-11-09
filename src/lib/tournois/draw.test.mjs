@@ -31,3 +31,23 @@ test("spreadPairs : pas de duel du premier tour entre deux pistes du même group
     for (let i = 0; i < d.length; i += 2) assert.notEqual(d[i].group, d[i + 1].group, JSON.stringify(d.map((x) => x.group)));
   }
 });
+
+const outB = await build({ entryPoints: [new URL("./bracket.ts", import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1")], bundle: true, format: "esm", write: false, platform: "node" });
+const { generateBracket, advance, currentMatch, champion } = await import(`data:text/javascript;base64,${Buffer.from(outB.outputFiles[0].text).toString("base64")}`);
+
+test("format Tout : 407 pistes, exempts répartis, tout le monde joue, 406 duels", () => {
+  const p = pool({ x: 407 });
+  const rounds = generateBracket(p);
+  assert.equal(rounds[0].size, 512);
+  const r1 = rounds[0].matches;
+  assert.equal(r1.filter((m) => m.left && m.right).length, 151);
+  assert.equal(r1.filter((m) => !m.left && !m.right).length, 0, "aucun duel vide");
+  assert.equal(rounds[1].matches.flatMap((m) => [m.left, m.right]).filter(Boolean).length, 105, "105 qualifiés d'office au 2e tour");
+  let r = rounds, duels = 0;
+  for (let cur = currentMatch(r); cur; cur = currentMatch(r)) {
+    r = advance(r, cur.match.id, cur.match.left.id);
+    duels++;
+  }
+  assert.equal(duels, 406);
+  assert.ok(champion(r));
+});
