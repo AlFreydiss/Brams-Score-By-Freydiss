@@ -16,6 +16,15 @@ const rgba = (hex: string, a: number) => {
 };
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 
+// Sprites PEINTS (planches 8×1 de cases 128 px, Grok Imagine détouré) pour les
+// auras « objets » : pétales de sakura, feuilles vertes ou d'automne selon l'accent.
+const isGreen = (hex: string) => {
+  const v = parseInt(hex.replace("#", ""), 16), r = (v >> 16) & 255, g = (v >> 8) & 255, b = v & 255;
+  return g > r * 1.1 && g > b;
+};
+const atlasFor = (kind: Aura, accent: string) =>
+  kind === "sakura" ? "/trails/trail-sakura.webp" : kind === "leaves" ? (isGreen(accent) ? "/trails/trail-konoha.webp" : "/trails/trail-automne.webp") : null;
+
 // Comportement de chaque style : sens (monte / tombe / dérive), vitesse, taille, couleurs.
 const SPEC: Record<Aura, { dir: -1 | 0 | 1; speed: [number, number]; size: [number, number]; n: number; colors: (accent: string) => string[] }> = {
   petals: { dir: -1, speed: [8, 22], size: [0.6, 1.8], n: 1, colors: () => ["#ffe2a0", "#e8a046", "#c42e34"] },
@@ -47,6 +56,9 @@ export function GameAura({ kind, accent, active, zIndex = 4 }: { kind: Aura; acc
     if (!ctx) return;
     const spec = SPEC[kind];
     const cols = spec.colors(accent);
+    const atlasUrl = atlasFor(kind, accent);
+    let atlas: HTMLImageElement | null = null;
+    if (atlasUrl) { const im = new Image(); im.decoding = "async"; im.onload = () => { atlas = im; }; im.src = atlasUrl; }
     let W = 0, H = 0, dpr = 1;
     const fit = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -182,6 +194,18 @@ export function GameAura({ kind, accent, active, zIndex = 4 }: { kind: Aura; acc
           }
           case "sakura":
           case "leaves": {
+            if (atlas) {
+              // Sprite peint : rotation + bascule 3D en une matrice, puis un drawImage.
+              const k = (q.r * 4.6) / 128, sy = k * (0.35 + 0.6 * Math.abs(Math.sin(q.t)));
+              const an = q.t * 0.6 * q.s, cs = Math.cos(an), sn = Math.sin(an);
+              ctx.globalAlpha = Math.min(1, a * 1.3);
+              ctx.setTransform(dpr * cs * k, dpr * sn * k, -dpr * sn * sy, dpr * cs * sy, dpr * q.x, dpr * q.y);
+              const fr = Math.floor(q.r * 53) % 8;
+              ctx.drawImage(atlas, fr * 128, 0, 128, 128, -64, -64, 128, 128);
+              ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+              ctx.globalAlpha = 1;
+              break;
+            }
             ctx.save();
             ctx.translate(q.x, q.y);
             ctx.rotate(q.t * 0.6 * q.s);
