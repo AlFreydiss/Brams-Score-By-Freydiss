@@ -431,3 +431,84 @@
 .nx-root .t-subnav-links a.is-on {
   border-bottom-color: transparent;
 }
+
+/* ── Autres tournois : champion et fins de tour, sobres, à leur couleur ── */
+.nx-root:not([data-t="jeux"]) .t-champ .t-kept {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  text-decoration: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--t-hue);
+}
+.nx-root:not([data-t="jeux"]) .t-champ .t-kept::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+}
+.nx-root:not([data-t="jeux"]) .t-champ .t-sub {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--nx-ink2);
+}
+.nx-root:not([data-t="jeux"]) .t-champ .t-title {
+  letter-spacing: -0.035em;
+  text-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+.nx-root:not([data-t="jeux"]) .t-champ .t-ctrl .t-btn--play {
+  border: 0;
+  background: var(--t-hue);
+  color: #0b0b0d !important;
+  box-shadow: 0 12px 30px -12px var(--t-hue);
+}
+.nx-root:not([data-t="jeux"]) .t-champ .t-ctrl .t-choose {
+  background: rgba(10, 10, 12, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+.nx-root:not([data-t="jeux"]) .t-recap-box .t-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--t-hue);
+}
+.nx-root:not([data-t="jeux"]) .t-recap-box .t-eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1px;
+  background: currentColor;
+}
+.nx-root:not([data-t="jeux"]) .t-recap-title {
+  letter-spacing: -0.035em !important;
+  text-wrap: balance;
+}
+.nx-root:not([data-t="jeux"]) :is(.t-recap-x, .t-recap-vs i) {
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--t-hue);
+}
+.nx-root:not([data-t="jeux"]) .t-recap-box .t-go {
+  border: 0;
+  background: var(--t-hue);
+  color: #0b0b0d !important;
+  box-shadow: 0 12px 30px -12px var(--t-hue);
+}
+.nx-root:not([data-t="jeux"]) .t-table tbody tr:nth-child(1) {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--t-hue) 10%, transparent), transparent 60%);
+}
+.nx-root:not([data-t="jeux"]) .t-table tbody tr:nth-child(1) .t-table-rank {
+  color: var(--t-hue);
+}
