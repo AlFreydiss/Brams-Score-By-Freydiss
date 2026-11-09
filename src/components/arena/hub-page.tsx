@@ -14,6 +14,7 @@ import { useSaved } from "@/lib/tournois/store";
 import type { Participant } from "@/lib/tournois/types";
 import { keyartSrc } from "../animehub/keyart.js";
 import "../tournois/themes/noir.css";
+import { JeuxReel } from "./jeux-reel";
 import "./hub.css";
 
 // Hub des tournois façon plateforme de streaming : un grand panneau qui fait
@@ -405,11 +406,17 @@ function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status:
   const running = status.progress != null;
   const navigate = useNavigate();
   const to = `/tournoi/${meta.path}${running ? "/duel" : ""}`;
+  const [hot, setHot] = useState(false);
+  const reel = meta.slug === "jeux";
   return (
     <motion.div {...cardIn(index)}>
       <Link
         to={to}
-        onPointerEnter={() => setAtmosphere(ACCENT[meta.slug] ?? "#d9a35a")}
+        onPointerEnter={() => {
+          setAtmosphere(ACCENT[meta.slug] ?? "#d9a35a");
+          setHot(true);
+        }}
+        onPointerLeave={() => setHot(false)}
         onClick={(e) => {
           // Clic simple : l'affiche s'ouvre en plein écran avant d'arriver sur le tournoi.
           if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -421,7 +428,7 @@ function TournamentCard({ meta, status, index }: { meta: TournamentMeta; status:
         style={{ "--acc": ACCENT[meta.slug] ?? "#f4f2ec" } as React.CSSProperties}
       >
         <span className="nf-card-art">
-          <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />
+          {reel ? <JeuxReel hot={hot} /> : <img src={ART[meta.slug]} alt="" loading="lazy" decoding="async" />}
           {running ? (
             <span className="nf-card-progress" aria-hidden>
               <i style={{ width: `${Math.round((status.progress ?? 0) * 100)}%` }} />

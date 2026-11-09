@@ -464,6 +464,28 @@
 .nf-grid--wide > :nth-child(n + 4) .nf-card-art {
   aspect-ratio: 21 / 9;
 }
+/* Bento : l'affiche des jeux en vedette sur deux rangées, les deux rap empilés à côté. */
+@media (min-width: 1001px) {
+  .nf-grid--wide > :nth-child(4) {
+    grid-column: span 4;
+    grid-row: span 2;
+    display: grid;
+  }
+  .nf-grid--wide > :nth-child(4) .nf-card,
+  .nf-grid--wide > :nth-child(4) .nf-card-art {
+    height: 100%;
+  }
+  .nf-grid--wide > :nth-child(4) .nf-card-art {
+    aspect-ratio: auto;
+    min-height: 340px;
+  }
+  .nf-grid--wide > :nth-child(n + 5) {
+    grid-column: span 2;
+  }
+  .nf-grid--wide > :nth-child(n + 5) .nf-card-art {
+    aspect-ratio: 16 / 9;
+  }
+}
 .nf-grid--tight {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -506,7 +528,8 @@
   .nf-grid--wide > :nth-child(n) {
     grid-column: auto;
   }
-  .nf-grid--wide > :first-child {
+  .nf-grid--wide > :first-child,
+  .nf-grid--wide > :nth-child(4) {
     grid-column: 1 / -1;
   }
   .nf-grid--wide > :nth-child(n + 4) .nf-card-art {
@@ -778,5 +801,45 @@
   }
   .nf .nf-card--poster:hover .nf-card-art img {
     filter: brightness(1) saturate(1.08);
+  }
+}
+
+/* Affiche vivante du tournoi jeux (jeux-reel.tsx). */
+.nf-reel {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.nf-card-art .nf-reel-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  filter: brightness(0.86) saturate(0.95);
+  animation: nf-kb-0 9s cubic-bezier(0.33, 0, 0.67, 1) both;
+}
+.nf-reel-img[data-kb="1"] { animation-name: nf-kb-1; }
+.nf-reel-img[data-kb="2"] { animation-name: nf-kb-2; }
+.nf-reel-img[data-kb="3"] { animation-name: nf-kb-3; }
+@keyframes nf-kb-0 { from { transform: scale(1.12) translate3d(1.5%, 0, 0); } to { transform: scale(1.02) translate3d(-1%, -1%, 0); } }
+@keyframes nf-kb-1 { from { transform: scale(1.02) translate3d(-1.5%, 0, 0); } to { transform: scale(1.12) translate3d(1.5%, -1%, 0); } }
+@keyframes nf-kb-2 { from { transform: scale(1.08) translate3d(0, 1.5%, 0); } to { transform: scale(1.03) translate3d(0, -1.5%, 0); } }
+@keyframes nf-kb-3 { from { transform: scale(1.03) translate3d(1%, -1%, 0); } to { transform: scale(1.13) translate3d(-1%, 1%, 0); } }
+.nf-reel-name {
+  position: absolute;
+  top: clamp(14px, 1.4vw, 20px);
+  right: clamp(16px, 1.6vw, 24px);
+  z-index: 3;
+  font: 400 11px/1 "trajan-pro-3", "Cinzel", Georgia, serif;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(244, 236, 214, 0.86);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-card-art .nf-reel-img {
+    animation: none;
   }
 }
