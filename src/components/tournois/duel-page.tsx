@@ -11,6 +11,7 @@ import { useTournament } from "./provider";
 import { Recap } from "./recap";
 import { Setup } from "./setup";
 import { warmYoutube } from "./youtube-deck";
+import { jeuArt } from "../fight/jeux-art";
 
 // Passage d'un duel au suivant : un glissement continu. Le duel tranché sort
 // par la droite pendant que le suivant entre par la gauche ; « Annuler » fait
@@ -99,7 +100,10 @@ export function DuelPage() {
         const img = new Image();
         img.decoding = "async";
         // Image de fond, ou vignette en grand pour l'intro des génériques.
-        img.src = p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/");
+        // Jeux : le fond est l'art Steam du jeu (la pochette n'apparaît qu'en vignette).
+        const art = meta.slug === "jeux" ? jeuArt(p.sub) : null;
+        img.src = art ? art.src : p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/");
+        if (art) new Image().src = p.thumb;
         // Extrait audio (OST de jeux) : on récupère déjà son en-tête.
         if (p.sound?.k === "audio") {
           const a = new Audio();
@@ -107,7 +111,7 @@ export function DuelPage() {
           a.src = p.sound.src;
         }
       }
-  }, [run, cur]);
+  }, [run, cur, meta.slug]);
 
   const showMatch = run ? (held?.match ?? cur?.match ?? null) : null;
   const showSize = held?.roundSize ?? cur?.round.size ?? 0;

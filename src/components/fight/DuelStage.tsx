@@ -323,7 +323,7 @@ export function DuelStage(props: Props) {
       }}
     >
       {narrow ? (
-        <Deck {...{ left, right, id, player, picked, blind: !!blind, masked, listen, choose, reduce }} />
+        <Deck {...{ left, right, id, player, picked, blind: !!blind, masked, listen, choose, reduce, jeux }} />
       ) : (
         <div style={{ display: "flex", gap: 7, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box" }}>
           {(["left", "right"] as const).map((side) => (
@@ -803,7 +803,7 @@ function JeuxBackdrop({ p, playing }: { p: Participant; playing: boolean }) {
 }
 
 // ── Mobile : deck de deux cartes, swipe façon Tinder ─────────────────
-function Deck({ left, right, id, player, picked, blind, masked, listen, choose, reduce }: { left: Participant; right: Participant; id: Identity; player: Player; picked: Side | null; blind: boolean; masked: (p: Participant) => string; listen: (s: Side) => void; choose: (s: Side) => void; reduce: boolean }) {
+function Deck({ left, right, id, player, picked, blind, masked, listen, choose, reduce, jeux }: { left: Participant; right: Participant; id: Identity; player: Player; picked: Side | null; blind: boolean; masked: (p: Participant) => string; listen: (s: Side) => void; choose: (s: Side) => void; reduce: boolean; jeux: boolean }) {
   const [top, setTop] = useState<Side>("left");
   const order: Side[] = top === "left" ? ["right", "left"] : ["left", "right"];
   return (
@@ -820,6 +820,7 @@ function Deck({ left, right, id, player, picked, blind, masked, listen, choose, 
           hidden={blind && !picked}
           masked={masked}
           reduce={reduce}
+          jeux={jeux}
           onKeep={() => choose(side)}
           onPass={() => setTop(OTHER[side])}
           onListen={() => listen(side)}
@@ -832,7 +833,7 @@ function Deck({ left, right, id, player, picked, blind, masked, listen, choose, 
   );
 }
 
-function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, onKeep, onPass, onListen }: { side: Side; p: Participant; id: Identity; player: Player; isTop: boolean; picked: Side | null; hidden: boolean; masked: (p: Participant) => string; reduce: boolean; onKeep: () => void; onPass: () => void; onListen: () => void }) {
+function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, jeux, onKeep, onPass, onListen }: { side: Side; p: Participant; id: Identity; player: Player; isTop: boolean; picked: Side | null; hidden: boolean; masked: (p: Participant) => string; reduce: boolean; jeux: boolean; onKeep: () => void; onPass: () => void; onListen: () => void }) {
   const x = useMotionValue(0);
   const rot = useTransform(x, (v) => v / 18);
   const keepGlow = useTransform(x, (v) => Math.max(0, Math.min(1, v / 140)));
@@ -863,7 +864,8 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
       onClick={() => isTop && !picked && onListen()}
     >
       <div style={{ position: "absolute", inset: 0 }}>
-        <Media p={p} player={player} />
+        {/* Jeux : même fond que sur grand écran (art du jeu recadré sur son sujet). */}
+        {jeux ? <JeuxBackdrop p={p} playing={playing} /> : <Media p={p} player={player} />}
       </div>
       {hidden ? <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", background: id.bg, fontFamily: FONT.display, fontWeight: 800, fontSize: 160, color: id.a }}>{KEY[side]}</div> : null}
       <div aria-hidden style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${id.bg} 0%, ${id.bg}aa 30%, transparent 60%)` }} />
@@ -872,20 +874,33 @@ function DeckCard({ side, p, id, player, isTop, picked, hidden, masked, reduce, 
       <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: keepGlow, background: `linear-gradient(to left, ${id.a}cc, transparent 55%)` }} />
       <motion.div aria-hidden style={{ position: "absolute", inset: 0, opacity: passGlow, background: `linear-gradient(to right, ${id.b}aa, transparent 55%)` }} />
       <div style={{ position: "absolute", left: 20, right: 20, bottom: 20, display: "grid", gap: 8, zIndex: 6 }}>
-        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: id.a }}>
-          {id.sides[side === "left" ? 0 : 1]} {playing ? "— en écoute" : ""}
+        {jeux && !hidden ? <img src={p.thumb} alt="" draggable={false} style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 2, boxShadow: `0 0 0 1px ${id.a}88, 0 10px 24px -8px rgba(0,0,0,0.9)` }} /> : null}
+        <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontFamily: jeux ? TRAJAN : undefined, fontSize: jeux ? 11 : 12, fontWeight: 600, letterSpacing: jeux ? "0.2em" : "0.06em", textTransform: "uppercase", color: jeux ? id.b : id.a }}>
+          {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]} {playing ? (jeux ? <EqBars color={id.a} /> : "— en écoute") : ""}
         </p>
-        <h2 style={{ margin: 0, fontFamily: FONT.display, fontWeight: 800, fontSize: 36, lineHeight: 0.98, letterSpacing: "-0.04em", color: id.ink }}>{masked(p)}</h2>
-        <p style={{ margin: 0, fontSize: 14, color: id.ink, opacity: 0.8 }}>{hidden ? "Titre caché" : [p.sub, p.artist].filter(Boolean).join(" — ")}</p>
+        {jeux ? (
+          <h2 style={{ margin: 0, fontFamily: TRAJAN, fontWeight: 400, fontSize: masked(p).length > 22 ? 23 : 30, lineHeight: 1.06, letterSpacing: "0.03em", textTransform: "uppercase", textWrap: "balance", overflowWrap: "break-word", filter: "drop-shadow(0 2px 1px rgba(0,0,0,0.55)) drop-shadow(0 10px 30px rgba(0,0,0,0.6))" }}>
+            {masked(p)
+              .split(" ")
+              .map((w, k, all) => (
+                <span key={`${p.id}-${k}`} className="jx-word" style={{ animationDelay: `${1.6 + k * 0.09}s`, marginRight: k < all.length - 1 ? "0.28em" : 0 }}>
+                  {w}
+                </span>
+              ))}
+          </h2>
+        ) : (
+          <h2 style={{ margin: 0, fontFamily: FONT.display, fontWeight: 800, fontSize: 36, lineHeight: 0.98, letterSpacing: "-0.04em", color: id.ink }}>{masked(p)}</h2>
+        )}
+        <p style={{ margin: 0, fontSize: jeux ? 13 : 14, fontFamily: jeux ? TRAJAN : undefined, letterSpacing: jeux ? "0.04em" : undefined, color: jeux ? id.mute : id.ink, opacity: jeux ? 1 : 0.8 }}>{hidden ? "Titre caché" : jeux ? p.artist : [p.sub, p.artist].filter(Boolean).join(" — ")}</p>
         {isTop && !picked ? (
           <div style={{ display: "flex", gap: 10, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
             <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onListen} aria-label={`${playing ? "Mettre en pause" : "Écouter"} ${masked(p)}`} style={{ width: 50, height: 50, border: 0, borderRadius: 999, display: "grid", placeItems: "center", background: playing ? id.a : "rgba(255,255,255,0.16)", color: playing ? id.bg : id.ink }}>
               {playing ? <Pause size={19} fill="currentColor" /> : <Play size={19} fill="currentColor" />}
             </motion.button>
-            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: 999, background: id.a, color: id.bg, fontFamily: FONT.body, fontWeight: 600, fontSize: 15 }}>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onKeep} style={{ flex: 1, height: 50, border: 0, borderRadius: jeux ? 2 : 999, background: jeux ? "#f4f2ec" : id.a, color: id.bg, fontFamily: jeux ? TRAJAN : FONT.body, fontWeight: 600, fontSize: jeux ? 13 : 15, letterSpacing: jeux ? "0.16em" : undefined, textTransform: jeux ? "uppercase" : undefined }}>
               Garder
             </motion.button>
-            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ height: 50, padding: "0 18px", border: 0, borderRadius: 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontWeight: 600, fontSize: 14 }}>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={onPass} style={{ height: 50, padding: "0 18px", border: 0, borderRadius: jeux ? 2 : 999, background: "rgba(255,255,255,0.14)", color: id.ink, fontFamily: jeux ? TRAJAN : undefined, fontWeight: 600, fontSize: jeux ? 12 : 14, letterSpacing: jeux ? "0.12em" : undefined, textTransform: jeux ? "uppercase" : undefined }}>
               L'autre
             </motion.button>
           </div>
