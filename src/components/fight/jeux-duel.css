@@ -52,3 +52,59 @@
     animation: none;
   }
 }
+
+/* Coupe en biais du duel : deux éclats descendent le filet, à des rythmes différents. */
+.jx-seam-run {
+  stroke-dasharray: 5 95;
+  stroke-dashoffset: 100;
+  animation: jx-run 3.2s cubic-bezier(0.55, 0, 0.45, 1) infinite;
+  filter: drop-shadow(0 0 6px #fff3d0);
+}
+.jx-seam-run--2 {
+  stroke-dasharray: 3 97;
+  animation-duration: 4.7s;
+  animation-delay: -1.9s;
+  opacity: 0.7;
+}
+@keyframes jx-run {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Diaporama pendant l'écoute : les autres images du même jeu, chacune avec
+   son propre mouvement de caméra (Ken Burns), en fondu enchaîné. */
+.jx-slide {
+  animation: jx-kb-0 9s cubic-bezier(0.33, 0, 0.67, 1) both;
+}
+.jx-slide[data-kb="1"] {
+  animation-name: jx-kb-1;
+}
+.jx-slide[data-kb="2"] {
+  animation-name: jx-kb-2;
+}
+.jx-slide[data-kb="3"] {
+  animation-name: jx-kb-3;
+}
+@keyframes jx-kb-0 {
+  from { transform: scale(1.14) translate3d(2%, 1%, 0); }
+  to { transform: scale(1.02) translate3d(-1%, -1%, 0); }
+}
+@keyframes jx-kb-1 {
+  from { transform: scale(1.02) translate3d(-2%, 0, 0); }
+  to { transform: scale(1.14) translate3d(2%, -1.5%, 0); }
+}
+@keyframes jx-kb-2 {
+  from { transform: scale(1.1) translate3d(0, 2%, 0); }
+  to { transform: scale(1.04) translate3d(0, -2%, 0); }
+}
+@keyframes jx-kb-3 {
+  from { transform: scale(1.04) translate3d(1.5%, -1.5%, 0); }
+  to { transform: scale(1.16) translate3d(-1.5%, 1%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jx-seam-run,
+  .jx-slide {
+    animation: none;
+  }
+}

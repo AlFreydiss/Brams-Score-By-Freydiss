@@ -1,7 +1,7 @@
 import { Maximize2, Minimize2, Network, Pause, Play, RotateCcw } from "lucide-react";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform, type MotionValue, type PanInfo } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { fetchPair } from "@/lib/versusStats.js";
 import type { Participant } from "@/lib/tournois/types";
 import type { RoundInfo, Side } from "../tournois/duel-screen";
@@ -17,7 +17,7 @@ import { dominantColors } from "./palette";
 import { CommunityReveal, Confetti, Shatter, type Rect } from "./VoteShatter";
 import { VersusIntro } from "./VersusIntro";
 import { bumpStreak, Magnetic, ShortcutsPanel, StageCursor, StreakBurst, useAlternate, usePrediction } from "./FightExtras";
-import { bgOf, jeuArt } from "./jeux-art";
+import { bgOf, jeuArt, type Bg } from "./jeux-art";
 import { Gommage, type TransitionMode } from "../tournois/gommage";
 import { useAdobeKit } from "../tournois/adobe-kit";
 import { Embers } from "./Embers";
@@ -48,6 +48,11 @@ type Props = {
 };
 
 const KEY: Record<Side, string> = { left: "A", right: "B" };
+// Jeux : largeur (px) de la coupe en biais entre les deux panneaux.
+const SLANT = 72;
+// Même gabarit de points à chaque état : framer interpole la découpe sans sauter.
+const cut = (side: Side, s: number) =>
+  side === "left" ? `polygon(0% 0%, 100% 0%, calc(100% - ${s}px) 100%, 0% 100%)` : `polygon(${s}px 0%, 100% 0%, 100% 100%, 0px 100%)`;
 const OTHER: Record<Side, Side> = { left: "right", right: "left" };
 const imgOf = (p: Participant) => (p.visual.k === "img" ? p.visual.src : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
 
@@ -358,9 +363,10 @@ export function DuelStage(props: Props) {
       {narrow ? (
         <Deck {...{ left, right, id, player, picked, blind: !!blind, masked, listen, choose, reduce, jeux }} />
       ) : (
-        <div style={{ display: "flex", gap: 7, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box" }}>
+        // Jeux : une seule scène coupée en biais (pas deux cartes) ; le cadre arrondi est découpé sur la zone utile.
+        <div style={{ display: "flex", gap: jeux ? 0 : 7, height: "100%", padding: "76px 24px 108px", boxSizing: "border-box", clipPath: jeux ? "inset(76px 24px 108px round 18px)" : undefined }}>
           {(["left", "right"] as const).map((side) => (
-            <PanelSlot key={side} side={side} first={side === "left"} accents={jeux ? [gameTheme(left.sub).accent, gameTheme(right.sub).accent] : undefined}>
+            <PanelSlot key={side} side={side} first={side === "left"} accents={jeux ? [gameTheme(left.sub).accent, gameTheme(right.sub).accent] : undefined} gone={!!picked}>
               <Panel
                 side={side}
                 p={side === "left" ? left : right}
@@ -491,10 +497,10 @@ const EXIT_T = {
   fade: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
 } as const;
 
-function PanelSlot({ side, first, accents, children }: { side: Side; first: boolean; accents?: [string, string]; children: React.ReactNode }) {
+function PanelSlot({ side, first, accents, gone, children }: { side: Side; first: boolean; accents?: [string, string]; gone?: boolean; children: React.ReactNode }) {
   return (
     <>
-      {!first ? <Divider accents={accents} /> : null}
+      {!first ? <Divider accents={accents} gone={gone} /> : null}
       <div data-slot={side} style={{ display: "contents" }}>
         {children}
       </div>
@@ -504,13 +510,27 @@ function PanelSlot({ side, first, accents, children }: { side: Side; first: bool
 
 // Le VS vit dans la jointure : il suit la frontière quand un côté s'étend.
 // Jeux : le médaillon est coupé aux couleurs des deux jeux, chacun rayonne de son côté.
-function Divider({ accents }: { accents?: [string, string] }) {
+function Divider({ accents, gone }: { accents?: [string, string]; gone?: boolean }) {
   const { meta } = useTournament();
   const id = IDENTITIES[meta.slug as FightSlug];
   if (accents) {
     const [a, b] = accents;
     return (
-      <div style={{ position: "relative", width: 0, zIndex: 12 }} aria-hidden>
+      <div style={{ position: "relative", width: 0, zIndex: 12, pointerEvents: "none", opacity: gone ? 0 : 1, transition: "opacity 0.25s ease" }} aria-hidden>
+        {/* La coupe : un filet de lumière aux deux couleurs, traversé d'éclats qui courent. */}
+        <svg className="jx-seam" viewBox={`0 0 ${SLANT} 100`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, bottom: 0, left: -SLANT / 2, width: SLANT, maxWidth: "none", height: "100%", overflow: "visible" }}>
+          <defs>
+            <linearGradient id="jx-seam-g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor={b} />
+              <stop offset="0.5" stopColor="#fff6e0" />
+              <stop offset="1" stopColor={a} />
+            </linearGradient>
+          </defs>
+          <line x1={SLANT} y1="0" x2="0" y2="100" stroke="url(#jx-seam-g)" strokeWidth="10" vectorEffect="non-scaling-stroke" opacity="0.22" style={{ filter: "blur(6px)" }} />
+          <line x1={SLANT} y1="0" x2="0" y2="100" stroke="url(#jx-seam-g)" strokeWidth="1.25" vectorEffect="non-scaling-stroke" opacity="0.9" />
+          <line className="jx-seam-run" x1={SLANT} y1="0" x2="0" y2="100" pathLength={100} stroke="#fffaf0" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          <line className="jx-seam-run jx-seam-run--2" x1={SLANT} y1="0" x2="0" y2="100" pathLength={100} stroke="#fffaf0" strokeWidth="1.5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </svg>
         <motion.div
           initial={{ scale: 0.6, opacity: 0, rotate: -90 }}
           animate={{ scale: 1, opacity: 1, rotate: 0, transition: { duration: 0.8, ease: EASE, delay: 0.3 } }}
@@ -591,6 +611,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
   const lose = !!picked && !win;
   const grow = picked ? (win ? 100 : 0.0001) : focus ? (focus === side ? 62 : 38) : 50;
   const dim = !picked && focus && focus !== side;
+  const mirror = !!jeux && side === "right";
   // Jeux : l'univers du jeu (police, encre, bouton, particules).
   const th = jeux ? gameTheme(p.sub) : null;
   const vars = th ? ({ "--jg-font": th.font, "--jg-accent": th.accent, "--jg-ink": th.ink, "--jg-shadow": th.shadow, "--jg-mute": th.mute } as React.CSSProperties) : undefined;
@@ -611,11 +632,12 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
     <motion.div
       ref={refEl}
       initial={reduce ? false : { y: 28, opacity: 0 }}
-      animate={{ y: 0, opacity: lose ? 0 : 1, flexGrow: grow }}
+      animate={{ y: 0, opacity: lose ? 0 : 1, flexGrow: grow, ...(jeux ? { clipPath: cut(side, win ? 0 : SLANT) } : {}) }}
       transition={{
         y: { duration: 0.9, ease: EASE, delay: side === "left" ? 0.05 : 0.15 },
         opacity: lose ? { duration: 0.01 } : { duration: 0.6, ease: EASE },
         flexGrow: { duration: picked ? 0.9 : 0.75, ease: EASE },
+        clipPath: { duration: 0.9, ease: EASE },
       }}
       onPointerEnter={(e) => e.pointerType === "mouse" && onHover(side)}
       onPointerLeave={() => {
@@ -629,7 +651,12 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
         mx.set(((e.clientX - r.left) / r.width) * 2 - 1);
         my.set(((e.clientY - r.top) / r.height) * 2 - 1);
       }}
-      style={{ ...vars, position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", borderRadius: 16, background: PANEL, boxShadow: th && focus === side && !picked ? `0 0 0 1px ${th.accent}66, 0 0 60px -20px ${th.accent}` : `0 0 0 1px ${LINE}`, transition: "box-shadow 0.5s ease" }}
+      style={
+        jeux
+          ? // Les deux panneaux se chevauchent de SLANT px : la coupe en biais passe au milieu.
+            { ...vars, position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", background: PANEL, [side === "left" ? "marginRight" : "marginLeft"]: -SLANT / 2 }
+          : { ...vars, position: "relative", flexBasis: 0, minWidth: 0, overflow: "hidden", perspective: 1200, cursor: picked ? "default" : "pointer", borderRadius: 16, background: PANEL, boxShadow: `0 0 0 1px ${LINE}` }
+      }
       onClick={() => !picked && onListen(side)}
       role="group"
       aria-label={`${id.sides[side === "left" ? 0 : 1]} : ${masked(p)}`}
@@ -682,17 +709,20 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
         <motion.div
           style={{
             position: "absolute",
-            left: "clamp(22px, 2.6vw, 40px)",
-            right: "clamp(22px, 2.6vw, 40px)",
+            // Jeux : on s'écarte de la coupe, et le côté droit est en miroir (face-à-face).
+            left: jeux && side === "right" ? `calc(clamp(22px, 2.6vw, 40px) + ${SLANT * 0.6}px)` : "clamp(22px, 2.6vw, 40px)",
+            right: jeux && side === "left" ? `calc(clamp(22px, 2.6vw, 40px) + ${SLANT}px)` : "clamp(22px, 2.6vw, 40px)",
             bottom: "clamp(22px, 3.4vh, 36px)",
             display: "grid",
+            justifyItems: mirror ? "end" : undefined,
+            textAlign: mirror ? "right" : undefined,
             gap: 10,
             x: txX,
             y: txY,
             zIndex: 6,
           }}
         >
-          <p style={{ margin: 0, display: "flex", gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? labelColor(th) : id.mute }}>
+          <p style={{ margin: 0, display: "flex", flexDirection: mirror ? "row-reverse" : undefined, gap: 10, alignItems: "center", fontFamily: th ? th.font : undefined, fontSize: th ? Math.round(12 * Math.min(1, th.scale + 0.2)) : 11, fontWeight: th ? th.weight : 600, letterSpacing: th?.id === "pixel" ? "0.06em" : "0.22em", textTransform: "uppercase", color: th ? labelColor(th) : id.mute }}>
             <span aria-hidden style={{ width: 18, height: th?.id === "pixel" ? 4 : 1, background: th ? th.accent : id.a }} />
             {jeux && !hidden && p.sub ? p.sub : id.sides[side === "left" ? 0 : 1]}
             {playing ? <EqBars color={id.a} /> : null}
@@ -756,7 +786,7 @@ function Panel({ side, p, id, player, focus, picked, hidden, masked, reduce, ref
             </motion.p>
           ) : null}
           {!picked ? (
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", flexDirection: mirror ? "row-reverse" : undefined, gap: 8, marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.94 }}
@@ -870,6 +900,41 @@ function JeuxBackdrop({ p, playing }: { p: Participant; playing: boolean }) {
   const [ready, setReady] = useState(false);
   const fill: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", opacity: ready ? 1 : 0, transition: "opacity 0.6s ease, filter 0.9s ease" };
   const cls = `jx-art ${playing ? "is-playing" : ""}`;
+  // Pendant l'écoute, le fond passe par les autres images du même jeu (celles des autres pistes).
+  const { participants } = useTournament();
+  const slides = useMemo(() => {
+    if (!bg || bg.video) return [];
+    const seen = new Set([bg.src]);
+    const out: Bg[] = [bg];
+    for (const q of participants) {
+      if (q.sub !== p.sub) continue;
+      const b = bgOf(q as Participant & { bg?: Bg });
+      if (!b || b.video || seen.has(b.src)) continue;
+      seen.add(b.src);
+      out.push(b);
+    }
+    // Ordre propre à la piste : deux pistes du même jeu ne défilent pas pareil.
+    const rest = out.slice(1);
+    const h = [...p.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7);
+    const k = rest.length ? h % rest.length : 0;
+    return [bg, ...rest.slice(k), ...rest.slice(0, k)].slice(0, 7);
+  }, [participants, p.id, p.sub, bg]);
+  const [slide, setSlide] = useState(0);
+  useEffect(() => setSlide(0), [p.id]);
+  useEffect(() => {
+    if (!playing || slides.length < 2) return;
+    const t = setInterval(() => setSlide((s) => (s + 1) % slides.length), 7000);
+    return () => clearInterval(t);
+  }, [playing, slides.length]);
+  useEffect(() => {
+    // Précharge l'image suivante pour que le fondu ne tombe jamais sur du vide.
+    if (!playing || slides.length < 2) return;
+    const n = slides[(slide + 1) % slides.length];
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.src = window.innerWidth >= 1500 && n.hi ? n.hi : n.src;
+  }, [playing, slide, slides]);
+  const cur = slide > 0 ? slides[slide] : null;
   if (bg?.video)
     return (
       <video
@@ -889,20 +954,42 @@ function JeuxBackdrop({ p, playing }: { p: Participant; playing: boolean }) {
     );
   if (bg)
     return (
-      <img
-        key={bg.src}
-        className={cls}
-        src={bg.src}
-        srcSet={bg.hi ? `${bg.src} 1920w, ${bg.hi} 3840w` : undefined}
-        sizes="(min-width: 1500px) 62vw, 100vw"
-        crossOrigin="anonymous"
-        alt=""
-        draggable={false}
-        decoding="async"
-        onLoad={() => setReady(true)}
-        onError={() => setReady(true)}
-        style={{ ...fill, objectPosition: bg.pos }}
-      />
+      <>
+        <img
+          key={bg.src}
+          className={cls}
+          src={bg.src}
+          srcSet={bg.hi ? `${bg.src} 1920w, ${bg.hi} 3840w` : undefined}
+          sizes="(min-width: 1500px) 62vw, 100vw"
+          crossOrigin="anonymous"
+          alt=""
+          draggable={false}
+          decoding="async"
+          onLoad={() => setReady(true)}
+          onError={() => setReady(true)}
+          style={{ ...fill, objectPosition: bg.pos }}
+        />
+        <AnimatePresence>
+          {cur ? (
+            <motion.img
+              key={cur.src}
+              className={`jx-slide ${playing ? "is-playing" : ""}`}
+              data-kb={slide % 4}
+              src={cur.src}
+              srcSet={cur.hi ? `${cur.src} 1920w, ${cur.hi} 3840w` : undefined}
+              sizes="(min-width: 1500px) 62vw, 100vw"
+              crossOrigin="anonymous"
+              alt=""
+              draggable={false}
+              decoding="async"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 1.6, ease: "easeInOut" } }}
+              exit={{ opacity: 0, transition: { duration: 1.6, ease: "easeInOut" } }}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", maxWidth: "none", objectFit: "cover", objectPosition: cur.pos, filter: "brightness(1.08) saturate(1.1)" }}
+            />
+          ) : null}
+        </AnimatePresence>
+      </>
     );
   const src = imgOf(p);
   return (
