@@ -80,6 +80,13 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       petalCache.set(color, c)
       return c
     }
+    // Planches de pétales peints (une Image par URL, chargée au premier besoin).
+    const atlasCache = new Map()
+    const getAtlas = (url) => {
+      let im = atlasCache.get(url)
+      if (!im) { im = new Image(); im.decoding = 'async'; im.src = url; atlasCache.set(url, im) }
+      return im.complete && im.naturalWidth ? im : null
+    }
     const flecks = [] // paillettes à dessiner en 2e passe (additif), réutilisé
 
     const tick = () => {
@@ -90,6 +97,8 @@ export default function CursorTrail({ skin, isGlobal = false }) {
       // un seul changement de composite par frame au lieu d'un par particule.
       ctx.globalCompositeOperation = petals ? 'source-over' : ((C?.composite) || 'lighter')
       flecks.length = 0
+      const atlas = petals && C.petalAtlas ? getAtlas(C.petalAtlas) : null
+      const cell = C?.petalCell || 128
 
       const tw = C?.twinkle || 0
       for (let i = parts.length - 1; i >= 0; i--) {
@@ -124,12 +133,21 @@ export default function CursorTrail({ skin, isGlobal = false }) {
           // rotation × échelle (k, k·sy) posée d'un coup, puis le sprite.
           p.rot += p.spin
           p.x += Math.sin(p.tw += 0.08) * 0.35 * dpr
-          const k = (p.size * (0.55 + 0.45 * ease)) / PU
-          const sy = k * (0.55 + 0.45 * Math.abs(Math.cos(p.rot * 1.7)))
+          const pr = p.size * (0.55 + 0.45 * ease)
+          const flip = 0.55 + 0.45 * Math.abs(Math.cos(p.rot * 1.7)) // pétale qui bascule (3D)
           const cs = Math.cos(p.rot), sn = Math.sin(p.rot)
           ctx.globalAlpha = a
-          ctx.setTransform(cs * k, sn * k, -sn * sy, cs * sy, p.x, p.y)
-          ctx.drawImage(getPetal(p.color), -PW / 2, -PH / 2)
+          if (atlas) {
+            // Pétale peint : la plus grande dimension ≈ 3·pr (comme l'ellipse).
+            const k = (pr * 3) / cell, sy = k * flip
+            ctx.setTransform(cs * k, sn * k, -sn * sy, cs * sy, p.x, p.y)
+            const cols = C.petalCols || 8
+            ctx.drawImage(atlas, (p.frame % cols) * cell, ((p.frame / cols) | 0) * cell, cell, cell, -cell / 2, -cell / 2, cell, cell)
+          } else {
+            const k = pr / PU, sy = k * flip
+            ctx.setTransform(cs * k, sn * k, -sn * sy, cs * sy, p.x, p.y)
+            ctx.drawImage(getPetal(p.color), -PW / 2, -PH / 2)
+          }
         } else if (petals) {
           p.r = r; p.a = a; flecks.push(p)
         } else {
@@ -197,6 +215,7 @@ export default function CursorTrail({ skin, isGlobal = false }) {
                 part.petal = true
                 part.rot = Math.random() * 6.283
                 part.spin = (Math.random() - 0.5) * 0.12
+                part.frame = (Math.random() * (C.petalCols || 8) * (C.petalRows || 2)) | 0
               }
             }
             // Mode « orbit » (traînée GALAXIE) : la particule spirale autour de son

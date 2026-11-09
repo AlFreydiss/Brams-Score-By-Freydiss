@@ -38,6 +38,9 @@ export const TRAILS = [
     // paillettes d'or : le Gommage de la Peintresse.
     config: {
       shape: 'petal', composite: 'source-over',
+      // Pétales PEINTS (Grok Imagine, détourés) : planche 8×2 de cases 128 px.
+      // Repli sur les ellipses colorées tant que l'image n'est pas chargée.
+      petalAtlas: '/trails/gommage-petals.webp', petalCols: 8, petalRows: 2, petalCell: 128,
       colors: ['#c22f36', '#e0484c', '#9d1f27', '#f4efe6', '#e9dfcf'],
       flecks: ['#ffe3a3', '#f6c75a', '#fff6dc'], fleckRate: 0.2,
       maxParts: 220, maxEmit: 5, emitDivisor: 7, minDist: 5,
