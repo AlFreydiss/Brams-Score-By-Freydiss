@@ -20,6 +20,7 @@ import SpotlightCard from './SpotlightCard.jsx'
 import { useCart } from '../contexts/CartContext.jsx'
 import RarityRow from './boutique/RarityRow.jsx'
 import { cursorSvgURI } from '../data/cursor-svgs.js'
+import { paintedCursor } from '../data/cursor-painted.js'
 
 const HUE = { COMMUN: 42, RARE: 220, EPIQUE: 280, MYTHIQUE: 42, INTERDIT: 0 }
 
@@ -100,7 +101,11 @@ function emojiCursorURI(emoji, size = 40) {
 // dans le SVG rendu à 32 px (pointe à (5,3) sur 40 → (4,2.4) sur 32).
 const ARROW_TIPS = { 'cur-clairobscur': [4, 2] }
 const isArrowCursor = (id) => !!ARROW_TIPS[id]
+// Priorité : icône PEINTE (cursor-painted.js, point de clic sur la pointe de
+// l'objet) → SVG maison → emoji.
 function nativeCursor(id, emoji) {
+  const p = paintedCursor(id)
+  if (p) return `url("${p.src32}") ${p.hot[0]} ${p.hot[1]}, auto`
   const [hx, hy] = ARROW_TIPS[id] || [5, 3]
   return `url("${cursorSvgURI(id, 32) || emojiCursorURI(emoji)}") ${hx} ${hy}, auto`
 }
@@ -147,8 +152,11 @@ function CursorPreview({ cur, size = 56 }) {
       background: `radial-gradient(circle at 50% 40%, ${r.color}22, rgba(0,0,0,0.18))`,
       border: `1px solid ${r.color}44`, boxShadow: `inset 0 0 18px ${r.glow}`,
     }}>
-      {/* Priorité : SVG vectoriel custom (designs maison) → PNG R2 → emoji */}
-      {cursorSvgURI(cur.id) ? (
+      {/* Priorité : icône peinte → SVG vectoriel maison → PNG R2 → emoji */}
+      {paintedCursor(cur.id) ? (
+        <img loading="lazy" decoding="async" src={paintedCursor(cur.id).src} alt=""
+          style={{ width: Math.round(size * 0.82), height: Math.round(size * 0.82), animation: cur.animated ? 'crc-float 1.6s ease-in-out infinite' : 'none', filter: `drop-shadow(0 3px 8px ${r.glow})` }} />
+      ) : cursorSvgURI(cur.id) ? (
         <img loading="lazy" decoding="async" src={cursorSvgURI(cur.id)} alt=""
           style={{ width: Math.round(size * 0.8), height: Math.round(size * 0.8), animation: cur.animated ? 'crc-float 1.6s ease-in-out infinite' : 'none', filter: `drop-shadow(0 2px 6px ${r.glow})` }} />
       ) : r2Failed ? (
@@ -174,6 +182,10 @@ if (typeof window !== 'undefined') {
 // curseur natif animé). Position fixed, pointer-events none, au-dessus de tout.
 function CustomCursorOverlay({ id, emoji, glow }) {
   const ref = useRef(null)
+  // Icône peinte : la POINTE de l'objet est posée sur la souris (point de clic
+  // calculé), pas le centre de l'image → clic précis. Image affichée à 32 px.
+  const painted = paintedCursor(id)
+  const off = painted ? `translate(${-painted.hot[0]}px, ${-painted.hot[1]}px)` : 'translate(-50%,-50%)'
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -181,24 +193,27 @@ function CustomCursorOverlay({ id, emoji, glow }) {
     // contrairement à left/top. translate3d isole la couche composite.
     // Écriture directe dans le handler (pas de rAF) : une simple écriture de style
     // ne force aucun layout, et on gagne la frame de retard qu'ajoutait le rAF.
-    const apply = (x, y) => { el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%,-50%)` }
+    const apply = (x, y) => { el.style.transform = `translate3d(${x}px, ${y}px, 0) ${off}` }
     const onMove = (e) => apply(e.clientX, e.clientY)
     apply(_lastPX, _lastPY) // peint immédiatement à la dernière position connue → jamais invisible au repos
     window.addEventListener('pointermove', onMove, { passive: true })
     return () => window.removeEventListener('pointermove', onMove)
-  }, [])
+  }, [off])
   return (
     <div ref={ref} aria-hidden style={{
       position: 'fixed', left: 0, top: 0, zIndex: 2147483647, pointerEvents: 'none',
-      transform: `translate3d(${_lastPX}px,${_lastPY}px,0) translate(-50%,-50%)`,
+      transform: `translate3d(${_lastPX}px,${_lastPY}px,0) ${off}`,
       willChange: 'transform', fontSize: 30, lineHeight: 1,
       filter: `drop-shadow(0 0 7px ${glow || 'rgba(245,181,10,0.7)'})`,
     }}>
-      {/* Le pulse vit sur l'enfant : il ne se bat plus avec le transform de position. */}
-      <span style={{ display: 'block', animation: 'crc-pulse 1.1s ease-in-out infinite' }}>
-        {cursorSvgURI(id)
-          ? <img loading="lazy" decoding="async" src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
-          : emoji}
+      {/* Le pulse vit sur l'enfant : il ne se bat plus avec le transform de position.
+          Icône peinte : il pulse autour de la pointe (transform-origin) → la pointe ne bouge pas. */}
+      <span style={{ display: 'block', animation: 'crc-pulse 1.1s ease-in-out infinite', transformOrigin: painted ? `${painted.hot[0]}px ${painted.hot[1]}px` : '50% 50%' }}>
+        {painted
+          ? <img decoding="async" src={painted.src} alt="" style={{ width: 32, height: 32, display: 'block' }} />
+          : cursorSvgURI(id)
+            ? <img loading="lazy" decoding="async" src={cursorSvgURI(id)} alt="" style={{ width: 34, height: 34, display: 'block' }} />
+            : emoji}
       </span>
     </div>
   )
