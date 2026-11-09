@@ -1,6 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { MeshReflectorMaterial } from "@react-three/drei";
-import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import { Bloom, EffectComposer, Noise, Vignette } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Info, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -133,7 +134,9 @@ export default function Arena3D({ items, onPlay, onInfo }: Props) {
         <Floor />
         <CameraRig dive={!!dive} drag={dragOff} />
         <EffectComposer>
-          <Bloom intensity={0.35} luminanceThreshold={0.55} luminanceSmoothing={0.3} mipmapBlur />
+          <Bloom intensity={0.45} luminanceThreshold={0.5} luminanceSmoothing={0.3} mipmapBlur />
+          {/* Grain de pellicule très léger : la scène a la matière d'une projection. */}
+          <Noise premultiply blendFunction={BlendFunction.SOFT_LIGHT} opacity={0.1} />
           <Vignette eskil={false} offset={0.2} darkness={0.75} />
         </EffectComposer>
       </Canvas>
@@ -515,6 +518,12 @@ function Sheen({ geo, accent, active }: { geo: THREE.BufferGeometry; accent: THR
     [],
   );
   const clock = useRef(2.5);
+  // Le portail qui devient actif accroche la lumière tout de suite.
+  const was = useRef(active);
+  useEffect(() => {
+    if (active && !was.current) clock.current = 0;
+    was.current = active;
+  }, [active]);
   useFrame((_, dt) => {
     clock.current += dt;
     if (clock.current > 7) clock.current = 0;
