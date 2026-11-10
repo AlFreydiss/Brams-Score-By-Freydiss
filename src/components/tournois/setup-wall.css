@@ -176,3 +176,72 @@
     height: 50px;
   }
 }
+
+/* Fenêtre très basse : le texte d'intro s'efface, le titre tient sur moins de place. */
+@media (min-width: 861px) and (max-height: 740px) {
+  .nx-root .nx-setup .nx-lede {
+    display: none;
+  }
+  .nx-root .nx-setup .nx-setup-box {
+    gap: 12px;
+  }
+  .nx-root .nx-setup .nx-title {
+    font-size: clamp(32px, 6.6vh, 56px) !important;
+  }
+  .nx-root .nx-setup--arena .nx-title em {
+    display: inline;
+  }
+  .nx-root .nx-setup--jeux .t-formats button {
+    height: 92px;
+  }
+  .nx-root .nx-setup .t-go {
+    height: 46px;
+  }
+}
+
+/* Colonne étroite (portable) : les formats restent sur une seule ligne. */
+@media (min-width: 861px) and (max-width: 1560px) {
+  .nx-root .nx-setup .t-formats {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .nx-root .nx-setup .t-formats button {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+  .nx-root .nx-setup .t-formats b {
+    font-size: 21px;
+    white-space: nowrap;
+  }
+  .nx-root .nx-setup .t-formats small {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .nx-root .nx-setup--jeux .t-formats button {
+    width: auto;
+    flex: 1 1 0;
+  }
+  .nx-root .nx-setup--jeux .t-formats b {
+    font-size: 17px;
+  }
+  .nx-root .nx-setup--jeux .t-formats small {
+    white-space: normal;
+  }
+}
+@media (min-width: 861px) and (max-height: 740px) {
+  .nx-root .nx-setup--jeux .nx-title {
+    font-size: clamp(28px, 5.6vh, 44px) !important;
+  }
+  .nx-root .nx-setup--jeux {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}
+@media (min-width: 861px) and (max-height: 740px) {
+  .nx-root .nx-setup--jeux .sj-kicker,
+  .nx-root .nx-setup--jeux .t-switch small {
+    display: none;
+  }
+}

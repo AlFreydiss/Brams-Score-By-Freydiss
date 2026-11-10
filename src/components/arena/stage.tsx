@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useMotionValue, useSpring, useTransform, type 
 import { ChevronLeft, ChevronRight, Play, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSilk, type Silk } from "./silk";
+import { watchBars } from "@/lib/tournois/pillarbox";
 import "./stage.css";
 
 // Accueil des tournois : la « scène ». Le texte du tournoi à gauche ; à droite
@@ -502,20 +503,31 @@ function Clip({ video, sound }: { video: { src: string; start: number }; sound: 
     if (sound) el.volume = 0.7;
     el.play().catch(() => {});
   }, [sound]);
+  // Bandes noires incrustées (vieux 4:3, cinémascope) : on agrandit pour les sortir de l'écran.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !on) return;
+    return watchBars(el, (s) => {
+      el.style.transform = `scale(${s.toFixed(3)})`;
+    });
+  }, [on]);
   return (
-    <video
-      ref={ref}
-      className={on ? "is-on" : ""}
-      src={`${video.src}#t=${video.start}`}
-      muted
-      autoPlay
-      loop
-      playsInline
-      preload="auto"
-      onLoadedMetadata={(e) => {
-        if (e.currentTarget.currentTime < video.start - 1) e.currentTarget.currentTime = video.start;
-      }}
-      onPlaying={() => setOn(true)}
-    />
+    <span className="stg-clip">
+      <video
+        ref={ref}
+        className={on ? "is-on" : ""}
+        src={`${video.src}#t=${video.start}`}
+        crossOrigin="anonymous"
+        muted
+        autoPlay
+        loop
+        playsInline
+        preload="auto"
+        onLoadedMetadata={(e) => {
+          if (e.currentTarget.currentTime < video.start - 1) e.currentTarget.currentTime = video.start;
+        }}
+        onPlaying={() => setOn(true)}
+      />
+    </span>
   );
 }

@@ -4,7 +4,7 @@ import { de, fill } from "@/lib/tournois/catalog";
 import { actions, draw } from "@/lib/tournois/store";
 import { useTournament } from "./provider";
 import type { Participant } from "@/lib/tournois/types";
-import { isPillarbox } from "@/lib/tournois/pillarbox";
+import { watchBars } from "@/lib/tournois/pillarbox";
 import { SetupWall } from "./setup-wall";
 import { IDENTITIES, isFight } from "../fight/identities";
 import { Embers } from "../fight/Embers";
@@ -26,14 +26,10 @@ const ARENA_TITLE: Record<ArenaSlug, [string, string]> = {
 function pillarbox(v: HTMLVideoElement) {
   if (v.dataset.pb) return;
   v.dataset.pb = "1";
-  // Un générique s'ouvre souvent sur du noir : on regarde plusieurs fois avant de conclure.
-  let tries = 0;
-  const check = () => {
-    if (!v.isConnected) return;
-    if (isPillarbox(v)) v.classList.add("is-pillar");
-    else if (++tries < 6) window.setTimeout(check, 900);
-  };
-  window.setTimeout(check, 400);
+  // Un générique s'ouvre souvent sur du noir : plusieurs mesures concordantes avant de conclure.
+  watchBars(v, (_s, bars) => {
+    if (bars.x > 0.08) v.classList.add("is-pillar");
+  });
 }
 
 function ArenaBackdrop({ slug, pool }: { slug: ArenaSlug; pool: Participant[] }) {

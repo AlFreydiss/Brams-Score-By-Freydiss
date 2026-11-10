@@ -304,6 +304,14 @@
 }
 .stg-card video {
   opacity: 0;
+  transition: filter 0.6s, opacity 0.6s, transform 0.5s var(--ease);
+}
+/* Cadre de la vidéo : elle peut être agrandie pour sortir ses bandes noires. */
+.stg-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
 }
 .stg-card video.is-on {
   opacity: 1;

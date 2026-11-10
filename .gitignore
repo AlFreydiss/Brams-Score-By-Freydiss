@@ -57,3 +57,6 @@ scripts/doublage-vtt-cache.json
 .shot-*.mjs
 .patch-*.mjs
 .apply-*.mjs
+
+# Sel local du skill hallmark
+.hallmark/
