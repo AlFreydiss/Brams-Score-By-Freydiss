@@ -47,6 +47,7 @@ export function ArenaHero({
   groups,
   lede,
   cta,
+  extra,
   base,
 }: {
   slug: "ost" | "openings" | "endings";
@@ -54,6 +55,8 @@ export function ArenaHero({
   groups: number;
   lede: string;
   cta: string;
+  /** Sous les boutons (ex. « Recommencer » quand une partie est en cours). */
+  extra?: React.ReactNode;
   base: string;
 }) {
   const u = U[slug];
@@ -217,6 +220,7 @@ export function ArenaHero({
           <Link to={`${base}/classement`} className="jh-link">
             Voir le classement
           </Link>
+          {extra}
         </div>
       </div>
 

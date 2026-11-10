@@ -624,3 +624,51 @@
     animation: none;
   }
 }
+
+/* ── Sous l'affiche : plus de fond plat ───────────────────────────────
+   L'art du jeu continue derrière toute la page, très flou et sombre, avec
+   une lueur d'or en haut et la nuit en bas. */
+.nx-root[data-t="jeux"] .t-home {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+}
+.nx-root[data-t="jeux"] .t-home::before,
+.nx-root[data-t="jeux"] .t-home::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.nx-root[data-t="jeux"] .t-home::before {
+  background: #070605 url("/tournoi/jeux-s/jeux-hero/clair-obscur.webp") center 20% / cover no-repeat;
+  filter: blur(56px) saturate(1.2) brightness(0.62);
+  transform: scale(1.1);
+}
+.nx-root[data-t="jeux"] .t-home::after {
+  background:
+    radial-gradient(60% 520px at 22% 980px, rgba(210, 173, 110, 0.16), transparent 70%),
+    radial-gradient(50% 600px at 86% 1700px, rgba(120, 150, 190, 0.1), transparent 70%),
+    linear-gradient(90deg, rgba(7, 6, 5, 0.72) 0%, rgba(7, 6, 5, 0.3) 22%, rgba(7, 6, 5, 0.3) 78%, rgba(7, 6, 5, 0.72) 100%),
+    linear-gradient(180deg, rgba(7, 6, 5, 0.5) 0%, rgba(7, 6, 5, 0.42) 45%, rgba(7, 6, 5, 0.86) 82%, #070605 100%);
+}
+/* Le bas de l'affiche se fond dans la suite au lieu de buter sur un aplat. */
+.nx-root[data-t="jeux"] .jh {
+  background: transparent;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 86%, transparent 100%);
+}
+.nx-root[data-t="jeux"] .t-home-body {
+  max-width: min(1560px, 92vw);
+}
+/* Sections en verre sombre, liseré d'or : elles se lisent sur le fond. */
+.nx-root[data-t="jeux"] .t-home-body :is(.t-panel, .t-facts) {
+  border: 1px solid rgba(210, 173, 110, 0.2);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(16, 13, 10, 0.72), rgba(10, 9, 8, 0.6));
+  box-shadow: 0 30px 60px -40px #000;
+}
+.nx-root[data-t="jeux"] .t-home-body .t-panel {
+  padding: 22px 24px 20px;
+}

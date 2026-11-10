@@ -33,6 +33,7 @@
   color: rgba(244, 242, 236, 0.5);
 }
 .sw-grid {
+  position: relative;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -243,5 +244,53 @@
   .nx-root .nx-setup--jeux .sj-kicker,
   .nx-root .nx-setup--jeux .t-switch small {
     display: none;
+  }
+}
+
+/* ── Lancement : le mur se retire, le premier duel s'avance ───────── */
+.sw-tile.is-star {
+  z-index: 3;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--sw-accent) 70%, transparent),
+    0 30px 60px -24px #000;
+}
+.sw-tile.is-star::before {
+  display: none;
+}
+.sw-versus {
+  position: absolute;
+  top: 2%;
+  bottom: 2%;
+  width: 1px;
+  margin-left: -0.5px;
+  z-index: 4;
+  background: linear-gradient(180deg, transparent, var(--sw-accent) 22%, #fff 50%, var(--sw-accent) 78%, transparent);
+  box-shadow: 0 0 18px 1px color-mix(in srgb, var(--sw-accent) 60%, transparent);
+  pointer-events: none;
+}
+/* Les réglages s'effacent : il ne reste que le tirage. */
+.nx-setup .nx-setup-box {
+  transition:
+    opacity 0.45s ease,
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-setup.is-launching .nx-setup-box {
+  opacity: 0;
+  transform: translateX(-28px);
+  pointer-events: none;
+}
+.nx-setup .sw-head {
+  transition: opacity 0.4s ease;
+}
+.nx-setup.is-launching :is(.sw-rest, .sw-head) {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-setup .nx-setup-box {
+    transition: none;
+  }
+  .nx-setup.is-launching .nx-setup-box {
+    transform: none;
   }
 }

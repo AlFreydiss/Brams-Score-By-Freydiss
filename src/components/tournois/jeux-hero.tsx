@@ -47,12 +47,15 @@ export function JeuxHero({
   games,
   counts,
   cta,
+  extra,
   base,
 }: {
   tracks: number;
   games: number;
   counts: Map<string, number>;
   cta: string;
+  /** Sous les boutons (ex. « Recommencer » quand une partie est en cours). */
+  extra?: React.ReactNode;
   base: string;
 }) {
   useAdobeKit();
@@ -197,6 +200,7 @@ export function JeuxHero({
           <Link to={`${base}/classement`} className="jh-link">
             Voir le classement
           </Link>
+          {extra}
         </div>
       </div>
 

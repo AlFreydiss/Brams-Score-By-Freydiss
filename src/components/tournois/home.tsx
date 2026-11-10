@@ -1,3 +1,4 @@
+import { ResetRun } from "./reset-run";
 import { Pause, Play } from "lucide-react";
 import { de, fill } from "@/lib/tournois/catalog";
 import { useEffect, useMemo, useState } from "react";
@@ -74,6 +75,8 @@ export function TournamentHome() {
   const fromSite = sitePopular.length > 0;
   const popular = fromSite ? sitePopular : localPopular;
 
+  const reset = run && !finished ? <ResetRun slug={meta.slug} className="t-reset--row" /> : null;
+
   return (
     <div className={`t-home ${arena ? "is-arena" : ""}`}>
       {meta.slug === "jeux" ? (
@@ -82,6 +85,7 @@ export function TournamentHome() {
           games={groups}
           counts={new Map(lineup)}
           cta={run && !finished ? `Reprendre, duel ${done + 1}` : "Participer au tournoi"}
+          extra={reset}
           base={base}
         />
       ) : arena ? (
@@ -91,6 +95,7 @@ export function TournamentHome() {
           groups={groups}
           lede={fill(meta.lead, participants)}
           cta={run && !finished ? `Reprendre, duel ${done + 1}` : "Participer au tournoi"}
+          extra={reset}
           base={base}
         />
       ) : (
@@ -105,6 +110,7 @@ export function TournamentHome() {
             <Link to={`${base}/classement`} className="nx-ghost-link">
               Voir le classement
             </Link>
+            {reset}
           </div>
         </div>
         {preview.length === 2 ? (
@@ -246,6 +252,7 @@ export function TournamentHome() {
                     <Link to={`${base}/duel`} className="t-go t-go--small">
                       Reprendre au duel {done + 1}
                     </Link>
+                    <ResetRun slug={meta.slug} className="t-reset--row" />
                   </>
                 ) : null}
               </section>

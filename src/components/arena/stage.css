@@ -269,6 +269,32 @@
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
+/* L'écran qui sort est effacé de gauche à droite : le masque vaut aussi pour son reflet. */
+.stg-card {
+  -webkit-mask-clip: no-clip;
+  mask-clip: no-clip;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  /* Répété vers le bas (le reflet), pas sur les côtés (le liseré ne doit pas réapparaître). */
+  -webkit-mask-repeat: no-repeat repeat;
+  mask-repeat: no-repeat repeat;
+}
+/* La lame de lumière qui efface, à la couleur du tournoi. */
+.stg-blade {
+  position: absolute;
+  left: 0;
+  top: -3%;
+  bottom: -3%;
+  width: 2px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow:
+    0 0 10px 1px #fff,
+    0 0 26px 5px var(--acc),
+    0 0 90px 22px color-mix(in srgb, var(--acc) 55%, transparent);
+  pointer-events: none;
+  z-index: 3;
+}
 /* Sol laqué : chaque écran s'y reflète (image fixe retournée, fondue vers le bas). */
 .stg-refl {
   position: absolute;

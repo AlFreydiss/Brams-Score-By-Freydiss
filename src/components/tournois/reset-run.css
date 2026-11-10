@@ -1,0 +1,80 @@
+/* Bouton « Recommencer » (reset-run.tsx) : discret au repos, net une fois armé. */
+.t-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  opacity: 0.62;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+button.t-reset:hover,
+button.t-reset:focus-visible {
+  opacity: 1;
+}
+.t-reset svg {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+button.t-reset:hover svg {
+  transform: rotate(-150deg);
+}
+.t-reset.is-armed {
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  opacity: 1;
+  cursor: default;
+  animation: t-reset-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.t-reset.is-armed button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.16s ease;
+}
+.t-reset.is-armed .t-reset-yes {
+  border-color: #e5484d;
+  background: #e5484d;
+  color: #fff;
+}
+.t-reset.is-armed .t-reset-no {
+  border-color: rgba(244, 242, 236, 0.3);
+}
+.t-reset.is-armed button:active {
+  transform: scale(0.96);
+}
+@keyframes t-reset-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+/* Sous les boutons d'un accueil : sur sa propre ligne. */
+.t-reset--row {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t-reset.is-armed {
+    animation: none;
+  }
+}
+/* Dans le panneau « Ta partie » : sous le bouton, pas collé à lui. */
+.t-panel--run .t-reset--row {
+  display: flex;
+  margin-top: 12px;
+}

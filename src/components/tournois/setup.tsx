@@ -123,7 +123,7 @@ export function Setup() {
     if (!effective || launching) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setLaunching(true);
-    timer.current = window.setTimeout(() => actions.start(meta.slug, drawn, blind), reduce ? 0 : 820);
+    timer.current = window.setTimeout(() => actions.start(meta.slug, drawn, blind), reduce ? 0 : 1400);
   };
   const accent = isFight(meta.slug) ? IDENTITIES[meta.slug].a : "#f4f2ec";
 
@@ -136,7 +136,7 @@ export function Setup() {
     });
 
   return (
-    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""} ${arena ? `nx-setup--arena nx-setup--${arena}` : ""} ${plain ? "nx-setup--plain" : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
+    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""} ${arena ? `nx-setup--arena nx-setup--${arena}` : ""} ${plain ? "nx-setup--plain" : ""} ${launching ? "is-launching" : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
       {jeux ? (
         // Univers Clair Obscur / Elden Ring : boucle vidéo du jeu, brume, braises.
         <div className="sj-bg" aria-hidden>

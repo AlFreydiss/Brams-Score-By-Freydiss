@@ -51,6 +51,14 @@ const BACK_MS = 7000;
 const DIVE_S = 1.05;
 // Angle entre deux écrans de l'anneau, et rayon en largeurs d'écran.
 const STEP = 34;
+// Part de la rotation gardée par l'écran qui sort à gauche.
+const LEFT_TURN = 0.3;
+// Mêmes valeurs que `perspective` et `perspective-origin` de .stg-scene.
+const PERSPECTIVE = 1300;
+const PERSPECTIVE_NARROW = 800;
+const ORIGIN_Y = 0.42;
+// Avancée de l'écran sortant, assez pour passer devant le bord de son voisin.
+const LIFT = 300;
 // Assez grand pour que le voisin passe derrière l'écran de face, jamais devant.
 const RADIUS = 1.78;
 // La scène est vue d'un peu au-dessus : on sent le sol.
@@ -442,14 +450,30 @@ function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: S
     return d;
   };
   // Au lancement, les voisins s'écartent de l'écran qui plonge.
-  const angle = useTransform([rot, flat], ([r, f]: number[]) => off(r) * STEP * (1 + f * 1.1));
+  // À gauche il y a le texte : l'écran qui sort ne pivote presque pas, il est effacé sur place.
+  const angle = useTransform([rot, flat], ([r, f]: number[]) => {
+    const d = off(r);
+    return (d < 0 ? d * LEFT_TURN : d) * STEP * (1 + f * 1.1);
+  });
+  // 0 = écran entier, 1 = entièrement effacé (de gauche à droite).
+  const out = useTransform(rot, (r) => Math.min(1, Math.max(0, -off(r))));
+  const mask = useTransform(out, (o) => (o <= 0.001 ? "none" : `linear-gradient(90deg, transparent ${(o * 124 - 24).toFixed(2)}%, #000 ${(o * 124).toFixed(2)}%)`));
+  // L'écran qui sort reste devant celui qui arrive (c'est la lame qui le découvre) : il avance
+  // vers la caméra et rétrécit d'autant, donc sa taille à l'écran ne change pas.
+  const lift = useTransform(out, (o) => Math.min(1, o * 6) * LIFT);
+  const P = narrow ? PERSPECTIVE_NARROW : PERSPECTIVE;
+  const shrink = useTransform(lift, (z) => (P - z) / P);
+  // Le point de fuite est un peu au-dessus du centre : on compense pour que l'écran ne descende pas.
+  const rise = useTransform(lift, (z) => (-(0.5 - ORIGIN_Y) * (radius / RADIUS) * (9 / 16) * z) / P);
+  const bladeX = useTransform(out, (o) => (o * 1.24 - 0.02) * (radius / RADIUS));
+  const bladeO = useTransform(out, (o) => (o <= 0.001 ? 0 : Math.min(1, o * 12, (1 - o) * 5)));
   const opacity = useTransform([rot, flat], ([r, f]: number[]) => {
     const d = off(r);
     const a = Math.abs(d);
     let o: number;
     // À droite : deux voisins visibles, de plus en plus sombres. À gauche il y a le texte : l'écran s'efface vite.
     if (d >= 0) o = a <= 1 ? 1 - 0.4 * a : a <= 2 ? 0.6 - (narrow ? 0.6 : 0.34) * (a - 1) : Math.max(0, 0.26 - 0.4 * (a - 2));
-    else o = Math.max(0, 1 - 1.05 * a);
+    else o = a < 1 ? 1 : 0;
     return o * (1 - f * Math.min(1, a * 3));
   });
   const events = useTransform(opacity, (o) => (o > 0.06 ? "auto" : "none"));
@@ -459,14 +483,15 @@ function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: S
     <motion.div
       className={`stg-card ${on ? "is-on" : ""}`}
       data-k={k}
-      style={{ rotateY: angle, opacity, pointerEvents: events, visibility: shown }}
-      transformTemplate={({ rotateY }) => `rotateY(${typeof rotateY === "number" ? `${rotateY}deg` : rotateY}) translateZ(${radius}px)`}
+      style={{ rotateY: angle, opacity, pointerEvents: events, z: lift, y: rise, scale: shrink, visibility: shown, WebkitMaskImage: mask, maskImage: mask }}
+      transformTemplate={({ rotateY, y, z, scale }) => `rotateY(${typeof rotateY === "number" ? `${rotateY}deg` : rotateY}) translateY(${parseFloat(String(y)) || 0}px) translateZ(${radius + (parseFloat(String(z)) || 0)}px) scale(${scale ?? 1})`}
       aria-hidden={!on}
     >
       <img src={c.still} alt="" draggable={false} decoding="async" style={c.pos ? { objectPosition: c.pos } : undefined} />
       {/* Reflet au sol : l'image retournée, peinte une fois (box-reflect redessinait l'écran à chaque image). */}
       <i className="stg-refl" style={{ backgroundImage: `url("${c.still}")`, backgroundPosition: c.pos }} />
       {children}
+      <motion.i className="stg-blade" style={{ x: bladeX, opacity: bladeO }} aria-hidden />
     </motion.div>
   );
 }
