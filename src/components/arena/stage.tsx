@@ -1,14 +1,14 @@
-import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Play, Volume2, VolumeX } from "lucide-react";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform, type MotionValue } from "framer-motion";
+import { ChevronLeft, ChevronRight, Play, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSilk, type Silk } from "./silk";
 import "./stage.css";
 
-// Accueil des tournois : la « scène ». Le texte du tournoi à gauche, sur le
-// noir ; à droite un seul écran net, au centre d'un carrousel à deux axes en
-// perspective. Gauche / droite change de tournoi, haut / bas change de
-// générique (ou d'image) dans ce tournoi. Seul l'écran du centre joue sa
-// vidéo. Derrière, une soie de lumière prend la couleur de l'univers choisi.
+// Accueil des tournois : la « scène ». Le texte du tournoi à gauche ; à droite
+// un anneau d'écrans en vraie perspective, qui tourne sous la main (glissé,
+// flèches, clavier) et se reflète au sol. Seul l'écran de face joue sa vidéo.
+// Derrière, les images du tournoi choisi défilent en grand, lentement, avec
+// une soie de lumière par-dessus.
 
 export type StageClip = {
   id: string;
@@ -30,6 +30,7 @@ export type StageItem = {
   run: { done: number; total: number; now: string; next: string | null } | null;
   /** Sans partie en cours : « 2 champions », par exemple. */
   note: string | null;
+  /** Le premier passe sur l'écran, les autres défilent en fond. */
   clips: StageClip[];
 };
 
@@ -44,42 +45,34 @@ type Props = {
 };
 
 const IDLE_MS = 9000;
+const BACK_MS = 7000;
 // Lancement : l'écran recule d'un souffle, puis fonce jusqu'à couvrir la page.
 const DIVE_S = 1.05;
-const SPRING = { type: "spring" as const, bounce: 0, duration: 0.95 };
+// Angle entre deux écrans de l'anneau, et rayon en largeurs d'écran.
+const STEP = 34;
+// Assez grand pour que le voisin passe derrière l'écran de face, jamais devant.
+const RADIUS = 1.78;
+// La scène est vue d'un peu au-dessus : on sent le sol.
+const CAM = -4;
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// Place d'un écran selon son écart au centre : dx en tournois, dy en génériques.
-function pose(dx: number, dy: number, w: number, h: number, narrow: boolean) {
-  if (dx === 0 && dy === 0) return { x: 0, y: 0, z: 0, rotateX: 0, rotateY: 0, opacity: 1, scale: 1 };
-  if (dx !== 0) {
-    const side = Math.sign(dx);
-    const far = Math.abs(dx) > 1;
-    // À gauche il y a le texte : l'écran précédent s'efface en reculant.
-    if (side < 0) return { x: -w * 0.42, y: 0, z: -w * 0.5, rotateX: 0, rotateY: -34, opacity: 0 };
-    return { x: w * (far ? 1.5 : narrow ? 0.9 : 0.94), y: 0, z: -w * (far ? 0.7 : 0.3), rotateX: 0, rotateY: far ? 52 : 40, opacity: far ? (narrow ? 0 : 0.2) : 0.55 };
-  }
-  const side = Math.sign(dy);
-  const far = Math.abs(dy) > 1;
-  // Les voisins du dessus et du dessous : de fines tranches, presque à plat.
-  return { x: 0, y: side * h * (far ? 1.08 : 0.72), z: -h * (far ? 1.5 : 0.7), rotateX: side * (far ? -84 : -68), rotateY: 0, opacity: far || narrow ? 0 : 0.42 };
-}
-
+const mod = (k: number, n: number) => ((k % n) + n) % n;
 // Écart signé sur un anneau de n éléments (le plus court chemin).
 const ring = (k: number, at: number, n: number) => {
-  let d = (((k - at) % n) + n) % n;
+  let d = mod(k - at, n);
   if (d > n / 2) d -= n;
   return d;
 };
 
-export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
+export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
   const n = items.length;
-  const [i, setI] = useState(0);
-  const [vi, setVi] = useState<Record<string, number>>({});
+  // Position sur l'anneau, sans borne : tourner toujours dans le même sens ne revient pas en arrière.
+  const [pos, setPosState] = useState(0);
+  const i = mod(pos, n);
   const [touched, setTouched] = useState(false);
   const [sound, setSound] = useState(false);
   const [live, setLive] = useState(true);
-  const [box, setBox] = useState({ w: 0, h: 0, narrow: false });
+  const [box, setBox] = useState({ w: 0, narrow: false });
   const [leaving, setLeaving] = useState(false);
   const [dive, setDive] = useState<{ x: number; y: number; s: number } | null>(null);
   const wrap = useRef<HTMLElement>(null);
@@ -88,32 +81,32 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
   const silk = useRef<Silk | null>(null);
   const reduce = useMemo(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
 
-  // L'ensemble penche à peine vers la souris (valeurs hors du rendu React).
+  // Angle de l'anneau (en écrans), suivi par un ressort : le glissé le pousse en direct.
+  const aim = useMotionValue(0);
+  const rot = useSpring(aim, reduce ? { stiffness: 1000, damping: 100 } : { stiffness: 110, damping: 21, mass: 1 });
+  // Souris : l'ensemble penche à peine, le fond glisse à l'opposé.
   const tx = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
   const ty = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
+  // 0 → 1 au lancement : la caméra se remet de face, les voisins s'écartent.
+  const flat = useSpring(useMotionValue(0), { stiffness: 170, damping: 26 });
+  const tiltY = useTransform([tx, flat], ([a, f]: number[]) => a * 3.2 * (1 - f));
+  const tiltX = useTransform([ty, flat], ([a, f]: number[]) => (CAM + a * -2.2) * (1 - f));
+  const backX = useTransform(tx, (v) => v * -22);
+  const backY = useTransform(ty, (v) => v * -14);
 
   const cur = items[i];
-  const at = (it: StageItem) => Math.min(vi[it.slug] ?? 0, it.clips.length - 1);
-  const clip = cur.clips[at(cur)];
+  const clip = cur.clips[0];
 
-  const pick = useCallback(
-    (k: number, user = true) => {
-      setI(((k % n) + n) % n);
+  const setPos = useCallback(
+    (p: number, user = true) => {
+      setPosState(p);
+      aim.set(p);
       if (user) setTouched(true);
     },
-    [n],
+    [aim],
   );
-  const turn = useCallback(
-    (step: number) => {
-      setTouched(true);
-      setVi((old) => {
-        const len = items[i].clips.length;
-        if (len < 2) return old;
-        return { ...old, [items[i].slug]: ((((old[items[i].slug] ?? 0) + step) % len) + len) % len };
-      });
-    },
-    [items, i],
-  );
+  const step = useCallback((d: number, user = true) => setPos(Math.round(aim.get()) + d, user), [aim, setPos]);
+
   const go = useCallback(() => {
     if (leaving) return;
     setLeaving(true);
@@ -123,12 +116,13 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
     // L'écran fonce vers toi jusqu'à couvrir toute la page, sa vidéo toujours en route.
     tx.set(0);
     ty.set(0);
+    flat.set(1);
     silk.current?.boost();
     const r = el.getBoundingClientRect();
     setDive({
       x: window.innerWidth / 2 - (r.left + r.width / 2),
       y: window.innerHeight / 2 - (r.top + r.height / 2),
-      s: Math.max(window.innerWidth / r.width, window.innerHeight / r.height) * 1.06,
+      s: Math.max(window.innerWidth / r.width, window.innerHeight / r.height) * 1.1,
     });
     window.setTimeout(() => {
       // Un voile de la couleur du tournoi tient le temps que la page suivante s'affiche dessous.
@@ -148,12 +142,12 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaving, cur, onGo, onLaunch, reduce]);
 
-  // Taille réelle de l'écran : les écarts du carrousel en dépendent.
+  // Taille réelle de l'écran : le rayon de l'anneau en dépend.
   useEffect(() => {
     const el = track.current;
     if (!el) return;
     const measure = () => {
-      setBox({ w: el.offsetWidth, h: el.offsetHeight, narrow: window.innerWidth < 760 });
+      setBox({ w: el.offsetWidth, narrow: window.innerWidth < 760 });
       // Le halo du fond se cale sur l'écran.
       const a = el.getBoundingClientRect();
       const b = wrap.current?.getBoundingClientRect();
@@ -171,10 +165,13 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
     if (!el) return;
     let seen = true;
     const sync = () => setLive(seen && !document.hidden);
-    const io = new IntersectionObserver(([e]) => {
-      seen = e.isIntersecting;
-      sync();
-    }, { threshold: 0.25 });
+    const io = new IntersectionObserver(
+      ([e]) => {
+        seen = e.isIntersecting;
+        sync();
+      },
+      { threshold: 0.25 },
+    );
     io.observe(el);
     document.addEventListener("visibilitychange", sync);
     return () => {
@@ -183,7 +180,7 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
     };
   }, []);
 
-  // Fond : la soie, teintée par le tournoi choisi.
+  // Soie de lumière, teintée par le tournoi choisi.
   useEffect(() => {
     if (!canvas.current) return;
     silk.current = createSilk(canvas.current, items[0].accent);
@@ -195,32 +192,28 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
     onAccent?.(cur.accent);
   }, [cur.accent, onAccent]);
 
-  // Tant que personne n'a touché, les tournois défilent seuls.
+  // Tant que personne n'a touché, l'anneau tourne seul.
   useEffect(() => {
     if (touched || reduce || !live || leaving) return;
-    const t = setTimeout(() => pick(i + 1, false), IDLE_MS);
+    const t = setTimeout(() => step(1, false), IDLE_MS);
     return () => clearTimeout(t);
-  }, [i, touched, reduce, live, leaving, pick]);
+  }, [pos, touched, reduce, live, leaving, step]);
 
-  // Clavier. Gauche / droite partout sur la page ; haut / bas seulement quand
-  // la scène a le focus, pour ne pas voler le défilement de la page.
+  // Clavier : flèches pour tourner, Entrée pour lancer.
   useEffect(() => {
     if (!live) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t?.closest?.("input, textarea, select, [contenteditable]")) return;
-      const inside = !!t && !!wrap.current?.contains(t);
-      if (e.key === "ArrowRight") pick(i + 1);
-      else if (e.key === "ArrowLeft") pick(i - 1);
-      else if (inside && e.key === "ArrowDown") (e.preventDefault(), turn(1));
-      else if (inside && e.key === "ArrowUp") (e.preventDefault(), turn(-1));
+      if (e.key === "ArrowRight") step(1);
+      else if (e.key === "ArrowLeft") step(-1);
       else if (e.key === "Enter" && (t === document.body || t === wrap.current)) go();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [live, i, pick, turn, go]);
+  }, [live, step, go]);
 
-  // Pavé tactile : un glissé horizontal à deux doigts change de tournoi.
+  // Pavé tactile : un glissé horizontal à deux doigts fait tourner l'anneau.
   useEffect(() => {
     const el = wrap.current;
     if (!el) return;
@@ -230,39 +223,14 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
       e.preventDefault();
       if (performance.now() < lock) return;
       lock = performance.now() + 520;
-      setTouched(true);
-      setI((old) => (old + (e.deltaX > 0 ? 1 : -1) + n) % n);
+      step(e.deltaX > 0 ? 1 : -1);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [n]);
+  }, [step]);
 
-  const tiltY = useTransform(tx, (v) => v * 2.4);
-  const tiltX = useTransform(ty, (v) => v * -1.8);
-  const drag = useRef<{ x: number; y: number } | null>(null);
-  // Pendant un glissé, l'ensemble suit la main avant de basculer.
-  const pullX = useSpring(useMotionValue(0), { stiffness: 260, damping: 30 });
-  const pullY = useSpring(useMotionValue(0), { stiffness: 260, damping: 30 });
-
-  // Les écrans à afficher : les génériques du tournoi choisi (axe vertical)
-  // et l'écran courant des tournois voisins (axe horizontal).
-  const cards = useMemo(() => {
-    const out: { key: string; item: StageItem; clip: StageClip; dx: number; dy: number; ti: number; ci: number }[] = [];
-    items.forEach((it, k) => {
-      const dx = ring(k, i, n);
-      if (dx < -1 || dx > 2) return;
-      const a = Math.min(vi[it.slug] ?? 0, it.clips.length - 1);
-      if (dx !== 0) return void out.push({ key: `${it.slug}/${it.clips[a].id}`, item: it, clip: it.clips[a], dx, dy: 0, ti: k, ci: a });
-      const len = it.clips.length;
-      it.clips.forEach((c, j) => {
-        const dy = len >= 5 ? ring(j, a, len) : j - a;
-        if (Math.abs(dy) <= 2) out.push({ key: `${it.slug}/${c.id}`, item: it, clip: c, dx: 0, dy, ti: k, ci: j });
-      });
-    });
-    return out;
-  }, [items, i, vi, n]);
-
-  const many = cur.clips.length > 1;
+  // Glissé : l'anneau suit la main, puis se cale sur l'écran le plus proche.
+  const drag = useRef<{ x: number; y: number; base: number; t: number; moved: boolean } | null>(null);
 
   return (
     <section
@@ -274,29 +242,41 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
       aria-roledescription="carrousel"
       onPointerDown={(e) => {
         const t = e.target as HTMLElement;
-        if (!t.closest("button, a")) wrap.current?.focus({ preventScroll: true });
-        if (t.closest(".stg-track")) drag.current = { x: e.clientX, y: e.clientY };
+        if (leaving || t.closest("button, a")) return;
+        wrap.current?.focus({ preventScroll: true });
+        if (t.closest(".stg-track")) drag.current = { x: e.clientX, y: e.clientY, base: aim.get(), t: performance.now(), moved: false };
       }}
       onPointerUp={(e) => {
         const d = drag.current;
         drag.current = null;
-        pullX.set(0);
-        pullY.set(0);
         if (!d) return;
         const dx = e.clientX - d.x;
-        const dy = e.clientY - d.y;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) pick(i + (dx < 0 ? 1 : -1));
-        else if (e.pointerType === "mouse" && Math.abs(dy) > 40 && Math.abs(dy) > Math.abs(dx)) turn(dy < 0 ? 1 : -1);
-        else if (Math.abs(dx) < 6 && Math.abs(dy) < 6 && (e.target as HTMLElement).closest(".stg-card.is-on")) go();
+        if (!d.moved) {
+          // Simple clic : l'écran de face lance le tournoi, un voisin vient au centre.
+          const card = (e.target as HTMLElement).closest<HTMLElement>(".stg-card");
+          if (!card || Math.abs(e.clientY - d.y) > 8) return;
+          if (card.classList.contains("is-on")) go();
+          else setPos(Math.round(aim.get()) + ring(Number(card.dataset.k), i, n));
+          return;
+        }
+        // Un geste vif passe à l'écran suivant même s'il est court.
+        const speed = dx / Math.max(1, performance.now() - d.t);
+        setPos(Math.round(aim.get() - Math.max(-0.45, Math.min(0.45, speed * 0.5))));
       }}
-      onPointerCancel={() => ((drag.current = null), pullX.set(0), pullY.set(0))}
+      onPointerCancel={() => {
+        if (drag.current) setPos(Math.round(aim.get()));
+        drag.current = null;
+      }}
       onPointerMove={(e) => {
         if (leaving) return;
-        if (drag.current && !reduce) {
-          const dx = e.clientX - drag.current.x;
-          const dy = e.clientY - drag.current.y;
-          if (Math.abs(dx) > Math.abs(dy)) pullX.set(Math.max(-90, Math.min(90, dx * 0.3)));
-          else if (e.pointerType === "mouse") pullY.set(Math.max(-60, Math.min(60, dy * 0.3)));
+        const d = drag.current;
+        if (d && box.w) {
+          const dx = e.clientX - d.x;
+          if (!d.moved && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(e.clientY - d.y)) {
+            d.moved = true;
+            setTouched(true);
+          }
+          if (d.moved) aim.set(d.base - dx / (box.w * 0.78));
         }
         if (e.pointerType !== "mouse" || reduce) return;
         const r = e.currentTarget.getBoundingClientRect();
@@ -305,6 +285,11 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
       }}
       onPointerLeave={() => (tx.set(0), ty.set(0))}
     >
+      {/* Fond : les images du tournoi, en grand, qui dérivent ; la soie par-dessus. */}
+      <motion.div className="stg-back" style={{ x: backX, y: backY }} aria-hidden>
+        <Backdrop item={cur} moving={live && !reduce && !leaving} />
+      </motion.div>
+      <div className="stg-scrim" aria-hidden />
       <canvas ref={canvas} className="stg-silk" aria-hidden />
 
       {/* Le tournoi choisi : nom, phrase, ta partie, boutons. */}
@@ -351,93 +336,51 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
         </div>
       </div>
 
-      {/* Le carrousel : un écran net, ses voisins en profondeur. */}
+      {/* L'anneau d'écrans. */}
       <div className="stg-scene">
-        <motion.div ref={track} className="stg-track" style={{ rotateY: tiltY, rotateX: tiltX, x: pullX, y: pullY }}>
-          <AnimatePresence initial={false}>
+        <motion.div
+          ref={track}
+          className="stg-track"
+          style={{ rotateY: tiltY, rotateX: tiltX }}
+          animate={dive ? { x: [0, 0, dive.x], y: [0, 0, dive.y], scale: [1, 0.93, dive.s] } : { x: 0, y: 0, scale: 1 }}
+          transition={dive ? { duration: DIVE_S, times: [0, 0.24, 1], ease: ["easeOut", [0.7, 0, 0.84, 0]] as ("easeOut" | [number, number, number, number])[] } : { duration: 0 }}
+        >
+          <div className="stg-ring" style={{ transform: `translateZ(${-box.w * RADIUS}px)` }}>
             {box.w
-              ? cards.map((c) => {
-                  const on = c.dx === 0 && c.dy === 0;
-                  const p = pose(c.dx, c.dy, box.w, box.h, box.narrow);
-                  // Lancement : l'écran du centre plonge, le prisme s'ouvre autour de lui.
-                  const target = !dive
-                    ? p
-                    : on
-                      ? { x: [0, 0, dive.x], y: [0, 0, dive.y], z: 0, rotateX: 0, rotateY: 0, opacity: 1, scale: [1, 0.93, dive.s] }
-                      : c.dx
-                        ? { ...p, x: box.w * 2.6, rotateY: 88, opacity: 0 }
-                        : { ...p, y: Math.sign(c.dy) * box.h * 2.2, rotateX: Math.sign(c.dy) * -160, opacity: 0 };
-                  const move = reduce
-                    ? { duration: 0 }
-                    : !dive
-                      ? SPRING
-                      : on
-                        ? { duration: DIVE_S, times: [0, 0.24, 1], ease: ["easeOut", [0.7, 0, 0.84, 0]] as ("easeOut" | [number, number, number, number])[] }
-                        : { duration: 0.55, ease: [0.6, 0, 0.9, 0.2] as [number, number, number, number], delay: Math.abs(c.dy) * 0.04 };
-                  return (
-                    <motion.div
-                      key={c.key}
-                      className={`stg-card ${on ? "is-on" : ""}`}
-                      initial={{ ...p, opacity: 0, scale: on ? 0.94 : 1 }}
-                      animate={target}
-                      exit={{ opacity: 0, transition: { duration: 0.3 } }}
-                      transition={move}
-                      style={{ zIndex: on ? 3 : 1, pointerEvents: p.opacity ? "auto" : "none" }}
-                      onClick={on ? undefined : () => (c.dx ? pick(c.ti) : turn(c.dy))}
-                      aria-hidden={!on}
-                    >
-                      <img src={c.clip.still} alt="" draggable={false} decoding="async" style={c.clip.pos ? { objectPosition: c.clip.pos } : undefined} />
-                      {on && c.clip.video && live && !reduce ? <Clip key={c.clip.id} video={c.clip.video} sound={sound} /> : null}
-                      {on ? (
+              ? items.map((it, k) => (
+                  <Card key={it.slug} item={it} k={k} n={n} on={k === i} rot={rot} flat={flat} radius={box.w * RADIUS} narrow={box.narrow}>
+                    {k === i && it.clips[0].video && live && !reduce ? <Clip key={it.clips[0].id} video={it.clips[0].video} sound={sound} /> : null}
+                    {k === i ? (
+                      <>
                         <span className="stg-play" aria-hidden>
                           <Play size={22} fill="currentColor" />
                         </span>
-                      ) : null}
-                      {on && dive ? <i className="stg-dive" style={{ animationDuration: `${DIVE_S}s` }} aria-hidden /> : null}
-                    </motion.div>
-                  );
-                })
+                        <div className="stg-cap">
+                          <p>
+                            <b>{clip.title}</b>
+                            {clip.sub ? <span>{clip.sub}</span> : null}
+                          </p>
+                          {clip.video ? (
+                            <button type="button" className={`stg-sound ${sound ? "is-on" : ""}`} aria-pressed={sound} aria-label={sound ? "Couper le son" : "Écouter"} onClick={() => setSound((s) => !s)}>
+                              {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                            </button>
+                          ) : null}
+                        </div>
+                        {dive ? <i className="stg-dive" style={{ animationDuration: `${DIVE_S}s` }} aria-hidden /> : null}
+                      </>
+                    ) : null}
+                  </Card>
+                ))
               : null}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* Axe vertical : les autres génériques du même tournoi. */}
-        {many ? (
-          <div className="stg-vert">
-            <button type="button" onClick={() => turn(-1)} aria-label="Générique précédent">
-              <ChevronUp size={16} />
-            </button>
-            <span aria-hidden>
-              {cur.clips.map((c, k) => (
-                <i key={c.id} className={k === at(cur) ? "is-on" : ""} />
-              ))}
-            </span>
-            <button type="button" onClick={() => turn(1)} aria-label="Générique suivant">
-              <ChevronDown size={16} />
-            </button>
           </div>
-        ) : null}
-
-        <div className="stg-cap">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.p key={clip.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE, delay: 0.15 } }} exit={{ opacity: 0, transition: { duration: 0.12 } }}>
-              <b>{clip.title}</b>
-              {clip.sub ? <span>{clip.sub}</span> : null}
-            </motion.p>
-          </AnimatePresence>
-          {clip.video ? (
-            <button type="button" className={`stg-sound ${sound ? "is-on" : ""}`} aria-pressed={sound} aria-label={sound ? "Couper le son" : "Écouter"} onClick={() => setSound((s) => !s)}>
-              {sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
-          ) : null}
-        </div>
+        </motion.div>
       </div>
 
-      {/* Axe horizontal : les huit tournois. Le trait montre ta partie. */}
+      {/* Les huit tournois. Le trait montre ta partie. */}
       <div className="stg-rail">
         <div className="stg-segs" role="tablist" aria-label="Tournois">
           {items.map((it, k) => (
-            <button key={it.slug} type="button" role="tab" aria-selected={k === i} className={`stg-seg ${k === i ? "is-on" : ""}`} style={{ "--sc": it.accent } as React.CSSProperties} onClick={() => (k === i ? go() : pick(k))}>
+            <button key={it.slug} type="button" role="tab" aria-selected={k === i} className={`stg-seg ${k === i ? "is-on" : ""}`} style={{ "--sc": it.accent } as React.CSSProperties} onClick={() => (k === i ? go() : setPos(pos + ring(k, i, n)))}>
               <i>
                 {it.run ? <u style={{ transform: `scaleX(${it.run.done / Math.max(1, it.run.total)})` }} /> : null}
                 {k === i && !touched && live && !reduce ? <s style={{ animationDuration: `${IDLE_MS}ms` }} /> : null}
@@ -447,10 +390,10 @@ export function Stage({ items, onGo, onInfo, onAccent, onLaunch }: Props) {
           ))}
         </div>
         <div className="stg-arrows">
-          <button type="button" onClick={() => pick(i - 1)} aria-label="Tournoi précédent">
+          <button type="button" onClick={() => step(-1)} aria-label="Tournoi précédent">
             <ChevronLeft size={17} />
           </button>
-          <button type="button" onClick={() => pick(i + 1)} aria-label="Tournoi suivant">
+          <button type="button" onClick={() => step(1)} aria-label="Tournoi suivant">
             <ChevronRight size={17} />
           </button>
         </div>
@@ -465,7 +408,63 @@ const RISE = {
   c: { opacity: 0, transition: { duration: 0.14 } },
 };
 
-// La vidéo de l'écran du centre : démarre au refrain, apparaît quand elle joue.
+// Un écran de l'anneau. Sa place et sa lumière se calculent à chaque image
+// depuis l'angle de l'anneau, sans repasser par React.
+function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: StageItem; k: number; n: number; on: boolean; rot: MotionValue<number>; flat: MotionValue<number>; radius: number; narrow: boolean; children: React.ReactNode }) {
+  const off = (r: number) => {
+    let d = mod(k - r, n);
+    if (d > n / 2) d -= n;
+    return d;
+  };
+  // Au lancement, les voisins s'écartent de l'écran qui plonge.
+  const angle = useTransform([rot, flat], ([r, f]: number[]) => off(r) * STEP * (1 + f * 1.1));
+  const opacity = useTransform([rot, flat], ([r, f]: number[]) => {
+    const d = off(r);
+    const a = Math.abs(d);
+    let o: number;
+    // À droite : deux voisins visibles, de plus en plus sombres. À gauche il y a le texte : l'écran s'efface vite.
+    if (d >= 0) o = a <= 1 ? 1 - 0.4 * a : a <= 2 ? 0.6 - (narrow ? 0.6 : 0.34) * (a - 1) : Math.max(0, 0.26 - 0.4 * (a - 2));
+    else o = Math.max(0, 1 - 1.05 * a);
+    return o * (1 - f * Math.min(1, a * 3));
+  });
+  const events = useTransform(opacity, (o) => (o > 0.06 ? "auto" : "none"));
+  const c = item.clips[0];
+  return (
+    <motion.div
+      className={`stg-card ${on ? "is-on" : ""}`}
+      data-k={k}
+      style={{ rotateY: angle, opacity, pointerEvents: events }}
+      transformTemplate={({ rotateY }) => `rotateY(${typeof rotateY === "number" ? `${rotateY}deg` : rotateY}) translateZ(${radius}px)`}
+      aria-hidden={!on}
+    >
+      <img src={c.still} alt="" draggable={false} decoding="async" style={c.pos ? { objectPosition: c.pos } : undefined} />
+      {children}
+    </motion.div>
+  );
+}
+
+// Fond : les images du tournoi se relaient en fondu, chacune avec son lent
+// mouvement de caméra. Celle de l'écran passe en dernier.
+function Backdrop({ item, moving }: { item: StageItem; moving: boolean }) {
+  const slides = item.clips.length > 1 ? [...item.clips.slice(1), item.clips[0]] : item.clips;
+  const [k, setK] = useState(0);
+  useEffect(() => setK(0), [item.slug]);
+  useEffect(() => {
+    if (!moving || slides.length < 2) return;
+    const t = setTimeout(() => setK((v) => (v + 1) % slides.length), BACK_MS);
+    return () => clearTimeout(t);
+  }, [k, moving, slides.length]);
+  const s = slides[Math.min(k, slides.length - 1)];
+  return (
+    <AnimatePresence initial={false}>
+      <motion.div key={`${item.slug}/${s.id}`} className="stg-slide" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 1.6, ease: "easeOut" } }} exit={{ opacity: 0, transition: { duration: 1.6 } }}>
+        <img className={`stg-drift-${k % 3}`} src={s.still} alt="" draggable={false} decoding="async" style={{ objectPosition: s.pos, animationPlayState: moving ? "running" : "paused" }} />
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// La vidéo de l'écran de face : démarre au refrain, apparaît quand elle joue.
 function Clip({ video, sound }: { video: { src: string; start: number }; sound: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [on, setOn] = useState(false);

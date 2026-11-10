@@ -1,13 +1,13 @@
 /* Accueil des tournois : la scène (stage.tsx). */
 .stg {
   --ink: #f4f2ec;
-  --mute: #8b8a85;
-  --dim: #55554f;
-  --line: rgba(244, 242, 236, 0.18);
+  --mute: #9a9993;
+  --dim: #6a6a64;
+  --line: rgba(244, 242, 236, 0.2);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --side: clamp(16px, 5.5vw, 96px);
-  /* Largeur de l'écran du centre : bornée par la hauteur disponible. */
-  --w: min(52vw, calc((min(100dvh, 960px) - 330px) * 16 / 9));
+  /* Largeur de l'écran de face : bornée par la hauteur disponible. */
+  --w: min(50vw, calc((min(100dvh, 960px) - 330px) * 16 / 9));
   position: relative;
   isolation: isolate;
   height: min(100dvh, 960px);
@@ -25,14 +25,6 @@
   user-select: none;
   outline: none;
 }
-.stg-silk {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
 .stg button {
   font: inherit;
   color: inherit;
@@ -46,6 +38,80 @@
   outline-offset: 3px;
 }
 
+/* ── Fond : images du tournoi qui dérivent, voile, soie de lumière ── */
+.stg-back {
+  position: absolute;
+  inset: -4%;
+  z-index: -3;
+  pointer-events: none;
+}
+.stg-slide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.stg-slide img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  will-change: transform;
+  animation: stg-drift-a 16s linear both;
+}
+.stg-slide img.stg-drift-1 {
+  animation-name: stg-drift-b;
+}
+.stg-slide img.stg-drift-2 {
+  animation-name: stg-drift-c;
+}
+@keyframes stg-drift-a {
+  from {
+    transform: scale(1.06) translate3d(-1.5%, 0, 0);
+  }
+  to {
+    transform: scale(1.2) translate3d(2%, -1.5%, 0);
+  }
+}
+@keyframes stg-drift-b {
+  from {
+    transform: scale(1.2) translate3d(2%, 1%, 0);
+  }
+  to {
+    transform: scale(1.07) translate3d(-2%, -1%, 0);
+  }
+}
+@keyframes stg-drift-c {
+  from {
+    transform: scale(1.1) translate3d(0, 2%, 0);
+  }
+  to {
+    transform: scale(1.22) translate3d(-2.5%, -1%, 0);
+  }
+}
+/* Voile : noir plein côté texte, l'image respire à droite ; fondu vers la page en bas. */
+.stg-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, #08090d 0%, rgba(8, 9, 13, 0.86) 16%, rgba(8, 9, 13, 0) 46%),
+    linear-gradient(to bottom, rgba(8, 9, 13, 0.92) 0%, rgba(8, 9, 13, 0) 26%),
+    linear-gradient(90deg, #08090d 0%, rgba(8, 9, 13, 0.97) 34%, rgba(8, 9, 13, 0.8) 60%, rgba(8, 9, 13, 0.66) 100%);
+}
+.stg-silk {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
 /* ── Texte ────────────────────────────────────────────────────────── */
 .stg-copy {
   align-self: center;
@@ -53,6 +119,8 @@
   gap: 30px;
   max-width: 460px;
   min-width: 0;
+  position: relative;
+  z-index: 3;
 }
 .stg-copy-in {
   display: grid;
@@ -99,7 +167,7 @@
   max-width: 32ch;
   font-size: 17px;
   line-height: 1.5;
-  color: #c9c7c1;
+  color: #d3d1cb;
 }
 .stg-run {
   display: grid;
@@ -154,6 +222,7 @@
 .stg .stg-more {
   padding: 0 24px;
   font-weight: 500;
+  background: rgba(8, 9, 13, 0.4);
   box-shadow: inset 0 0 0 1px var(--line);
 }
 .stg .stg-go:active,
@@ -169,12 +238,13 @@
   }
 }
 
-/* ── Carrousel ────────────────────────────────────────────────────── */
+/* ── Anneau d'écrans ──────────────────────────────────────────────── */
 .stg-scene {
   position: relative;
   align-self: center;
   width: var(--w);
-  perspective: 1500px;
+  perspective: 1300px;
+  perspective-origin: 50% 42%;
 }
 .stg-track {
   position: relative;
@@ -186,19 +256,24 @@
 .stg-track:active {
   cursor: grabbing;
 }
+.stg-ring {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
 .stg-card {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   border-radius: 6px;
   background: #101116;
   cursor: pointer;
   will-change: transform, opacity;
   backface-visibility: hidden;
+  /* Sol laqué : chaque écran s'y reflète. */
+  -webkit-box-reflect: below 10px linear-gradient(transparent 58%, rgba(0, 0, 0, 0.3));
 }
 .stg-card.is-on {
-  cursor: pointer;
-  box-shadow: 0 0 0 1px var(--line), 0 70px 120px -60px #000;
+  box-shadow: 0 0 0 1px var(--line), 0 60px 110px -50px #000;
 }
 .stg-card img,
 .stg-card video {
@@ -208,15 +283,25 @@
   height: 100%;
   max-width: none;
   object-fit: cover;
+  border-radius: inherit;
   transition: filter 0.6s, opacity 0.6s;
+}
+.stg-card:not(.is-on) img {
+  filter: saturate(0.6);
+}
+.stg-card video {
+  opacity: 0;
+}
+.stg-card video.is-on {
+  opacity: 1;
 }
 /* Les voisins s'éclairent sous la souris : ils sont cliquables. */
 @media (hover: hover) {
   .stg-card:not(.is-on):hover img {
-    filter: saturate(1) brightness(1.25);
+    filter: saturate(1) brightness(1.3);
   }
 }
-/* Écran du centre : un bouton lecture apparaît au survol, un clic lance le tournoi. */
+/* Écran de face : un bouton lecture apparaît au survol, un clic lance le tournoi. */
 .stg-play {
   position: absolute;
   left: 50%;
@@ -248,107 +333,13 @@
   transform: scale(1.6);
   transition-duration: 0.3s;
 }
-/* Plongée : la couleur du tournoi monte sur l'écran à la fin de sa course. */
-.stg-dive {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(90% 90% at 50% 55%, color-mix(in srgb, var(--acc) 24%, transparent), transparent 70%), #08090d;
-  opacity: 0;
-  animation: stg-dive ease-in both;
-  pointer-events: none;
-}
-@keyframes stg-dive {
-  0%,
-  62% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-/* Un reflet traverse l'écran quand il arrive au centre. */
-.stg-card::after {
-  content: "";
-  position: absolute;
-  inset: -20% -60%;
-  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.16) 50%, transparent 58%);
-  transform: translateX(-70%);
-  opacity: 0;
-  pointer-events: none;
-}
-.stg-card.is-on::after {
-  animation: stg-sheen 1.3s 0.35s var(--ease) both;
-}
-@keyframes stg-sheen {
-  0% {
-    transform: translateX(-70%);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(70%);
-    opacity: 1;
-  }
-}
-.stg-card:not(.is-on) img {
-  filter: saturate(0.55);
-}
-.stg-card video {
-  opacity: 0;
-}
-.stg-card video.is-on {
-  opacity: 1;
-}
-
-/* Axe vertical : flèches et repères, à gauche de l'écran. */
-.stg-vert {
-  position: absolute;
-  right: calc(100% + 14px);
-  top: 0;
-  height: calc(var(--w) * 9 / 16);
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 10px;
-}
-.stg-vert button {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  color: var(--mute);
-  transition: color 0.2s, box-shadow 0.2s;
-}
-.stg-vert span {
-  display: grid;
-  gap: 6px;
-}
-.stg-vert i {
-  width: 2px;
-  height: 12px;
-  background: var(--line);
-  transition: background 0.3s, height 0.3s var(--ease);
-}
-.stg-vert i.is-on {
-  height: 22px;
-  background: var(--ink);
-}
-@media (hover: hover) {
-  .stg-vert button:hover {
-    color: var(--ink);
-    box-shadow: inset 0 0 0 1px var(--line);
-  }
-}
-
-/* Titre du générique et bouton son, posés au bas de l'écran du centre. */
+/* Titre du générique et bouton son, au bas de l'écran de face. */
 .stg-cap {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(var(--w) * 9 / 16);
-  translate: 0 -100%;
-  z-index: 4;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -357,6 +348,13 @@
   border-radius: 0 0 6px 6px;
   background: linear-gradient(to top, rgba(8, 9, 13, 0.82), rgba(8, 9, 13, 0));
   pointer-events: none;
+  animation: stg-cap 0.6s 0.35s var(--ease) both;
+}
+@keyframes stg-cap {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 .stg-cap > * {
   pointer-events: auto;
@@ -389,6 +387,51 @@
 .stg .stg-sound.is-on {
   background: var(--ink);
   color: #08090d;
+}
+/* Plongée : la couleur du tournoi monte sur l'écran à la fin de sa course. */
+.stg-dive {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background: radial-gradient(90% 90% at 50% 55%, color-mix(in srgb, var(--acc) 24%, transparent), transparent 70%), #08090d;
+  opacity: 0;
+  animation: stg-dive ease-in both;
+  pointer-events: none;
+}
+@keyframes stg-dive {
+  0%,
+  62% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+/* Un reflet traverse l'écran quand il arrive de face. */
+.stg-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.16) 50%, transparent 62%);
+  background-size: 300% 100%;
+  background-position: 120% 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.stg-card.is-on::after {
+  animation: stg-sheen 1.3s 0.4s var(--ease) both;
+}
+@keyframes stg-sheen {
+  0% {
+    opacity: 1;
+    background-position: 120% 0;
+  }
+  100% {
+    opacity: 1;
+    background-position: -20% 0;
+  }
 }
 
 /* ── Rail des tournois ────────────────────────────────────────────── */
@@ -475,6 +518,7 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
+  background: rgba(8, 9, 13, 0.4);
   box-shadow: inset 0 0 0 1px var(--line);
   transition: box-shadow 0.2s, transform 0.2s var(--ease);
 }
@@ -500,8 +544,7 @@
 }
 .stg.is-leaving .stg-copy,
 .stg.is-leaving .stg-rail,
-.stg.is-leaving .stg-cap,
-.stg.is-leaving .stg-vert {
+.stg.is-leaving .stg-cap {
   opacity: 0;
   transition: opacity 0.3s, transform 0.5s cubic-bezier(0.6, 0, 0.9, 0.2);
 }
@@ -510,6 +553,9 @@
 }
 .stg.is-leaving .stg-rail {
   transform: translateY(30px);
+}
+.stg.is-leaving .stg-card {
+  -webkit-box-reflect: unset;
 }
 .stg.is-leaving .stg-card.is-on {
   border-radius: 0;
@@ -524,13 +570,26 @@
     min-height: 0;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
-    row-gap: 22px;
+    row-gap: 30px;
     padding: 84px 16px 26px;
   }
   .stg-scene {
     order: -1;
-    width: 100%;
-    perspective: 900px;
+    width: 88%;
+    perspective: 800px;
+  }
+  .stg-scrim {
+    background:
+      linear-gradient(to top, #08090d 0%, rgba(8, 9, 13, 0.9) 40%, rgba(8, 9, 13, 0.55) 100%);
+  }
+  .stg-card {
+    -webkit-box-reflect: below 6px linear-gradient(transparent 72%, rgba(0, 0, 0, 0.24));
+  }
+  .stg-cap {
+    padding: 36px 10px 10px 14px;
+  }
+  .stg-cap p {
+    font-size: 12.5px;
   }
   .stg-copy {
     gap: 22px;
@@ -551,33 +610,6 @@
     justify-content: center;
     padding: 0 16px;
   }
-  /* Les repères verticaux passent sous l'écran, à côté du titre du générique. */
-  .stg-cap {
-    position: static;
-    translate: none;
-    padding: 14px 0 0;
-    background: none;
-    align-items: center;
-  }
-  .stg-cap p {
-    color: var(--mute);
-  }
-  .stg-vert {
-    position: static;
-    height: auto;
-    display: flex;
-    float: right;
-    margin: 14px 0 0 10px;
-    gap: 4px;
-  }
-  .stg-vert span {
-    display: none;
-  }
-  .stg-vert button {
-    width: 40px;
-    height: 40px;
-    box-shadow: inset 0 0 0 1px var(--line);
-  }
   .stg-rail {
     padding-top: 4px;
   }
@@ -595,7 +627,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stg-card.is-on::after {
+  .stg-card.is-on::after,
+  .stg-slide img,
+  .stg-cap {
     animation: none;
   }
   .stg * {
