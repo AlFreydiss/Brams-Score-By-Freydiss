@@ -1,7 +1,8 @@
-import { AnimatePresence, motion, useMotionValue, useSpring, useTransform, type MotionValue } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useMotionValueEvent, useSpring, useTransform, type MotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createSilk, type Silk } from "./silk";
+import { FRONT, createPetals, erosionEdges, type Edges, type Petals } from "./volatilize";
 import { watchBars } from "@/lib/tournois/pillarbox";
 import "./stage.css";
 
@@ -51,6 +52,8 @@ const BACK_MS = 7000;
 const DIVE_S = 1.05;
 // Angle entre deux écrans de l'anneau, et rayon en largeurs d'écran.
 const STEP = 34;
+// Masque de l'écran qui sort : le front rongé, puis tout ce qui est encore intact à sa droite.
+const MASK = "var(--gom), linear-gradient(90deg, transparent var(--e), #000 var(--e))";
 // Part de la rotation gardée par l'écran qui sort à gauche.
 const LEFT_TURN = 0.3;
 // Mêmes valeurs que `perspective` et `perspective-origin` de .stg-scene.
@@ -264,12 +267,27 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
   const drag = useRef<{ x: number; y: number; base: number; t: number; moved: boolean } | null>(null);
   const rect = useRef<DOMRect | null>(null);
 
+  // Gommage : les textures du bord rongé (une fois) et le canvas des pétales.
+  const [edges, setEdges] = useState<Edges | null>(null);
+  const petalCanvas = useRef<HTMLCanvasElement>(null);
+  const petals = useRef<Petals | null>(null);
+  useEffect(() => {
+    let alive = true;
+    erosionEdges().then((e) => alive && setEdges(e));
+    if (petalCanvas.current && !reduce) petals.current = createPetals(petalCanvas.current);
+    return () => {
+      alive = false;
+      petals.current?.destroy();
+      petals.current = null;
+    };
+  }, [reduce]);
+
   return (
     <section
       ref={wrap}
       tabIndex={-1}
       className={`stg ${leaving ? "is-leaving" : ""}`}
-      style={{ "--acc": cur.accent } as React.CSSProperties}
+      style={{ "--acc": cur.accent, "--gom": edges ? `url("${edges.front}")` : "none", "--gom-ember": edges ? `url("${edges.ember}")` : "none" } as React.CSSProperties}
       aria-label="Choisis ton tournoi"
       aria-roledescription="carrousel"
       onPointerDown={(e) => {
@@ -324,6 +342,7 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
       </motion.div>
       <div className="stg-scrim" aria-hidden />
       <canvas ref={canvas} className="stg-silk" aria-hidden />
+      <canvas ref={petalCanvas} className="stg-petals" aria-hidden />
 
       {/* Le tournoi choisi : nom, phrase, ta partie, boutons. */}
       <div className="stg-copy" aria-live="polite">
@@ -381,7 +400,7 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
           <div className="stg-ring" style={{ transform: `translateZ(${-box.w * RADIUS}px)` }}>
             {box.w
               ? items.map((it, k) => (
-                  <Card key={it.slug} item={it} k={k} n={n} on={k === i} rot={rot} flat={flat} radius={box.w * RADIUS} narrow={box.narrow}>
+                  <Card key={it.slug} item={it} k={k} n={n} on={k === i} rot={rot} flat={flat} radius={box.w * RADIUS} narrow={box.narrow} gom={!!edges} petals={petals}>
                     {k === i && k === settled && it.clips[0].video && live && !reduce ? <Clip key={it.clips[0].id} video={it.clips[0].video} sound={sound} /> : null}
                     {k === i ? (
                       <>
@@ -443,30 +462,44 @@ const RISE = {
 
 // Un écran de l'anneau. Sa place et sa lumière se calculent à chaque image
 // depuis l'angle de l'anneau, sans repasser par React.
-function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: StageItem; k: number; n: number; on: boolean; rot: MotionValue<number>; flat: MotionValue<number>; radius: number; narrow: boolean; children: React.ReactNode }) {
+function Card({ item, k, n, on, rot, flat, radius, narrow, gom, petals, children }: { item: StageItem; k: number; n: number; on: boolean; rot: MotionValue<number>; flat: MotionValue<number>; radius: number; narrow: boolean; /** Textures du Gommage prêtes. */ gom: boolean; petals: React.RefObject<Petals | null>; children: React.ReactNode }) {
   const off = (r: number) => {
     let d = mod(k - r, n);
     if (d > n / 2) d -= n;
     return d;
   };
   // Au lancement, les voisins s'écartent de l'écran qui plonge.
-  // À gauche il y a le texte : l'écran qui sort ne pivote presque pas, il est effacé sur place.
+  // À gauche il y a le texte : l'écran qui sort ne pivote presque pas, il se volatilise sur place.
   const angle = useTransform([rot, flat], ([r, f]: number[]) => {
     const d = off(r);
     return (d < 0 ? d * LEFT_TURN : d) * STEP * (1 + f * 1.1);
   });
-  // 0 = écran entier, 1 = entièrement effacé (de gauche à droite).
+  // 0 = écran entier, 1 = entièrement rongé (de gauche à droite).
   const out = useTransform(rot, (r) => Math.min(1, Math.max(0, -off(r))));
-  const mask = useTransform(out, (o) => (o <= 0.001 ? "none" : `linear-gradient(90deg, transparent ${(o * 124 - 24).toFixed(2)}%, #000 ${(o * 124).toFixed(2)}%)`));
-  // L'écran qui sort reste devant celui qui arrive (c'est la lame qui le découvre) : il avance
+  const width = radius / RADIUS;
+  // Position du front d'érosion, en px depuis le bord gauche de l'écran.
+  const front = useTransform(out, (o) => `${(o * (1 + FRONT) * width).toFixed(1)}px`);
+  // Le masque n'est posé que pendant la sortie : au repos l'écran n'est pas masqué.
+  const mask = useTransform(out, (o) => (o <= 0.001 || !gom ? "none" : MASK));
+  const self = useRef<HTMLDivElement>(null);
+  const shedAt = useRef(0);
+  // Les pétales se détachent là où l'écran vient d'être rongé.
+  useMotionValueEvent(out, "change", (o) => {
+    const d = Math.abs(o - shedAt.current);
+    shedAt.current = o;
+    const el = self.current;
+    if (!petals.current || !el || o <= 0.001 || o >= 0.999 || d <= 0 || d > 0.5) return;
+    const r = el.getBoundingClientRect();
+    petals.current.shed(r.left + Math.min(1, o * (1 + FRONT) - FRONT * 0.35) * r.width, r.top, r.bottom, d, "#f1e4cf", r.left, r.right);
+  });
+  // L'écran qui sort reste devant celui qui arrive (c'est le Gommage qui le découvre) : il avance
   // vers la caméra et rétrécit d'autant, donc sa taille à l'écran ne change pas.
   const lift = useTransform(out, (o) => Math.min(1, o * 6) * LIFT);
   const P = narrow ? PERSPECTIVE_NARROW : PERSPECTIVE;
   const shrink = useTransform(lift, (z) => (P - z) / P);
   // Le point de fuite est un peu au-dessus du centre : on compense pour que l'écran ne descende pas.
   const rise = useTransform(lift, (z) => (-(0.5 - ORIGIN_Y) * (radius / RADIUS) * (9 / 16) * z) / P);
-  const bladeX = useTransform(out, (o) => (o * 1.24 - 0.02) * (radius / RADIUS));
-  const bladeO = useTransform(out, (o) => (o <= 0.001 ? 0 : Math.min(1, o * 12, (1 - o) * 5)));
+  const ember = useTransform(out, (o) => (o <= 0.001 || o >= 0.999 || !gom ? "none" : "block"));
   const opacity = useTransform([rot, flat], ([r, f]: number[]) => {
     const d = off(r);
     const a = Math.abs(d);
@@ -481,9 +514,10 @@ function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: S
   const c = item.clips[0];
   return (
     <motion.div
+      ref={self}
       className={`stg-card ${on ? "is-on" : ""}`}
       data-k={k}
-      style={{ rotateY: angle, opacity, pointerEvents: events, z: lift, y: rise, scale: shrink, visibility: shown, WebkitMaskImage: mask, maskImage: mask }}
+      style={{ rotateY: angle, opacity, pointerEvents: events, z: lift, y: rise, scale: shrink, visibility: shown, WebkitMaskImage: mask, maskImage: mask, "--e": front } as never}
       transformTemplate={({ rotateY, y, z, scale }) => `rotateY(${typeof rotateY === "number" ? `${rotateY}deg` : rotateY}) translateY(${parseFloat(String(y)) || 0}px) translateZ(${radius + (parseFloat(String(z)) || 0)}px) scale(${scale ?? 1})`}
       aria-hidden={!on}
     >
@@ -491,7 +525,7 @@ function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: S
       {/* Reflet au sol : l'image retournée, peinte une fois (box-reflect redessinait l'écran à chaque image). */}
       <i className="stg-refl" style={{ backgroundImage: `url("${c.still}")`, backgroundPosition: c.pos }} />
       {children}
-      <motion.i className="stg-blade" style={{ x: bladeX, opacity: bladeO }} aria-hidden />
+      <motion.i className="stg-ember" style={{ display: ember }} aria-hidden />
     </motion.div>
   );
 }
