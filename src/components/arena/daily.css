@@ -112,7 +112,7 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to top, rgba(5, 5, 8, 0.95) 0%, rgba(5, 5, 8, 0.5) 32%, transparent 62%),
+    linear-gradient(to top, rgba(5, 5, 8, 0.96) 0%, rgba(5, 5, 8, 0.72) 30%, rgba(5, 5, 8, 0.28) 52%, transparent 72%),
     radial-gradient(60% 80% at var(--dd-x, 20%) 100%, color-mix(in srgb, var(--dd-c) 30%, transparent), transparent 70%);
 }
 .dd-side--r .dd-shade {
@@ -138,7 +138,8 @@
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--dd-c);
+  /* Clair, pas la couleur du tournoi : lisible même sur une image pâle. */
+  color: rgba(244, 242, 236, 0.82);
 }
 .dd-name {
   font-family: var(--nx-sans);
@@ -316,4 +317,46 @@
   .dd-seam {
     display: none;
   }
+}
+
+/* Sous le duel : ton vote face aux autres, le résultat d'hier, la radio. */
+.dd-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 28px;
+  min-height: 44px;
+}
+.dd-foot p {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #8b8a85;
+}
+.dd-foot b {
+  font-weight: 600;
+  color: #f4f2ec;
+}
+.dd-foot > :only-child {
+  margin-left: auto;
+}
+
+/* Chaque côté s'assombrit vers son bord, là où le texte est posé : lisible même sur une image claire. */
+.dd-side--l .dd-shade::after,
+.dd-side--r .dd-shade::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(5, 5, 8, 0.6), transparent 58%);
+}
+.dd-side--r .dd-shade::after {
+  background: linear-gradient(to left, rgba(5, 5, 8, 0.6), transparent 58%);
+}
+.dd-name,
+.dd-game,
+.dd-artist {
+  text-shadow: 0 1px 18px rgba(5, 5, 8, 0.7);
 }

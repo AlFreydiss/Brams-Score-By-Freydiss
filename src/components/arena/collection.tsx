@@ -64,6 +64,25 @@ export function Collection() {
   const total = entries.length;
   const tournaments = useMemo(() => new Set(entries.map((e) => e.meta.slug)).size, [entries]);
 
+  // Aucune carte : une bande courte qui dit comment en gagner une, pas une rangée vide.
+  if (!wins.length)
+    return (
+      <section className="cl cl--none" aria-label="Ta collection de cartes">
+        <span className="cl-ghosts" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </span>
+        <div>
+          <h2>Ta collection est vide</h2>
+          <p>Va au bout d'un tournoi : ton champion devient une carte légendaire, rangée ici.</p>
+        </div>
+        <Link to="/tournoi/openings/duel" className="cl-start">
+          Gagner ma première carte
+        </Link>
+      </section>
+    );
+
   return (
     <section className="cl" aria-label="Ta collection de cartes">
       <div className="cl-head">

@@ -1,13 +1,14 @@
 import { Info, Play, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import type { ArenaItem } from "../fight/arena/Arena3D";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DailyDuel, RefrainRadio } from "./hub-extras";
 import { Collection } from "./collection";
-import { SelectScreen, type DeckProps, type SelectItem } from "./select-screen";
+import { Stage, type StageClip, type StageItem } from "./stage";
+import { bgOf, type Bg } from "../fight/jeux-art";
 import { Atmosphere, setAtmosphere } from "./atmosphere";
 import { portalTo } from "./portal";
+import { playLumiere } from "./jingle";
 import "./modes.css";
 import { TOURNAMENTS, type TournamentMeta, type TournamentSlug } from "@/lib/tournois/catalog";
 import { participants as loadParticipants } from "@/lib/tournois/data";
@@ -99,27 +100,31 @@ const ACCENT: Record<string, string> = { ost: "#d9a35a", openings: "#ef4d5a", en
 // Écran de sélection : ordre des cases et nom court de chaque tournoi.
 const ORDER: TournamentSlug[] = ["openings", "ost", "endings", "jeux", "rap", "rapvsost", "bankai", "panels"];
 const SHORT: Record<TournamentSlug, string> = { openings: "Openings", ost: "OST", endings: "Endings", jeux: "Jeux vidéo", rap: "Rap FR", rapvsost: "Rap vs OST", bankai: "Bankai", panels: "Panels" };
-// Anneau d'écrans en 3D (chargé à la demande, seulement si WebGL répond).
-const HoloDeck = lazy(() => import("./orbit-deck"));
-function LazyDeck(p: DeckProps) {
-  return (
-    <Suspense fallback={null}>
-      <HoloDeck {...p} />
-    </Suspense>
-  );
-}
-export function useWebGL() {
-  const [ok] = useState(() => {
-    if (typeof window === "undefined") return false;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-    try {
-      const c = document.createElement("canvas");
-      return !!(c.getContext("webgl2") || c.getContext("webgl"));
-    } catch {
-      return false;
-    }
-  });
-  return ok;
+// Écrans du carrousel : jusqu'à six par tournoi, tirés une fois. Une vidéo du
+// site démarre à son refrain ; sinon l'image du participant en grand.
+function clipsFrom(list: Participant[], slug: TournamentSlug, count = 6): StageClip[] {
+  const pool = [...list].sort(() => Math.random() - 0.5);
+  const seen = new Set<string>();
+  const out: StageClip[] = [];
+  for (const p of pool) {
+    const key = p.sub ?? p.group;
+    if (seen.has(key)) continue;
+    const v = p.visual as { k: string; src: string; hi?: string; pos?: string };
+    const art = slug === "jeux" ? bgOf(p as Participant & { bg?: Bg }) : null;
+    const still = art?.src ?? (v.k === "img" ? (v.hi ?? v.src) : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
+    if (!still) continue;
+    seen.add(key);
+    out.push({
+      id: p.id,
+      title: p.title,
+      sub: [p.sub, p.artist].filter(Boolean).join(", ") || undefined,
+      still,
+      pos: art?.pos ?? v.pos,
+      video: v.k === "video" ? { src: v.src, start: p.sound?.k === "video" ? (p.sound.hook ?? 25) : 25 } : undefined,
+    });
+    if (out.length >= count) break;
+  }
+  return out;
 }
 const ROTATE_MS = 11000;
 
@@ -138,17 +143,23 @@ function useStatuses() {
     panels: useSaved("panels"),
   };
   return useMemo(() => {
-    const out = {} as Record<TournamentSlug, { label: string | null; progress: number | null }>;
+    const out = {} as Record<TournamentSlug, { label: string | null; progress: number | null; run: StageItem["run"] }>;
     for (const slug of Object.keys(s) as TournamentSlug[]) {
       const run = s[slug].run;
       if (!run) {
         const n = s[slug].champions.length;
-        out[slug] = { label: n ? `${n} champion${n > 1 ? "s" : ""}` : null, progress: null };
+        out[slug] = { label: n ? `${n} champion${n > 1 ? "s" : ""}` : null, progress: null, run: null };
         continue;
       }
       const cur = currentMatch(run.rounds);
       const done = run.rounds.reduce((k, r) => k + r.matches.filter((m) => m.status === "closed" && m.left && m.right).length, 0);
-      out[slug] = { label: cur ? roundName(cur.round.size) : "Partie terminée", progress: cur ? done / Math.max(1, run.size - 1) : null };
+      // Vrais duels de la partie : un de moins que de participants (les exempts ne jouent pas).
+      const players = (run.rounds[0]?.matches ?? []).reduce((k, m) => k + (m.left ? 1 : 0) + (m.right ? 1 : 0), 0);
+      out[slug] = {
+        label: cur ? roundName(cur.round.size) : "Partie terminée",
+        progress: cur ? done / Math.max(1, run.size - 1) : null,
+        run: cur ? { done, total: Math.max(done + 1, players - 1), now: roundName(cur.round.size), next: cur.round.size > 2 ? roundName(cur.round.size / 2) : null } : null,
+      };
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,6 +187,7 @@ export default function HubPage() {
   const [openings, setOpenings] = useState<Participant[]>([]);
   const [endings, setEndings] = useState<Participant[]>([]);
   const [jeux, setJeux] = useState<Participant[]>([]);
+  const [rest, setRest] = useState<Partial<Record<TournamentSlug, Participant[]>>>({});
   const statuses = useStatuses();
 
   useEffect(() => {
@@ -186,80 +198,36 @@ export default function HubPage() {
     loadParticipants("openings").then((l) => on && setOpenings(l));
     loadParticipants("endings").then((l) => on && setEndings(l));
     loadParticipants("jeux").then((l) => on && setJeux(l));
+    // Les autres tournois : seulement pour les écrans du carrousel, sans rien bloquer.
+    for (const slug of ["rap", "rapvsost", "bankai", "panels"] as TournamentSlug[]) loadParticipants(slug).then((l) => on && setRest((r) => ({ ...r, [slug]: l })));
     return () => {
       on = false;
     };
   }, []);
 
-  // Une vidéo de fond par tournoi phare, tirée une fois.
-  const backdrops = useMemo(() => {
-    const pick = (l: Participant[]) => {
-      const v = l.filter((p) => p.visual.k === "video");
-      return v.length ? v[Math.floor(Math.random() * v.length)] : null;
-    };
-    const ostImg = ost.filter((p) => p.visual.k === "img" && (p.visual as { hi?: string }).hi);
-    return {
-      openings: pick(openings),
-      endings: pick(endings),
-      ost: ostImg.length ? ostImg[Math.floor(Math.random() * ostImg.length)] : null,
-      // Jeux : toujours le fond d'écran de Clair Obscur (ART.jeux).
-      jeux: null,
-    } as Record<string, Participant | null>;
-    // Tirage une fois les catalogues chargés.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ost.length > 0, openings.length > 0, endings.length > 0, jeux.length > 0]);
-
-  // Les trois portails de l'arène 3D (données prêtes une fois les fonds tirés).
   const navigate = useNavigate();
-  const arenaItems = useMemo((): ArenaItem[] | null => {
-    if (!backdrops.openings || !backdrops.endings) return null;
-    return FEATURED.map((slug) => {
-      const meta = bySlug(slug);
-      const back = backdrops[slug];
-      const st = statuses[slug];
-      const media: ArenaItem["media"] =
-        back?.visual.k === "video"
-          ? { k: "video", src: back.visual.src, start: back.sound?.k === "video" ? (back.sound.hook ?? 30) : 30 }
-          : { k: "img", src: back?.visual.k === "img" ? ((back.visual as { hi?: string }).hi ?? back.visual.src) : ART[slug] };
-      return {
-        slug,
-        title: meta.title,
-        tagline: meta.tagline,
-        path: meta.path,
-        kind: KIND[slug],
-        accent: ACCENT[slug],
-        status: st.progress != null ? `En cours, ${(st.label ?? "").toLowerCase()}` : st.label,
-        media,
-        // Image fixe pour les panneaux du fond : celle de l'écran, ou la vignette en grand d'une vidéo.
-        still: media.k === "img" ? media.src : back?.thumb ? back.thumb.replace("/t/p/w300/", "/t/p/w1280/") : ART[slug],
-        caption: back ? { title: back.title, sub: back.sub ?? back.group } : undefined,
-      };
-    });
-  }, [backdrops, statuses]);
-  const three = useWebGL();
-  // Toutes les cases de l'écran de sélection (les tournois phares avec leur vidéo).
-  const selectItems = useMemo((): SelectItem[] | null => {
-    if (!arenaItems) return null;
+  // Les écrans de chaque tournoi, tirés une fois par catalogue chargé.
+  const clips = useMemo(() => {
+    const lists: Record<TournamentSlug, Participant[]> = { ost, openings, endings, jeux, rap: rest.rap ?? [], rapvsost: rest.rapvsost ?? [], bankai: rest.bankai ?? [], panels: rest.panels ?? [] };
+    const out = {} as Record<TournamentSlug, StageClip[]>;
+    for (const slug of ORDER) {
+      const drawn = clipsFrom(lists[slug], slug);
+      // Jeux : toujours la boucle de Clair Obscur en premier.
+      const head: StageClip[] = slug === "jeux" ? [{ id: "jeux-hero", title: "Clair Obscur: Expedition 33", still: ART.jeux, video: { src: "/tournoi/jeux-hero/clair-obscur.mp4", start: 0 } }] : [];
+      out[slug] = [...head, ...drawn].slice(0, 6);
+      if (!out[slug].length) out[slug] = [{ id: `${slug}-art`, title: bySlug(slug).title, still: ART[slug] }];
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ost.length, openings.length, endings.length, jeux.length, rest]);
+  const stageItems = useMemo((): StageItem[] | null => {
+    if (!openings.length) return null;
     return ORDER.map((slug) => {
-      const a = arenaItems.find((x) => x.slug === slug);
       const meta = bySlug(slug);
       const st = statuses[slug];
-      const media: SelectItem["media"] = slug === "jeux" ? { k: "video", src: "/tournoi/jeux-hero/clair-obscur.mp4", start: 0 } : (a?.media ?? { k: "img", src: ART[slug] });
-      return {
-        slug,
-        title: meta.title,
-        short: SHORT[slug],
-        tagline: meta.tagline,
-        kind: KIND[slug],
-        accent: ACCENT[slug],
-        status: st.progress != null ? `En cours, ${(st.label ?? "").toLowerCase()}` : st.label,
-        progress: st.progress,
-        media,
-        still: a?.still ?? ART[slug],
-        caption: a?.caption ? `${a.caption.title}${a.caption.sub ? `, ${a.caption.sub}` : ""}` : undefined,
-      };
+      return { slug, title: meta.title, short: SHORT[slug], tagline: meta.tagline, kind: KIND[slug], accent: ACCENT[slug], run: st.run, note: st.run ? null : st.label, clips: clips[slug] };
     });
-  }, [arenaItems, statuses]);
+  }, [clips, statuses, openings.length]);
 
   // Duel du jour : tiré parmi les génériques et les musiques de jeux (sons lisibles par le site).
   const dailyPools = useMemo(
@@ -277,20 +245,21 @@ export default function HubPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div ref={rootRef} className={`nx-root nf ${ready ? "is-ready" : ""}`}>
-        {selectItems ? (
-          <SelectScreen Deck={three ? LazyDeck : undefined} items={selectItems} onGo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}/duel`)} onInfo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}`)} />
+        {stageItems ? (
+          <Stage items={stageItems} onAccent={setAtmosphere} onLaunch={(it) => it.slug === "jeux" && playLumiere()} onGo={(it) => navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}/duel`)} onInfo={(it) => {
+              if (it.slug === "jeux") playLumiere();
+              navigate(`/tournoi/${bySlug(it.slug as TournamentSlug).path}`);
+            }}
+          />
         ) : (
-          <div style={{ height: "min(92dvh, 920px)", minHeight: 600, background: "#07080b" }} aria-busy="true" />
+          <div style={{ height: "min(100dvh, 960px)", minHeight: 640, background: "#08090d" }} aria-busy="true" />
         )}
 
         {/* Brume vivante derrière les rangées (sous l'arène, fixe à l'écran). */}
         <Atmosphere />
         <div className="nf-body">
           <div className="nf-block">
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: -8 }}>
-              <RefrainRadio list={radioList} />
-            </div>
-            <DailyDuel pools={dailyPools} />
+            <DailyDuel pools={dailyPools} aside={<RefrainRadio list={radioList} />} />
           </div>
           <div className="nf-block">
             <Collection />
@@ -523,6 +492,7 @@ function TournamentCard({ meta, status, index, reel }: { meta: TournamentMeta; s
           // Clic simple : l'affiche s'ouvre en plein écran avant d'arriver sur le tournoi.
           if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
           e.preventDefault();
+          if (meta.slug === "jeux") playLumiere();
           const art = e.currentTarget.querySelector<HTMLElement>(".nf-card-art") ?? e.currentTarget;
           portalTo(art, ART[meta.slug], ACCENT[meta.slug] ?? "#f4f2ec", () => navigate(to));
         }}

@@ -17,7 +17,7 @@ const INK = "#f4f2ec";
 const MUTE = "#8b8a85";
 const BG = "#08090d";
 
-type Pool = { slug: string; statsId: string; title: string; accent: string; list: Participant[] };
+export type Pool = { slug: string; statsId: string; title: string; accent: string; list: Participant[] };
 
 // Tirage déterministe à partir de la date : tout le monde voit le même duel.
 function seeded(seed: number) {
@@ -27,24 +27,42 @@ function seeded(seed: number) {
     return (s - 1) / 2147483646;
   };
 }
-const today = () => new Date().toISOString().slice(0, 10);
+// Le jour change à minuit, heure de Paris (et pas à 1 h ou 2 h du matin).
+const PARIS = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" });
+const dayOf = (shift = 0) => PARIS.format(new Date(Date.now() + shift * 86400000));
+const today = () => dayOf(0);
 
-export function DailyDuel({ pools }: { pools: Pool[] }) {
+// Le duel d'un jour donné : même tirage pour tout le monde.
+function drawFor(day: string, ready: Pool[]) {
+  if (!ready.length) return null;
+  const rnd = seeded(Number(day.replace(/-/g, "")));
+  const pool = ready[Math.floor(rnd() * ready.length)];
+  // Sons lisibles ici : vidéo du site, extrait audio, ou YouTube avec son extrait de secours.
+  const list = pool.list.filter((p) => p.sound?.k === "video" || p.sound?.k === "audio" || (p.sound?.k === "youtube" && !!p.sound.fallback));
+  if (list.length < 2) return null;
+  const a = list[Math.floor(rnd() * list.length)];
+  let b = list[Math.floor(rnd() * list.length)];
+  for (let k = 0; b.id === a.id && k < 8; k++) b = list[Math.floor(rnd() * list.length)];
+  return { pool, a, b };
+}
+
+export function DailyDuel({ pools, aside }: { pools: Pool[]; aside?: React.ReactNode }) {
   const ready = pools.filter((p) => p.list.length > 1);
   const day = today();
-  const duel = useMemo(() => {
-    if (!ready.length) return null;
-    const rnd = seeded(Number(day.replace(/-/g, "")));
-    const pool = ready[Math.floor(rnd() * ready.length)];
-    // Sons lisibles ici : vidéo du site, extrait audio, ou YouTube avec son extrait de secours.
-    const list = pool.list.filter((p) => p.sound?.k === "video" || p.sound?.k === "audio" || (p.sound?.k === "youtube" && !!p.sound.fallback));
-    const a = list[Math.floor(rnd() * list.length)];
-    let b = list[Math.floor(rnd() * list.length)];
-    for (let k = 0; b.id === a.id && k < 8; k++) b = list[Math.floor(rnd() * list.length)];
-    return { pool, a, b };
-    // Un tirage par jour, une fois les catalogues chargés.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [day, ready.length]);
+  // Un tirage par jour, une fois les catalogues chargés.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const duel = useMemo(() => drawFor(day, ready), [day, ready.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const past = useMemo(() => drawFor(dayOf(-1), ready), [day, ready.length]);
+  const [pastSplit, setPastSplit] = useState<{ a: number; b: number } | null>(null);
+  useEffect(() => {
+    if (!past) return;
+    let on = true;
+    fetchPair(past.pool.statsId, past.a.id, past.b.id).then((r: { a: number; b: number } | null) => on && r && setPastSplit(r));
+    return () => {
+      on = false;
+    };
+  }, [past]);
 
   const key = `daily_duel_${day}`;
   const [voted, setVoted] = useState<string | null>(() => {
@@ -65,7 +83,7 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
   }, [duel, voted]);
   useEffect(() => () => media.current?.pause(), []);
 
-  if (!duel) return null;
+  if (!duel) return aside ? <div className="dd-foot">{aside}</div> : null;
   const { pool, a, b } = duel;
 
   const listen = (p: Participant) => {
@@ -98,6 +116,13 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
   const total = split ? split.a + split.b : 0;
   const pct = (p: Participant) => (split && total ? Math.round(((p.id === a.id ? split.a : split.b) / total) * 100) : null);
   const jeux = pool.slug === "jeux";
+  // Hier : qui l'a emporté, et de combien.
+  const yTotal = pastSplit ? pastSplit.a + pastSplit.b : 0;
+  const yWin = past && pastSplit && yTotal >= 3 && pastSplit.a !== pastSplit.b ? (pastSplit.a > pastSplit.b ? past.a : past.b) : null;
+  const yLose = past && yWin ? (yWin.id === past.a.id ? past.b : past.a) : null;
+  const yPct = pastSplit && yTotal ? Math.round((Math.max(pastSplit.a, pastSplit.b) / yTotal) * 100) : 0;
+  // Aujourd'hui, une fois le vote fait : avec ou contre la majorité.
+  const minePct = voted && split && total ? Math.round(((voted === a.id ? split.a : split.b) / total) * 100) : null;
   const art = (p: Participant) => (jeux ? (bgOf(p as Participant & { bg?: Bg })?.src ?? p.thumb) : p.visual.k === "img" ? ((p.visual as { hi?: string }).hi ?? p.visual.src) : p.thumb.replace("/t/p/w300/", "/t/p/w1280/"));
 
   return (
@@ -180,34 +205,37 @@ export function DailyDuel({ pools }: { pools: Pool[] }) {
             );
           })()}
         </svg>
-        {/* Sceau au croisement des deux affiches. */}
-        <div className="dd-seal" aria-hidden>
-          <svg viewBox="0 0 100 100">
-            <defs>
-              <path id="dd-ring" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
-            </defs>
-            <text>
-              <textPath href="#dd-ring">DUEL DU JOUR · UN VOTE · DUEL DU JOUR · UN VOTE ·</textPath>
-            </text>
-          </svg>
-          <span>VS</span>
-        </div>
         {voted && total ? (
           <div className="dd-bar" aria-label="Répartition des votes">
             <motion.i initial={{ width: "50%" }} animate={{ width: `${pct(a) ?? 50}%` }} transition={{ duration: 1.2, ease: EASE, delay: 0.3 }} />
           </div>
         ) : null}
       </div>
+      <div className="dd-foot">
+        <p>
+          {minePct != null && total >= 3 ? (
+            <span>
+              {minePct > 50 ? "Tu es avec la majorité : " : minePct < 50 ? "Tu es en minorité : " : "Égalité parfaite : "}
+              <b>{minePct} %</b> des {total} votants ont fait comme toi.
+            </span>
+          ) : null}
+          {yWin && yLose ? (
+            <span>
+              Hier, <b>{yWin.title}</b> a battu {yLose.title} avec {yPct} % des voix.
+            </span>
+          ) : null}
+        </p>
+        {aside}
+      </div>
     </div>
   );
 }
 
-// Temps restant avant le prochain duel (minuit UTC : la date du tirage est en UTC).
+// Temps restant avant le prochain duel (minuit à Paris, comme le tirage).
 function Countdown({ voted }: { voted: boolean }) {
   const left = () => {
-    const now = new Date();
-    const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
-    const ms = Math.max(0, next - now.getTime());
+    const [hh, mm, ss] = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(new Date()).split(":").map(Number);
+    const ms = Math.max(0, 86400 - (hh * 3600 + mm * 60 + ss)) * 1000;
     const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000), sec = Math.floor((ms % 60000) / 1000);
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };

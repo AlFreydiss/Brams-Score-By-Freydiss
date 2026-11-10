@@ -139,7 +139,6 @@ export function Atmosphere() {
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
   }, []);
   return <canvas ref={ref} className="nf-atmo" aria-hidden />;

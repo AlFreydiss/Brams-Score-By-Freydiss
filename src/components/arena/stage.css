@@ -1,0 +1,604 @@
+/* Accueil des tournois : la scène (stage.tsx). */
+.stg {
+  --ink: #f4f2ec;
+  --mute: #8b8a85;
+  --dim: #55554f;
+  --line: rgba(244, 242, 236, 0.18);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --side: clamp(16px, 5.5vw, 96px);
+  /* Largeur de l'écran du centre : bornée par la hauteur disponible. */
+  --w: min(52vw, calc((min(100dvh, 960px) - 330px) * 16 / 9));
+  position: relative;
+  isolation: isolate;
+  height: min(100dvh, 960px);
+  min-height: 640px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: clamp(24px, 4vw, 72px);
+  padding: 96px var(--side) 34px;
+  background: #08090d;
+  color: var(--ink);
+  font-family: "Inter", system-ui, sans-serif;
+  touch-action: pan-y;
+  user-select: none;
+  outline: none;
+}
+.stg-silk {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.stg button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.stg button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ── Texte ────────────────────────────────────────────────────────── */
+.stg-copy {
+  align-self: center;
+  display: grid;
+  gap: 30px;
+  max-width: 460px;
+  min-width: 0;
+}
+.stg-copy-in {
+  display: grid;
+  gap: 20px;
+}
+.stg-kind {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.stg-kind span {
+  color: var(--acc);
+}
+.stg .stg-title {
+  margin: 0;
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(52px, 6.4vw, 108px) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.22em;
+}
+/* Chaque mot monte derrière un cache (la marge garde les jambages). */
+.stg-title > span {
+  display: block;
+  overflow: hidden;
+  padding: 0.06em 0.04em 0.16em;
+  margin: -0.06em -0.04em -0.16em;
+}
+.stg-title > span > span {
+  display: block;
+}
+.stg-tag {
+  margin: 0;
+  max-width: 32ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: #c9c7c1;
+}
+.stg-run {
+  display: grid;
+  gap: 10px;
+  max-width: 360px;
+}
+.stg-run p {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13.5px;
+  color: var(--mute);
+  font-variant-numeric: tabular-nums;
+}
+.stg-run b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.stg-run i {
+  display: block;
+  height: 2px;
+  background: var(--line);
+}
+.stg-run u {
+  display: block;
+  height: 100%;
+  background: var(--acc);
+  transform-origin: left;
+}
+.stg-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.stg .stg-go,
+.stg .stg-more {
+  height: 52px;
+  border-radius: 999px;
+  font-size: 15px;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s, background 0.2s;
+}
+.stg .stg-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 28px 0 22px;
+  background: var(--ink);
+  color: #08090d;
+  font-weight: 600;
+}
+.stg .stg-more {
+  padding: 0 24px;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.stg .stg-go:active,
+.stg .stg-more:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) {
+  .stg .stg-go:hover {
+    background: #fff;
+  }
+  .stg .stg-more:hover {
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+}
+
+/* ── Carrousel ────────────────────────────────────────────────────── */
+.stg-scene {
+  position: relative;
+  align-self: center;
+  width: var(--w);
+  perspective: 1500px;
+}
+.stg-track {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  transform-style: preserve-3d;
+  cursor: grab;
+}
+.stg-track:active {
+  cursor: grabbing;
+}
+.stg-card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #101116;
+  cursor: pointer;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+.stg-card.is-on {
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--line), 0 70px 120px -60px #000;
+}
+.stg-card img,
+.stg-card video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  transition: filter 0.6s, opacity 0.6s;
+}
+/* Les voisins s'éclairent sous la souris : ils sont cliquables. */
+@media (hover: hover) {
+  .stg-card:not(.is-on):hover img {
+    filter: saturate(1) brightness(1.25);
+  }
+}
+/* Écran du centre : un bouton lecture apparaît au survol, un clic lance le tournoi. */
+.stg-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  padding-left: 4px;
+  background: rgba(244, 242, 236, 0.94);
+  color: #08090d;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.25s, transform 0.4s var(--ease);
+  pointer-events: none;
+  z-index: 2;
+}
+@media (hover: hover) {
+  .stg-card.is-on:hover .stg-play {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.stg.is-leaving .stg-card.is-on .stg-play,
+.stg.is-leaving .stg-card.is-on:hover .stg-play {
+  opacity: 0;
+  transform: scale(1.6);
+  transition-duration: 0.3s;
+}
+/* Plongée : la couleur du tournoi monte sur l'écran à la fin de sa course. */
+.stg-dive {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: radial-gradient(90% 90% at 50% 55%, color-mix(in srgb, var(--acc) 24%, transparent), transparent 70%), #08090d;
+  opacity: 0;
+  animation: stg-dive ease-in both;
+  pointer-events: none;
+}
+@keyframes stg-dive {
+  0%,
+  62% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+/* Un reflet traverse l'écran quand il arrive au centre. */
+.stg-card::after {
+  content: "";
+  position: absolute;
+  inset: -20% -60%;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.16) 50%, transparent 58%);
+  transform: translateX(-70%);
+  opacity: 0;
+  pointer-events: none;
+}
+.stg-card.is-on::after {
+  animation: stg-sheen 1.3s 0.35s var(--ease) both;
+}
+@keyframes stg-sheen {
+  0% {
+    transform: translateX(-70%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(70%);
+    opacity: 1;
+  }
+}
+.stg-card:not(.is-on) img {
+  filter: saturate(0.55);
+}
+.stg-card video {
+  opacity: 0;
+}
+.stg-card video.is-on {
+  opacity: 1;
+}
+
+/* Axe vertical : flèches et repères, à gauche de l'écran. */
+.stg-vert {
+  position: absolute;
+  right: calc(100% + 14px);
+  top: 0;
+  height: calc(var(--w) * 9 / 16);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+}
+.stg-vert button {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--mute);
+  transition: color 0.2s, box-shadow 0.2s;
+}
+.stg-vert span {
+  display: grid;
+  gap: 6px;
+}
+.stg-vert i {
+  width: 2px;
+  height: 12px;
+  background: var(--line);
+  transition: background 0.3s, height 0.3s var(--ease);
+}
+.stg-vert i.is-on {
+  height: 22px;
+  background: var(--ink);
+}
+@media (hover: hover) {
+  .stg-vert button:hover {
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+}
+
+/* Titre du générique et bouton son, posés au bas de l'écran du centre. */
+.stg-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--w) * 9 / 16);
+  translate: 0 -100%;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 56px 18px 16px 22px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(to top, rgba(8, 9, 13, 0.82), rgba(8, 9, 13, 0));
+  pointer-events: none;
+}
+.stg-cap > * {
+  pointer-events: auto;
+}
+.stg-cap p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  font-size: 13.5px;
+  color: #c9c7c1;
+  min-width: 0;
+}
+.stg-cap b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.stg .stg-sound {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 9, 13, 0.5);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: background 0.2s, color 0.2s;
+}
+.stg .stg-sound.is-on {
+  background: var(--ink);
+  color: #08090d;
+}
+
+/* ── Rail des tournois ────────────────────────────────────────────── */
+.stg-rail {
+  position: relative;
+  z-index: 5;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+  padding-top: 26px;
+}
+.stg-segs {
+  flex: 1;
+  display: flex;
+  gap: clamp(8px, 1.2vw, 18px);
+  min-width: 0;
+}
+.stg .stg-seg {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 11px;
+  padding: 8px 0 4px;
+  text-align: left;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dim);
+  transition: color 0.3s;
+}
+.stg-seg i {
+  position: relative;
+  display: block;
+  height: 2px;
+  background: var(--line);
+  transition: background 0.3s;
+}
+.stg-seg u {
+  display: block;
+  height: 100%;
+  background: var(--sc);
+  opacity: 0.7;
+  transform-origin: left;
+}
+/* Attente : la ligne se remplit avant de passer au tournoi suivant. */
+.stg-seg s {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform-origin: left;
+  animation: stg-wait linear both;
+}
+@keyframes stg-wait {
+  from {
+    transform: scaleX(0);
+  }
+}
+.stg-seg.is-on i:has(s) {
+  background: var(--line);
+}
+.stg .stg-seg.is-on {
+  color: var(--ink);
+}
+.stg-seg.is-on i {
+  background: var(--ink);
+}
+.stg-seg.is-on u {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .stg .stg-seg:not(.is-on):hover {
+    color: var(--mute);
+  }
+}
+.stg-arrows {
+  display: flex;
+  gap: 8px;
+}
+.stg-arrows button {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 0.2s, transform 0.2s var(--ease);
+}
+.stg-arrows button:active {
+  transform: scale(0.94);
+}
+@media (hover: hover) {
+  .stg-arrows button:hover {
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+}
+
+/* La suite de la page démarre sous la scène, sans remonter dessus. */
+.stg ~ .nf-body {
+  margin-top: 20px;
+}
+
+/* Départ vers le tournoi : le texte et le rail s'écartent, l'écran passe
+   par-dessus tout (barre du site comprise) et couvre la page. */
+.stg.is-leaving {
+  z-index: 10055;
+  overflow: visible;
+}
+.stg.is-leaving .stg-copy,
+.stg.is-leaving .stg-rail,
+.stg.is-leaving .stg-cap,
+.stg.is-leaving .stg-vert {
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.5s cubic-bezier(0.6, 0, 0.9, 0.2);
+}
+.stg.is-leaving .stg-copy {
+  transform: translateX(-60px);
+}
+.stg.is-leaving .stg-rail {
+  transform: translateY(30px);
+}
+.stg.is-leaving .stg-card.is-on {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* ── Mobile : l'écran en haut, le texte dessous ───────────────────── */
+@media (max-width: 760px) {
+  .stg {
+    --w: 100%;
+    height: auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    row-gap: 22px;
+    padding: 84px 16px 26px;
+  }
+  .stg-scene {
+    order: -1;
+    width: 100%;
+    perspective: 900px;
+  }
+  .stg-copy {
+    gap: 22px;
+    max-width: none;
+  }
+  .stg-copy-in {
+    gap: 14px;
+  }
+  .stg .stg-title {
+    font-size: clamp(44px, 14vw, 60px) !important;
+  }
+  .stg-tag {
+    font-size: 16px;
+  }
+  .stg .stg-go,
+  .stg .stg-more {
+    flex: 1;
+    justify-content: center;
+    padding: 0 16px;
+  }
+  /* Les repères verticaux passent sous l'écran, à côté du titre du générique. */
+  .stg-cap {
+    position: static;
+    translate: none;
+    padding: 14px 0 0;
+    background: none;
+    align-items: center;
+  }
+  .stg-cap p {
+    color: var(--mute);
+  }
+  .stg-vert {
+    position: static;
+    height: auto;
+    display: flex;
+    float: right;
+    margin: 14px 0 0 10px;
+    gap: 4px;
+  }
+  .stg-vert span {
+    display: none;
+  }
+  .stg-vert button {
+    width: 40px;
+    height: 40px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .stg-rail {
+    padding-top: 4px;
+  }
+  .stg-segs {
+    gap: 5px;
+  }
+  .stg .stg-seg {
+    font-size: 0;
+    gap: 0;
+    padding: 14px 0;
+  }
+  .stg-arrows {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stg-card.is-on::after {
+    animation: none;
+  }
+  .stg * {
+    transition-duration: 0.01s !important;
+  }
+}
