@@ -10,7 +10,7 @@ import { IDENTITIES, isFight } from "../fight/identities";
 import { Embers } from "../fight/Embers";
 import { useAdobeKit } from "./adobe-kit";
 import "./setup-jeux.css";
-import { bgOf, type Bg } from "../fight/jeux-art";
+import { artSmall, bgOf, type Bg } from "../fight/jeux-art";
 import "./setup-arena.css";
 
 // OST, openings, endings : le départ reprend l'univers de leur accueil
@@ -26,9 +26,14 @@ const ARENA_TITLE: Record<ArenaSlug, [string, string]> = {
 function pillarbox(v: HTMLVideoElement) {
   if (v.dataset.pb) return;
   v.dataset.pb = "1";
-  window.setTimeout(() => {
+  // Un générique s'ouvre souvent sur du noir : on regarde plusieurs fois avant de conclure.
+  let tries = 0;
+  const check = () => {
+    if (!v.isConnected) return;
     if (isPillarbox(v)) v.classList.add("is-pillar");
-  }, 400);
+    else if (++tries < 6) window.setTimeout(check, 900);
+  };
+  window.setTimeout(check, 400);
 }
 
 function ArenaBackdrop({ slug, pool }: { slug: ArenaSlug; pool: Participant[] }) {
@@ -82,6 +87,9 @@ export function Setup() {
   const jeux = meta.slug === "jeux";
   const arena = isArena(meta.slug) ? meta.slug : null;
   useAdobeKit(jeux);
+  const plain = !jeux && !arena;
+  // Tirée une fois : le fond ne change pas à chaque clic de format.
+  const [glow] = useState(() => participants[Math.floor(Math.random() * participants.length)]?.thumb);
   const groups = useMemo(() => {
     const m = new Map<string, number>();
     for (const p of participants) m.set(p.group, (m.get(p.group) ?? 0) + 1);
@@ -132,7 +140,7 @@ export function Setup() {
     });
 
   return (
-    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""} ${arena ? `nx-setup--arena nx-setup--${arena}` : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
+    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""} ${arena ? `nx-setup--arena nx-setup--${arena}` : ""} ${plain ? "nx-setup--plain" : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
       {jeux ? (
         // Univers Clair Obscur / Elden Ring : boucle vidéo du jeu, brume, braises.
         <div className="sj-bg" aria-hidden>
@@ -142,6 +150,12 @@ export function Setup() {
         </div>
       ) : null}
       {arena ? <ArenaBackdrop slug={arena} pool={participants} /> : null}
+      {plain && glow ? (
+        // Pas de générique à passer : une image du pool, floue, donne la couleur du fond.
+        <div className="sg-bg" aria-hidden>
+          <img src={glow} alt="" decoding="async" />
+        </div>
+      ) : null}
       <div className="nx-setup-box">
         {jeux ? <p className="sj-kicker">Tournoi · {participants.length} musiques</p> : null}
         {arena ? (
@@ -250,7 +264,7 @@ export function Setup() {
         </button>
         <p className="t-note">Tirage au hasard à chaque partie. Ta partie est sauvegardée sur ce navigateur : tu peux la reprendre plus tard.</p>
       </div>
-      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} art={jeux ? (p) => bgOf(p as Participant & { bg?: Bg })?.src ?? p.thumb : undefined} /> : null}
+      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} art={jeux ? (p) => { const b = bgOf(p as Participant & { bg?: Bg })?.src; return b ? artSmall(b) : p.thumb; } : undefined} /> : null}
     </div>
   );
 }

@@ -463,6 +463,8 @@ function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: S
       aria-hidden={!on}
     >
       <img src={c.still} alt="" draggable={false} decoding="async" style={c.pos ? { objectPosition: c.pos } : undefined} />
+      {/* Reflet au sol : l'image retournée, peinte une fois (box-reflect redessinait l'écran à chaque image). */}
+      <i className="stg-refl" style={{ backgroundImage: `url("${c.still}")`, backgroundPosition: c.pos }} />
       {children}
     </motion.div>
   );

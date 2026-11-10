@@ -272,8 +272,8 @@
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
   gap: clamp(32px, 6vw, 120px);
   align-items: center;
-  padding-top: clamp(24px, 4vh, 56px);
-  padding-bottom: clamp(32px, 6vh, 72px);
+  padding-top: clamp(16px, 2.5vh, 32px);
+  padding-bottom: clamp(20px, 3vh, 40px);
 }
 .nx-setup--jeux .sj-bg video {
   opacity: 0.92;
@@ -286,11 +286,11 @@
     linear-gradient(to bottom, rgba(7, 6, 5, 0.85) 0%, rgba(7, 6, 5, 0) 22%);
 }
 .nx-root .nx-setup--jeux .nx-setup-box {
-  gap: 20px;
+  gap: 16px;
   max-width: 640px;
 }
 .nx-root .nx-setup--jeux .nx-title {
-  font-size: clamp(42px, 4.1vw, 82px) !important;
+  font-size: clamp(42px, 3.8vw, 76px) !important;
   line-height: 1 !important;
 }
 /* Texte courant : en bas de casse, pas en capitales gravées. */
@@ -314,7 +314,7 @@
 }
 .nx-root .nx-setup--jeux .t-formats button {
   width: clamp(92px, 6.4vw, 118px);
-  height: clamp(116px, 7vw, 136px);
+  height: clamp(104px, 6vw, 120px);
 }
 .nx-root .nx-setup--jeux .t-formats b {
   font-size: clamp(19px, 1.35vw, 24px);

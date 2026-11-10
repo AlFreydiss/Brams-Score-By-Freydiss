@@ -268,8 +268,22 @@
   cursor: pointer;
   will-change: transform, opacity;
   backface-visibility: hidden;
-  /* Sol laqué : chaque écran s'y reflète. */
-  -webkit-box-reflect: below 10px linear-gradient(transparent 58%, rgba(0, 0, 0, 0.3));
+}
+/* Sol laqué : chaque écran s'y reflète (image fixe retournée, fondue vers le bas). */
+.stg-refl {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 10px);
+  height: 100%;
+  border-radius: inherit;
+  background: center / cover no-repeat;
+  transform: scaleY(-1);
+  /* Flou : un sol laqué, pas un miroir (l'écran joue une vidéo, le reflet reste une image fixe). */
+  filter: blur(7px) saturate(0.9);
+  -webkit-mask-image: linear-gradient(transparent 56%, rgba(0, 0, 0, 0.26));
+  mask-image: linear-gradient(transparent 56%, rgba(0, 0, 0, 0.26));
+  pointer-events: none;
 }
 .stg-card.is-on {
   box-shadow: 0 0 0 1px var(--line), 0 60px 110px -50px #000;
@@ -553,8 +567,8 @@
 .stg.is-leaving .stg-rail {
   transform: translateY(30px);
 }
-.stg.is-leaving .stg-card {
-  -webkit-box-reflect: unset;
+.stg.is-leaving .stg-refl {
+  display: none;
 }
 .stg.is-leaving .stg-card.is-on {
   border-radius: 0;
@@ -581,8 +595,10 @@
     background:
       linear-gradient(to top, #08090d 0%, rgba(8, 9, 13, 0.9) 40%, rgba(8, 9, 13, 0.55) 100%);
   }
-  .stg-card {
-    -webkit-box-reflect: below 6px linear-gradient(transparent 72%, rgba(0, 0, 0, 0.24));
+  .stg-refl {
+    top: calc(100% + 6px);
+    -webkit-mask-image: linear-gradient(transparent 72%, rgba(0, 0, 0, 0.24));
+    mask-image: linear-gradient(transparent 72%, rgba(0, 0, 0, 0.24));
   }
   .stg-cap {
     padding: 36px 10px 10px 14px;

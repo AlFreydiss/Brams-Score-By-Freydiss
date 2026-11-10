@@ -98,3 +98,9 @@ export function jeuArt(game: string | undefined) {
 /** Fond propre à une piste (data jeux.json : p.bg), sinon l'art du jeu. */
 export type Bg = { src: string; hi?: string; pos?: string; video?: string };
 export const bgOf = (p: { sub?: string; bg?: Bg }): Bg | null => p.bg ?? jeuArt(p.sub);
+
+// Version légère d'un art, pour les petites cases (mur du départ) : miniature
+// 300 px de haut dans public/tournoi/jeux-s (même arborescence, en .webp), ou
+// la variante 600 px des captures Steam. À régénérer quand on ajoute un art.
+export const artSmall = (src: string) =>
+  src.replace(/\.1920x1080\.jpg$/, ".600x338.jpg").replace(/^\/tournoi\/(jeux-art|jeux-bg|jeux-hero)\/([^/.]+)\.\w+$/, "/tournoi/jeux-s/$1/$2.webp");
