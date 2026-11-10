@@ -10,7 +10,7 @@ import "./setup-wall.css";
 const CAP = 64;
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function SetupWall({ pool, size, launching, accent }: { pool: Participant[]; size: number; launching: boolean; accent: string }) {
+export function SetupWall({ pool, size, launching, accent, art }: { pool: Participant[]; size: number; launching: boolean; accent: string; /** Image de chaque case, si ce n'est pas la vignette. */ art?: (p: Participant) => string }) {
   const reduce = !!useReducedMotion();
   const shown = pool.slice(0, Math.min(size, CAP));
   const rest = size - shown.length;
@@ -26,7 +26,7 @@ export function SetupWall({ pool, size, launching, accent }: { pool: Participant
   }
 
   return (
-    <div className="sw" aria-hidden style={{ "--sw-cols": cols, "--sw-accent": accent } as React.CSSProperties}>
+    <div className="sw" aria-hidden style={{ "--sw-cols": cols, "--sw-accent": accent, "--sw-ratio": n <= 16 ? "16 / 10" : n <= 32 ? "3 / 4" : "1 / 1" } as React.CSSProperties}>
       <div className="sw-head">
         <motion.b key={size} initial={reduce ? false : { y: "60%", opacity: 0 }} animate={{ y: 0, opacity: 1, transition: { duration: 0.6, ease: EASE } }}>
           {size}
@@ -55,7 +55,7 @@ export function SetupWall({ pool, size, launching, accent }: { pool: Participant
                 exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.6, filter: "blur(8px)", transition: { duration: 0.3 } }}
                 className="sw-tile"
               >
-                <img src={p.thumb} alt="" loading="lazy" decoding="async" draggable={false} />
+                <img src={art ? art(p) : p.thumb} alt="" loading="lazy" decoding="async" draggable={false} />
               </motion.li>
             );
           })}

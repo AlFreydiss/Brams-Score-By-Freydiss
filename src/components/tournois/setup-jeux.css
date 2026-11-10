@@ -261,3 +261,105 @@
     animation: none;
   }
 }
+
+/* ── Reprise du 10 nov : la page tient tout l'écran, même très large ──
+   Le texte et le mur se centrent dans la hauteur, le fond retrouve du
+   contraste, le texte courant redevient lisible, le mur montre l'art des
+   jeux (et plus des pochettes dépareillées). */
+.nx-root .nx-setup--jeux {
+  max-width: 1680px;
+  min-height: calc(100dvh - 132px);
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: clamp(32px, 6vw, 120px);
+  align-items: center;
+  padding-top: clamp(24px, 4vh, 56px);
+  padding-bottom: clamp(32px, 6vh, 72px);
+}
+.nx-setup--jeux .sj-bg video {
+  opacity: 0.92;
+  filter: saturate(1.06) contrast(1.08) brightness(0.8);
+}
+.nx-setup--jeux .sj-fog {
+  background:
+    linear-gradient(90deg, #070605 0%, rgba(7, 6, 5, 0.94) 30%, rgba(7, 6, 5, 0.62) 52%, rgba(7, 6, 5, 0.5) 100%),
+    linear-gradient(to top, #070605 0%, rgba(7, 6, 5, 0) 34%),
+    linear-gradient(to bottom, rgba(7, 6, 5, 0.85) 0%, rgba(7, 6, 5, 0) 22%);
+}
+.nx-root .nx-setup--jeux .nx-setup-box {
+  gap: 20px;
+  max-width: 640px;
+}
+.nx-root .nx-setup--jeux .nx-title {
+  font-size: clamp(42px, 4.1vw, 82px) !important;
+  line-height: 1 !important;
+}
+/* Texte courant : en bas de casse, pas en capitales gravées. */
+.nx-root .nx-setup--jeux .nx-lede {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: clamp(15.5px, 1vw, 18px);
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: #d6cdb9;
+  max-width: 54ch;
+}
+.nx-root .nx-setup--jeux .t-note,
+.nx-root .nx-setup--jeux .t-switch small {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13.5px;
+  letter-spacing: 0;
+  color: #a39a87;
+}
+.nx-root .nx-setup--jeux .t-formats {
+  gap: 12px;
+}
+.nx-root .nx-setup--jeux .t-formats button {
+  width: clamp(92px, 6.4vw, 118px);
+  height: clamp(116px, 7vw, 136px);
+}
+.nx-root .nx-setup--jeux .t-formats b {
+  font-size: clamp(19px, 1.35vw, 24px);
+}
+.nx-root .nx-setup--jeux .t-go {
+  height: 60px;
+  padding: 0 40px;
+  font-size: 14px;
+}
+/* Mur : l'art de chaque jeu, cases plus grandes, proportions selon le format. */
+.nx-setup--jeux .sw {
+  position: static;
+  gap: 22px;
+}
+.nx-setup--jeux .sw-grid {
+  gap: 8px;
+}
+.nx-setup--jeux .sw-tile {
+  aspect-ratio: var(--sw-ratio, 1);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(210, 173, 110, 0.38), 0 14px 26px -14px #000;
+}
+.nx-setup--jeux .sw-tile:nth-child(even)::before {
+  display: none;
+}
+.nx-setup--jeux .sw-tile img {
+  filter: saturate(0.95) brightness(0.92);
+}
+@media (max-width: 860px) {
+  .nx-root .nx-setup--jeux {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    align-items: start;
+  }
+  .nx-setup--jeux .sj-fog {
+    background: linear-gradient(to top, #070605 0%, rgba(7, 6, 5, 0.86) 45%, rgba(7, 6, 5, 0.62) 100%);
+  }
+  .nx-root .nx-setup--jeux .t-formats {
+    gap: 6px;
+  }
+  .nx-root .nx-setup--jeux .t-formats button {
+    width: calc((100% - 24px) / 5);
+    height: 100px;
+  }
+  .nx-root .nx-setup--jeux .t-formats b {
+    font-size: 13px;
+  }
+}

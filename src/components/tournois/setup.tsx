@@ -10,6 +10,7 @@ import { IDENTITIES, isFight } from "../fight/identities";
 import { Embers } from "../fight/Embers";
 import { useAdobeKit } from "./adobe-kit";
 import "./setup-jeux.css";
+import { bgOf, type Bg } from "../fight/jeux-art";
 import "./setup-arena.css";
 
 // OST, openings, endings : le départ reprend l'univers de leur accueil
@@ -249,7 +250,7 @@ export function Setup() {
         </button>
         <p className="t-note">Tirage au hasard à chaque partie. Ta partie est sauvegardée sur ce navigateur : tu peux la reprendre plus tard.</p>
       </div>
-      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} /> : null}
+      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} art={jeux ? (p) => bgOf(p as Participant & { bg?: Bg })?.src ?? p.thumb : undefined} /> : null}
     </div>
   );
 }

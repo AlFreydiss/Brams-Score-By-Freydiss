@@ -119,6 +119,12 @@ export function Atmosphere() {
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw);
       if (document.hidden || now - last < 33) return;
+      // Tant que la scène du haut remplit l'écran, la brume est derrière : rien à dessiner.
+      const top = document.querySelector(".stg");
+      if (top && top.getBoundingClientRect().bottom >= window.innerHeight) {
+        last = now;
+        return;
+      }
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
       // La teinte glisse vers la carte survolée (environ 0,8 s).

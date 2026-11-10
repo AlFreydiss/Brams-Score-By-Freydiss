@@ -96,6 +96,13 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
 
   const cur = items[i];
   const clip = cur.clips[0];
+  // L'écran « posé » : la vidéo et les images du fond attendent la fin de la rotation.
+  const [settled, setSettled] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(i), 420);
+    return () => clearTimeout(t);
+  }, [i]);
+  const calm = items[settled] ?? cur;
 
   const setPos = useCallback(
     (p: number, user = true) => {
@@ -192,6 +199,21 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
     onAccent?.(cur.accent);
   }, [cur.accent, onAccent]);
 
+  // Les premières images de fond de chaque tournoi sont chargées d'avance, quand le navigateur est au repos.
+  useEffect(() => {
+    const load = () => {
+      for (const it of items) {
+        const img = new Image();
+        img.decoding = "async";
+        img.src = (it.clips[1] ?? it.clips[0]).still;
+      }
+    };
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+    const t = idle ? idle(load, { timeout: 4000 }) : window.setTimeout(load, 1800);
+    return () => (idle ? window.cancelIdleCallback?.(t) : clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.map((it) => (it.clips[1] ?? it.clips[0]).id).join("|")]);
+
   // Tant que personne n'a touché, l'anneau tourne seul.
   useEffect(() => {
     if (touched || reduce || !live || leaving) return;
@@ -231,6 +253,7 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
 
   // Glissé : l'anneau suit la main, puis se cale sur l'écran le plus proche.
   const drag = useRef<{ x: number; y: number; base: number; t: number; moved: boolean } | null>(null);
+  const rect = useRef<DOMRect | null>(null);
 
   return (
     <section
@@ -279,15 +302,16 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
           if (d.moved) aim.set(d.base - dx / (box.w * 0.78));
         }
         if (e.pointerType !== "mouse" || reduce) return;
-        const r = e.currentTarget.getBoundingClientRect();
+        const r = (rect.current ??= e.currentTarget.getBoundingClientRect());
         tx.set(((e.clientX - r.left) / r.width - 0.5) * 2);
         ty.set(((e.clientY - r.top) / r.height - 0.5) * 2);
       }}
-      onPointerLeave={() => (tx.set(0), ty.set(0))}
+      onPointerEnter={(e) => (rect.current = e.currentTarget.getBoundingClientRect())}
+      onPointerLeave={() => ((rect.current = null), tx.set(0), ty.set(0))}
     >
       {/* Fond : les images du tournoi, en grand, qui dérivent ; la soie par-dessus. */}
       <motion.div className="stg-back" style={{ x: backX, y: backY }} aria-hidden>
-        <Backdrop item={cur} moving={live && !reduce && !leaving} />
+        <Backdrop item={calm} moving={live && !reduce && !leaving} />
       </motion.div>
       <div className="stg-scrim" aria-hidden />
       <canvas ref={canvas} className="stg-silk" aria-hidden />
@@ -349,7 +373,7 @@ export function Stage({ items, onGo, onLaunch, onInfo, onAccent }: Props) {
             {box.w
               ? items.map((it, k) => (
                   <Card key={it.slug} item={it} k={k} n={n} on={k === i} rot={rot} flat={flat} radius={box.w * RADIUS} narrow={box.narrow}>
-                    {k === i && it.clips[0].video && live && !reduce ? <Clip key={it.clips[0].id} video={it.clips[0].video} sound={sound} /> : null}
+                    {k === i && k === settled && it.clips[0].video && live && !reduce ? <Clip key={it.clips[0].id} video={it.clips[0].video} sound={sound} /> : null}
                     {k === i ? (
                       <>
                         <span className="stg-play" aria-hidden>
@@ -428,12 +452,13 @@ function Card({ item, k, n, on, rot, flat, radius, narrow, children }: { item: S
     return o * (1 - f * Math.min(1, a * 3));
   });
   const events = useTransform(opacity, (o) => (o > 0.06 ? "auto" : "none"));
+  const shown = useTransform(opacity, (o) => (o > 0.01 ? "visible" : "hidden"));
   const c = item.clips[0];
   return (
     <motion.div
       className={`stg-card ${on ? "is-on" : ""}`}
       data-k={k}
-      style={{ rotateY: angle, opacity, pointerEvents: events }}
+      style={{ rotateY: angle, opacity, pointerEvents: events, visibility: shown }}
       transformTemplate={({ rotateY }) => `rotateY(${typeof rotateY === "number" ? `${rotateY}deg` : rotateY}) translateZ(${radius}px)`}
       aria-hidden={!on}
     >

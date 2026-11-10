@@ -34,7 +34,9 @@ void main(){
   col += uCol * halo * (0.07 + 0.13 * fold) * (1.0 + 3.0 * uBoost);
   col += uCol * fold * m * 0.5 * uBoost;
   col += (hash(gl_FragCoord.xy + fract(uT)) - 0.5) / 255.0 * 1.6;
-  gl_FragColor = vec4(col, 1.0);
+  // Lumière seule, prémultipliée : elle se pose sur les images du fond sans mode de fusion.
+  vec3 light = max(col - bg, 0.0);
+  gl_FragColor = vec4(light, clamp(max(light.r, max(light.g, light.b)), 0.0, 1.0));
 }`;
 
 const rgb = (hex: string): [number, number, number] => {
@@ -53,7 +55,7 @@ export type Silk = {
 };
 
 export function createSilk(canvas: HTMLCanvasElement, color: string): Silk | null {
-  const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power" });
+  const gl = canvas.getContext("webgl", { antialias: false, alpha: true, premultipliedAlpha: true, powerPreference: "low-power" });
   if (!gl) return null;
   const sh = (type: number, src: string) => {
     const s = gl.createShader(type)!;
