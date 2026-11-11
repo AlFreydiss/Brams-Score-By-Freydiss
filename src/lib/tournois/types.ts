@@ -28,9 +28,18 @@ export type Participant = {
   gain?: number;
 };
 
-/** Volume 0-100 de la piste, gain compris. */
-export const gained = (p: Participant | null | undefined, volume: number) =>
-  Math.min(100, volume * (p?.gain ?? 1));
+/**
+ * Volume 0-100 de la piste, gain compris. Le lecteur s'arrête à 100 : le gain
+ * s'applique en entier jusqu'au volume par défaut (70), puis la courbe rejoint
+ * 100 en restant croissante, pour que le haut du curseur agisse encore.
+ */
+export function gained(p: Participant | null | undefined, volume: number) {
+  const g = p?.gain ?? 1;
+  if (g <= 1) return volume;
+  const knee = Math.min(70, 100 / g);
+  if (volume <= knee) return volume * g;
+  return knee * g + ((volume - knee) * (100 - knee * g)) / (100 - knee);
+}
 
 export type Match = {
   id: string;

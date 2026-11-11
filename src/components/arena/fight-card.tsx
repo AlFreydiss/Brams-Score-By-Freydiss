@@ -53,7 +53,7 @@ function usePreview() {
         a.src = p.sound.src;
         a.dataset.id = p.id;
       }
-      a.volume = 0.7;
+      a.volume = Math.min(1, 0.7 * (p.gain ?? 1));
       a.play().then(
         () => setPlaying(p.id),
         () => setPlaying(null),

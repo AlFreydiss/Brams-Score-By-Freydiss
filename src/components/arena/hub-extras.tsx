@@ -93,7 +93,7 @@ export function DailyDuel({ pools, aside }: { pools: Pool[]; aside?: React.React
     el.src = p.visual.k === "video" ? p.visual.src : p.sound?.k === "audio" ? p.sound.src : p.sound?.k === "youtube" ? (p.sound.fallback ?? "") : "";
     const start = p.sound?.k === "video" ? (p.sound.hook ?? 0) : 0;
     el.addEventListener("loadedmetadata", () => (el.currentTime = start), { once: true });
-    el.volume = 0.7;
+    el.volume = Math.min(1, 0.7 * (p.gain ?? 1));
     el.onended = () => setPlaying(null);
     el.play().then(
       () => setPlaying(p.id),
