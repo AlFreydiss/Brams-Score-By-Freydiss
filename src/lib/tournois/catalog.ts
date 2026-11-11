@@ -111,7 +111,7 @@ export const TOURNAMENTS: TournamentMeta[] = [
     brand: "OST de jeux",
     signature: "Les musiques qui restent quand la manette est posée.",
     tagline: "Clair Obscur, Skyrim, Zelda, Halo, God of War… une seule reste.",
-    lead: "{n} musiques de jeux vidéo, {g} jeux : la liste de la commu, de Call of Duty à Zelda, plus la bande originale de Clair Obscur : Expedition 33 et toutes les pistes chantées par Alice Duport-Percier. Tu écoutes les deux en entier, tu gardes celle qui te ramène quelque part.",
+    lead: "{n} musiques de jeux vidéo, {g} jeux : la liste de la commu, de Call of Duty à Zelda, plus 25 morceaux de Clair Obscur : Expedition 33, d'Alicia à Lumière. Tu écoutes les deux en entier, tu gardes celle qui te ramène quelque part.",
     unit: "musiques",
     unitOne: "musique",
     mode: "audio",
