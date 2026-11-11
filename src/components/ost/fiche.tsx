@@ -11,6 +11,7 @@ import { engrave, Photo } from "./ui";
 // réels portent : pas d'album, d'année ou d'anecdote inventés.
 
 function ytUrl(p: Participant) {
+  if (p.sound?.k === "audio") return p.sound.link?.includes("youtube.com") ? p.sound.link : null;
   if (p.sound?.k !== "youtube") return null;
   const t = p.sound.start ? `&t=${p.sound.start}s` : "";
   return `https://www.youtube.com/watch?v=${p.sound.id}${t}`;

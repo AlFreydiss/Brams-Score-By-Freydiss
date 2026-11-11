@@ -9,8 +9,7 @@ import { SetupWall } from "./setup-wall";
 import { IDENTITIES, isFight } from "../fight/identities";
 import { Embers } from "../fight/Embers";
 import { useAdobeKit } from "./adobe-kit";
-import "./setup-jeux.css";
-import { artSmall, bgOf, type Bg } from "../fight/jeux-art";
+import { DepartJeux } from "./depart-jeux";
 import "./setup-arena.css";
 
 // OST, openings, endings : le départ reprend l'univers de leur accueil
@@ -70,9 +69,6 @@ function ArenaBackdrop({ slug, pool }: { slug: ArenaSlug; pool: Participant[] })
   );
 }
 
-// Jeux : formats en chiffres romains, comme les cartes d'un jeu de tarot.
-const ROMAN: Record<number, string> = { 8: "VIII", 16: "XVI", 32: "XXXII", 64: "LXIV", 128: "CXXVIII", 256: "CCLVI" };
-
 // Écran de départ : format, filtre, mode à l'aveugle. Le fond annonce déjà le
 // duel : deux participants tirés au hasard, coupés dans le style du tournoi.
 // Valeur de format qui veut dire « tout le pool » (suit le filtre).
@@ -123,7 +119,7 @@ export function Setup() {
     if (!effective || launching) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setLaunching(true);
-    timer.current = window.setTimeout(() => actions.start(meta.slug, drawn, blind), reduce ? 0 : 1400);
+    timer.current = window.setTimeout(() => actions.start(meta.slug, drawn, blind), reduce ? 0 : jeux ? 700 : 1400);
   };
   const accent = isFight(meta.slug) ? IDENTITIES[meta.slug].a : "#f4f2ec";
 
@@ -135,16 +131,37 @@ export function Setup() {
       return n;
     });
 
+  // OST de jeux : son propre écran, la frise du tirage (depart-jeux.tsx).
+  if (jeux)
+    return (
+      <DepartJeux
+        title={meta.title}
+        lead={fill(meta.lead, participants)}
+        unit={meta.unit}
+        formats={meta.formats}
+        capacity={capacity}
+        all={all}
+        effective={effective ?? 0}
+        onSize={setSize}
+        onAll={() => setSize(ALL)}
+        groups={groups}
+        shownGroups={shownGroups}
+        off={off}
+        poolCount={pool.length}
+        q={q}
+        onQ={setQ}
+        onToggle={toggle}
+        onReset={() => setOff(new Set())}
+        onClear={() => setOff(new Set(groups.map(([g]) => g)))}
+        blind={blind}
+        onBlind={setBlind}
+        launching={launching}
+        onLaunch={launch}
+      />
+    );
+
   return (
-    <div className={`nx-setup ${jeux ? "nx-setup--jeux" : ""} ${arena ? `nx-setup--arena nx-setup--${arena}` : ""} ${plain ? "nx-setup--plain" : ""} ${launching ? "is-launching" : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
-      {jeux ? (
-        // Univers Clair Obscur / Elden Ring : boucle vidéo du jeu, brume, braises.
-        <div className="sj-bg" aria-hidden>
-          <video src="/tournoi/jeux-hero/clair-obscur.mp4" poster="/tournoi/jeux-hero/clair-obscur.webp" autoPlay muted loop playsInline preload="auto" />
-          <div className="sj-fog" />
-          <Embers active density={0.7} zIndex={2} />
-        </div>
-      ) : null}
+    <div className={`nx-setup ${arena ? `nx-setup--arena nx-setup--${arena}` : ""} ${plain ? "nx-setup--plain" : ""} ${launching ? "is-launching" : ""}`} style={arena ? ({ "--sa-acc": accent } as React.CSSProperties) : undefined}>
       {arena ? <ArenaBackdrop slug={arena} pool={participants} /> : null}
       {plain && glow ? (
         // Pas de générique à passer : une image du pool, floue, donne la couleur du fond.
@@ -153,7 +170,6 @@ export function Setup() {
         </div>
       ) : null}
       <div className="nx-setup-box">
-        {jeux ? <p className="sj-kicker">Tournoi · {participants.length} musiques</p> : null}
         {arena ? (
           <p className="sa-kicker">
             <span>{IDENTITIES[arena].name}</span>
@@ -164,19 +180,13 @@ export function Setup() {
           </p>
         ) : null}
         <h1 className="nx-title">
-          {jeux
-            ? meta.title.split(" ").map((w, k, all) => (
-                <span key={k} className="jx-word" style={{ animationDelay: `${1.4 + k * 0.08}s`, marginRight: k < all.length - 1 ? "0.26em" : 0 }}>
-                  {w}
-                </span>
-              ))
-            : arena
-              ? (
-                  <>
-                    {ARENA_TITLE[arena][0]} <em>{ARENA_TITLE[arena][1]}</em>
-                  </>
-                )
-              : meta.title}
+          {arena ? (
+            <>
+              {ARENA_TITLE[arena][0]} <em>{ARENA_TITLE[arena][1]}</em>
+            </>
+          ) : (
+            meta.title
+          )}
         </h1>
         <p className="nx-lede">{fill(meta.lead, participants)}</p>
 
@@ -185,14 +195,14 @@ export function Setup() {
           <div className="t-formats">
             {meta.formats.map((f) => (
               <button key={f} type="button" disabled={f > capacity} className={effective === f ? "is-on" : ""} aria-pressed={effective === f} onClick={() => setSize(f)}>
-                <b>{jeux ? ROMAN[f] ?? f : f}</b>
-                <small>{jeux ? `${f} · ${f - 1} duels` : `${f - 1} duels`}</small>
+                <b>{f}</b>
+                <small>{f - 1} duels</small>
               </button>
             ))}
             {all ? (
               <button type="button" className={effective === all ? "is-on" : ""} aria-pressed={effective === all} onClick={() => setSize(ALL)} title={`Les ${all} ${meta.unit} dans un seul tableau`}>
-                <b>{jeux ? "Tout" : `Tout · ${all}`}</b>
-                <small>{jeux ? `${all} · ${all - 1} duels` : `${all - 1} duels`}</small>
+                <b>Tout · {all}</b>
+                <small>{all - 1} duels</small>
               </button>
             ) : null}
           </div>
@@ -260,7 +270,7 @@ export function Setup() {
         </button>
         <p className="t-note">Tirage au hasard à chaque partie. Ta partie est sauvegardée sur ce navigateur : tu peux la reprendre plus tard.</p>
       </div>
-      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} art={jeux ? (p) => { const b = bgOf(p as Participant & { bg?: Bg })?.src; return b ? artSmall(b) : p.thumb; } : undefined} /> : null}
+      {effective ? <SetupWall pool={drawn} size={effective} launching={launching} accent={accent} /> : null}
     </div>
   );
 }

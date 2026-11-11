@@ -71,6 +71,7 @@ export function useRightLane(active: boolean) {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.removeAttribute("src");
+      delete audioRef.current.dataset.id;
     }
     setLane((l) => ({ ...l, id: null, playing: false, loading: false }));
   }, []);
@@ -85,16 +86,49 @@ export function useRightLane(active: boolean) {
     if (audioRef.current) audioRef.current.volume = Math.max(0, Math.min(1, v / 100));
   }, []);
 
+  // Fichier audio (R2 ou extrait) lu par l'élément <audio> de ce cadre.
+  const playFile = (p: Participant, src: string, vol: number, my: number) => {
+    const live = () => want.current === "play" && gen.current === my && owner.current?.id === p.id;
+    via.current = "audio";
+    const el = audio();
+    if (el.dataset.id !== p.id) {
+      el.src = src;
+      el.dataset.id = p.id;
+    } else if (el.ended) el.currentTime = 0;
+    el.volume = Math.max(0, Math.min(1, vol / 100));
+    el.onended = () => {
+      if (!live()) return;
+      want.current = "pause";
+      setLane((l) => ({ ...l, playing: false, loading: false }));
+    };
+    el.play().then(
+      () => {
+        if (live()) setLane((l) => ({ ...l, playing: true, loading: false, failed: false }));
+        else el.pause();
+      },
+      () => {
+        if (gen.current !== my) return;
+        want.current = "pause";
+        setLane((l) => ({ ...l, playing: false, loading: false, failed: true }));
+      },
+    );
+  };
+
   const play = useCallback(
     (p: Participant) => {
-      if (p.sound?.k !== "youtube") return;
+      if (p.sound?.k !== "youtube" && p.sound?.k !== "audio") return;
       const my = ++gen.current;
       want.current = "play";
       owner.current = p;
-      via.current = "yt";
-      if (audioRef.current) audioRef.current.pause();
       const vol = gained(p, laneRef.current.volume);
       setLane((l) => ({ ...l, id: p.id, loading: true, failed: false, playing: false }));
+      if (p.sound.k === "audio") {
+        stopYoutubeSlot("b");
+        playFile(p, p.sound.src, vol, my);
+        return;
+      }
+      via.current = "yt";
+      if (audioRef.current) audioRef.current.pause();
       const live = () => want.current === "play" && gen.current === my && owner.current?.id === p.id;
       playYoutubeSlot(
         "b",
@@ -119,21 +153,8 @@ export function useRightLane(active: boolean) {
               setLane((l) => ({ ...l, playing: false, loading: false, failed: true }));
               return;
             }
-            via.current = "audio";
             stopYoutubeSlot("b");
-            const el = audio();
-            el.src = fb;
-            el.volume = Math.max(0, Math.min(1, vol / 100));
-            el.play().then(
-              () => {
-                if (live()) setLane((l) => ({ ...l, playing: true, loading: false, failed: false }));
-              },
-              () => {
-                if (gen.current !== my) return;
-                want.current = "pause";
-                setLane((l) => ({ ...l, playing: false, loading: false, failed: true }));
-              },
-            );
+            playFile(p, fb, vol, my);
           },
         },
       );

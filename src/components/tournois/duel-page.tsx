@@ -108,6 +108,8 @@ export function DuelPage() {
         // Extrait audio (OST de jeux) : on récupère déjà son en-tête.
         if (p.sound?.k === "audio") {
           const a = new Audio();
+          // Même mode CORS que le lecteur : une seule entrée en cache.
+          a.crossOrigin = "anonymous";
           a.preload = "metadata";
           a.src = p.sound.src;
         }

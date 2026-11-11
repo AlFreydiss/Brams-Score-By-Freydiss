@@ -89,7 +89,7 @@ export function DailyDuel({ pools, aside }: { pools: Pool[]; aside?: React.React
   const listen = (p: Participant) => {
     media.current?.pause();
     if (playing === p.id) return setPlaying(null);
-    const el = p.visual.k === "video" ? Object.assign(document.createElement("video"), { crossOrigin: "anonymous" }) : new Audio();
+    const el = p.visual.k === "video" ? Object.assign(document.createElement("video"), { crossOrigin: "anonymous" }) : Object.assign(new Audio(), { crossOrigin: "anonymous" });
     el.src = p.visual.k === "video" ? p.visual.src : p.sound?.k === "audio" ? p.sound.src : p.sound?.k === "youtube" ? (p.sound.fallback ?? "") : "";
     const start = p.sound?.k === "video" ? (p.sound.hook ?? 0) : 0;
     el.addEventListener("loadedmetadata", () => (el.currentTime = start), { once: true });
