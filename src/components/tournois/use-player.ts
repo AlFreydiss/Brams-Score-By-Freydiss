@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { Participant } from "@/lib/tournois/types";
+import { gained, type Participant } from "@/lib/tournois/types";
 import { pauseYoutube, playYoutube, seekYoutube, setYoutubeVolume, stopYoutube, youtubeAlive, youtubeTime } from "./youtube-deck";
 
 // Un seul son à la fois :
@@ -255,7 +255,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
     if (p?.sound?.k === "video") setMedia(el, { muted: true });
   }, [elementOf]);
 
-  const level = () => (mute.current ? 0 : readVolume() / 100);
+  const level = () => (mute.current ? 0 : gained(current.current, readVolume()) / 100);
 
   const hush = () => {
     if (audio.current) {
@@ -282,7 +282,7 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
         set(p.id, { loading: true, ended: false });
         const live = () => want.current === "play" && gen === playGen && current.current?.id === p.id;
         playYoutube(
-          { id: p.sound.id, start: p.sound.start, end: p.sound.end, volume: mute.current ? 0 : readVolume() },
+          { id: p.sound.id, start: p.sound.start, end: p.sound.end, volume: mute.current ? 0 : gained(p, readVolume()) },
           {
             onPlaying: () => { if (live()) set(p.id, { playing: true, loading: false, ended: false }); },
             onPaused: () => { if (want.current === "pause" && current.current?.id === p.id) set(p.id, { playing: false, loading: false }); },
@@ -396,11 +396,11 @@ export function usePlayer({ playFrom = 0 }: { playFrom?: number } = {}) {
 
   const applyLevel = useCallback(() => {
     if (current.current?.sound?.k === "youtube") {
-      setYoutubeVolume(mute.current ? 0 : readVolume());
+      setYoutubeVolume(mute.current ? 0 : gained(current.current, readVolume()));
       return;
     }
     stopFade(elementOf(current.current));
-    setMedia(elementOf(current.current), { volume: mute.current ? 0 : readVolume() / 100 });
+    setMedia(elementOf(current.current), { volume: mute.current ? 0 : gained(current.current, readVolume()) / 100 });
   }, [elementOf]);
 
   const setVolume = useCallback(

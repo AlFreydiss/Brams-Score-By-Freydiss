@@ -24,7 +24,13 @@ export type Participant = {
   camp?: "rap" | "ost";
   visual: Visual;
   sound?: Sound;
+  /** Multiplie le volume de lecture (1.3 = +30 %), plafonné au maximum du lecteur. */
+  gain?: number;
 };
+
+/** Volume 0-100 de la piste, gain compris. */
+export const gained = (p: Participant | null | undefined, volume: number) =>
+  Math.min(100, volume * (p?.gain ?? 1));
 
 export type Match = {
   id: string;

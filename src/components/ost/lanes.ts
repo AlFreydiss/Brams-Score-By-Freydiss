@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Participant } from "@/lib/tournois/types";
+import { gained, type Participant } from "@/lib/tournois/types";
 import {
   pauseYoutubeSlot,
   playYoutubeSlot,
@@ -79,7 +79,8 @@ export function useRightLane(active: boolean) {
     if (!active) stop();
   }, [active, stop]);
 
-  const applyVol = useCallback((v: number) => {
+  const applyVol = useCallback((raw: number) => {
+    const v = gained(owner.current, raw);
     setYoutubeVolumeSlot("b", v);
     if (audioRef.current) audioRef.current.volume = Math.max(0, Math.min(1, v / 100));
   }, []);
@@ -92,7 +93,7 @@ export function useRightLane(active: boolean) {
       owner.current = p;
       via.current = "yt";
       if (audioRef.current) audioRef.current.pause();
-      const vol = laneRef.current.volume;
+      const vol = gained(p, laneRef.current.volume);
       setLane((l) => ({ ...l, id: p.id, loading: true, failed: false, playing: false }));
       const live = () => want.current === "play" && gen.current === my && owner.current?.id === p.id;
       playYoutubeSlot(
