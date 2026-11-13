@@ -180,11 +180,11 @@ export function DuelStage(props: Props) {
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
   const toggleFull = useCallback(() => {
-    // La scène est recréée à chaque duel (key = id du match) : si c'était elle
-    // l'élément en plein écran, le navigateur en sortirait à chaque vote. On
-    // prend donc la page du duel, qui reste montée d'un duel à l'autre.
-    const el = stage.current?.closest<HTMLElement>(".t-duel-page") ?? stage.current;
-    if (!el) return;
+    // Le document entier passe en plein écran, et la page du duel le recouvre
+    // (base.css). Deux raisons : la scène est recréée à chaque duel (un plein
+    // écran posé sur elle sauterait à chaque vote), et le curseur animé comme la
+    // traînée du site vivent à la racine, hors de la page du duel.
+    const el = document.documentElement;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     else el.requestFullscreen?.().catch(() => {});
   }, []);

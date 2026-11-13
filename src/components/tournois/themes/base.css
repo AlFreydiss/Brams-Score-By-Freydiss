@@ -205,8 +205,14 @@
   opacity: 0;
 }
 
-/* La page du duel en plein écran : la scène, le récap et le champion s'y succèdent. */
-.t-duel-page:fullscreen {
+/* La page du duel en plein écran : la scène, le récap et le champion s'y succèdent.
+   C'est le document entier qui passe en plein écran, et la page du duel le
+   recouvre : le curseur animé et la traînée du site (posés à la racine, hors
+   de la page du duel) restent ainsi visibles par-dessus. */
+:root:fullscreen .t-duel-page {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
   overflow-y: auto;
   background: var(--t-bg);
 }

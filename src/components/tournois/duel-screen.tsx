@@ -184,8 +184,8 @@ export function DuelScreen({ left, right, round, isFinal, practice, blind, canUn
   }, [ab, abOk, left, right]);
 
   const toggleFull = useCallback(() => {
-    const el = stageRef.current?.closest<HTMLElement>(".t-duel-page") ?? stageRef.current;
-    if (!el) return;
+    // Document entier : le curseur animé et la traînée du site restent visibles (base.css).
+    const el = document.documentElement;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     else el.requestFullscreen?.().catch(() => {});
   }, []);
