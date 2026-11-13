@@ -159,7 +159,8 @@ export function DuelStage(props: Props) {
     if (!el) return;
     if (!document.fullscreenElement && window.scrollY > 0) window.scrollTo({ top: 0, behavior: "instant" });
     const fit = () => {
-      if (document.fullscreenElement) return el.style.removeProperty("height");
+      // Plein écran : c'est la page du duel (stable) qui le porte, la scène la remplit.
+      if (document.fullscreenElement) return void (el.style.height = "100dvh");
       el.style.height = `calc(100dvh - ${Math.round(el.getBoundingClientRect().top + window.scrollY)}px)`;
     };
     fit();
@@ -179,7 +180,10 @@ export function DuelStage(props: Props) {
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
   const toggleFull = useCallback(() => {
-    const el = stage.current;
+    // La scène est recréée à chaque duel (key = id du match) : si c'était elle
+    // l'élément en plein écran, le navigateur en sortirait à chaque vote. On
+    // prend donc la page du duel, qui reste montée d'un duel à l'autre.
+    const el = stage.current?.closest<HTMLElement>(".t-duel-page") ?? stage.current;
     if (!el) return;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     else el.requestFullscreen?.().catch(() => {});
@@ -414,8 +418,9 @@ export function DuelStage(props: Props) {
         {ab && !picked ? <p style={{ margin: 0, fontSize: 12.5, color: id.a }}>Écoute alternée : A puis B, 7 s chacun</p> : null}
       </motion.div>
 
-      {/* Raccourcis visibles, en haut à droite. */}
-      <div className={jeux ? "jx-tools" : undefined} style={{ position: "absolute", top: 16, right: 18, zIndex: 24, display: "flex", alignItems: "center", gap: 6 }}>
+      {/* Outils en haut à droite : réduits à un « ? », le reste se déplie au survol ou au clavier. */}
+      <div className={`fx-tools${jeux ? " jx-tools" : ""}`} style={{ position: "absolute", top: 16, right: 18, zIndex: 24, display: "flex", alignItems: "center" }}>
+        <div className="fx-tools-more">
         {!narrow ? (
           <span style={{ display: "flex", gap: 10, marginRight: 8, fontSize: 12.5, color: id.mute }}>
             <span>
@@ -432,9 +437,6 @@ export function DuelStage(props: Props) {
         <Chip id={id} onClick={() => setAb((v) => !v)} disabled={!!picked} label={ab ? "Arrêter l'écoute alternée (C)" : "Écoute alternée A puis B (C)"}>
           <span style={{ fontSize: 11, fontWeight: 600, color: ab ? id.a : id.ink }}>A/B</span>
         </Chip>
-        <Chip id={id} onClick={() => setHelp((v) => !v)} label="Raccourcis clavier (?)">
-          <span style={{ fontSize: 13, fontWeight: 600 }}>?</span>
-        </Chip>
         {canUndo && onUndo ? (
           <Chip id={id} onClick={onUndo} disabled={!!picked} label="Annuler mon dernier choix">
             <RotateCcw size={15} />
@@ -445,6 +447,10 @@ export function DuelStage(props: Props) {
         </Link>
         <Chip id={id} onClick={toggleFull} label={full ? "Quitter le plein écran (F)" : "Plein écran (F)"}>
           {full ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+        </Chip>
+        </div>
+        <Chip id={id} onClick={() => setHelp((v) => !v)} label="Raccourcis clavier (?)">
+          <span style={{ fontSize: 13, fontWeight: 600 }}>?</span>
         </Chip>
       </div>
 

@@ -190,3 +190,49 @@
   letter-spacing: -0.03em;
   padding-right: 0.08em;
 }
+
+/* ── Outils du duel, en haut à droite ────────────────────────────────
+   Au repos : un seul bouton « ? ». Au survol (ou au clavier), le reste se
+   déplie vers la gauche. Sans souris (tactile) : tout reste visible. */
+.fx-tools-more {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+.fx-tools-more > :last-child {
+  margin-right: 6px;
+}
+.fx-tools:hover .fx-tools-more,
+.fx-tools:focus-within .fx-tools-more {
+  max-width: 640px;
+  opacity: 1;
+  pointer-events: auto;
+}
+.jx-tools.fx-tools {
+  transition: padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) and (min-width: 761px) {
+  .jx-tools.fx-tools:not(:hover):not(:focus-within) {
+    padding-left: 5px;
+  }
+}
+@media (hover: none) {
+  .fx-tools-more {
+    max-width: none;
+    opacity: 1;
+    overflow: visible;
+    pointer-events: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-tools-more,
+  .jx-tools.fx-tools {
+    transition: none;
+  }
+}
