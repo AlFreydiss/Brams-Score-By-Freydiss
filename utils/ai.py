@@ -18,10 +18,79 @@ import re
 import time
 
 import aiohttp
-import litellm
 
-litellm.drop_params = True          # ignore les params non supportés au lieu de planter
-litellm.suppress_debug_info = True  # pas de « Give Feedback » à chaque erreur dans les logs
+# Appels HTTP directs (plus de litellm : sa seule importation coûtait ~200 Mo de RAM sur Railway)
+_GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
+_GROQ_BASE   = "https://api.groq.com/openai/v1"
+_http: aiohttp.ClientSession | None = None
+
+
+def _session() -> aiohttp.ClientSession:
+    global _http
+    if _http is None or _http.closed:
+        _http = aiohttp.ClientSession()
+    return _http
+
+
+async def _post(url: str, payload: dict, headers: dict, timeout: float) -> dict:
+    async with _session().post(url, json=payload, headers=headers,
+                               timeout=aiohttp.ClientTimeout(total=timeout)) as r:
+        if r.status >= 400:
+            body = re.sub(r"\s+", " ", await r.text())[:400]
+            raise RuntimeError(f"HTTP {r.status}: {body}")
+        return await r.json(content_type=None)
+
+
+async def _gemini_call(model: str, key: str, messages: list[dict], *, max_tokens: int,
+                       temperature: float | None, json: bool, safety_settings: list[dict] | None,
+                       timeout: float) -> str:
+    name = model.split("/", 1)[1]
+    system = "\n\n".join(m["content"] for m in messages if m["role"] == "system")
+    contents = []
+    for m in messages:
+        if m["role"] == "system":
+            continue
+        role = "model" if m["role"] == "assistant" else "user"
+        if contents and contents[-1]["role"] == role:
+            contents[-1]["parts"].append({"text": m["content"]})
+        else:
+            contents.append({"role": role, "parts": [{"text": m["content"]}]})
+    gen: dict = {"maxOutputTokens": max_tokens}
+    if temperature is not None:
+        gen["temperature"] = temperature
+    if json:
+        gen["responseMimeType"] = "application/json"
+    # Les modèles récents raisonnent avant de répondre : au minimum, sinon
+    # le raisonnement mange tout max_tokens et la réponse arrive vide.
+    if "gemini-2.5" in name:
+        gen["thinkingConfig"] = {"thinkingBudget": 1024 if "lite" not in name else 512}
+    elif not re.search(r"gemini-(1|2\.0)", name):
+        gen["thinkingConfig"] = {"thinkingLevel": "minimal"}
+    payload: dict = {"contents": contents, "generationConfig": gen}
+    if system:
+        payload["systemInstruction"] = {"parts": [{"text": system}]}
+    if safety_settings:
+        payload["safetySettings"] = safety_settings
+    data = await _post(f"{_GEMINI_BASE}/models/{name}:generateContent", payload,
+                       {"x-goog-api-key": key}, timeout)
+    cands = data.get("candidates") or []
+    parts = (cands[0].get("content") or {}).get("parts", []) if cands else []
+    return "".join(p.get("text", "") for p in parts if not p.get("thought"))
+
+
+async def _openai_call(base: str, model: str, key: str, messages: list[dict], *, max_tokens: int,
+                       temperature: float | None, json: bool, timeout: float) -> str:
+    payload: dict = {"model": model, "messages": messages, "max_tokens": max_tokens}
+    if temperature is not None:
+        payload["temperature"] = temperature
+    if json:
+        payload["response_format"] = {"type": "json_object"}
+    if "gpt-oss" in model:
+        payload["reasoning_effort"] = "low"
+    elif "qwen3" in model:
+        payload["reasoning_format"] = "hidden"
+    data = await _post(f"{base}/chat/completions", payload, {"Authorization": f"Bearer {key}"}, timeout)
+    return ((data.get("choices") or [{}])[0].get("message") or {}).get("content") or ""
 
 _REFRESH_EVERY = 12 * 3600
 _LIST_TIMEOUT  = aiohttp.ClientTimeout(total=8)
@@ -191,16 +260,6 @@ def current_models() -> dict:
     return {"gemini": _candidates("gemini"), "groq": _candidates("groq")}
 
 
-def _reasoning_kwargs(model: str) -> dict:
-    """Les modèles récents raisonnent avant de répondre : au minimum, sinon
-    le raisonnement mange tout max_tokens et la réponse arrive vide."""
-    if model.startswith("gemini/") and not re.search(r"gemini-(1|2\.0)", model):
-        return {"reasoning_effort": "minimal" if "gemini-2.5" not in model else "low"}
-    if "gpt-oss" in model or "qwen3" in model:
-        return {"reasoning_effort": "low"}
-    return {}
-
-
 # ── Appel ─────────────────────────────────────────────────────────────
 
 async def complete(
@@ -246,27 +305,18 @@ async def complete(
             if remaining < 2:
                 raise asyncio.TimeoutError()
             started = time.monotonic()
-            extra = {"response_format": {"type": "json_object"}} if json else {}
             # Gemini 3+ : la température est dépréciée (warning à chaque appel)
-            if not re.search(r"gemini/gemini-[3-9]", model):
-                extra["temperature"] = temperature
-            if safety_settings and provider == "gemini":
-                extra["safety_settings"] = safety_settings
+            temp = None if re.search(r"gemini/gemini-[3-9]", model) else temperature
+            t = min(attempt_timeout, remaining)
             try:
-                resp = await asyncio.wait_for(
-                    litellm.acompletion(
-                        model=model,
-                        api_key=key,
-                        max_tokens=max_tokens,
-                        request_timeout=min(attempt_timeout, remaining),
-                        num_retries=0,
-                        messages=messages,
-                        **_reasoning_kwargs(model),
-                        **extra,
-                    ),
-                    timeout=min(attempt_timeout + 2, remaining),
-                )
-                text = (resp.choices[0].message.content or "").strip()
+                if provider == "gemini":
+                    coro = _gemini_call(model, key, messages, max_tokens=max_tokens, temperature=temp,
+                                        json=json, safety_settings=safety_settings, timeout=t)
+                else:
+                    coro = _openai_call(_GROQ_BASE, model.split("/", 1)[1], key, messages,
+                                        max_tokens=max_tokens, temperature=temp, json=json, timeout=t)
+                resp = await asyncio.wait_for(coro, timeout=min(attempt_timeout + 2, remaining))
+                text = (resp or "").strip()
                 if not text:
                     raise RuntimeError("réponse vide du modèle")
                 _last_good[provider] = model
@@ -319,17 +369,15 @@ async def complete_grok(messages: list[dict], *, max_tokens: int = 1024, json: b
                         timeout: float = 25) -> str:
     name = os.environ.get("AI_MODEL_GROK", "grok-4.20-non-reasoning")
     if os.environ.get("XAI_API_KEY"):
-        route = {"model": f"xai/{name}", "api_key": os.environ["XAI_API_KEY"]}
+        base, model, key = "https://api.x.ai/v1", name, os.environ["XAI_API_KEY"]
     elif os.environ.get("AI_GATEWAY_API_KEY"):
-        route = {"model": f"openai/xai/{name}", "api_key": os.environ["AI_GATEWAY_API_KEY"],
-                 "api_base": "https://ai-gateway.vercel.sh/v1"}
+        base, model, key = "https://ai-gateway.vercel.sh/v1", f"xai/{name}", os.environ["AI_GATEWAY_API_KEY"]
     else:
         raise AIUnavailable("no_grok_key")
-    extra = {"response_format": {"type": "json_object"}} if json else {}
     try:
         resp = await asyncio.wait_for(
-            litellm.acompletion(messages=messages, max_tokens=max_tokens, temperature=1.0,
-                                num_retries=0, request_timeout=timeout, **route, **extra),
+            _openai_call(base, model, key, messages, max_tokens=max_tokens, temperature=1.0,
+                         json=json, timeout=timeout),
             timeout=timeout + 2,
         )
     except Exception as e:
@@ -337,7 +385,7 @@ async def complete_grok(messages: list[dict], *, max_tokens: int = 1024, json: b
         last_error.set(f"{name} : {detail}")
         print(f"[IA] Grok échec : {last_error.get()}")
         raise
-    text = (resp.choices[0].message.content or "").strip()
+    text = (resp or "").strip()
     if not text:
         raise RuntimeError("réponse vide de Grok")
     last_model.set(name)

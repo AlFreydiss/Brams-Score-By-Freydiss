@@ -5,5 +5,5 @@ pillow
 matplotlib
 aiohttp
 psycopg2-binary
-litellm
 tzdata
+python-dotenv
