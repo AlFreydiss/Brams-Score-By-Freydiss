@@ -4405,8 +4405,15 @@ _CHAR_STATIC_URLS: dict[str, str] = {
 _NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
 _CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
 _CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
-_CHAR_IMG_BYTES_MAX = 200  # entrées max - évite la fuite mémoire
+_CHAR_IMG_BYTES_MAX = 60  # entrées max - évite la fuite mémoire
 _CHAR_GIF_CACHE: dict[str, bytes | None] = {}
+# GIF Giphy jusqu'à ~8 Mo chacun : sans plafond ce cache faisait grimper la RAM de jour en jour
+_CHAR_GIF_MAX = 8
+
+def _gif_cache_set(key: str, val: bytes | None):
+    if len(_CHAR_GIF_CACHE) >= _CHAR_GIF_MAX:
+        _CHAR_GIF_CACHE.pop(next(iter(_CHAR_GIF_CACHE)))
+    _CHAR_GIF_CACHE[key] = val
 GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
 
 def _img_bytes_set(key: str, val: bytes | None):
@@ -4544,11 +4551,11 @@ async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
                     async with sess.get(gif_url, timeout=aiohttp.ClientTimeout(total=20)) as gresp:
                         if gresp.status == 200:
                             raw = await gresp.read()
-                            _CHAR_GIF_CACHE[cache_key] = raw
+                            _gif_cache_set(cache_key, raw)
                             return raw
     except Exception as e:
         print(f"[CITATION] Giphy error '{name}': {e}")
-    _CHAR_GIF_CACHE[cache_key] = None
+    _gif_cache_set(cache_key, None)
     return None
 
 

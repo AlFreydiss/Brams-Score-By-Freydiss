@@ -23,6 +23,7 @@ import aiohttp
 _GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 _GROQ_BASE   = "https://api.groq.com/openai/v1"
 _http: aiohttp.ClientSession | None = None
+_NO_MINIMAL: set[str] = set()  # modèles Gemini qui refusent thinkingLevel "minimal"
 
 
 def _session() -> aiohttp.ClientSession:
@@ -60,19 +61,33 @@ async def _gemini_call(model: str, key: str, messages: list[dict], *, max_tokens
         gen["temperature"] = temperature
     if json:
         gen["responseMimeType"] = "application/json"
-    # Les modèles récents raisonnent avant de répondre : au minimum, sinon
-    # le raisonnement mange tout max_tokens et la réponse arrive vide.
+    # Les modèles récents raisonnent avant de répondre : au minimum, et le budget de
+    # réflexion s'ajoute à max_tokens, sinon il le mange et la réponse arrive coupée.
     if "gemini-2.5" in name:
-        gen["thinkingConfig"] = {"thinkingBudget": 1024 if "lite" not in name else 512}
+        budget = 1024 if "lite" not in name else 512
+        gen["thinkingConfig"] = {"thinkingBudget": budget}
+        gen["maxOutputTokens"] = max_tokens + budget
     elif not re.search(r"gemini-(1|2\.0)", name):
-        gen["thinkingConfig"] = {"thinkingLevel": "minimal"}
+        if name in _NO_MINIMAL:
+            gen["thinkingConfig"] = {"thinkingLevel": "low"}
+            gen["maxOutputTokens"] = max_tokens + 2048
+        else:
+            gen["thinkingConfig"] = {"thinkingLevel": "minimal"}
     payload: dict = {"contents": contents, "generationConfig": gen}
     if system:
         payload["systemInstruction"] = {"parts": [{"text": system}]}
     if safety_settings:
         payload["safetySettings"] = safety_settings
-    data = await _post(f"{_GEMINI_BASE}/models/{name}:generateContent", payload,
-                       {"x-goog-api-key": key}, timeout)
+    try:
+        data = await _post(f"{_GEMINI_BASE}/models/{name}:generateContent", payload,
+                           {"x-goog-api-key": key}, timeout)
+    except RuntimeError as e:
+        # gemini-3.7+ refusent "minimal" : on retient le modèle et on relance tout de suite en "low"
+        if name not in _NO_MINIMAL and "Thinking level MINIMAL is not supported" in str(e):
+            _NO_MINIMAL.add(name)
+            return await _gemini_call(model, key, messages, max_tokens=max_tokens, temperature=temperature,
+                                      json=json, safety_settings=safety_settings, timeout=timeout)
+        raise
     cands = data.get("candidates") or []
     parts = (cands[0].get("content") or {}).get("parts", []) if cands else []
     return "".join(p.get("text", "") for p in parts if not p.get("thought"))

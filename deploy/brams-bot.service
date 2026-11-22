@@ -1,0 +1,18 @@
+[Unit]
+Description=Bot Discord Brams Score
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=brams
+WorkingDirectory=/opt/brams-bot
+EnvironmentFile=/opt/brams-bot/.env
+Environment=MALLOC_ARENA_MAX=2 PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/brams-bot/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+# Filet contre une fuite mémoire : au-delà, systemd tue puis relance le bot
+MemoryMax=850M
+
+[Install]
+WantedBy=multi-user.target

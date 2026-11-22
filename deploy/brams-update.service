@@ -1,0 +1,6 @@
+[Unit]
+Description=Met à jour le bot Brams Score depuis GitHub (master)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/brams-update
