@@ -45,7 +45,7 @@ ARRIVAL_SOUND_EXEMPT = {
     1094070545248694342,  # Freydiss
     1529571471205072936,  # Freydiss (2e compte)
 }
-ARRIVAL_SOUND_COOLDOWN_S = 30  # par membre : pas de spam s'il sort et revient en boucle
+ARRIVAL_SOUND_COOLDOWN_S = 20 * 60  # 1 son max toutes les 20 min par salon, toutes personnes confondues
 
 # Discord regroupe les déplacements d'un même auteur vers un même salon dans UNE
 # entrée d'audit (compteur qui monte). Quand quelqu'un en déplace plusieurs d'affilée,
@@ -70,7 +70,7 @@ class ManegeCog(commands.Cog):
         self._seen_moves: dict[int, int] = {}
         self._last_mover: dict[int, tuple[int, float]] = {}  # salon -> (auteur, instant)
         self._audit_lock = asyncio.Lock()
-        self._sound_cd: dict[int, float] = {}
+        self._sound_cd: dict[int, float] = {}  # salon -> instant du dernier son joué
         self._last_sound: dict[int, str] = {}
 
     async def _move_entries(self, guild: discord.Guild) -> list[discord.AuditLogEntry]:
@@ -138,13 +138,15 @@ class ManegeCog(commands.Cog):
             except discord.HTTPException:
                 pass
 
+    def _sound_on_cooldown(self, channel_id: int) -> bool:
+        last = self._sound_cd.get(channel_id)
+        return last is not None and asyncio.get_running_loop().time() - last < ARRIVAL_SOUND_COOLDOWN_S
+
     def _arrival_sound(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
         if member.id in ARRIVAL_SOUND_EXEMPT:
             return
-        now = asyncio.get_running_loop().time()
-        if now - self._sound_cd.get(member.id, -1e9) < ARRIVAL_SOUND_COOLDOWN_S:
+        if self._sound_on_cooldown(channel.id):
             return
-        self._sound_cd[member.id] = now
         pool = ARRIVAL_SOUNDS_BY_MEMBER.get(member.id) or [ARRIVAL_SOUND]
         choices = [f for f in pool if f != self._last_sound.get(member.id)] or pool
         path = random.choice(choices)
@@ -159,7 +161,7 @@ class ManegeCog(commands.Cog):
         if lock.locked():  # un autre son passe déjà : on n'empile pas
             return
         async with lock:
-            if member not in channel.members:
+            if member not in channel.members or self._sound_on_cooldown(channel.id):
                 return
             vc = None
             try:
@@ -170,6 +172,7 @@ class ManegeCog(commands.Cog):
                 loop = asyncio.get_running_loop()
                 source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(path, options="-vn"), volume=0.6)
                 vc.play(source, after=lambda err: loop.call_soon_threadsafe(done.set))
+                self._sound_cd[channel.id] = loop.time()  # compté seulement si le son part vraiment
                 await asyncio.wait_for(done.wait(), timeout=30)
                 print(f"[CENTRAL46] {os.path.basename(path)} joué pour {member}")
             except Exception as e:
