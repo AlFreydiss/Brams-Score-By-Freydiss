@@ -1243,7 +1243,8 @@ def clean_old_data(user, _now=None):
     kept, extra = [], user.get("extra_seconds", 0)
     for s in user["vocal_sessions"]:
         if s["end"] < cutoff:
-            extra += s["end"] - s["start"]
+            if not s.get("comp"):  # compensation de panne : déjà comptée par la vraie session
+                extra += s["end"] - s["start"]
         else:
             kept.append(s)
     user["vocal_sessions"] = kept
@@ -2505,6 +2506,45 @@ TEMPLATE_PATH = "template.png"
 #  EVENTS
 # ─────────────────────────────────────────
 @bot.event
+def _compensate_long_outage() -> None:
+    """Panne longue (PANNE_DEBUT=2026-11-15T03:00:00Z dans l'env) : rejoue la semaine
+    d'avant la panne, décalée de la durée de la panne. Chaque membre retrouve ses
+    heures 7j d'avant la panne, qui s'effacent ensuite au même rythme qu'avant.
+    /sync_panne ne couvre pas ce cas : au-delà de 7 jours sa compensation, posée au
+    début de la panne, sort de la fenêtre. Idempotent (tag panne_comp)."""
+    raw = os.environ.get("PANNE_DEBUT", "").strip()
+    if not raw:
+        return
+    try:
+        t0 = datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        print(f"[PANNE] PANNE_DEBUT illisible : {raw!r}")
+        return
+    _now = now_ts()
+    shift = _now - t0
+    if shift < 3600:
+        return
+    tag, lo, fixed = int(t0), t0 - 7 * 86400, 0
+    for uid, user in _CACHE.items():
+        if not isinstance(user, dict) or user.get("panne_comp") == tag:
+            continue
+        sessions = user.get("vocal_sessions") or []
+        replay = []
+        for sess in sessions:
+            if sess.get("comp"):
+                continue
+            a, b = max(sess["start"], lo), min(sess["end"], t0)
+            if b > a:
+                replay.append({"start": a + shift, "end": b + shift, "channel": None, "comp": "panne"})
+        if not replay:
+            continue
+        user["vocal_sessions"] = sessions + replay
+        user["panne_comp"] = tag
+        _DIRTY.add(uid)
+        fixed += 1
+    print(f"[PANNE] semaine d'avant la panne ({raw}) rejouée pour {fixed} membres")
+
+
 async def on_ready():
     global _HTTP
     print(f"[BOT] Connecte : {bot.user}")
@@ -2516,6 +2556,7 @@ async def on_ready():
     # Charge le cache mémoire UNE SEULE FOIS
     await load_data_async()
     _log_rank_role_setup()
+    _compensate_long_outage()  # avant check_ranks_loop, sinon derank de tout le monde
 
     # Démarre les boucles de fond
     if not check_ranks_loop.is_running():
