@@ -1,5 +1,6 @@
 import asyncio
 import os
+import random
 
 import discord
 from discord import app_commands
@@ -29,13 +30,20 @@ GUARD_MOVER_IDS = {
 }
 GUARD_MOVER_ROLES = {1502420669244248156}  # Division 0
 
-# Son joué dans Central 46 quand quelqu'un y arrive (et y reste), sauf pour ces membres.
-ARRIVAL_SOUND = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sounds", "central46_clochard.mp3")
+# Son joué dans Central 46 quand quelqu'un y arrive (et y reste). Certains membres ont
+# leurs propres sons (un au hasard, jamais deux fois le même d'affilée), d'autres aucun.
+_SOUNDS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sounds")
+ARRIVAL_SOUND = os.path.join(_SOUNDS_DIR, "central46_clochard.mp3")
+_BLAZE_SOUNDS  = [os.path.join(_SOUNDS_DIR, f"central46_blaze_{i}.mp3") for i in range(1, 5)]
+_HAKUJI_SOUNDS = [os.path.join(_SOUNDS_DIR, f"central46_hakuji_{i}.mp3") for i in range(1, 4)]
+ARRIVAL_SOUNDS_BY_MEMBER = {
+    847832035909435413:  _BLAZE_SOUNDS,   # BLAZE
+    994546252995907754:  _HAKUJI_SOUNDS,  # Hakuji
+    1191446549369196697: _HAKUJI_SOUNDS,  # Hakuji (2e compte, H4kuji)
+}
 ARRIVAL_SOUND_EXEMPT = {
     1094070545248694342,  # Freydiss
     1529571471205072936,  # Freydiss (2e compte)
-    994546252995907754,   # Hakuji
-    847832035909435413,   # BLAZE
 }
 ARRIVAL_SOUND_COOLDOWN_S = 30  # par membre : pas de spam s'il sort et revient en boucle
 
@@ -63,6 +71,7 @@ class ManegeCog(commands.Cog):
         self._last_mover: dict[int, tuple[int, float]] = {}  # salon -> (auteur, instant)
         self._audit_lock = asyncio.Lock()
         self._sound_cd: dict[int, float] = {}
+        self._last_sound: dict[int, str] = {}
 
     async def _move_entries(self, guild: discord.Guild) -> list[discord.AuditLogEntry]:
         if not guild.me.guild_permissions.view_audit_log:
@@ -136,9 +145,13 @@ class ManegeCog(commands.Cog):
         if now - self._sound_cd.get(member.id, -1e9) < ARRIVAL_SOUND_COOLDOWN_S:
             return
         self._sound_cd[member.id] = now
-        asyncio.create_task(self._play_arrival(member, channel))
+        pool = ARRIVAL_SOUNDS_BY_MEMBER.get(member.id) or [ARRIVAL_SOUND]
+        choices = [f for f in pool if f != self._last_sound.get(member.id)] or pool
+        path = random.choice(choices)
+        self._last_sound[member.id] = path
+        asyncio.create_task(self._play_arrival(member, channel, path))
 
-    async def _play_arrival(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
+    async def _play_arrival(self, member: discord.Member, channel: discord.VoiceChannel, path: str) -> None:
         locks = getattr(self.bot, "_entry_sound_locks", None)
         if locks is None:
             locks = self.bot._entry_sound_locks = {}
@@ -155,10 +168,10 @@ class ManegeCog(commands.Cog):
                 vc = await channel.connect(timeout=10)
                 done = asyncio.Event()
                 loop = asyncio.get_running_loop()
-                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ARRIVAL_SOUND, options="-vn"), volume=0.6)
+                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(path, options="-vn"), volume=0.6)
                 vc.play(source, after=lambda err: loop.call_soon_threadsafe(done.set))
-                await asyncio.wait_for(done.wait(), timeout=20)
-                print(f"[CENTRAL46] son d'arrivée joué pour {member}")
+                await asyncio.wait_for(done.wait(), timeout=30)
+                print(f"[CENTRAL46] {os.path.basename(path)} joué pour {member}")
             except Exception as e:
                 print(f"[CENTRAL46] son d'arrivée impossible pour {member} : {type(e).__name__}: {e}")
             finally:
