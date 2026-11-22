@@ -16,6 +16,22 @@ OWNER_IDS = {1094070545248694342}
 # /antimove : qui peut se protéger des déplacements.
 ANTIMOVE_IDS = OWNER_IDS
 
+# Salons gardés : un membre sans droit d'y entrer qui s'y fait déplacer est renvoyé
+# aussitôt d'où il vient, sauf si c'est un de ces membres (ou un porteur d'un de ces
+# rôles) qui l'a déplacé. Le bot lui-même compte comme autorisé (/manege).
+GUARDED_CHANNELS = {1554871712137347164}  # 👑・Central 46
+GUARD_MOVER_IDS = {
+    1094070545248694342,  # Freydiss
+    1529571471205072936,  # Freydiss (2e compte)
+    994546252995907754,   # Hakuji
+}
+GUARD_MOVER_ROLES = {1502420669244248156}  # Division 0
+
+# Discord regroupe les déplacements d'un même auteur vers un même salon dans UNE
+# entrée d'audit (compteur qui monte). Quand quelqu'un en déplace plusieurs d'affilée,
+# seule la 1re lecture voit le compteur bouger : on garde donc l'auteur quelques secondes.
+_MOVER_MEMORY_S = 6
+
 
 def _allowed(interaction: discord.Interaction) -> bool:
     if interaction.user.id in OWNER_IDS:
@@ -32,6 +48,8 @@ class ManegeCog(commands.Cog):
         # entrées « membre déplacé » du journal d'audit (Discord les regroupe).
         self._shield: set[tuple[int, int]] = set()
         self._seen_moves: dict[int, int] = {}
+        self._last_mover: dict[int, tuple[int, float]] = {}  # salon -> (auteur, instant)
+        self._audit_lock = asyncio.Lock()
 
     async def _move_entries(self, guild: discord.Guild) -> list[discord.AuditLogEntry]:
         if not guild.me.guild_permissions.view_audit_log:
@@ -41,28 +59,54 @@ class ManegeCog(commands.Cog):
         except discord.HTTPException:
             return []
 
-    async def _forced_move(self, member: discord.Member, channel: discord.abc.GuildChannel) -> bool:
-        # Un changement de salon fait par le membre lui-même ne laisse rien dans
-        # le journal d'audit ; un déplacement par quelqu'un d'autre, si.
-        await asyncio.sleep(0.4)  # l'entrée d'audit arrive juste après l'événement vocal
-        now = discord.utils.utcnow()
-        forced = False
-        for e in await self._move_entries(member.guild):
-            count = getattr(e.extra, "count", 1) or 1
-            new = count > self._seen_moves[e.id] if e.id in self._seen_moves else (now - e.created_at).total_seconds() < 15
-            self._seen_moves[e.id] = count
-            target = getattr(e.extra, "channel", None)
-            if new and target and target.id == channel.id and e.user and e.user.id not in (member.id, self.bot.user.id):
-                forced = True
-        return forced
+    async def _mover_of(self, member: discord.Member, channel: discord.abc.GuildChannel) -> int | None:
+        """Qui vient de déplacer `member` dans `channel` ? None = il y est allé lui-même
+        (un changement de salon fait soi-même ne laisse rien dans le journal d'audit)."""
+        loop = asyncio.get_running_loop()
+        async with self._audit_lock:  # deux événements simultanés ne se volent pas l'entrée
+            for delay in (0.4, 1.2):  # l'entrée d'audit arrive juste après l'événement vocal
+                await asyncio.sleep(delay)
+                now = discord.utils.utcnow()
+                for e in await self._move_entries(member.guild):
+                    count = getattr(e.extra, "count", 1) or 1
+                    new = count > self._seen_moves[e.id] if e.id in self._seen_moves else (now - e.created_at).total_seconds() < 15
+                    self._seen_moves[e.id] = count
+                    target = getattr(e.extra, "channel", None)
+                    if new and target and e.user:
+                        self._last_mover[target.id] = (e.user.id, loop.time())
+                hit = self._last_mover.get(channel.id)
+                if hit and loop.time() - hit[1] < _MOVER_MEMORY_S:
+                    return hit[0]
+        return None
+
+    def _may_move_into_guarded(self, guild: discord.Guild, mover_id: int | None) -> bool:
+        if mover_id is None:
+            return False
+        if mover_id in GUARD_MOVER_IDS or mover_id == self.bot.user.id:
+            return True
+        mover = guild.get_member(mover_id)
+        return bool(mover and any(r.id in GUARD_MOVER_ROLES for r in mover.roles))
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        if (member.guild.id, member.id) not in self._shield:
+        if not after.channel or before.channel == after.channel or member.bot:
             return
-        if not before.channel or not after.channel or before.channel == after.channel:
+        guarded = (after.channel.id in GUARDED_CHANNELS
+                   and not after.channel.permissions_for(member).connect)
+        shielded = before.channel is not None and (member.guild.id, member.id) in self._shield
+        if not guarded and not shielded:
             return
-        if await self._forced_move(member, after.channel):
+        mover = await self._mover_of(member, after.channel)
+        if guarded and not self._may_move_into_guarded(member.guild, mover):
+            back = before.channel if before.channel and before.channel.id not in GUARDED_CHANNELS else None
+            try:
+                await member.move_to(back, reason=f"Salon gardé : déplacé par {mover or 'inconnu'}, non autorisé")
+            except discord.HTTPException as e:
+                print(f"[GARDE] renvoi de {member} impossible : {e}")
+            else:
+                print(f"[GARDE] {member} renvoyé de {after.channel.name} (déplacé par {mover})")
+            return
+        if shielded and mover not in (None, member.id, self.bot.user.id):
             try:
                 await member.move_to(before.channel, reason="/antimove")
             except discord.HTTPException:

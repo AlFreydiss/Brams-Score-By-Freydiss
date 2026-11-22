@@ -109,18 +109,6 @@ async def get_or_create(uid: str, guild_id: str) -> dict:
     return await _run(_do)
 
 
-async def get_profile(uid: str) -> dict:
-    def _do():
-        conn = _conn()
-        try:
-            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute("SELECT * FROM bank_profiles WHERE user_id=%s", (uid,))
-            row = cur.fetchone()
-            cur.close()
-            return dict(row) if row else {}
-        finally:
-            _put(conn)
-    return await _run(_do)
 
 
 # ── TRANSACTIONS ─────────────────────────────────────────────────
@@ -212,18 +200,6 @@ async def update_invest(uid: str, invested: int, last_collect: datetime):
     await _run(_do)
 
 
-async def get_all_investors() -> list[dict]:
-    def _do():
-        conn = _conn()
-        try:
-            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            cur.execute("SELECT * FROM bank_profiles WHERE invested > 0")
-            rows = cur.fetchall()
-            cur.close()
-            return [dict(r) for r in rows]
-        finally:
-            _put(conn)
-    return await _run(_do)
 
 
 # ── EFFETS BOUTIQUE ───────────────────────────────────────────────

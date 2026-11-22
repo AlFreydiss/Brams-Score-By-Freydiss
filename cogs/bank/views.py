@@ -11,7 +11,6 @@ from .constants import (
     ROUGE, NOIR, PIRATES,
     PILLAGE_SUCCESS, PILLAGE_MIN, PILLAGE_MAX, PILLAGE_PENALTY, PILLAGE_COOLDOWN,
     INVEST_RATE, INVEST_INTERVAL, INVEST_CAP,
-    DAILY_MIN,
 )
 from .utils import (
     fmt, get_rank, get_next_rank, daily_cap,

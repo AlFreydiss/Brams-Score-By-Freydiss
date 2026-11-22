@@ -9,7 +9,6 @@ exposé par bot.py (ai_member_stats / ai_server_snapshot / ai_overlap_partner).
 import asyncio
 import collections
 import json
-import os
 import random
 import re
 import time

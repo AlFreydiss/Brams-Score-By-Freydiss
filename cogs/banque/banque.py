@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from . import database as db
 from .constants import BANK_RANKS
-from .views import MainBanqueView, fmt, _send_leaderboard
+from .views import MainBanqueView, fmt
 from utils.embed_helpers import build_banque_banner
 
 GUILD_IDS = [int(x) for x in os.environ.get("GUILD_IDS", "924346730194014220,1478937064031518892").split(",")]

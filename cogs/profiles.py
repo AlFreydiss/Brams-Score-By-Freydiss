@@ -22,7 +22,6 @@ _RANK_IDS = {
     1486554770306236596: "Shichibukai",
     1486554682263343284: "Pirate",
 }
-_RANK_ORDER  = ["Roi des pirates", "Yonkou", "Amiral", "Shichibukai", "Pirate"]
 _RANK_EMOJIS = {
     "Pirate": "🏴‍☠️", "Shichibukai": "⚔️", "Amiral": "🪖",
     "Yonkou": "👑", "Roi des pirates": "🤴",

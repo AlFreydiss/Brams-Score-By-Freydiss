@@ -1,9 +1,7 @@
 discord.py[voice]
 yt-dlp
-flask
 pillow
 matplotlib
 aiohttp
 psycopg2-binary
 tzdata
-python-dotenv

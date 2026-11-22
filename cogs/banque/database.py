@@ -74,18 +74,6 @@ def get_next_rank(total: int) -> dict | None:
 
 # ── Compte bancaire ───────────────────────────────────────────────
 
-async def ensure_account(uid: str, guild_id: str) -> None:
-    def _do():
-        conn = _conn()
-        try:
-            with conn:
-                conn.cursor().execute(
-                    "INSERT INTO bank_accounts (user_id, guild_id) VALUES (%s,%s) ON CONFLICT DO NOTHING",
-                    (uid, guild_id),
-                )
-        finally:
-            _put(conn)
-    await _run(_do)
 
 
 async def ensure_and_get_account(uid: str, guild_id: str) -> dict:
@@ -137,33 +125,6 @@ async def get_bank_account(uid: str, guild_id: str) -> dict:
     return await _run(_do)
 
 
-async def get_week_stats(uid: str) -> tuple[int, int]:
-    """Retourne (gains_7j, dépenses_7j). Retourne (0,0) si la table n'est pas disponible."""
-    def _do():
-        conn = _conn()
-        try:
-            cur = conn.cursor()
-            # Tente avec le nom de colonne réel — fallback silencieux si absent
-            try:
-                cur.execute(
-                    """SELECT "type", COALESCE(SUM(montant),0) FROM bank_transactions
-                       WHERE user_id=%s AND created_at >= NOW()-INTERVAL '7 days'
-                       GROUP BY "type" """,
-                    (uid,),
-                )
-                gain = dep = 0
-                for t, v in cur.fetchall():
-                    if t == "gain":
-                        gain = int(v)
-                    else:
-                        dep = int(v)
-                return gain, dep
-            except Exception:
-                conn.rollback()
-                return 0, 0
-        finally:
-            _put(conn)
-    return await _run(_do)
 
 
 async def update_bank_rank_db(uid: str, guild_id: str, new_rank: str) -> None:

@@ -126,17 +126,3 @@ async def get_all_knowledge(guild_id: str) -> list[dict]:
     return await _run(_do)
 
 
-async def delete_knowledge(guild_id: str, type_: str, key: str) -> bool:
-    def _do():
-        conn = _get()
-        try:
-            with conn:
-                cur = conn.cursor()
-                cur.execute(
-                    "DELETE FROM bot_knowledge WHERE guild_id=%s AND type=%s AND key=%s",
-                    (guild_id, type_, key.lower()),
-                )
-                return cur.rowcount > 0
-        finally:
-            _put(conn)
-    return await _run(_do)

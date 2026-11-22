@@ -8,16 +8,13 @@ try:
 except Exception:
     pass
 
-from flask import Flask
-from threading import Thread, Lock
+from threading import Lock
 import os
 import asyncio
 import secrets
 import yt_dlp
-import psycopg2
 from psycopg2.extras import execute_values as _pg_execute_values
 from concurrent.futures import ThreadPoolExecutor
-from utils.security import add_security_headers, sanitize, sanitize_name, validate_amount, is_safe_url
 from utils import ai
 from utils.wrapped_math import (
     best_binome as _wr_best_binome,
@@ -32,21 +29,6 @@ from utils.wrapped_math import (
     MEMBERSHIP_DAYS as WRAPPED_MIN_MEMBERSHIP_DAYS,
 )
 
-app = Flask('')
-app.after_request(add_security_headers)
-
-@app.route('/')
-def home():
-    return "Bot en ligne !", 200, {'Content-Type': 'text/plain; charset=utf-8'}
-
-def run():
-    app.run(host='0.0.0.0', port=5000, threaded=True)
-
-def keep_alive():
-    t = Thread(target=run, daemon=True)
-    t.start()
-
-keep_alive()
 
 import discord
 from discord.ext import commands, tasks
@@ -67,7 +49,7 @@ logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.font_manager as fm
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime, timedelta, timezone
 try:
     from zoneinfo import ZoneInfo
@@ -76,8 +58,7 @@ except Exception:
     # Fallback si tzdata absent : UTC+1 fixe (le jour calendaire reste cohérent à 1h près).
     PARIS_TZ = timezone(timedelta(hours=1))
 from collections import defaultdict, deque
-from urllib.parse import quote as _url_quote
-from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name, get_all_knowledge as _mem_get_all
+from utils.memory import save_alias_pair, save_fact, get_knowledge_for_name
 from utils.virement_state import (
     is_open as _virements_open,
     set_open as _virements_set_open,
@@ -883,19 +864,6 @@ async def load_data_async() -> dict:
     return _CACHE
 
 
-async def save_user_async(uid: str, udata: dict) -> None:
-    """Écrit en mémoire + marque dirty (flush vers DB toutes les 30s)."""
-    _CACHE[uid] = udata
-    _DIRTY.add(uid)
-
-
-async def save_data_async(data: dict) -> None:
-    """Met à jour le cache pour chaque UID et marque dirty."""
-    for uid, udata in data.items():
-        _CACHE[uid] = udata
-        _DIRTY.add(uid)
-
-
 def _apply_berry_sync_for_uids(uids: set) -> None:
     """Applique les déductions web (achats boutique) avant de flusher vers la DB."""
     if not uids:
@@ -1069,10 +1037,6 @@ def _sync_flush_dirty() -> int:
     return len(to_flush)
 
 
-def _force_flush_uid_to_db(uid: str) -> bool:
-    return _flush_uids_to_db({str(uid)})
-
-
 def get_user(data, uid: str):
     if uid not in data:
         data[uid] = {
@@ -1187,7 +1151,6 @@ def reset_berrys(uid: str, track: str = "lost") -> int:
     _BERRY_ZERO.add(uid)
     _DIRTY.add(uid)
     return old_balance
-
 
 
 # Filet de sécurité anti-fantôme : aucune session vocale ne compte plus de 24h en continu.
@@ -1358,65 +1321,7 @@ def format_prime(berries):
 # ─────────────────────────────────────────
 #  FOND SAKURA JAPONAIS
 # ─────────────────────────────────────────
-def draw_sakura_petal(draw, cx, cy, size, angle, color, alpha_img, alpha_val):
-    pts = []
-    for i in range(5):
-        a = math.radians(angle + i * 72)
-        px = cx + math.cos(a) * size
-        py = cy + math.sin(a) * size
-        pts.append((px, py))
-        a2 = math.radians(angle + i * 72 + 36)
-        px2 = cx + math.cos(a2) * size * 0.4
-        py2 = cy + math.sin(a2) * size * 0.4
-        pts.append((px2, py2))
-    draw.polygon(pts, fill=color)
 
-def generate_sakura_background(W, H, opacity=0.30):
-    bg = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(bg)
-
-    for y in range(H):
-        ratio = y / H
-        r = int(255 * 1.0)
-        g = int((230 + (255-230) * ratio))
-        b = int((235 + (255-235) * ratio))
-        a = int(255 * opacity)
-        draw.line([(0, y), (W, y)], fill=(r, g, b, a))
-
-    branch_draw = ImageDraw.Draw(bg)
-    branches = [
-        [(0, H), (W//4, H*2//3), (W//3, H//2), (W//2, H//3)],
-        [(W, H), (W*3//4, H*2//3), (W*2//3, H//2), (W//2, H//3)],
-        [(W//4, H), (W//3, H*3//4), (W//2, H//2)],
-    ]
-    for branch in branches:
-        for i in range(len(branch)-1):
-            x1, y1 = branch[i]
-            x2, y2 = branch[i+1]
-            branch_draw.line(
-                [(x1, y1), (x2, y2)],
-                fill=(101, 60, 20, int(255 * opacity * 1.5)),
-                width=max(1, int(4 * (1 - i/len(branch))))
-            )
-
-    petal_layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    pd = ImageDraw.Draw(petal_layer)
-    colors_petals = [
-        (255, 182, 193),
-        (255, 160, 180),
-        (255, 200, 210),
-        (240, 150, 170),
-    ]
-    for _ in range(60):
-        cx = random.randint(0, W)
-        cy = random.randint(0, H)
-        size = random.randint(6, 18)
-        angle = random.randint(0, 360)
-        color = random.choice(colors_petals) + (int(255 * opacity * 2),)
-        draw_sakura_petal(pd, cx, cy, size, angle, color, petal_layer, int(255*opacity))
-
-    bg = Image.alpha_composite(bg, petal_layer)
-    return bg
 
 # ─────────────────────────────────────────
 #  BOT
@@ -1725,19 +1630,6 @@ async def _get_announce_channel():
             print(f"[RANK] Impossible de fetch le canal {ANNOUNCE_CHANNEL_ID}: {e}")
     return ch
 
-async def _send_mod_log(embed: discord.Embed) -> None:
-    if not LOG_MOD_CHANNEL_ID:
-        return
-    ch = bot.get_channel(LOG_MOD_CHANNEL_ID)
-    if ch is None:
-        try:
-            ch = await bot.fetch_channel(LOG_MOD_CHANNEL_ID)
-        except Exception:
-            return
-    try:
-        await ch.send(embed=embed)
-    except Exception as e:
-        print(f"[MOD LOG] Impossible d'envoyer le log : {e}")
 
 async def update_rank(member: discord.Member, hours_7d: float, announce=True, data=None):
     """Rangs cumulatifs : ajoute les rôles mérités, retire ceux perdus, annonce montée ET derank."""
@@ -1892,11 +1784,6 @@ async def update_rank(member: discord.Member, hours_7d: float, announce=True, da
     if added_ranks or removed_ranks:
         print(f"[RANK] {member.display_name} : +{added_ranks} -{removed_ranks} | {hours_7d:.1f}h")
 
-def _load_font(path: str, size: int):
-    try:
-        return ImageFont.truetype(path, size)
-    except Exception:
-        return ImageFont.load_default()
 
 # ── Fonts citation (chargées une seule fois) ──────────────────────
 _CIT_FONT_FALLBACKS = [
@@ -2316,7 +2203,7 @@ def _make_rank_image_sync(
 
 
 async def make_rank_image(member: discord.Member, rank_name: str, hours_7d: float):
-    avatar_bytes: Optional[bytes] = None
+    avatar_bytes: bytes | None = None
     try:
         avatar_url = member.display_avatar.replace(size=256, format="png").url
         async with _HTTP.get(str(avatar_url)) as resp:
@@ -3043,11 +2930,6 @@ _RE_MEM_RECALL = [
     re.compile(rf"tu\s+sais\s+qui\s+(?:est|c[''']?est)\s+{_NAME}\s*\??", re.IGNORECASE),
     re.compile(rf"{_NAME}\s+c[''']?est\s+qui\s*\??", re.IGNORECASE),
 ]
-# Pré-filtre : un seul test rapide avant de lancer les 10+ patterns
-_RE_MEM_QUICK = re.compile(
-    r"\bet\b.*m[eê]me|sache\s+que|retiens\s+que|oublie\s+pas|rappelle.toi|qui\s+est\s+\w|c[''']?est\s+qui\s+\w|\w+\s+c[''']?est\s+qui",
-    re.IGNORECASE,
-)
 
 # Pré-compilés module-level — évite recompilation à chaque on_message
 _RE_NEUTRAL_CTX = re.compile(
@@ -4174,7 +4056,7 @@ async def tout(interaction: discord.Interaction):
     m14d = messages_in_period(user["messages"], 14)
     m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
     hours_7d = s7d / 3600
-    hours_tot = s_tot / 3600
+    s_tot / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
     prime_val = get_berrys(uid)
@@ -4316,13 +4198,12 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
     m_tot = total_messages(user["messages"], user.get("extra_messages", 0))
 
     hours_7d  = s7d / 3600
-    hours_tot = s_tot / 3600
+    s_tot / 3600
     rank_actuel = get_rank_for_hours(hours_7d) or "Aucun"
     r_emoji = RANK_EMOJIS.get(rank_actuel, "💀")
     ranks_display = format_all_ranks_display(hours_7d)
     prime_val = get_berrys(uid)
     next_thresh, next_rank = get_next_rank(hours_7d)
-    live_indicator = "  　🎙️ *EN VOCAL*" if jt else ""
 
     # Même habillage que /stats : un seul bloc description, sections ━━━, valeurs en backticks.
     live_line = "　🎙️ *- en vocal actuellement*\n" if jt else ""
@@ -4381,223 +4262,10 @@ async def chercher(interaction: discord.Interaction, membre: discord.Member):
         print(f"❌ /chercher followup failed: {e}")
 
 
-
 CITATION_HISTORY: deque[str] = deque(maxlen=len(QUOTES_DB) - 1)
 
-# Cache URL image par personnage (Jikan API)
-# Persos non présents sur MAL (cartoons occidentaux, jeux vidéo hors anime, etc.)
-# URLs d image statiques verifiees - priorite absolue sur Jikan (CDN MAL stable)
-_CHAR_STATIC_URLS: dict[str, str] = {
-    # ── Attack on Titan ──
-    "Eren Yeager":         "https://cdn.myanimelist.net/images/characters/10/216895.jpg",
-    "Levi Ackerman":       "https://cdn.myanimelist.net/images/characters/12/622510.jpg",
-    "Mikasa Ackerman":     "https://cdn.myanimelist.net/images/characters/9/215563.jpg",
-    "Armin Arlert":        "https://cdn.myanimelist.net/images/characters/8/220267.jpg",
-    "Erwin Smith":         "https://cdn.myanimelist.net/images/characters/14/559023.jpg",
-    # ── Naruto ──
-    "Itachi Uchiha":       "https://cdn.myanimelist.net/images/characters/9/284122.jpg",
-    "Rock Lee":            "https://cdn.myanimelist.net/images/characters/13/433353.jpg",
-    "Pain":                "https://cdn.myanimelist.net/images/characters/8/73473.jpg",
-    "Hinata Hyuga":        "https://cdn.myanimelist.net/images/characters/6/278736.jpg",
-    "Obito Uchiha":        "https://cdn.myanimelist.net/images/characters/8/70596.jpg",
-    "Minato Namikaze":     "https://s4.anilist.co/file/anilistcdn/character/large/b2535-Xq9WKNPJQEt3.png",
-    "Jiraiya":             "https://s4.anilist.co/file/anilistcdn/character/large/b2423-RO5MyoXSA9OL.png",
-    # ── FMA ──
-    "Roy Mustang":         "https://s4.anilist.co/file/anilistcdn/character/large/b68-moBLY2WO2am3.png",
-    # ── Hunter x Hunter ──
-    "Killua Zoldyck":      "https://cdn.myanimelist.net/images/characters/2/327920.jpg",
-    "Hisoka Morow":        "https://s4.anilist.co/file/anilistcdn/character/large/b31-FZckOuu7L1un.png",
-    "Kurapika":            "https://cdn.myanimelist.net/images/characters/3/549312.jpg",
-    "Mito Freecss":        "https://cdn.myanimelist.net/images/characters/8/47876.jpg",
-    "Meruem":              "https://s4.anilist.co/file/anilistcdn/character/large/b23277-EYmIxzL64Mji.png",
-    # ── JoJo's Bizarre Adventure ──
-    "Giorno Giovanna":     "https://cdn.myanimelist.net/images/characters/16/571466.jpg",
-    "Dio Brando":          "https://s4.anilist.co/file/anilistcdn/character/large/b4004-w0OtWuvjhftG.png",
-    # ── Fairy Tail ──
-    "Natsu Dragneel":      "https://cdn.myanimelist.net/images/characters/15/594274.jpg",
-    "Erza Scarlet":        "https://cdn.myanimelist.net/images/characters/12/492254.jpg",
-    # ── Tokyo Ghoul ──
-    "Ken Kaneki":          "https://cdn.myanimelist.net/images/characters/15/307255.jpg",
-    # ── One Punch Man ──
-    "Saitama":             "https://cdn.myanimelist.net/images/characters/11/294388.jpg",
-    # ── Black Clover ──
-    "Asta":                "https://s4.anilist.co/file/anilistcdn/character/large/b123285-tKijiuQErDS0.png",
-    # ── Berserk ──
-    "Guts":                "https://s4.anilist.co/file/anilistcdn/character/large/b422-XTaiTuvRohsV.png",
-    # ── Death Note ──
-    "Ryuk":                "https://s4.anilist.co/file/anilistcdn/character/large/b75-IkEpzO21LgFy.jpg",
-    # ── Jujutsu Kaisen ──
-    "Gojo Satoru":         "https://s4.anilist.co/file/anilistcdn/character/large/b127691-9zqh1xpIubn7.png",
-    "Yuji Itadori":        "https://cdn.myanimelist.net/images/characters/6/467646.jpg",
-    # ── Demon Slayer ──
-    "Rengoku Kyojuro":     "https://cdn.myanimelist.net/images/characters/10/423443.jpg",
-    # ── Re:Zero ──
-    "Rem":                 "https://s4.anilist.co/file/anilistcdn/character/large/b88575-Ayu8UPDA8NS6.png",
-    "Subaru Natsuki":      "https://s4.anilist.co/file/anilistcdn/character/large/b88573-F8yMTK9GhnTA.png",
-    # ── Sword Art Online ──
-    "Kirito":              "https://s4.anilist.co/file/anilistcdn/character/large/b36765-BnLbXg0Tzzh9.png",
-    "Asuna Yuuki":         "https://s4.anilist.co/file/anilistcdn/character/large/b36828-j5ib0adAzGMx.png",
-    # ── Violet Evergarden ──
-    "Violet Evergarden":   "https://s4.anilist.co/file/anilistcdn/character/large/b90169-4wr1Zehnsac8.png",
-    # ── Vinland Saga ──
-    "Thorfinn":            "https://cdn.myanimelist.net/images/characters/9/309871.jpg",
-}
 
-_NO_MAL_CHARS: frozenset[str] = frozenset({"Zuko"})
-_CHAR_IMAGE_CACHE: dict[str, str | None] = {n: None for n in _NO_MAL_CHARS}
-_CHAR_IMG_BYTES_CACHE: dict[str, bytes | None] = {}
-_CHAR_IMG_BYTES_MAX = 60  # entrées max - évite la fuite mémoire
-_CHAR_GIF_CACHE: dict[str, bytes | None] = {}
-# GIF Giphy jusqu'à ~8 Mo chacun : sans plafond ce cache faisait grimper la RAM de jour en jour
-_CHAR_GIF_MAX = 8
-
-def _gif_cache_set(key: str, val: bytes | None):
-    if len(_CHAR_GIF_CACHE) >= _CHAR_GIF_MAX:
-        _CHAR_GIF_CACHE.pop(next(iter(_CHAR_GIF_CACHE)))
-    _CHAR_GIF_CACHE[key] = val
 GIPHY_API_KEY = os.environ.get("GIPHY_API_KEY", "")
-
-def _img_bytes_set(key: str, val: bytes | None):
-    if len(_CHAR_IMG_BYTES_CACHE) >= _CHAR_IMG_BYTES_MAX:
-        _CHAR_IMG_BYTES_CACHE.pop(next(iter(_CHAR_IMG_BYTES_CACHE)))
-    _CHAR_IMG_BYTES_CACHE[key] = val
-
-_CHAR_IMG_URL = "cdn.myanimelist.net/images/characters"
-
-def _name_matches(searched: str, returned: str) -> bool:
-    """Toutes les parties significatives (>2 chars) du nom cherché
-    doivent apparaître dans le nom retourné - évite les faux positifs."""
-    parts = [p.lower() for p in searched.split() if len(p) > 2]
-    r = returned.lower()
-    return bool(parts) and all(p in r for p in parts)
-
-async def _jikan_get(sess: aiohttp.ClientSession, url: str, retries: int = 2) -> dict | None:
-    """GET Jikan avec retry automatique sur 429 (rate-limit)."""
-    for attempt in range(retries + 1):
-        try:
-            async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                if resp.status == 429:
-                    wait = 1.5 * (attempt + 1)
-                    print(f"[CITATION] 429 rate-limit, retry dans {wait}s ({url})")
-                    await asyncio.sleep(wait)
-                    continue
-                print(f"[CITATION] HTTP {resp.status} pour {url}")
-                return None
-        except asyncio.TimeoutError:
-            print(f"[CITATION] timeout {url} (tentative {attempt+1})")
-        except Exception as e:
-            print(f"[CITATION] erreur {url}: {e}")
-            return None
-    return None
-
-async def _get_char_image_url(name: str) -> str | None:
-    """URL image du personnage.
-    Ordre de priorite :
-    1. _CHAR_STATIC_URLS - URLs verifiees manuellement (bypass Jikan)
-    2. _CHAR_IMAGE_CACHE - cache memoire session
-    3. Jikan par ID direct (CHAR_JIKAN_IDS)
-    4. Jikan par recherche nom (fallback)
-    """
-    if name in _CHAR_STATIC_URLS:
-        url = _CHAR_STATIC_URLS[name]
-        _CHAR_IMAGE_CACHE[name] = url
-        return url
-    if name in _CHAR_IMAGE_CACHE:
-        return _CHAR_IMAGE_CACHE[name]
-
-    img_url = None
-    jikan_id = CHAR_JIKAN_IDS.get(name)
-
-    try:
-        sess = _HTTP
-        if jikan_id:
-            # ID connu → fetch direct, on fait confiance à l'ID
-            data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters/{jikan_id}")
-            if data_root:
-                data = data_root.get("data", {})
-                returned_name = data.get("name", "")
-                candidate = data.get("images", {}).get("jpg", {}).get("image_url", "")
-                # Accepte toute URL myanimelist (pas juste /characters/)
-                if candidate and "myanimelist.net" in candidate:
-                    img_url = candidate
-                    print(f"[CITATION] OK id={jikan_id} '{returned_name}' → '{name}'")
-                else:
-                    print(f"[CITATION] id={jikan_id} URL inattendue: {candidate!r}")
-        else:
-            # Pas d'ID → recherche par nom avec validation stricte
-            data_root = await _jikan_get(sess, f"https://api.jikan.moe/v4/characters?q={_url_quote(name)}&limit=8")
-            if data_root:
-                for char in data_root.get("data", []):
-                    returned_name = char.get("name", "")
-                    if not _name_matches(name, returned_name):
-                        continue
-                    candidate = char.get("images", {}).get("jpg", {}).get("image_url", "")
-                    if candidate and _CHAR_IMG_URL in candidate:
-                        img_url = candidate
-                        print(f"[CITATION] OK search '{returned_name}' → '{name}'")
-                        break
-                if not img_url:
-                    print(f"[CITATION] aucun match search pour '{name}'")
-    except Exception as e:
-        print(f"[CITATION] exception '{name}': {e}")
-
-    # Ne cacher que les succès : un None transitoire (429, timeout) ne doit pas bloquer
-    # les prochains appels. Seuls les None définitifs (_NO_MAL_CHARS) sont pré-cachés.
-    if img_url is not None:
-        _CHAR_IMAGE_CACHE[name] = img_url
-    return img_url
-
-async def _fetch_char_image_bytes(name: str) -> bytes | None:
-    """Télécharge et met en cache les bytes PIL de l'image du personnage."""
-    if name in _CHAR_IMG_BYTES_CACHE:
-        return _CHAR_IMG_BYTES_CACHE[name]
-    url = await _get_char_image_url(name)
-    if not url:
-        # Pareil : ne pas cacher les échecs transitoires sur les bytes
-        return None
-    try:
-        sess = _HTTP or aiohttp.ClientSession()
-        async with sess.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-            if resp.status == 200:
-                raw = await resp.read()
-                _img_bytes_set(name, raw)
-                return raw
-            if resp.status == 404:
-                _img_bytes_set(name, None)
-            print(f"[CITATION] DL image HTTP {resp.status} pour '{name}'")
-    except Exception as e:
-        print(f"[CITATION] DL image erreur '{name}': {e}")
-    return None
-
-async def _fetch_char_gif_bytes(name: str, anime: str) -> bytes | None:
-    """Cherche un GIF du personnage sur Giphy. Retourne None si GIPHY_API_KEY absent."""
-    if not GIPHY_API_KEY:
-        return None
-    cache_key = f"{name}|{anime}"
-    if cache_key in _CHAR_GIF_CACHE:
-        return _CHAR_GIF_CACHE[cache_key]
-    query = _url_quote(f"{name} {anime}")
-    url = f"https://api.giphy.com/v1/gifs/search?q={query}&api_key={GIPHY_API_KEY}&limit=5&rating=pg-13&lang=en"
-    try:
-        sess = _HTTP or aiohttp.ClientSession()
-        async with sess.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                results = data.get("data", [])
-                if results:
-                    r = results[0]
-                    gif_url = r["images"]["downsized_large"]["url"]
-                    async with sess.get(gif_url, timeout=aiohttp.ClientTimeout(total=20)) as gresp:
-                        if gresp.status == 200:
-                            raw = await gresp.read()
-                            _gif_cache_set(cache_key, raw)
-                            return raw
-    except Exception as e:
-        print(f"[CITATION] Giphy error '{name}': {e}")
-    _gif_cache_set(cache_key, None)
-    return None
 
 
 async def _citation_handler(interaction: discord.Interaction, categorie: str = None):
@@ -4644,7 +4312,6 @@ async def _citation_handler(interaction: discord.Interaction, categorie: str = N
         print(f"❌ /citation followup failed: {e}")
 
 
-
 @bot.tree.command(name="citation", description="Citation aléatoire d'un personnage anime")
 @app_commands.describe(categorie="Filtrer par anime (optionnel)")
 @app_commands.choices(categorie=[
@@ -4674,7 +4341,6 @@ async def _citation_handler(interaction: discord.Interaction, categorie: str = N
 ])
 async def citation(interaction: discord.Interaction, categorie: app_commands.Choice[str] = None):
     await _citation_handler(interaction, categorie.value if categorie else None)
-
 
 
 # ─────────────────────────────────────────
@@ -5782,8 +5448,6 @@ async def _quiz_entry(interaction: discord.Interaction):
         print(f"❌ quiz followup: {e}")
 
 
-
-
 class _DuelAnswerButton(discord.ui.Button):
     def __init__(self, label_text: str, choice_text: str, is_correct: bool,
                  duel: "_LiveDuelSession", q: dict):
@@ -6071,67 +5735,6 @@ class _DuelChallengeView(discord.ui.View):
 #  QUIZ PRIME — PAYANT
 # ─────────────────────────────────────────
 
-_QUIZ_PRIME_MODES: dict[str, dict] = {
-    "enrichi":    {"label": "Solo Enrichi",   "emoji": "💰", "cost": 50,  "reward": 150,  "n": 10, "style": discord.ButtonStyle.primary,   "desc": "10 questions · **50 💰** → **150 💰** si tout juste"},
-    "survie":     {"label": "Survie",         "emoji": "❤️", "cost": 100, "reward": None, "n": 20, "style": discord.ButtonStyle.danger,    "desc": "Stop à 1ère erreur · **100 💰** → **50 💰/question** correcte"},
-    "legendaire": {"label": "Légendaire",     "emoji": "👑", "cost": 500, "reward": 2000, "n": 10, "style": discord.ButtonStyle.secondary, "desc": "10 questions · **500 💰** → **2 000 💰** si parfait"},
-    "ranked_1v1": {"label": "Ranked 1v1",    "emoji": "⚔️", "cost": 200, "reward": None, "n": 10, "style": discord.ButtonStyle.success,   "desc": "200 💰 chacun · **Tout au gagnant**"},
-}
-
-
-class _QuizPrimeModeView(discord.ui.View):
-    def __init__(self, user_id: int, category: str):
-        super().__init__(timeout=60)
-        self._user_id  = user_id
-        self._category = category
-        for mode_key, cfg in _QUIZ_PRIME_MODES.items():
-            btn = discord.ui.Button(label=cfg["label"], emoji=cfg["emoji"], style=cfg["style"])
-            btn.callback = self._make_cb(mode_key)
-            self.add_item(btn)
-
-    def _make_cb(self, mode_key: str):
-        async def cb(interaction: discord.Interaction):
-            if interaction.user.id != self._user_id:
-                await interaction.response.send_message("Ce menu n'est pas pour toi.", ephemeral=True)
-                return
-            self.stop()
-            cfg  = _QUIZ_PRIME_MODES[mode_key]
-            cost = cfg["cost"]
-            uid  = str(interaction.user.id)
-
-            if mode_key == "ranked_1v1":
-                await interaction.response.send_message(
-                    "Pour un Ranked 1v1, utilise `/quizz_ranked @adversaire`.", ephemeral=True
-                )
-                return
-
-            if not spend_berrys(uid, cost):
-                bal = get_berrys(uid)
-                await interaction.response.send_message(
-                    f"❌ Solde insuffisant. Tu as **{bal} 💰**, il te faut **{cost} 💰**.", ephemeral=True
-                )
-                return
-
-            await interaction.response.defer()
-            questions, err = await _generate_quiz_questions(cfg["n"], self._category)
-            if not questions:
-                add_berrys(uid, cost)
-                await interaction.edit_original_response(
-                    content=f"❌ Erreur de génération. Berrys remboursés. ({err[:100]})", embed=None, view=None
-                )
-                return
-
-            sess = _QuizSession(questions, interaction.user.id, interaction, self._category)
-            sess.paid_mode       = mode_key
-            sess.entry_cost      = cost
-            sess.quiz_reward     = cfg.get("reward") or 0
-            sess.quiz_all_correct = True
-            QUIZ_SESSIONS[interaction.user.id] = sess
-
-            await interaction.edit_original_response(content=None, embed=None, view=None)
-            await _send_next_question(interaction, sess)
-        return cb
-
 
 @bot.tree.command(name="quizz", description="Quiz animé — gratuit en solo/duel, ou Ranked 1v1 avec mise Berry !")
 @app_commands.describe(
@@ -6237,7 +5840,6 @@ class _QuizRankedChallengeView(discord.ui.View):
         await interaction.response.edit_message(content="❌ Défi refusé.", embed=None, view=None)
 
 
-
 # ─────────────────────────────────────────
 #  SHOP
 # ─────────────────────────────────────────
@@ -6326,13 +5928,6 @@ _SHIELD_ITEM = {
     "style": discord.ButtonStyle.success,
 }
 
-_STICKER_ITEM = {
-    "id":    "nick_sticker",
-    "emoji": "☠️",
-    "name":  "Sticker Auto-Réaction",
-    "price": 5_000,
-    "style": discord.ButtonStyle.secondary,
-}
 
 _SOUND_ITEMS: list[dict] = [
     {"id": "sound_shinobu", "emoji": "🌸", "name": "Shinobu — Moshi Moshi", "price": 1_500_000, "file": "shinobu_moshi_moshi.mp3", "type": "entry_sound", "style": discord.ButtonStyle.primary},
@@ -6346,8 +5941,6 @@ _BOOST_ITEMS = [
     {"id": "boost_24h", "emoji": "🔊", "name": "Boost 24h", "hours": 24, "price": 6_000_000, "type": "voice_boost", "style": discord.ButtonStyle.danger},
 ]
 
-_SHOP_ITEMS = _TICKET_TIERS + [_SHIELD_ITEM, _STICKER_ITEM] + _SOUND_ITEMS + _BOOST_ITEMS
-_ITEM_BY_ID = {item["id"]: item for item in _SHOP_ITEMS}
 
 _SHOP_CATS  = ["tickets", "protection", "sons", "boost"]
 _CAT_LABELS = {
@@ -6411,20 +6004,6 @@ def _add_item_stock(user_data: dict, item_id: str, qty: int):
         tickets = _get_tickets(user_data)
         tickets[item_id] = tickets.get(item_id, 0) + qty
         user_data["pseudo_tickets"] = tickets
-
-def _remove_item_stock(user_data: dict, item_id: str, qty: int) -> bool:
-    stock = _get_item_stock(user_data, item_id)
-    if stock < qty:
-        return False
-    if item_id == "nick_shield":
-        user_data["nick_shields"] = stock - qty
-    elif item_id == "nick_sticker":
-        user_data["sticker_reactions"] = stock - qty
-    else:
-        tickets = _get_tickets(user_data)
-        tickets[item_id] = stock - qty
-        user_data["pseudo_tickets"] = tickets
-    return True
 
 
 # ── Embeds par page ───────────────────────────────────────────────
@@ -6914,7 +6493,6 @@ async def shop_cmd(interaction: discord.Interaction):
 # ─────────────────────────────────────────
 
 def _virements_status_embed() -> discord.Embed:
-    import math
     if _virements_open():
         rem = _virements_remaining()
         if rem == float("inf"):
@@ -6944,7 +6522,6 @@ class _VirementActiverModal(discord.ui.Modal, title="Activer les virements"):
         self._parent_view = view
 
     async def on_submit(self, interaction: discord.Interaction):
-        import math
         val = self.duree.value.strip()
         if val == "" or val == "0":
             _virements_set_permanent()
@@ -7000,7 +6577,6 @@ async def virements_toggle_cmd(interaction: discord.Interaction):
         view=_VirementToggleView(),
         ephemeral=True,
     )
-
 
 
 @bot.tree.command(name="ticket", description="Utilise un ticket pour changer le pseudo d'un membre !")
@@ -7592,7 +7168,6 @@ async def akinator_cmd(interaction: discord.Interaction):
     session.nb_q = 1
     session.history.append((q, ""))
     await interaction.edit_original_response(embed=_aki_q_embed(session, q), view=_AkiAnswerView(session))
-
 
 
 # ─────────────────────────────────────────
@@ -8438,13 +8013,6 @@ _RANK_EMOJIS_DISPLAY = {
     "Yonkou":          "⚜️",
     "Roi des pirates": "👑",
 }
-_RANK_EMBED_COLORS = {
-    "Pirate":          discord.Color.from_rgb(46,  204, 113),
-    "Shichibukai":     discord.Color.from_rgb(22,  96,  45),
-    "Amiral":          discord.Color.from_rgb(241, 196, 15),
-    "Yonkou":          discord.Color.from_rgb(155, 89,  182),
-    "Roi des pirates": discord.Color.from_rgb(255, 215, 0),
-}
 
 
 @bot.tree.command(name="rangs", description="📊 Liste tous les membres par rang One Piece")
@@ -8514,7 +8082,7 @@ async def rangs_cmd(interaction: discord.Interaction):
             text=f"Brams Score · One Piece  •  {len(unique_ids)} membres rankés au total"
         )
         await interaction.followup.send(embed=embed)
-    except Exception as e:
+    except Exception:
         import traceback; traceback.print_exc()
         try:
             await interaction.followup.send("❌ Erreur lors de la récupération des rangs.", ephemeral=True)

@@ -4,11 +4,9 @@ Mini-jeux : Dés, Slots, Blackjack, Pile/Face, Pierre-Papier-Ciseaux, Roulette, 
 """
 from __future__ import annotations
 
-import asyncio
 import random
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 _STONK_PATH = Path(__file__).parent.parent.parent / "stonk.jpg"
 
@@ -16,18 +14,16 @@ import discord
 
 from . import database as db
 from .constants import (
-    TRANSFER_FEE_RATE, TRANSFER_CONFIRM_THRESHOLD, TRANSFER_DAILY_LIMIT,
+    TRANSFER_CONFIRM_THRESHOLD, TRANSFER_DAILY_LIMIT,
     CASINO_DAILY_CAP_RATIO,
     SLOTS_EMOJIS, SLOTS_WEIGHTS, SLOTS_MULT,
     ACHIEVEMENTS, COLOR_GAIN, COLOR_LOSS, COLOR_NEUTRAL, COLOR_INFO,
-    DAILY_MIN, DAILY_MAX, STREAK_BONUS, STREAK_MAX,
+    STREAK_BONUS, STREAK_MAX,
     VAULT_MAX,
 )
 from utils.transactions import log_transaction
 from utils.virement_state import is_open as _virements_open
 
-if TYPE_CHECKING:
-    import discord
 
 SEP = "━━━━━━━━━━━━━━━━━━━━━━"
 

@@ -271,8 +271,6 @@ def _candidates(provider: str) -> list[str]:
     return free or models[:1]  # tout saturé : on tente quand même le premier
 
 
-def current_models() -> dict:
-    return {"gemini": _candidates("gemini"), "groq": _candidates("groq")}
 
 
 # ── Appel ─────────────────────────────────────────────────────────────

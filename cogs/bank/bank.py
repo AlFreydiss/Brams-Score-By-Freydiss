@@ -1,14 +1,12 @@
 from __future__ import annotations
-import os
-from datetime import datetime, timezone, timedelta
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
 from . import database as db
-from .constants import GUILD_IDS, ANNOUNCE_CHANNEL_ID, INVEST_RATE, INVEST_INTERVAL
-from .utils import fmt, get_rank
+from .constants import GUILD_IDS, ANNOUNCE_CHANNEL_ID
+from .utils import fmt
 from .views import BankView, _main_embed
 
 
@@ -50,7 +48,7 @@ class BankDashboardCog(commands.Cog):
             msg  = await interaction.followup.send(embed=embed, view=view)
             view.message = msg
 
-        except Exception as e:
+        except Exception:
             import traceback
             traceback.print_exc()
             try:
