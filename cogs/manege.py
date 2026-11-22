@@ -1,4 +1,6 @@
 import asyncio
+import os
+
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -27,6 +29,16 @@ GUARD_MOVER_IDS = {
 }
 GUARD_MOVER_ROLES = {1502420669244248156}  # Division 0
 
+# Son joué dans Central 46 quand quelqu'un y arrive (et y reste), sauf pour ces membres.
+ARRIVAL_SOUND = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sounds", "central46_clochard.mp3")
+ARRIVAL_SOUND_EXEMPT = {
+    1094070545248694342,  # Freydiss
+    1529571471205072936,  # Freydiss (2e compte)
+    994546252995907754,   # Hakuji
+    847832035909435413,   # BLAZE
+}
+ARRIVAL_SOUND_COOLDOWN_S = 30  # par membre : pas de spam s'il sort et revient en boucle
+
 # Discord regroupe les déplacements d'un même auteur vers un même salon dans UNE
 # entrée d'audit (compteur qui monte). Quand quelqu'un en déplace plusieurs d'affilée,
 # seule la 1re lecture voit le compteur bouger : on garde donc l'auteur quelques secondes.
@@ -50,6 +62,7 @@ class ManegeCog(commands.Cog):
         self._seen_moves: dict[int, int] = {}
         self._last_mover: dict[int, tuple[int, float]] = {}  # salon -> (auteur, instant)
         self._audit_lock = asyncio.Lock()
+        self._sound_cd: dict[int, float] = {}
 
     async def _move_entries(self, guild: discord.Guild) -> list[discord.AuditLogEntry]:
         if not guild.me.guild_permissions.view_audit_log:
@@ -91,10 +104,12 @@ class ManegeCog(commands.Cog):
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         if not after.channel or before.channel == after.channel or member.bot:
             return
-        guarded = (after.channel.id in GUARDED_CHANNELS
-                   and not after.channel.permissions_for(member).connect)
+        in_guarded = after.channel.id in GUARDED_CHANNELS
+        guarded = in_guarded and not after.channel.permissions_for(member).connect
         shielded = before.channel is not None and (member.guild.id, member.id) in self._shield
         if not guarded and not shielded:
+            if in_guarded:
+                self._arrival_sound(member, after.channel)
             return
         mover = await self._mover_of(member, after.channel)
         if guarded and not self._may_move_into_guarded(member.guild, mover):
@@ -106,11 +121,49 @@ class ManegeCog(commands.Cog):
             else:
                 print(f"[GARDE] {member} renvoyé de {after.channel.name} (déplacé par {mover})")
             return
+        if in_guarded:
+            self._arrival_sound(member, after.channel)
         if shielded and mover not in (None, member.id, self.bot.user.id):
             try:
                 await member.move_to(before.channel, reason="/antimove")
             except discord.HTTPException:
                 pass
+
+    def _arrival_sound(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
+        if member.id in ARRIVAL_SOUND_EXEMPT:
+            return
+        now = asyncio.get_running_loop().time()
+        if now - self._sound_cd.get(member.id, -1e9) < ARRIVAL_SOUND_COOLDOWN_S:
+            return
+        self._sound_cd[member.id] = now
+        asyncio.create_task(self._play_arrival(member, channel))
+
+    async def _play_arrival(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
+        locks = getattr(self.bot, "_entry_sound_locks", None)
+        if locks is None:
+            locks = self.bot._entry_sound_locks = {}
+        lock = locks.setdefault(channel.guild.id, asyncio.Lock())
+        if lock.locked():  # un autre son passe déjà : on n'empile pas
+            return
+        async with lock:
+            if member not in channel.members:
+                return
+            vc = None
+            try:
+                if channel.guild.voice_client:
+                    await channel.guild.voice_client.disconnect(force=True)
+                vc = await channel.connect(timeout=10)
+                done = asyncio.Event()
+                loop = asyncio.get_running_loop()
+                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(ARRIVAL_SOUND, options="-vn"), volume=0.6)
+                vc.play(source, after=lambda err: loop.call_soon_threadsafe(done.set))
+                await asyncio.wait_for(done.wait(), timeout=20)
+                print(f"[CENTRAL46] son d'arrivée joué pour {member}")
+            except Exception as e:
+                print(f"[CENTRAL46] son d'arrivée impossible pour {member} : {type(e).__name__}: {e}")
+            finally:
+                if vc and vc.is_connected():
+                    await vc.disconnect()
 
     def _route(self, member: discord.Member) -> list[discord.abc.GuildChannel]:
         guild = member.guild

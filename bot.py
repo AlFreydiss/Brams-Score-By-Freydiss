@@ -3243,6 +3243,7 @@ async def on_message(message):
 # ─────────────────────────────────────────
 
 _ENTRY_SOUND_LOCKS: dict[int, asyncio.Lock] = {}
+bot._entry_sound_locks = _ENTRY_SOUND_LOCKS  # partagé avec cogs.manege (son de Central 46) : un seul son à la fois
 
 _YTDL_OPTS = {
     "format": "bestaudio/best",
