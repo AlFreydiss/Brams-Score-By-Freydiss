@@ -2505,7 +2505,6 @@ TEMPLATE_PATH = "template.png"
 # ─────────────────────────────────────────
 #  EVENTS
 # ─────────────────────────────────────────
-@bot.event
 def _compensate_long_outage() -> None:
     """Panne longue (PANNE_DEBUT=2026-11-15T03:00:00Z dans l'env) : rejoue la semaine
     d'avant la panne, décalée de la durée de la panne. Chaque membre retrouve ses
@@ -2545,6 +2544,7 @@ def _compensate_long_outage() -> None:
     print(f"[PANNE] semaine d'avant la panne ({raw}) rejouée pour {fixed} membres")
 
 
+@bot.event
 async def on_ready():
     global _HTTP
     print(f"[BOT] Connecte : {bot.user}")
