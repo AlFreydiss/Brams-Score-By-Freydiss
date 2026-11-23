@@ -81,7 +81,7 @@ class _VoixDebug(logging.Filter):
         m = r.getMessage()
         if r.levelno >= logging.INFO:
             return True
-        return not any(k in m for k in ("keeping websocket alive", "Dispatching", "HEARTBEAT", "heartbeat", "'op': 3", "'op': 6"))
+        return not any(k in m for k in ("keeping websocket alive", "Dispatching", "WebSocket Event", "Shard ID", "HEARTBEAT", "heartbeat", "'op': 3", "'op': 6"))
 
 
 for _nom in ("discord.gateway", "discord.voice_state"):
