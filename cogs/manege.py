@@ -57,6 +57,8 @@ ARRIVAL_SOUND_EXEMPT = {
     1529571471205072936,  # Freydiss (2e compte)
 }
 ARRIVAL_SOUND_COOLDOWN_S = 20 * 60  # 1 son max toutes les 20 min par salon, toutes personnes confondues
+# BLAZE et Hakuji : leur son part à CHAQUE arrivée, sans attendre la fin des 20 min
+ARRIVAL_SOUND_NO_COOLDOWN = set(ARRIVAL_SOUNDS_BY_MEMBER)
 
 # Discord regroupe les déplacements d'un même auteur vers un même salon dans UNE
 # entrée d'audit (compteur qui monte). Quand quelqu'un en déplace plusieurs d'affilée,
@@ -168,14 +170,16 @@ class ManegeCog(commands.Cog):
             except discord.HTTPException:
                 pass
 
-    def _sound_on_cooldown(self, channel_id: int) -> bool:
+    def _sound_on_cooldown(self, channel_id: int, member_id: int = 0) -> bool:
+        if member_id in ARRIVAL_SOUND_NO_COOLDOWN:
+            return False
         last = self._sound_cd.get(channel_id)
         return last is not None and asyncio.get_running_loop().time() - last < ARRIVAL_SOUND_COOLDOWN_S
 
     def _arrival_sound(self, member: discord.Member, channel: discord.VoiceChannel) -> None:
         if member.id in ARRIVAL_SOUND_EXEMPT:
             return
-        if self._sound_on_cooldown(channel.id):
+        if self._sound_on_cooldown(channel.id, member.id):
             return
         pool = ARRIVAL_SOUNDS_BY_MEMBER.get(member.id) or [ARRIVAL_SOUND]
         choices = [f for f in pool if f != self._last_sound.get(member.id)] or pool
@@ -191,7 +195,7 @@ class ManegeCog(commands.Cog):
         if lock.locked():  # un autre son passe déjà : on n'empile pas
             return
         async with lock:
-            if member not in channel.members or self._sound_on_cooldown(channel.id):
+            if member not in channel.members or self._sound_on_cooldown(channel.id, member.id):
                 return
             vc = None
             try:
