@@ -66,7 +66,7 @@ ARRIVAL_SOUND_COOLDOWN_S = 20 * 60  # 1 son max toutes les 20 min par salon, tou
 # Discord regroupe les déplacements d'un même auteur vers un même salon dans UNE
 # entrée d'audit (compteur qui monte). Quand quelqu'un en déplace plusieurs d'affilée,
 # seule la 1re lecture voit le compteur bouger : on garde donc l'auteur quelques secondes.
-_MOVER_MEMORY_S = 6
+_MOVER_FRESH_S = 1.0  # un déplacement noté plus de 1 s avant l'arrivée ne compte pas (autre personne)
 
 
 def _allowed(interaction: discord.Interaction) -> bool:
@@ -116,7 +116,6 @@ class ManegeCog(commands.Cog):
         self._last_sound: dict[int, str] = {}
         self._admitted: dict[int, set[int]] = self._load_admitted()  # salon gardé -> membres admis
         self._deciding: set[int] = set()  # membres dont l'arrivée est en cours d'examen (la ronde attend)
-        self._returning: dict[int, int] = {}  # membre -> salon gardé où le bot est en train de le remettre
         self._sweeper: asyncio.Task | None = None
 
     async def cog_load(self) -> None:
@@ -189,25 +188,50 @@ class ManegeCog(commands.Cog):
         except discord.HTTPException:
             return []
 
-    async def _mover_of(self, member: discord.Member, channel: discord.abc.GuildChannel) -> int | None:
-        """Qui vient de déplacer `member` dans `channel` ? None = il y est allé lui-même
-        (un changement de salon fait soi-même ne laisse rien dans le journal d'audit)."""
+    async def _poll_audit(self, guild: discord.Guild) -> None:
+        """Relit le journal d'audit (déplacements) et note, par salon d'arrivée, qui vient d'y déplacer quelqu'un."""
         loop = asyncio.get_running_loop()
-        async with self._audit_lock:  # deux événements simultanés ne se volent pas l'entrée
-            for delay in (0.3, 0.4, 0.6, 0.9):  # l'entrée d'audit arrive juste après l'événement vocal
-                await asyncio.sleep(delay)
-                now = discord.utils.utcnow()
-                for e in await self._move_entries(member.guild):
-                    count = getattr(e.extra, "count", 1) or 1
-                    new = count > self._seen_moves[e.id] if e.id in self._seen_moves else (now - e.created_at).total_seconds() < 15
-                    self._seen_moves[e.id] = count
-                    target = getattr(e.extra, "channel", None)
-                    if new and target and e.user:
-                        self._last_mover[target.id] = (e.user.id, loop.time())
-                hit = self._last_mover.get(channel.id)
-                if hit and loop.time() - hit[1] < _MOVER_MEMORY_S:
-                    return hit[0]
-        return None
+        now = discord.utils.utcnow()
+        for e in await self._move_entries(guild):
+            count = getattr(e.extra, "count", 1) or 1
+            new = count > self._seen_moves[e.id] if e.id in self._seen_moves else (now - e.created_at).total_seconds() < 15
+            self._seen_moves[e.id] = count
+            target = getattr(e.extra, "channel", None)
+            if new and target and e.user:
+                self._last_mover[target.id] = (e.user.id, loop.time())
+
+    @commands.Cog.listener()
+    async def on_audit_log_entry_create(self, entry: discord.AuditLogEntry):
+        """Journal d'audit en direct (passerelle) : un déplacement est connu presque en même temps que l'arrivée."""
+        if entry.action != discord.AuditLogAction.member_move:
+            return
+        target = getattr(entry.extra, "channel", None)
+        uid = entry.user_id
+        if target and uid:
+            self._last_mover[target.id] = (uid, asyncio.get_running_loop().time())
+            self._seen_moves[entry.id] = getattr(entry.extra, "count", 1) or 1
+
+    async def _mover_of(self, member: discord.Member, channel: discord.abc.GuildChannel,
+                        deadline_s: float = 0.8) -> tuple[int | None, float]:
+        """Qui vient de déplacer `member` dans `channel` ? (None = il y est allé lui-même : un changement de salon
+        fait soi-même ne laisse rien dans le journal d'audit.) Regarde le journal en direct et le relit toutes les
+        0,25 s ; répond dès qu'un déplaceur est connu, sinon au bout de `deadline_s`. Renvoie (déplaceur, attente)."""
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        next_poll = t0
+        while True:
+            hit = self._last_mover.get(channel.id)
+            if hit and hit[1] >= t0 - _MOVER_FRESH_S:
+                return hit[0], loop.time() - t0
+            now = loop.time()
+            if now - t0 >= deadline_s:
+                return None, now - t0
+            if now >= next_poll:
+                next_poll = now + 0.25
+                async with self._audit_lock:
+                    await self._poll_audit(member.guild)
+                continue
+            await asyncio.sleep(0.05)
 
     @staticmethod
     def _may_be_in_guarded(member: discord.Member) -> bool:
@@ -235,12 +259,6 @@ class ManegeCog(commands.Cog):
         if not target:
             return
         in_guarded = target.id in GUARDED_CHANNELS
-        if in_guarded and self._returning.pop(member.id, None) == target.id:
-            # remis par le bot après vérification du journal d'audit (déplacement autorisé)
-            self._admitted.setdefault(target.id, set()).add(member.id)
-            self._save_admitted()
-            self._arrival_sound(member, target)
-            return
         guarded = in_guarded and not self._may_be_in_guarded(member) and (member.guild.id, member.id) not in self._runs
         shielded = source is not None and (member.guild.id, member.id) in self._shield
         if not guarded and not shielded:
@@ -249,41 +267,33 @@ class ManegeCog(commands.Cog):
                 self._arrival_sound(member, target)
             return
         if guarded:
-            await self._bounce(member, source, target)
+            await self._guard(member, source, target)
             return
-        mover = await self._mover_of(member, target)
+        mover, _ = await self._mover_of(member, target, deadline_s=1.5)
         if shielded and mover not in (None, member.id, self.bot.user.id):
             try:
                 await member.move_to(source, reason="/antimove")
             except discord.HTTPException:
                 pass
 
-    async def _bounce(self, member: discord.Member, source, target) -> None:
-        """Arrivée non autorisée dans un salon gardé : sortie IMMÉDIATE (retour au salon d'avant, ou déconnexion),
-        puis lecture du journal d'audit. Si c'était un déplaceur autorisé qui l'y avait mis, le bot l'y remet
-        aussitôt (aller-retour d'une seconde environ) et il est retenu comme admis."""
+    async def _guard(self, member: discord.Member, source, target) -> None:
+        """Arrivée dans un salon gardé de quelqu'un qui n'a pas le droit d'y être lui-même : il reste seulement si
+        un déplaceur autorisé vient de l'y mettre ; sinon il est sorti aussitôt (salon d'avant, ou déconnecté)."""
         origin = source if source and source.id not in GUARDED_CHANNELS else None
         self._deciding.add(member.id)
         try:
+            mover, attente = await self._mover_of(member, target)
+            if self._may_move_into_guarded(member, mover):
+                self._admitted.setdefault(target.id, set()).add(member.id)
+                self._save_admitted()
+                print(f"[GARDE] {member} admis dans {target.name} (déplacé par {mover}, vu en {attente:.2f} s)")
+                self._arrival_sound(member, target)
+                return
             try:
-                await member.move_to(origin, reason="Salon gardé : sortie immédiate en attendant de savoir qui l'a déplacé")
+                await member.move_to(origin, reason=f"Salon gardé : {'venu seul' if mover is None else f'déplacé par {mover}'}, non autorisé")
+                print(f"[GARDE] {member} sorti de {target.name} en {attente:.2f} s ({'venu seul' if mover is None else f'déplacé par {mover}'}, non autorisé)")
             except discord.HTTPException as e:
                 print(f"[GARDE] renvoi de {member} impossible : {e}")
-                return
-            mover = await self._mover_of(member, target)
-            if not self._may_move_into_guarded(member, mover):
-                print(f"[GARDE] {member} sorti de {target.name} (venu seul ou déplacé par {mover}, non autorisé)")
-                return
-            if not member.voice or not member.voice.channel:
-                print(f"[GARDE] {member} déplacé par {mover} (autorisé) mais n'est plus en vocal")
-                return
-            self._returning[member.id] = target.id
-            try:
-                await member.move_to(target, reason=f"Salon gardé : déplacé par {mover}, autorisé")
-                print(f"[GARDE] {member} remis dans {target.name} (déplacé par {mover}, autorisé)")
-            except discord.HTTPException as e:
-                self._returning.pop(member.id, None)
-                print(f"[GARDE] remise de {member} dans {target.name} impossible : {e}")
         finally:
             self._deciding.discard(member.id)
 
