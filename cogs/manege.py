@@ -72,19 +72,29 @@ def _allowed(interaction: discord.Interaction) -> bool:
     raise app_commands.MissingPermissions(["move_members"])
 
 
-async def attendre_chiffrement(vc: discord.VoiceClient, max_s: float = 5.0) -> None:
+async def attendre_chiffrement(vc: discord.VoiceClient, max_s: float = 15.0) -> bool:
     """Discord chiffre la voix de bout en bout (DAVE) : tant que l'échange de clés avec les
     membres du salon n'est pas fini, l'audio envoyé est indéchiffrable et personne ne l'entend.
-    On attend donc que le chiffrement soit prêt, plus une petite marge."""
+    On attend donc que le chiffrement soit prêt, plus une petite marge. Renvoie True si prêt."""
     etat = getattr(vc, "_connection", None)
     loop = asyncio.get_running_loop()
-    fin = loop.time() + max_s
+    debut = loop.time()
+    fin = debut + max_s
+    pret = True
     while etat is not None and getattr(etat, "dave_protocol_version", 0) and not getattr(etat, "can_encrypt", True):
         if loop.time() > fin:
-            print("[VOIX] chiffrement pas prêt après 5 s, on joue quand même")
+            sess = getattr(etat, "dave_session", None)
+            print(f"[VOIX] chiffrement pas prêt après {max_s:.0f} s (DAVE v{etat.dave_protocol_version}, "
+                  f"session={'oui' if sess else 'non'}, ready={getattr(sess, 'ready', None)}, "
+                  f"transitions en attente={dict(getattr(etat, 'dave_pending_transitions', {}))})")
+            pret = False
             break
         await asyncio.sleep(0.1)
+    if pret:
+        print(f"[VOIX] chiffrement prêt en {loop.time() - debut:.1f} s "
+              f"(DAVE v{getattr(etat, 'dave_protocol_version', 0) if etat else 0})")
     await asyncio.sleep(0.6)
+    return pret
 
 
 class ManegeCog(commands.Cog):
