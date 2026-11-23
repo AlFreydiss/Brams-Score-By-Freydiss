@@ -5,3 +5,5 @@ matplotlib
 aiohttp
 psycopg2-binary
 tzdata
+# discord.py 2.7.1 est écrit pour davey 0.1 : avec davey 0.2 le bot n'a jamais de clé de chiffrement vocal (sons inaudibles)
+davey<0.2

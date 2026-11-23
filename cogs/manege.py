@@ -1,8 +1,7 @@
 import asyncio
-import logging
+import json
 import os
 import random
-import sys
 
 import discord
 from discord import app_commands
@@ -47,6 +46,10 @@ GUARD_MEMBER_ROLES = {1502420669244248156}  # Division 0
 # leurs propres sons (un au hasard, jamais deux fois le même d'affilée), d'autres aucun.
 _SOUNDS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sounds")
 ARRIVAL_SOUND = os.path.join(_SOUNDS_DIR, "central46_clochard.mp3")
+# Membres sans droit propre mais mis dans un salon gardé par un déplaceur autorisé : retenus ici (fichier local
+# de la VM, hors git) pour que la ronde de vérification ne les sorte pas, même après un redémarrage du bot.
+_ADMIS_PATH = os.path.join(os.path.dirname(_SOUNDS_DIR), "central46_admis.json")
+GUARD_SWEEP_S = 30  # ronde : sort toute personne présente sans autorisation (rattrape les arrivées ratées)
 _BLAZE_SOUNDS  = [os.path.join(_SOUNDS_DIR, f"central46_blaze_{i}.mp3") for i in range(1, 5)]
 _HAKUJI_SOUNDS = [os.path.join(_SOUNDS_DIR, f"central46_hakuji_{i}.mp3") for i in range(1, 4)]
 ARRIVAL_SOUNDS_BY_MEMBER = {
@@ -74,32 +77,11 @@ def _allowed(interaction: discord.Interaction) -> bool:
     raise app_commands.MissingPermissions(["move_members"])
 
 
-# Diagnostic DAVE (23/11) : trace des échanges de clés de la connexion vocale (opcodes MLS / transitions),
-# sans le bruit des heartbeats. À retirer une fois les sons de nouveau audibles.
-class _VoixDebug(logging.Filter):
-    def filter(self, r: logging.LogRecord) -> bool:
-        m = r.getMessage()
-        if r.levelno >= logging.INFO:
-            return True
-        return not any(k in m for k in ("keeping websocket alive", "Dispatching", "WebSocket Event", "Shard ID", "HEARTBEAT", "heartbeat", "'op': 3", "'op': 6"))
-
-
-for _nom in ("discord.gateway", "discord.voice_state"):
-    _lg = logging.getLogger(_nom)
-    if not getattr(_lg, "_voix_debug", False):
-        _h = logging.StreamHandler(sys.stdout)
-        _h.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
-        _h.addFilter(_VoixDebug())
-        _lg.addHandler(_h)
-        _lg.setLevel(logging.DEBUG)
-        _lg.propagate = False
-        _lg._voix_debug = True
-
-
-async def attendre_chiffrement(vc: discord.VoiceClient, max_s: float = 15.0) -> bool:
+async def attendre_chiffrement(vc: discord.VoiceClient, max_s: float = 5.0) -> bool:
     """Discord chiffre la voix de bout en bout (DAVE) : tant que l'échange de clés avec les
     membres du salon n'est pas fini, l'audio envoyé est indéchiffrable et personne ne l'entend.
-    On attend donc que le chiffrement soit prêt, plus une petite marge. Renvoie True si prêt."""
+    On attend donc que le chiffrement soit prêt, plus une petite marge. Renvoie True si prêt.
+    (23/11 : davey 0.2 ne donnait jamais de clé à discord.py 2.7.1 -> davey<0.2 dans requirements.txt.)"""
     etat = getattr(vc, "_connection", None)
     loop = asyncio.get_running_loop()
     debut = loop.time()
@@ -134,6 +116,71 @@ class ManegeCog(commands.Cog):
         self._audit_lock = asyncio.Lock()
         self._sound_cd: dict[int, float] = {}  # salon -> instant du dernier son joué
         self._last_sound: dict[int, str] = {}
+        self._admitted: dict[int, set[int]] = self._load_admitted()  # salon gardé -> membres admis
+        self._deciding: set[int] = set()  # membres dont l'arrivée est en cours d'examen (la ronde attend)
+        self._sweeper: asyncio.Task | None = None
+
+    async def cog_load(self) -> None:
+        self._sweeper = asyncio.create_task(self._sweep_loop())
+
+    async def cog_unload(self) -> None:
+        if self._sweeper:
+            self._sweeper.cancel()
+
+    @staticmethod
+    def _load_admitted() -> dict[int, set[int]]:
+        try:
+            with open(_ADMIS_PATH, encoding="utf-8") as f:
+                return {int(k): set(v) for k, v in json.load(f).items()}
+        except (OSError, ValueError):
+            return {}
+
+    def _save_admitted(self) -> None:
+        try:
+            with open(_ADMIS_PATH, "w", encoding="utf-8") as f:
+                json.dump({str(k): sorted(v) for k, v in self._admitted.items()}, f)
+        except OSError as e:
+            print(f"[GARDE] sauvegarde des admis impossible : {e}")
+
+    async def _sweep_loop(self) -> None:
+        """Ronde toutes les 30 s : quiconque est dans un salon gardé sans en avoir le droit (ni liste, ni rôle,
+        ni admis par un déplaceur) est sorti. Rattrape les arrivées pendant un redémarrage du bot. Au tout
+        premier passage (pas encore de fichier), les présents sont gardés tels quels."""
+        await self.bot.wait_until_ready()
+        premier = not os.path.exists(_ADMIS_PATH)
+        while True:
+            try:
+                await self._sweep(premier)
+                premier = False
+            except Exception as e:
+                print(f"[GARDE] ronde en erreur : {type(e).__name__}: {e}")
+            await asyncio.sleep(GUARD_SWEEP_S)
+
+    async def _sweep(self, premier: bool) -> None:
+        changed = premier
+        for cid in GUARDED_CHANNELS:
+            ch = self.bot.get_channel(cid)
+            if not isinstance(ch, (discord.VoiceChannel, discord.StageChannel)):
+                continue
+            admis = self._admitted.setdefault(cid, set())
+            present = {m.id for m in ch.members}
+            if admis - present:  # partis entre-temps (événement de départ raté)
+                admis &= present
+                changed = True
+            for m in list(ch.members):
+                if m.bot or self._may_be_in_guarded(m) or m.id in admis or m.id in self._deciding:
+                    continue
+                if premier:
+                    admis.add(m.id)
+                    print(f"[GARDE] premier passage : {m} déjà dans {ch.name}, gardé")
+                    continue
+                try:
+                    await m.move_to(None, reason="Salon gardé : présent sans autorisation")
+                    print(f"[GARDE] ronde : {m} sorti de {ch.name} (présent sans autorisation)")
+                except discord.HTTPException as e:
+                    print(f"[GARDE] ronde : sortie de {m} impossible : {e}")
+        if changed:
+            self._save_admitted()
 
     async def _move_entries(self, guild: discord.Guild) -> list[discord.AuditLogEntry]:
         if not guild.me.guild_permissions.view_audit_log:
@@ -177,25 +224,39 @@ class ManegeCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        if not after.channel or before.channel == after.channel or member.bot:
+        if before.channel == after.channel or member.bot:
+            return
+        if before.channel and before.channel.id in GUARDED_CHANNELS and member.id in self._admitted.get(before.channel.id, set()):
+            self._admitted[before.channel.id].discard(member.id)  # il part : il devra être remis par un déplaceur
+            self._save_admitted()
+        if not after.channel:
             return
         in_guarded = after.channel.id in GUARDED_CHANNELS
         guarded = in_guarded and not self._may_be_in_guarded(member)
         shielded = before.channel is not None and (member.guild.id, member.id) in self._shield
         if not guarded and not shielded:
             if in_guarded:
+                print(f"[GARDE] {member} entre dans {after.channel.name} : autorisé (liste / rôle)")
                 self._arrival_sound(member, after.channel)
             return
-        mover = await self._mover_of(member, after.channel)
-        if guarded and not self._may_move_into_guarded(member.guild, mover):
-            back = before.channel if before.channel and before.channel.id not in GUARDED_CHANNELS else None
-            try:
-                await member.move_to(back, reason=f"Salon gardé : déplacé par {mover or 'inconnu'}, non autorisé")
-            except discord.HTTPException as e:
-                print(f"[GARDE] renvoi de {member} impossible : {e}")
-            else:
-                print(f"[GARDE] {member} renvoyé de {after.channel.name} (déplacé par {mover})")
-            return
+        self._deciding.add(member.id)
+        try:
+            mover = await self._mover_of(member, after.channel)
+            if guarded and not self._may_move_into_guarded(member.guild, mover):
+                back = before.channel if before.channel and before.channel.id not in GUARDED_CHANNELS else None
+                try:
+                    await member.move_to(back, reason=f"Salon gardé : déplacé par {mover or 'personne'}, non autorisé")
+                except discord.HTTPException as e:
+                    print(f"[GARDE] renvoi de {member} impossible : {e}")
+                else:
+                    print(f"[GARDE] {member} renvoyé de {after.channel.name} (venu seul ou déplacé par {mover}, non autorisé)")
+                return
+            if guarded:
+                self._admitted.setdefault(after.channel.id, set()).add(member.id)
+                self._save_admitted()
+                print(f"[GARDE] {member} admis dans {after.channel.name} (déplacé par {mover})")
+        finally:
+            self._deciding.discard(member.id)
         if in_guarded:
             self._arrival_sound(member, after.channel)
         if shielded and mover not in (None, member.id, self.bot.user.id):
