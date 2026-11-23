@@ -59,6 +59,21 @@ def _allowed(interaction: discord.Interaction) -> bool:
     raise app_commands.MissingPermissions(["move_members"])
 
 
+async def attendre_chiffrement(vc: discord.VoiceClient, max_s: float = 5.0) -> None:
+    """Discord chiffre la voix de bout en bout (DAVE) : tant que l'échange de clés avec les
+    membres du salon n'est pas fini, l'audio envoyé est indéchiffrable et personne ne l'entend.
+    On attend donc que le chiffrement soit prêt, plus une petite marge."""
+    etat = getattr(vc, "_connection", None)
+    loop = asyncio.get_running_loop()
+    fin = loop.time() + max_s
+    while etat is not None and getattr(etat, "dave_protocol_version", 0) and not getattr(etat, "can_encrypt", True):
+        if loop.time() > fin:
+            print("[VOIX] chiffrement pas prêt après 5 s, on joue quand même")
+            break
+        await asyncio.sleep(0.1)
+    await asyncio.sleep(0.6)
+
+
 class ManegeCog(commands.Cog):
 
     def __init__(self, bot):
@@ -168,9 +183,10 @@ class ManegeCog(commands.Cog):
                 if channel.guild.voice_client:
                     await channel.guild.voice_client.disconnect(force=True)
                 vc = await channel.connect(timeout=10)
+                await attendre_chiffrement(vc)
                 done = asyncio.Event()
                 loop = asyncio.get_running_loop()
-                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(path, options="-vn"), volume=0.6)
+                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(path, options="-vn"), volume=0.9)
                 vc.play(source, after=lambda err: loop.call_soon_threadsafe(done.set))
                 self._sound_cd[channel.id] = loop.time()  # compté seulement si le son part vraiment
                 await asyncio.wait_for(done.wait(), timeout=30)

@@ -3296,6 +3296,8 @@ async def _play_entry_sound(member: discord.Member, channel: discord.VoiceChanne
                 ffmpeg_opts = _FFMPEG_OPTS
             _log(f"[ENTRY SOUND] Connexion au salon vocal {channel.name}...")
             vc = await channel.connect(timeout=10)
+            from cogs.manege import attendre_chiffrement
+            await attendre_chiffrement(vc)  # sinon le début du son est inaudible (chiffrement DAVE pas prêt)
             _log("[ENTRY SOUND] Connecté. Lecture en cours...")
             done = asyncio.Event()
             def _after(err):
