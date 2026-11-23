@@ -1,6 +1,8 @@
 import asyncio
+import logging
 import os
 import random
+import sys
 
 import discord
 from discord import app_commands
@@ -70,6 +72,28 @@ def _allowed(interaction: discord.Interaction) -> bool:
     if interaction.user.id in OWNER_IDS:
         return True
     raise app_commands.MissingPermissions(["move_members"])
+
+
+# Diagnostic DAVE (23/11) : trace des échanges de clés de la connexion vocale (opcodes MLS / transitions),
+# sans le bruit des heartbeats. À retirer une fois les sons de nouveau audibles.
+class _VoixDebug(logging.Filter):
+    def filter(self, r: logging.LogRecord) -> bool:
+        m = r.getMessage()
+        if r.levelno >= logging.INFO:
+            return True
+        return not any(k in m for k in ("keeping websocket alive", "Dispatching", "HEARTBEAT", "heartbeat", "'op': 3", "'op': 6"))
+
+
+for _nom in ("discord.gateway", "discord.voice_state"):
+    _lg = logging.getLogger(_nom)
+    if not getattr(_lg, "_voix_debug", False):
+        _h = logging.StreamHandler(sys.stdout)
+        _h.setFormatter(logging.Formatter("[%(name)s] %(message)s"))
+        _h.addFilter(_VoixDebug())
+        _lg.addHandler(_h)
+        _lg.setLevel(logging.DEBUG)
+        _lg.propagate = False
+        _lg._voix_debug = True
 
 
 async def attendre_chiffrement(vc: discord.VoiceClient, max_s: float = 15.0) -> bool:
