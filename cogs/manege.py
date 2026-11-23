@@ -30,6 +30,17 @@ GUARD_MOVER_IDS = {
 }
 GUARD_MOVER_ROLES = {1502420669244248156}  # Division 0
 
+# Qui a le droit d'ÊTRE dans un salon gardé (même s'il y va seul). Les admins n'ont pas de
+# passe-droit : seuls ceux-là, le rôle Division 0, et ceux qu'un déplaceur autorisé y met.
+GUARD_MEMBER_IDS = {
+    1094070545248694342,  # Freydiss
+    1529571471205072936,  # Freydiss (2e compte)
+    994546252995907754,   # Hakuji
+    1079054995917381672,  # Brams
+    1495896013037113366,  # Amel (accès perso au salon)
+}
+GUARD_MEMBER_ROLES = {1502420669244248156}  # Division 0
+
 # Son joué dans Central 46 quand quelqu'un y arrive (et y reste). Certains membres ont
 # leurs propres sons (un au hasard, jamais deux fois le même d'affilée), d'autres aucun.
 _SOUNDS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sounds")
@@ -116,6 +127,10 @@ class ManegeCog(commands.Cog):
                     return hit[0]
         return None
 
+    @staticmethod
+    def _may_be_in_guarded(member: discord.Member) -> bool:
+        return member.id in GUARD_MEMBER_IDS or any(r.id in GUARD_MEMBER_ROLES for r in member.roles)
+
     def _may_move_into_guarded(self, guild: discord.Guild, mover_id: int | None) -> bool:
         if mover_id is None:
             return False
@@ -129,7 +144,7 @@ class ManegeCog(commands.Cog):
         if not after.channel or before.channel == after.channel or member.bot:
             return
         in_guarded = after.channel.id in GUARDED_CHANNELS
-        guarded = in_guarded and not after.channel.permissions_for(member).connect
+        guarded = in_guarded and not self._may_be_in_guarded(member)
         shielded = before.channel is not None and (member.guild.id, member.id) in self._shield
         if not guarded and not shielded:
             if in_guarded:
